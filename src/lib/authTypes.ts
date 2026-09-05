@@ -30,6 +30,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsing Committee Member",
+  MANAGEMENT: "Management",
   ADMIN: "Administrator",
 };
 
@@ -37,6 +38,7 @@ export const ROLE_SLUGS: Record<UserRole, string> = {
   OFFICER: "officer",
   DIRECTOR: "director",
   ENDORSING_COMMITTEE: "endorsing-committee",
+  MANAGEMENT: "management",
   ADMIN: "admin",
 };
 
@@ -49,6 +51,9 @@ export function normalizeUserRole(role: string): UserRole {
     r === "PROJECTMANAGER"
   ) {
     return "DIRECTOR";
+  }
+  if (r === "MANAGEMENT") {
+    return "MANAGEMENT";
   }
   if (
     r === "ENDORSING_COMMITTEE" ||
@@ -70,6 +75,9 @@ export function dashboardPath(role: string): string {
 export function roleFromSlug(slug: string): UserRole | undefined {
   if (!slug) return undefined;
   const clean = slug.toLowerCase().replace(/_/g, "-").trim();
+  if (clean === "management") {
+    return "MANAGEMENT";
+  }
   if (
     clean === "endorsing-committee" ||
     clean === "committee" ||

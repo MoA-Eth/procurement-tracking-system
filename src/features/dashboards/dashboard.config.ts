@@ -19,6 +19,11 @@ export const DASHBOARD_HEADINGS: Record<
     description:
       "Review procurement plans and record clear, traceable committee decisions.",
   },
+  MANAGEMENT: {
+    eyebrow: "Executive management review",
+    description:
+      "Review endorsed procurement plans, provide comments, and record executive approvals or rejections.",
+  },
   ADMIN: {
     eyebrow: "System administration",
     description:

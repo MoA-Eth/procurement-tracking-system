@@ -38,9 +38,19 @@ import {
 } from "@/features/plans/data/planRevisions";
 
 type ViewMode =
-  "list" | "project-form" | "plans-list" | "plan-form" | "activities-list";
+  | "list"
+  | "project-form"
+  | "plans-list"
+  | "plan-form"
+  | "activities-list";
 
-export function ProjectsManagementView() {
+interface ProjectsManagementViewProps {
+  readOnly?: boolean;
+}
+
+export function ProjectsManagementView({
+  readOnly = false,
+}: ProjectsManagementViewProps = {}) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [projects, setProjects] = useState<ProjectItem[]>(INITIAL_PROJECTS);
   const [plans, setPlans] = useState<ProcurementPlan[]>(INITIAL_PLANS);
@@ -480,6 +490,7 @@ export function ProjectsManagementView() {
           onCreateClick={handleCreateProjectClick}
           onEditClick={handleEditProjectClick}
           onViewPlansClick={handleViewPlansClick}
+          readOnly={readOnly}
         />
       )}
 
@@ -501,12 +512,12 @@ export function ProjectsManagementView() {
         <ProjectPlansView
           project={selectedProject}
           plans={plans}
-          userRole="DIRECTOR"
+          userRole={readOnly ? ("MANAGEMENT" as any) : "DIRECTOR"}
           onBackToProjects={() => {
             setSelectedProject(null);
             setViewMode("list");
           }}
-          onEditPlanClick={handleEditPlanClick}
+          onEditPlanClick={readOnly ? undefined : handleEditPlanClick}
           onViewActivitiesClick={handleViewActivitiesClick}
         />
       )}
@@ -532,74 +543,82 @@ export function ProjectsManagementView() {
             plan={selectedPlanForActivities}
             project={selectedProject}
             parentSection="projects"
-            userRole="DIRECTOR"
+            userRole={readOnly ? "MANAGEMENT" : "DIRECTOR"}
             onBackClick={() => {
               setSelectedPlanForActivities(null);
               setViewMode("plans-list");
             }}
-            onApprovePlan={async (p) => {
-              try {
-                await sendPlanToCommittee(p.id);
-              } catch (err) {
-                console.warn("Backend sendToCommittee note:", err);
-              }
-              updateLocalStoragePlanAndActivities(
-                p,
-                "Committee Review",
-                "Not Started",
-              );
-              recordPlanVersionEvent({
-                planId: p.id,
-                planReference: p.reference || p.planName,
-                projectCode: p.projectCode,
-                versionNumber: getCurrentPlanVersionNumber(p.id),
-                action: "APPROVED_DIRECTOR",
-                actionLabel: "Plan Approved by Director & Sent to Committee",
-                changedBy: "Director",
-                changedByRole: "Director",
-                reason:
-                  "Plan approved by Director and forwarded to Endorsement Committee.",
-              });
-              showToast(
-                `Plan "${p.planName}" approved by Director and forwarded to Endorsing Committee!`,
-              );
-              await loadData();
-              setSelectedPlanForActivities(null);
-              setViewMode("plans-list");
-            }}
-            onReturnPlan={async (p, remarks) => {
-              try {
-                await rejectPlan(
-                  p.id,
-                  remarks || "Returned by Director for revisions.",
-                );
-              } catch (err) {
-                console.warn("Backend rejectPlan note:", err);
-              }
-              updateLocalStoragePlanAndActivities(
-                p,
-                "Returned",
-                undefined,
-                remarks || "Returned by Director for revisions.",
-              );
-              recordPlanVersionEvent({
-                planId: p.id,
-                planReference: p.reference || p.planName,
-                projectCode: p.projectCode,
-                versionNumber: getCurrentPlanVersionNumber(p.id),
-                action: "RETURNED",
-                actionLabel: "Plan Returned by Director for Revision",
-                changedBy: "Director",
-                changedByRole: "Director",
-                reason: remarks || "Returned by Director for revisions.",
-              });
-              showToast(
-                `Plan "${p.planName}" returned to Procurement Officer for revision.`,
-              );
-              await loadData();
-              setSelectedPlanForActivities(null);
-              setViewMode("plans-list");
-            }}
+            onApprovePlan={
+              readOnly
+                ? undefined
+                : async (p) => {
+                    try {
+                      await sendPlanToCommittee(p.id);
+                    } catch (err) {
+                      console.warn("Backend sendToCommittee note:", err);
+                    }
+                    updateLocalStoragePlanAndActivities(
+                      p,
+                      "Committee Review",
+                      "Not Started",
+                    );
+                    recordPlanVersionEvent({
+                      planId: p.id,
+                      planReference: p.reference || p.planName,
+                      projectCode: p.projectCode,
+                      versionNumber: getCurrentPlanVersionNumber(p.id),
+                      action: "APPROVED_DIRECTOR",
+                      actionLabel: "Plan Approved by Director & Sent to Committee",
+                      changedBy: "Director",
+                      changedByRole: "Director",
+                      reason:
+                        "Plan approved by Director and forwarded to Endorsement Committee.",
+                    });
+                    showToast(
+                      `Plan "${p.planName}" approved by Director and forwarded to Endorsing Committee!`,
+                    );
+                    await loadData();
+                    setSelectedPlanForActivities(null);
+                    setViewMode("plans-list");
+                  }
+            }
+            onReturnPlan={
+              readOnly
+                ? undefined
+                : async (p, remarks) => {
+                    try {
+                      await rejectPlan(
+                        p.id,
+                        remarks || "Returned by Director for revisions.",
+                      );
+                    } catch (err) {
+                      console.warn("Backend rejectPlan note:", err);
+                    }
+                    updateLocalStoragePlanAndActivities(
+                      p,
+                      "Returned",
+                      undefined,
+                      remarks || "Returned by Director for revisions.",
+                    );
+                    recordPlanVersionEvent({
+                      planId: p.id,
+                      planReference: p.reference || p.planName,
+                      projectCode: p.projectCode,
+                      versionNumber: getCurrentPlanVersionNumber(p.id),
+                      action: "RETURNED",
+                      actionLabel: "Plan Returned by Director for Revision",
+                      changedBy: "Director",
+                      changedByRole: "Director",
+                      reason: remarks || "Returned by Director for revisions.",
+                    });
+                    showToast(
+                      `Plan "${p.planName}" returned to Officer for revision.`,
+                    );
+                    await loadData();
+                    setSelectedPlanForActivities(null);
+                    setViewMode("plans-list");
+                  }
+            }
           />
         )}
     </div>

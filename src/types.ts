@@ -1,4 +1,4 @@
-export type UserRole = "OFFICER" | "DIRECTOR" | "ENDORSING_COMMITTEE" | "ADMIN";
+export type UserRole = "OFFICER" | "DIRECTOR" | "ENDORSING_COMMITTEE" | "MANAGEMENT" | "ADMIN";
 
 export type UserStatus = "INVITED" | "ACTIVE" | "INACTIVE";
 

@@ -5,6 +5,7 @@ export type ProcurementPlanStatus =
   | "Draft"
   | "Finally Approved"
   | "Returned"
+  | "Returned for Revision"
   | "Submitted to Director";
 export type ProcurementCategory =
   "Goods" | "Works" | "Non-Consulting Services" | "Consultancy Services";
@@ -35,6 +36,8 @@ export interface ProcurementPlanSummary {
   reference: string;
   status: ProcurementPlanStatus;
   rejectionReason?: string;
+  directorRevisionComment?: string;
+  managementComment?: string;
   version?: number;
   planActivities?: readonly import("./officerActivityDrafts").ProcurementActivitySummary[];
 }

@@ -33,6 +33,7 @@ const AUTH_ROLE_LABELS: Record<string, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsement Committee",
+  MANAGEMENT: "Management",
   ADMIN: "Administrator",
 };
 
@@ -45,7 +46,9 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
 };
 
 function displayRole(user: ApiUser): string {
+  const authKey = (user.authRole || "").toUpperCase();
   return (
+    AUTH_ROLE_LABELS[authKey] ??
     AUTH_ROLE_LABELS[user.authRole] ??
     PRISMA_ROLE_LABELS[user.role] ??
     user.authRole ??
@@ -240,6 +243,7 @@ export function UserManagementView({
         OFFICER: "ProcurementOfficer",
         DIRECTOR: "ProcurementDirector",
         ENDORSING_COMMITTEE: "ManagementTeam",
+        MANAGEMENT: "ManagementTeam",
         ADMIN: "Administrator",
       };
 
@@ -271,6 +275,7 @@ export function UserManagementView({
       OFFICER: "ProcurementOfficer",
       DIRECTOR: "ProcurementDirector",
       ENDORSING_COMMITTEE: "ManagementTeam",
+      MANAGEMENT: "ManagementTeam",
       ADMIN: "Administrator",
     };
 
@@ -559,6 +564,9 @@ export function UserManagementView({
                   <option value="ENDORSING_COMMITTEE">
                     Endorsement Committee (Committee Review)
                   </option>
+                  <option value="MANAGEMENT">
+                    Management (Executive Review &amp; Approval)
+                  </option>
                 </select>
 
                 <p className="text-xs text-[#64748b] font-medium mt-2 flex items-center gap-1.5">
@@ -651,6 +659,7 @@ export function UserManagementView({
                   <option value="ENDORSING_COMMITTEE">
                     Endorsement Committee
                   </option>
+                  <option value="MANAGEMENT">Management</option>
                   <option value="ADMIN">Administrator</option>
                 </select>
 

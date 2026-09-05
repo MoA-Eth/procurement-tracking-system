@@ -56,6 +56,37 @@ describe("auth API", () => {
     );
   });
 
+  it("authenticates as MANAGEMENT correctly when backend returns authRole MANAGEMENT", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            user: {
+              id: "mgt-1",
+              email: "abel@moa.gov.et",
+              name: "Abel",
+              role: "ManagementTeam",
+              authRole: "MANAGEMENT",
+            },
+            tokens: {
+              accessToken: "sample-mgt-token",
+            },
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const session = await authenticate(
+      "abel@moa.gov.et",
+      "secret",
+      false,
+    );
+
+    expect(session.user.role).toBe("MANAGEMENT");
+    expect(session.user.displayName).toBe("Abel");
+  });
+
   it("surfaces the backend sign-in error", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(

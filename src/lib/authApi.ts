@@ -1,8 +1,9 @@
-import type {
-  AuthSession,
-  AuthUser,
-  InvitedUserResponse,
-  ProvisionableRole,
+import {
+  type AuthSession,
+  type AuthUser,
+  type InvitedUserResponse,
+  type ProvisionableRole,
+  normalizeUserRole,
 } from "./authTypes";
 import type { UserRole } from "../types";
 import { apiClient, ApiClientError } from "./apiClient";
@@ -19,20 +20,22 @@ function mapPrismaRoleToUserRole(role: string): UserRole {
   switch (role) {
     case "ProcurementDirector":
     case "ProjectManager":
+    case "DIRECTOR":
       return "DIRECTOR";
+    case "MANAGEMENT":
+    case "Management":
+      return "MANAGEMENT";
     case "ManagementTeam":
+    case "ENDORSING_COMMITTEE":
       return "ENDORSING_COMMITTEE";
     case "Administrator":
+    case "ADMIN":
       return "ADMIN";
     case "ProcurementOfficer":
-      return "OFFICER";
-    case "DIRECTOR":
-    case "ENDORSING_COMMITTEE":
-    case "ADMIN":
     case "OFFICER":
-      return role as UserRole;
-    default:
       return "OFFICER";
+    default:
+      return normalizeUserRole(role);
   }
 }
 
@@ -85,7 +88,7 @@ export async function authenticate(
       authTokenManager.setToken(token);
     }
 
-    const role = mapPrismaRoleToUserRole(rawUser.role || rawUser.authRole);
+    const role = mapPrismaRoleToUserRole(rawUser.authRole || rawUser.role);
     const user: AuthUser = {
       id: rawUser.id || `user-${Date.now()}`,
       email: rawUser.email || cleanId,
@@ -298,23 +301,35 @@ export function getClientSession(): AuthSession | null {
     const match = cookies.find((c) => c.startsWith(`${name}=`));
     if (match) {
       const val = match.slice(name.length + 1);
+      const tryNormalize = (parsed: any): AuthSession | null => {
+        if (parsed && parsed.user) {
+          if (parsed.user.role || parsed.user.authRole) {
+            parsed.user.role = normalizeUserRole(
+              parsed.user.authRole || parsed.user.role,
+            );
+          }
+          return parsed as AuthSession;
+        }
+        return null;
+      };
+
       try {
         const decoded = decodeURIComponent(escape(atob(val)));
-        const parsed = JSON.parse(decoded);
-        if (parsed && parsed.user) return parsed;
+        const res = tryNormalize(JSON.parse(decoded));
+        if (res) return res;
       } catch {}
       try {
         const decoded = atob(val);
-        const parsed = JSON.parse(decoded);
-        if (parsed && parsed.user) return parsed;
+        const res = tryNormalize(JSON.parse(decoded));
+        if (res) return res;
       } catch {}
       try {
-        const parsed = JSON.parse(decodeURIComponent(val));
-        if (parsed && parsed.user) return parsed;
+        const res = tryNormalize(JSON.parse(decodeURIComponent(val)));
+        if (res) return res;
       } catch {}
       try {
-        const parsed = JSON.parse(val);
-        if (parsed && parsed.user) return parsed;
+        const res = tryNormalize(JSON.parse(val));
+        if (res) return res;
       } catch {}
     }
   }

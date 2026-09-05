@@ -17,10 +17,14 @@ import {
   Send,
   Loader2,
   History,
+  Building2,
+  MessageSquare,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import type { ProcurementPlan } from "../../plans/plansData";
 import type { ProjectItem } from "@/features/projects/management/projectsData";
+import { fetchPlanComments, type BackendComment } from "@/lib/plansApi";
 import {
   INITIAL_ACTIVITIES,
   generateRoadmapForMethod,
@@ -265,6 +269,12 @@ interface DirectorActivitiesListViewProps {
     decision: "APPROVE" | "REJECT",
     remarks?: string,
   ) => void;
+  onManagementDecision?: (
+    plan: ProcurementPlan,
+    decision: "APPROVE" | "REJECT",
+    comment?: string,
+  ) => void;
+  onAddActivityComment?: (activityId: string, comment: string) => Promise<void>;
 }
 
 export function DirectorActivitiesListView({
@@ -276,10 +286,24 @@ export function DirectorActivitiesListView({
   onApprovePlan,
   onReturnPlan,
   onCommitteeVote,
+  onManagementDecision,
+  onAddActivityComment,
 }: DirectorActivitiesListViewProps) {
   const isCommittee = userRole === "ENDORSING_COMMITTEE";
-  const isEditable = parentSection === "plan-for-review" && !isCommittee;
+  const isManagement = userRole === "MANAGEMENT";
+  const isEditable = parentSection === "plan-for-review" && !isCommittee && !isManagement;
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [activityComments, setActivityComments] = useState<BackendComment[]>([]);
+  const [newActivityCommentText, setNewActivityCommentText] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  useEffect(() => {
+    if (plan?.id) {
+      fetchPlanComments(plan.id)
+        .then((cmts) => setActivityComments(cmts || []))
+        .catch(() => {});
+    }
+  }, [plan?.id]);
   const planVersion = getCurrentPlanVersionNumber(
     plan.id || (plan as any).reference || "",
   );
@@ -1403,6 +1427,105 @@ export function DirectorActivitiesListView({
               </div>
             </div>
           )}
+
+          {/* ACTIVITY COMMENTS & EXECUTIVE ANNOTATIONS SECTION */}
+          <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-[#0A3C2F]" />
+                <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                  Activity Comments &amp; Review Annotations
+                </h3>
+              </div>
+              <span className="text-[11px] text-slate-500 font-medium">
+                {activityComments.filter((c) => c.entityId === selectedActivity.id).length} Comments
+              </span>
+            </div>
+
+            {/* List of comments on this activity */}
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {activityComments.filter((c) => c.entityId === selectedActivity.id).length === 0 ? (
+                <p className="text-xs text-slate-400 italic py-2">
+                  No review comments recorded for this activity yet.
+                </p>
+              ) : (
+                activityComments
+                  .filter((c) => c.entityId === selectedActivity.id)
+                  .map((c) => (
+                    <div
+                      key={c.id}
+                      className="p-3 rounded-xl border border-slate-200 bg-slate-50/70 text-xs space-y-1"
+                    >
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span className="font-bold text-slate-800">
+                          {c.author?.displayName || c.author?.name || "Reviewer"}
+                        </span>
+                        <span className="font-mono text-[10px]">
+                          {new Date(c.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-slate-800 italic leading-relaxed pl-1">
+                        &quot;{c.body}&quot;
+                      </p>
+                    </div>
+                  ))
+              )}
+            </div>
+
+            {/* Add Comment Input */}
+            {onAddActivityComment && (
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <label className="block text-[11px] font-bold text-slate-800">
+                  {isManagement ? "Executive Management Comment on this Activity" : "Add Activity Note / Comment"}
+                </label>
+                <div className="flex items-start gap-2">
+                  <textarea
+                    rows={2}
+                    value={newActivityCommentText}
+                    onChange={(e) => setNewActivityCommentText(e.target.value)}
+                    placeholder={
+                      isManagement
+                        ? "Enter executive comment, reservation, or clarification required on this activity..."
+                        : "Enter note or feedback..."
+                    }
+                    className="flex-1 p-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#0A3C2F] outline-none"
+                  />
+                  <button
+                    type="button"
+                    disabled={!newActivityCommentText.trim() || isSubmittingComment}
+                    onClick={async () => {
+                      if (!newActivityCommentText.trim()) return;
+                      setIsSubmittingComment(true);
+                      try {
+                        await onAddActivityComment(selectedActivity.id, newActivityCommentText.trim());
+                        setActivityComments((prev) => [
+                          ...prev,
+                          {
+                            id: `temp-${Date.now()}`,
+                            entityType: "ACTIVITY",
+                            entityId: selectedActivity.id,
+                            authorId: "current-user",
+                            body: newActivityCommentText.trim(),
+                            createdAt: new Date().toISOString(),
+                            author: {
+                              id: "current-user",
+                              name: isManagement ? "Executive Management" : "Director",
+                            },
+                          },
+                        ]);
+                        setNewActivityCommentText("");
+                      } finally {
+                        setIsSubmittingComment(false);
+                      }
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072a21] text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs transition-colors cursor-pointer shrink-0 mt-0.5"
+                  >
+                    {isSubmittingComment ? "Saving..." : "Add Comment"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       ) : (
         /* MAIN TABULAR ACTIVITY DIRECTORY (DIRECTOR VIEW) */
@@ -1440,13 +1563,19 @@ export function DirectorActivitiesListView({
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Plan Name
               </label>
-              <input
-                type="text"
-                value={currentPlanName}
-                onChange={(e) => setCurrentPlanName(e.target.value)}
-                placeholder="Enter plan name..."
-                className="w-full text-base sm:text-lg font-extrabold text-slate-950 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10 outline-none transition-all"
-              />
+              {isManagement ? (
+                <p className="text-base sm:text-lg font-extrabold text-slate-950 py-1">
+                  {currentPlanName}
+                </p>
+              ) : (
+                <input
+                  type="text"
+                  value={currentPlanName}
+                  onChange={(e) => setCurrentPlanName(e.target.value)}
+                  placeholder="Enter plan name..."
+                  className="w-full text-base sm:text-lg font-extrabold text-slate-950 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10 outline-none transition-all"
+                />
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
@@ -1736,6 +1865,70 @@ export function DirectorActivitiesListView({
                 >
                   <RotateCcw className="h-4 w-4" />
                   <span>Vote: Reject / Return Plan</span>
+                </button>
+              </div>
+            </section>
+          ) : isManagement && onManagementDecision ? (
+            <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5 mt-6">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                <Building2 className="h-5 w-5 text-indigo-700" />
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Executive Management Decision &amp; Authorization
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Final executive approval gate. Review plan and activities, enter remarks or comments, and authorize or reject.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-800">
+                  Executive Remarks / Rejection Rationale
+                  <span className="ml-1 text-rose-500 text-[10px] font-semibold">
+                    (Required to reject)
+                  </span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={directorReturnRemarks}
+                  onChange={(e) => setDirectorReturnRemarks(e.target.value)}
+                  placeholder="Enter executive authorization remarks or rejection reasons..."
+                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
+                />
+                {!directorReturnRemarks.trim() && (
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    A comment is required before rejecting a plan.
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onManagementDecision(plan, "APPROVE", directorReturnRemarks)
+                  }
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
+                  <span>Authorize &amp; Approve Plan</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!directorReturnRemarks.trim()}
+                  onClick={() =>
+                    onManagementDecision(plan, "REJECT", directorReturnRemarks)
+                  }
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors ${
+                    directorReturnRemarks.trim()
+                      ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
+                      : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
+                  }`}
+                >
+                  <XCircle className="h-4 w-4" />
+                  <span>Reject Plan</span>
                 </button>
               </div>
             </section>

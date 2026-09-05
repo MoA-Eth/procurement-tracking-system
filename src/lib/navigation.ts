@@ -33,7 +33,7 @@ const workspaceSections = {
     href: "/workspace/projects",
     icon: "projects",
     description: "View and follow procurement projects assigned to your role.",
-    allowedRoles: ["OFFICER", "DIRECTOR"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT"],
   },
   contracts: {
     section: "contracts",
@@ -49,7 +49,7 @@ const workspaceSections = {
     href: "/workspace/activity-tracker",
     icon: "activity",
     description: "Track procurement activities, milestones and upcoming work.",
-    allowedRoles: ["OFFICER", "DIRECTOR"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT"],
   },
   "plan-for-review": {
     section: "plan-for-review",
@@ -57,15 +57,23 @@ const workspaceSections = {
     href: "/workspace/plan-for-review",
     icon: "clipboard",
     description: "Review procurement plans awaiting action from your role.",
-    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE"],
+    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT"],
+  },
+  "vote-progress": {
+    section: "vote-progress",
+    label: "Vote Progress",
+    href: "/workspace/vote-progress",
+    icon: "progress",
+    description: "Monitor Endorsement Committee voting and Executive Management reviews.",
+    allowedRoles: ["DIRECTOR", "MANAGEMENT", "ENDORSING_COMMITTEE", "ADMIN", "OFFICER"],
   },
   "committee-progress": {
     section: "committee-progress",
-    label: "Committee Progress",
-    href: "/workspace/committee-progress",
+    label: "Vote Progress",
+    href: "/workspace/vote-progress",
     icon: "progress",
-    description: "Monitor the progress of plans submitted to the committee.",
-    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "ADMIN", "OFFICER"],
+    description: "Monitor Endorsement Committee voting and Executive Management reviews.",
+    allowedRoles: ["DIRECTOR", "MANAGEMENT", "ENDORSING_COMMITTEE", "ADMIN", "OFFICER"],
   },
   reports: {
     section: "reports",
@@ -73,7 +81,7 @@ const workspaceSections = {
     href: "/workspace/reports",
     icon: "reports",
     description: "Open directorate procurement reports and summaries.",
-    allowedRoles: ["DIRECTOR", "OFFICER", "ENDORSING_COMMITTEE", "ADMIN"],
+    allowedRoles: ["DIRECTOR", "MANAGEMENT", "OFFICER", "ENDORSING_COMMITTEE", "ADMIN"],
   },
   "my-decisions": {
     section: "my-decisions",
@@ -106,7 +114,7 @@ const workspaceSections = {
     icon: "clipboard",
     description:
       "View alerts, reviews, milestone deadlines and system notifications.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "ENDORSING_COMMITTEE", "ADMIN"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT", "ENDORSING_COMMITTEE", "ADMIN"],
   },
 } as const satisfies Record<string, WorkspaceSection>;
 
@@ -117,8 +125,13 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
   DIRECTOR: [
     "projects",
     "plan-for-review",
-    "committee-progress",
-    "activity-tracker",
+    "vote-progress",
+    "reports",
+  ],
+  MANAGEMENT: [
+    "projects",
+    "plan-for-review",
+    "vote-progress",
     "reports",
   ],
   ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],

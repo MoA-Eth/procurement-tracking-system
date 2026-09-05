@@ -20,6 +20,7 @@ const AUTH_ROLE_LABELS: Record<string, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsement Committee",
+  MANAGEMENT: "Management",
   ADMIN: "Administrator",
 };
 
@@ -32,7 +33,9 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
 };
 
 function displayRole(user: ApiUser): string {
+  const authKey = (user.authRole || "").toUpperCase();
   return (
+    AUTH_ROLE_LABELS[authKey] ??
     AUTH_ROLE_LABELS[user.authRole] ??
     PRISMA_ROLE_LABELS[user.role] ??
     user.authRole ??

@@ -20,6 +20,7 @@ import {
   Clock,
   Mail,
   History,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import type { ProcurementPlan } from "../plansData";
@@ -28,6 +29,10 @@ import {
   sendPlanToCommittee,
   rejectPlan,
   submitVote,
+  submitManagementDecision,
+  addPlanComment,
+  fetchPlanComments,
+  type BackendComment,
   mapBackendPlanToFrontend,
 } from "../../../lib/plansApi";
 import type { AuthUser } from "../../../lib/authTypes";
@@ -216,6 +221,21 @@ export function PlanForReviewView({
   );
   const [editingActivity, setEditingActivity] =
     useState<ProcurementActivity | null>(null);
+  const [activityComments, setActivityComments] = useState<BackendComment[]>([]);
+  const [newActivityCommentText, setNewActivityCommentText] = useState("");
+  const [isSubmittingActivityComment, setIsSubmittingActivityComment] =
+    useState(false);
+  const [isPostingPlanComment, setIsPostingPlanComment] = useState(false);
+
+  useEffect(() => {
+    if (selectedPlanForReview?.id) {
+      fetchPlanComments(selectedPlanForReview.id)
+        .then((cmts) => setActivityComments(cmts || []))
+        .catch(() => {});
+    } else {
+      setActivityComments([]);
+    }
+  }, [selectedPlanForReview?.id]);
 
   useEffect(() => {
     const handleReset = (event: Event) => {
@@ -291,6 +311,14 @@ export function PlanForReviewView({
         (p.status === "Committee Review" ||
           (p as any).status === "WITH_COMMITTEE") &&
         !alreadyVoted;
+    } else if (user?.role === "MANAGEMENT") {
+      const alreadyDecided = p.managementDecision !== undefined;
+      isAwaitingReview =
+        (p.status === "Awaiting Management Approval" ||
+          p.status === "Committee Endorsed" ||
+          (p as any).status === "AWAITING_MANAGEMENT_APPROVAL" ||
+          (p as any).status === "COMMITTEE_ENDORSED") &&
+        !alreadyDecided;
     } else {
       isAwaitingReview =
         p.status === "Submitted to Director" || p.status === "Returned";
@@ -587,6 +615,138 @@ export function PlanForReviewView({
     );
   };
 
+  // Management Decision: Approve or Reject
+  const handleManagementDecision = async (
+    plan: ProcurementPlan,
+    decision: "APPROVE" | "REJECT",
+    comment?: string,
+  ) => {
+    const commentText = (comment !== undefined ? comment : returnRemarks).trim() || undefined;
+    try {
+      await submitManagementDecision(plan.id, decision, commentText, user.id);
+    } catch (err: any) {
+      console.warn("Backend submitManagementDecision error:", err);
+      alert(err.message || "Failed to submit management decision");
+      return;
+    }
+
+    const nextStatus =
+      decision === "APPROVE" ? "Management Approved" : "Management Rejected";
+    updateLocalStoragePlanAndActivities(
+      plan,
+      nextStatus,
+      decision === "APPROVE" ? "Approved" : "Under Review",
+      decision === "REJECT" ? commentText : undefined,
+    );
+
+    recordPlanVersionEvent({
+      planId: plan.id,
+      planReference: plan.reference || plan.planName,
+      projectCode: plan.projectCode,
+      versionNumber: getCurrentPlanVersionNumber(plan.id),
+      action: decision === "APPROVE" ? "FINALLY_APPROVED" : "RETURNED",
+      actionLabel:
+        decision === "APPROVE"
+          ? "Executive Management Approved Plan"
+          : "Executive Management Rejected Plan",
+      changedBy: user.displayName || user.email || "Management",
+      changedByRole: "Management",
+      reason:
+        commentText ||
+        (decision === "APPROVE"
+          ? "Executive authorization granted"
+          : "Rejected by Executive Management"),
+    });
+
+    await loadPlans();
+    setSelectedPlanForReview(null);
+    setReturnRemarks("");
+    showToast(
+      decision === "APPROVE"
+        ? `Plan "${plan.planName}" authorized & approved by Executive Management!`
+        : `Plan "${plan.planName}" rejected by Executive Management.`,
+    );
+  };
+
+  const handleAddActivityComment = async (
+    activityId: string,
+    comment: string,
+  ) => {
+    const targetPlan = activitiesPlan || selectedPlanForReview;
+    if (!targetPlan || !comment.trim()) return;
+    try {
+      const created = await addPlanComment(
+        targetPlan.id,
+        "ACTIVITY",
+        activityId,
+        comment.trim(),
+        user.id,
+      );
+      setActivityComments((prev) => [
+        ...prev,
+        created || {
+          id: `temp-${Date.now()}`,
+          entityType: "ACTIVITY",
+          entityId: activityId,
+          authorId: user.id,
+          body: comment.trim(),
+          createdAt: new Date().toISOString(),
+          author: {
+            id: user.id,
+            name: user.displayName || user.email || "Reviewer",
+            displayName: user.displayName || user.email,
+            role: user.role,
+          },
+        },
+      ]);
+      showToast("Review comment recorded on activity.");
+    } catch (err: any) {
+      console.error("Failed to add activity comment:", err);
+      alert(err.message || "Failed to add activity comment.");
+    }
+  };
+
+  const handleAddPlanComment = async (
+    planId: string,
+    comment: string,
+  ) => {
+    if (!planId || !comment.trim()) return;
+    setIsPostingPlanComment(true);
+    try {
+      const created = await addPlanComment(
+        planId,
+        "PLAN",
+        planId,
+        comment.trim(),
+        user.id,
+      );
+      setActivityComments((prev) => [
+        ...prev,
+        created || {
+          id: `temp-${Date.now()}`,
+          entityType: "PLAN",
+          entityId: planId,
+          authorId: user.id,
+          body: comment.trim(),
+          createdAt: new Date().toISOString(),
+          author: {
+            id: user.id,
+            name: user.displayName || user.email || "Reviewer",
+            displayName: user.displayName || user.email,
+            role: user.role,
+          },
+        },
+      ]);
+      setReturnRemarks("");
+      showToast("Review directive / comment recorded on plan.");
+    } catch (err: any) {
+      console.error("Failed to add plan comment:", err);
+      alert(err.message || "Failed to add plan comment.");
+    } finally {
+      setIsPostingPlanComment(false);
+    }
+  };
+
   const handleSavePlanEdits = (savedPlan: ProcurementPlan) => {
     setPlans((prev) =>
       prev.map((p) => (p.id === savedPlan.id ? savedPlan : p)),
@@ -631,6 +791,15 @@ export function PlanForReviewView({
               }
             : undefined
         }
+        onManagementDecision={
+          user.role === "MANAGEMENT"
+            ? (p, decision, comment) => {
+                handleManagementDecision(p, decision, comment);
+                setActivitiesPlan(null);
+              }
+            : undefined
+        }
+        onAddActivityComment={handleAddActivityComment}
       />
     );
   }
@@ -734,7 +903,7 @@ export function PlanForReviewView({
                 <label className="block text-[11px] font-extrabold text-[#0A3C2F] uppercase tracking-wider">
                   Plan Title
                 </label>
-                {user.role === "ENDORSING_COMMITTEE" ? (
+                {user.role === "ENDORSING_COMMITTEE" || user.role === "MANAGEMENT" ? (
                   <h2 className="text-lg sm:text-xl font-extrabold text-slate-950 tracking-tight pt-0.5">
                     {selectedPlanForReview.planName}
                   </h2>
@@ -817,7 +986,7 @@ export function PlanForReviewView({
             <span className="text-[11px] font-extrabold text-[#0A3C2F] uppercase tracking-wider block">
               Plan Description & Scope Overview
             </span>
-            {user.role === "ENDORSING_COMMITTEE" ? (
+            {user.role === "ENDORSING_COMMITTEE" || user.role === "MANAGEMENT" ? (
               <div className="w-full text-xs text-slate-800 leading-relaxed rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
                 {selectedPlanForReview.description ||
                   "No description provided."}
@@ -980,7 +1149,7 @@ export function PlanForReviewView({
 
                           {/* Action Button */}
                           <td className="py-3.5 px-3.5 align-top text-center">
-                            {user.role === "ENDORSING_COMMITTEE" ? (
+                            {user.role === "ENDORSING_COMMITTEE" || user.role === "MANAGEMENT" ? (
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -1032,15 +1201,53 @@ export function PlanForReviewView({
             <h3 className="text-sm font-bold text-slate-900">
               {user.role === "ENDORSING_COMMITTEE"
                 ? "Endorsement Committee Decision & Voting"
-                : "Director Decision & Workflow Actions"}
+                : user.role === "MANAGEMENT"
+                  ? "Executive Management Decision & Authorization"
+                  : "Director Decision & Workflow Actions"}
             </h3>
           </div>
+
+          {/* Recorded Plan & Activity Annotations */}
+          {activityComments.length > 0 && (
+            <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/60 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                  <MessageSquare className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                  <span>Recorded Annotations & Comments ({activityComments.length})</span>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {activityComments.map((c) => (
+                  <div
+                    key={c.id}
+                    className="p-2.5 rounded-lg border border-slate-200 bg-white text-xs space-y-0.5 shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between text-[10px] text-slate-500">
+                      <span className="font-semibold text-slate-700">
+                        {c.author?.displayName || c.author?.name || "Reviewer"}
+                        {c.entityType === "ACTIVITY" ? " (on Activity)" : " (on Plan)"}
+                      </span>
+                      <span>{new Date(c.createdAt).toLocaleString()}</span>
+                    </div>
+                    <p className="text-slate-800 italic leading-relaxed pl-1">&quot;{c.body}&quot;</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-800">
               {user.role === "ENDORSING_COMMITTEE" ? (
                 <>
                   Committee Feedback / Deliberation Notes
+                  <span className="ml-1 text-rose-500 text-[10px] font-semibold">
+                    (Required to reject)
+                  </span>
+                </>
+              ) : user.role === "MANAGEMENT" ? (
+                <>
+                  Executive Review Remarks / Directives / Rejection Rationale
                   <span className="ml-1 text-rose-500 text-[10px] font-semibold">
                     (Required to reject)
                   </span>
@@ -1061,16 +1268,18 @@ export function PlanForReviewView({
               placeholder={
                 user.role === "ENDORSING_COMMITTEE"
                   ? "Enter your voting remarks or rejection reason (visible to Director)..."
-                  : "Specify required corrections, missing documents or revision notes for the Procurement Officer..."
+                  : user.role === "MANAGEMENT"
+                    ? "Enter executive authorization directives, comments or rejection reasons..."
+                    : "Specify required corrections, missing documents or revision notes for the Procurement Officer..."
               }
               className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
             />
-            {user.role === "ENDORSING_COMMITTEE" && !returnRemarks.trim() && (
+            {(user.role === "ENDORSING_COMMITTEE" || user.role === "MANAGEMENT") && !returnRemarks.trim() && (
               <p className="text-[10px] text-slate-400 font-medium">
                 A comment is required before rejecting a plan.
               </p>
             )}
-            {user.role !== "ENDORSING_COMMITTEE" && !returnRemarks.trim() && (
+            {user.role === "DIRECTOR" && !returnRemarks.trim() && (
               <p className="text-[10px] text-slate-400 font-medium">
                 Revision notes are required before returning a plan to the
                 Procurement Officer.
@@ -1086,7 +1295,56 @@ export function PlanForReviewView({
           </div>
 
           {/* Action Buttons */}
-          {user.role === "ENDORSING_COMMITTEE" ? (
+          {user.role === "MANAGEMENT" ? (
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleManagementDecision(selectedPlanForReview, "APPROVE", returnRemarks)
+                  }
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
+                  <span>Authorize &amp; Approve Plan</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!returnRemarks.trim()}
+                  onClick={() =>
+                    handleManagementDecision(selectedPlanForReview, "REJECT", returnRemarks)
+                  }
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors ${
+                    returnRemarks.trim()
+                      ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
+                      : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
+                  }`}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  <span>Reject Plan</span>
+                </button>
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  disabled={!returnRemarks.trim() || isPostingPlanComment}
+                  onClick={() =>
+                    handleAddPlanComment(selectedPlanForReview.id, returnRemarks.trim())
+                  }
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <MessageSquare className="h-4 w-4 text-indigo-700" />
+                  <span>
+                    {isPostingPlanComment
+                      ? "Recording Directive..."
+                      : "Record Executive Directive / Comment on Plan"}
+                  </span>
+                </button>
+              </div>
+            </div>
+          ) : user.role === "ENDORSING_COMMITTEE" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
               <button
                 type="button"
@@ -1220,13 +1478,14 @@ export function PlanForReviewView({
                   </label>
                   <textarea
                     rows={3}
+                    disabled={user.role === "MANAGEMENT" || user.role === "ENDORSING_COMMITTEE"}
                     value={editingActivity.description}
                     onChange={(e) =>
                       setEditingActivity((prev: ProcurementActivity | null) =>
                         prev ? { ...prev, description: e.target.value } : null,
                       )
                     }
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all leading-relaxed"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all leading-relaxed disabled:opacity-75 disabled:cursor-not-allowed"
                     placeholder="Enter activity description..."
                   />
                 </div>
@@ -1235,6 +1494,7 @@ export function PlanForReviewView({
                 <DualCalendarField
                   id="review-target-planned-date"
                   label="Target Planned Date (Roadmap Milestone)"
+                  disabled={user.role === "MANAGEMENT" || user.role === "ENDORSING_COMMITTEE"}
                   gregorianValue={
                     editingActivity.roadmap.find(
                       (s: ActivityStage) =>
@@ -1262,6 +1522,7 @@ export function PlanForReviewView({
                   </label>
                   <input
                     type="text"
+                    disabled={user.role === "MANAGEMENT" || user.role === "ENDORSING_COMMITTEE"}
                     value={editingActivity.remarks || ""}
                     onChange={(e) =>
                       setEditingActivity((prev: ProcurementActivity | null) =>
@@ -1269,7 +1530,7 @@ export function PlanForReviewView({
                       )
                     }
                     placeholder="Add clarification notes..."
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all disabled:opacity-75 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -1280,6 +1541,7 @@ export function PlanForReviewView({
                   </label>
                   <input
                     type="text"
+                    disabled={user.role === "MANAGEMENT" || user.role === "ENDORSING_COMMITTEE"}
                     value={editingActivity.additionalRemarks || ""}
                     onChange={(e) =>
                       setEditingActivity((prev: ProcurementActivity | null) =>
@@ -1289,14 +1551,100 @@ export function PlanForReviewView({
                       )
                     }
                     placeholder="Add technical notes..."
-                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all"
+                    className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all disabled:opacity-75 disabled:cursor-not-allowed"
                   />
+                </div>
+
+                {/* Activity Comments & Review Annotations */}
+                <div className="pt-3 border-t border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                      <MessageSquare className="h-4 w-4 text-[#0A3C2F]" />
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                        Activity Comments & Review Annotations
+                      </h4>
+                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium">
+                      {activityComments.filter((c) => c.entityId === editingActivity.id).length} Comments
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {activityComments.filter((c) => c.entityId === editingActivity.id).length === 0 ? (
+                      <p className="text-xs text-slate-400 italic py-1">
+                        No review comments recorded for this activity yet.
+                      </p>
+                    ) : (
+                      activityComments
+                        .filter((c) => c.entityId === editingActivity.id)
+                        .map((c) => (
+                          <div
+                            key={c.id}
+                            className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/70 text-xs space-y-1"
+                          >
+                            <div className="flex items-center justify-between text-[10px] text-slate-500">
+                              <span className="font-bold text-slate-800">
+                                {c.author?.displayName || c.author?.name || "Reviewer"}
+                              </span>
+                              <span className="font-mono text-[10px]">
+                                {new Date(c.createdAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-slate-800 italic leading-relaxed pl-1">
+                              &quot;{c.body}&quot;
+                            </p>
+                          </div>
+                        ))
+                    )}
+                  </div>
+
+                  {/* Add Comment Input */}
+                  <div className="pt-1 border-t border-slate-100 space-y-2">
+                    <label className="block text-[11px] font-bold text-slate-800">
+                      {user.role === "MANAGEMENT"
+                        ? "Executive Management Comment on this Activity"
+                        : "Add Activity Note / Comment"}
+                    </label>
+                    <div className="flex items-start gap-2">
+                      <textarea
+                        rows={2}
+                        value={newActivityCommentText}
+                        onChange={(e) => setNewActivityCommentText(e.target.value)}
+                        placeholder={
+                          user.role === "MANAGEMENT"
+                            ? "Enter executive comment, reservation, or clarification required on this activity..."
+                            : "Enter note or feedback..."
+                        }
+                        className="flex-1 p-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#0A3C2F] outline-none"
+                      />
+                      <button
+                        type="button"
+                        disabled={!newActivityCommentText.trim() || isSubmittingActivityComment}
+                        onClick={async () => {
+                          if (!newActivityCommentText.trim()) return;
+                          setIsSubmittingActivityComment(true);
+                          try {
+                            await handleAddActivityComment(
+                              editingActivity.id,
+                              newActivityCommentText.trim(),
+                            );
+                            setNewActivityCommentText("");
+                          } finally {
+                            setIsSubmittingActivityComment(false);
+                          }
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072a21] text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs transition-colors cursor-pointer shrink-0 mt-0.5"
+                      >
+                        {isSubmittingActivityComment ? "Saving..." : "Add Comment"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Modal Footer Actions */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                {user.role === "ENDORSING_COMMITTEE" ? (
+                {user.role === "ENDORSING_COMMITTEE" || user.role === "MANAGEMENT" ? (
                   <button
                     type="button"
                     onClick={() => setEditingActivity(null)}
@@ -1364,7 +1712,9 @@ export function PlanForReviewView({
         <span className="font-bold text-[#0A3C2F]">
           {user.role === "ENDORSING_COMMITTEE"
             ? "Committee Plan for Review"
-            : "Plan for Review"}
+            : user.role === "MANAGEMENT"
+              ? "Management Plan for Review"
+              : "Plan for Review"}
         </span>
       </nav>
 
@@ -1374,12 +1724,16 @@ export function PlanForReviewView({
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
             {user.role === "ENDORSING_COMMITTEE"
               ? "Endorsement Committee \u2014 Plans for Review"
-              : "Director \u2014 Plan for Review"}
+              : user.role === "MANAGEMENT"
+                ? "Executive Management \u2014 Plans for Review"
+                : "Director \u2014 Plan for Review"}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             {user.role === "ENDORSING_COMMITTEE"
               ? "Review procurement plans awaiting committee endorsement and record your approval or rejection vote."
-              : "Review procurement plans submitted by Officers, examine activities, and approve or return for revision."}
+              : user.role === "MANAGEMENT"
+                ? "Review committee-endorsed procurement plans, inspect package activities, and record executive authorization or rejection."
+                : "Review procurement plans submitted by Officers, examine activities, and approve or return for revision."}
           </p>
         </div>
       </div>

@@ -84,17 +84,49 @@ export interface BackendPlanActivity {
   status?: string;
 }
 
+export interface BackendComment {
+  id: string;
+  entityType: "PLAN" | "ACTIVITY" | string;
+  entityId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  author?: {
+    id: string;
+    name: string;
+    displayName?: string;
+    email?: string;
+    role?: string;
+    authRole?: string;
+  };
+}
+
 export interface BackendPlan {
   id: string;
   projectId: string;
   status:
-    "DRAFT" | "SUBMITTED" | "WITH_COMMITTEE" | "APPROVED" | "REJECTED" | string;
+    | "DRAFT"
+    | "SUBMITTED"
+    | "WITH_COMMITTEE"
+    | "COMMITTEE_ENDORSED"
+    | "COMMITTEE_REJECTED"
+    | "AWAITING_MANAGEMENT_APPROVAL"
+    | "MANAGEMENT_APPROVED"
+    | "MANAGEMENT_REJECTED"
+    | "RETURNED_FOR_REVISION"
+    | "APPROVED"
+    | "REJECTED"
+    | string;
   committeeRound?: number;
   committeeVoteDeadline?: string | null;
   title: string;
   budgetYear?: string | null;
   procurementCategory?:
-    "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" | null;
+    | "GOODS"
+    | "WORKS"
+    | "CONSULTANCY"
+    | "NON_CONSULTING"
+    | null;
   periodStart: string;
   periodEnd: string;
   organization?: string | null;
@@ -102,6 +134,18 @@ export interface BackendPlan {
   gpnDate?: string | null;
   approvalDate?: string | null;
   rejectionReason?: string | null;
+  managementDecision?: "APPROVE" | "REJECT" | string | null;
+  managementComment?: string | null;
+  managementById?: string | null;
+  managementByUser?: {
+    id: string;
+    name: string;
+    displayName?: string;
+    email?: string;
+  } | null;
+  managementAt?: string | null;
+  directorRevisionComment?: string | null;
+  comments?: BackendComment[];
   createdBy?: string;
   creator?: { id: string; name: string; displayName?: string; email?: string };
   createdAt: string;
@@ -229,6 +273,58 @@ export async function submitVote(
   });
 }
 
+/** Management records approval or rejection */
+export async function submitManagementDecision(
+  planId: string,
+  decision: "APPROVE" | "REJECT",
+  comment?: string,
+  userId?: string,
+): Promise<BackendPlan> {
+  const res = await apiClient.post<any>(
+    `/plans/${encodeURIComponent(planId)}/management-decision`,
+    { decision, comment, userId },
+  );
+  return res.data || res;
+}
+
+/** Director returns rejected plan to Officer for revision with comments */
+export async function returnPlanForRevision(
+  planId: string,
+  comment: string,
+  userId?: string,
+): Promise<BackendPlan> {
+  const res = await apiClient.post<any>(
+    `/plans/${encodeURIComponent(planId)}/return-to-officer`,
+    { comment, userId },
+  );
+  return res.data || res;
+}
+
+/** Fetch comments for a plan and its activities */
+export async function fetchPlanComments(
+  planId: string,
+): Promise<BackendComment[]> {
+  const res = await apiClient.get<any>(
+    `/plans/${encodeURIComponent(planId)}/comments`,
+  );
+  return Array.isArray(res) ? res : res.data || [];
+}
+
+/** Add a comment to a plan or activity */
+export async function addPlanComment(
+  planId: string,
+  entityType: "PLAN" | "ACTIVITY",
+  entityId: string,
+  body: string,
+  userId?: string,
+): Promise<BackendComment> {
+  const res = await apiClient.post<any>(
+    `/plans/${encodeURIComponent(planId)}/comments`,
+    { entityType, entityId, body, userId },
+  );
+  return res.data || res;
+}
+
 export function mapBackendPlanToFrontend(
   backendPlan: BackendPlan,
   currentMemberId?: string,
@@ -244,6 +340,19 @@ export function mapBackendPlanToFrontend(
   // Map status
   let status: PlanStatus = "Draft";
   if (backendPlan.status === "WITH_COMMITTEE") status = "Committee Review";
+  else if (
+    backendPlan.status === "COMMITTEE_ENDORSED" ||
+    backendPlan.status === "AWAITING_MANAGEMENT_APPROVAL"
+  )
+    status = "Awaiting Management Approval";
+  else if (backendPlan.status === "COMMITTEE_REJECTED")
+    status = "Committee Rejected";
+  else if (backendPlan.status === "MANAGEMENT_APPROVED")
+    status = "Management Approved";
+  else if (backendPlan.status === "MANAGEMENT_REJECTED")
+    status = "Management Rejected";
+  else if (backendPlan.status === "RETURNED_FOR_REVISION")
+    status = "Returned for Revision";
   else if (backendPlan.status === "APPROVED") status = "Finally Approved";
   else if (backendPlan.status === "REJECTED") status = "Returned";
   else if (backendPlan.status === "SUBMITTED") status = "Submitted to Director";
@@ -303,6 +412,13 @@ export function mapBackendPlanToFrontend(
     }
   }
 
+  const managementDecision =
+    backendPlan.managementDecision === "APPROVE"
+      ? "Approved"
+      : backendPlan.managementDecision === "REJECT"
+        ? "Rejected"
+        : undefined;
+
   return {
     id: backendPlan.id,
     projectId: backendPlan.projectId || backendPlan.project?.id || "proj-id",
@@ -355,6 +471,16 @@ export function mapBackendPlanToFrontend(
     decisionRecordedDate,
     committeeDecision,
     rejectionReason,
+    managementDecision,
+    managementComment: backendPlan.managementComment || undefined,
+    managementById: backendPlan.managementById || undefined,
+    managementByName:
+      backendPlan.managementByUser?.displayName ||
+      backendPlan.managementByUser?.name ||
+      undefined,
+    managementAt: backendPlan.managementAt || undefined,
+    directorRevisionComment: backendPlan.directorRevisionComment || undefined,
+    comments: backendPlan.comments || [],
     activities: backendPlan.activities || [],
   };
 }
@@ -371,9 +497,25 @@ export function mapBackendPlanToOfficerPlanSummary(
 
   let status: import("@/features/projects/data/officerProjects").ProcurementPlanStatus =
     "Draft";
-  if (backendPlan.status === "WITH_COMMITTEE") status = "Committee Review";
-  else if (backendPlan.status === "APPROVED") status = "Finally Approved";
-  else if (backendPlan.status === "REJECTED") status = "Returned";
+  if (
+    backendPlan.status === "WITH_COMMITTEE" ||
+    backendPlan.status === "COMMITTEE_ENDORSED" ||
+    backendPlan.status === "AWAITING_MANAGEMENT_APPROVAL"
+  )
+    status = "Committee Review";
+  else if (
+    backendPlan.status === "APPROVED" ||
+    backendPlan.status === "MANAGEMENT_APPROVED"
+  )
+    status = "Finally Approved";
+  else if (backendPlan.status === "RETURNED_FOR_REVISION")
+    status = "Returned for Revision";
+  else if (
+    backendPlan.status === "REJECTED" ||
+    backendPlan.status === "COMMITTEE_REJECTED" ||
+    backendPlan.status === "MANAGEMENT_REJECTED"
+  )
+    status = "Returned";
   else if (backendPlan.status === "SUBMITTED") status = "Submitted to Director";
   else if (backendPlan.status === "DRAFT") status = "Draft";
 
@@ -642,6 +784,8 @@ export function mapBackendPlanToOfficerPlanSummary(
     category,
     status,
     rejectionReason: backendPlan.rejectionReason || undefined,
+    directorRevisionComment: backendPlan.directorRevisionComment || undefined,
+    managementComment: backendPlan.managementComment || undefined,
     activities: activities.length,
     completedActivities: activities.filter((a) => a.status === "COMPLETED")
       .length,

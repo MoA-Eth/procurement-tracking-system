@@ -228,6 +228,10 @@ export function CreateProcurementPlanView({
     project.availableOrganizationRegions ??
     (project.organizationRegion ? [project.organizationRegion] : []);
 
+  const isPlanReturned =
+    initialPlan?.status === "Returned" ||
+    initialPlan?.status === "Returned for Revision";
+
   const planBackHref = initialPlan
     ? `/workspace/projects?project=${encodeURIComponent(
         project.code,
@@ -248,7 +252,7 @@ export function CreateProcurementPlanView({
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-slate-900">
                 {isEditing
-                  ? initialPlan?.status === "Returned"
+                  ? isPlanReturned
                     ? "Revise Procurement Plan"
                     : "Edit Procurement Plan"
                   : "Create Procurement Plan"}
@@ -271,16 +275,29 @@ export function CreateProcurementPlanView({
           </div>
         </div>
 
-        {/* Director Feedback Banner if Returned */}
-        {initialPlan?.rejectionReason && (
-          <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-xs shadow-2xs">
-            <p className="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
-              <MessageSquare className="h-4 w-4 text-amber-700" />
-              Director Feedback &amp; Revision Instructions:
-            </p>
-            <p className="italic leading-relaxed text-amber-950">
-              &ldquo;{initialPlan.rejectionReason}&rdquo;
-            </p>
+        {/* Director / Management Feedback Banner if Returned */}
+        {(initialPlan?.directorRevisionComment || initialPlan?.rejectionReason) && (
+          <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-xs shadow-2xs space-y-2.5">
+            <div>
+              <p className="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+                <MessageSquare className="h-4 w-4 text-amber-700" />
+                Director Feedback &amp; Revision Instructions:
+              </p>
+              <p className="italic leading-relaxed text-amber-950">
+                &ldquo;{initialPlan.directorRevisionComment || initialPlan.rejectionReason}&rdquo;
+              </p>
+            </div>
+            {Boolean(initialPlan.managementComment) && (
+              <div className="pt-2 border-t border-amber-200/70">
+                <p className="font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
+                  <MessageSquare className="h-4 w-4 text-indigo-700" />
+                  Management Rejection Comment:
+                </p>
+                <p className="italic leading-relaxed text-indigo-950">
+                  &ldquo;{initialPlan.managementComment}&rdquo;
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -558,7 +575,7 @@ export function CreateProcurementPlanView({
         </section>
 
         {/* Section 4: Revision Justification (When in Returned / Revision status) */}
-        {initialPlan?.status === "Returned" && (
+        {isPlanReturned && (
           <section className="overflow-hidden rounded border border-amber-300 bg-amber-50/40 p-5 shadow-xs space-y-2.5">
             <div className="flex items-center gap-2">
               <RotateCcw className="h-4 w-4 text-amber-700" />
@@ -656,7 +673,9 @@ function CreatePlanBreadcrumb({
             </li>
             <li aria-hidden="true">/</li>
             <li aria-current="page" className="font-semibold text-slate-800">
-              {initialPlan.status === "Returned" ? "Revise Plan" : "Edit Plan"}
+              {initialPlan.status === "Returned" || initialPlan.status === "Returned for Revision"
+                ? "Revise Plan"
+                : "Edit Plan"}
             </li>
           </>
         ) : (
