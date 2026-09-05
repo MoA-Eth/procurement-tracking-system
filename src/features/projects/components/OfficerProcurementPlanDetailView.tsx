@@ -681,9 +681,7 @@ export function OfficerProcurementPlanDetailView({
                   <ActivityRow
                     key={activity.reference}
                     activity={activity}
-                    canEdit={
-                      activePlanStatus === "Draft" || isReturned
-                    }
+                    canEdit={activePlanStatus === "Draft" || isReturned}
                     editHref={
                       "/workspace/projects?project=" +
                       encodeURIComponent(project.code) +

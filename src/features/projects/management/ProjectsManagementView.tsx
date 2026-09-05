@@ -38,11 +38,7 @@ import {
 } from "@/features/plans/data/planRevisions";
 
 type ViewMode =
-  | "list"
-  | "project-form"
-  | "plans-list"
-  | "plan-form"
-  | "activities-list";
+  "list" | "project-form" | "plans-list" | "plan-form" | "activities-list";
 
 interface ProjectsManagementViewProps {
   readOnly?: boolean;
@@ -568,7 +564,8 @@ export function ProjectsManagementView({
                       projectCode: p.projectCode,
                       versionNumber: getCurrentPlanVersionNumber(p.id),
                       action: "APPROVED_DIRECTOR",
-                      actionLabel: "Plan Approved by Director & Sent to Committee",
+                      actionLabel:
+                        "Plan Approved by Director & Sent to Committee",
                       changedBy: "Director",
                       changedByRole: "Director",
                       reason:

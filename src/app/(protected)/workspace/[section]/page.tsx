@@ -121,7 +121,9 @@ export default async function WorkspaceSectionPage({
     section === "projects" &&
     (session.user.role === "DIRECTOR" || session.user.role === "MANAGEMENT")
   ) {
-    return <ProjectsManagementView readOnly={session.user.role === "MANAGEMENT"} />;
+    return (
+      <ProjectsManagementView readOnly={session.user.role === "MANAGEMENT"} />
+    );
   }
 
   if (section === "contracts" && session.user.role === "OFFICER") {
@@ -143,7 +145,10 @@ export default async function WorkspaceSectionPage({
   }
 
   if (section === "activity-tracker") {
-    if (session.user.role === "DIRECTOR" || session.user.role === "MANAGEMENT") {
+    if (
+      session.user.role === "DIRECTOR" ||
+      session.user.role === "MANAGEMENT"
+    ) {
       return (
         <DirectorActivityTrackerView
           selectedActivityReference={

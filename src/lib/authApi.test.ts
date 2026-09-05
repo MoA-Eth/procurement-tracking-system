@@ -77,11 +77,7 @@ describe("auth API", () => {
       ),
     );
 
-    const session = await authenticate(
-      "abel@moa.gov.et",
-      "secret",
-      false,
-    );
+    const session = await authenticate("abel@moa.gov.et", "secret", false);
 
     expect(session.user.role).toBe("MANAGEMENT");
     expect(session.user.displayName).toBe("Abel");

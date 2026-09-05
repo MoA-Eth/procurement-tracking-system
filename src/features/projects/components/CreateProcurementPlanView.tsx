@@ -276,7 +276,8 @@ export function CreateProcurementPlanView({
         </div>
 
         {/* Director / Management Feedback Banner if Returned */}
-        {(initialPlan?.directorRevisionComment || initialPlan?.rejectionReason) && (
+        {(initialPlan?.directorRevisionComment ||
+          initialPlan?.rejectionReason) && (
           <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-xs shadow-2xs space-y-2.5">
             <div>
               <p className="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
@@ -284,7 +285,10 @@ export function CreateProcurementPlanView({
                 Director Feedback &amp; Revision Instructions:
               </p>
               <p className="italic leading-relaxed text-amber-950">
-                &ldquo;{initialPlan.directorRevisionComment || initialPlan.rejectionReason}&rdquo;
+                &ldquo;
+                {initialPlan.directorRevisionComment ||
+                  initialPlan.rejectionReason}
+                &rdquo;
               </p>
             </div>
             {Boolean(initialPlan.managementComment) && (
@@ -673,7 +677,8 @@ function CreatePlanBreadcrumb({
             </li>
             <li aria-hidden="true">/</li>
             <li aria-current="page" className="font-semibold text-slate-800">
-              {initialPlan.status === "Returned" || initialPlan.status === "Returned for Revision"
+              {initialPlan.status === "Returned" ||
+              initialPlan.status === "Returned for Revision"
                 ? "Revise Plan"
                 : "Edit Plan"}
             </li>

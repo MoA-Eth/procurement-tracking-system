@@ -123,11 +123,7 @@ export interface BackendPlan {
   title: string;
   budgetYear?: string | null;
   procurementCategory?:
-    | "GOODS"
-    | "WORKS"
-    | "CONSULTANCY"
-    | "NON_CONSULTING"
-    | null;
+    "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" | null;
   periodStart: string;
   periodEnd: string;
   organization?: string | null;

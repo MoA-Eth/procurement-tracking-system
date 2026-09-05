@@ -600,12 +600,14 @@ export function PlanFullScreenReviewView({
               Review comments are required before rejecting a plan.
             </p>
           )}
-          {userRole !== "ENDORSING_COMMITTEE" && userRole !== "MANAGEMENT" && !returnRemarks.trim() && (
-            <p className="text-[10px] text-slate-400 font-medium">
-              Revision notes are required before returning a plan to the
-              Procurement Officer.
-            </p>
-          )}
+          {userRole !== "ENDORSING_COMMITTEE" &&
+            userRole !== "MANAGEMENT" &&
+            !returnRemarks.trim() && (
+              <p className="text-[10px] text-slate-400 font-medium">
+                Revision notes are required before returning a plan to the
+                Procurement Officer.
+              </p>
+            )}
           {userRole === "ENDORSING_COMMITTEE" && (
             <p className="text-[11px] text-slate-500 font-medium pt-1">
               Note: A plan requires at least 3 approval votes from the
@@ -615,7 +617,8 @@ export function PlanFullScreenReviewView({
           )}
           {userRole === "MANAGEMENT" && (
             <p className="text-[11px] text-slate-500 font-medium pt-1">
-              Note: Executive management decision grants final authorization for procurement plan activities.
+              Note: Executive management decision grants final authorization for
+              procurement plan activities.
             </p>
           )}
         </div>

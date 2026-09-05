@@ -303,9 +303,12 @@ export function DirectorActivitiesListView({
 }: DirectorActivitiesListViewProps) {
   const isCommittee = userRole === "ENDORSING_COMMITTEE";
   const isManagement = userRole === "MANAGEMENT";
-  const isEditable = parentSection === "plan-for-review" && !isCommittee && !isManagement;
+  const isEditable =
+    parentSection === "plan-for-review" && !isCommittee && !isManagement;
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [activityComments, setActivityComments] = useState<BackendComment[]>([]);
+  const [activityComments, setActivityComments] = useState<BackendComment[]>(
+    [],
+  );
   const [newActivityCommentText, setNewActivityCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
@@ -1532,13 +1535,20 @@ export function DirectorActivitiesListView({
                 </h3>
               </div>
               <span className="text-[11px] text-slate-500 font-medium">
-                {activityComments.filter((c) => c.entityId === selectedActivity.id).length} Comments
+                {
+                  activityComments.filter(
+                    (c) => c.entityId === selectedActivity.id,
+                  ).length
+                }{" "}
+                Comments
               </span>
             </div>
 
             {/* List of comments on this activity */}
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {activityComments.filter((c) => c.entityId === selectedActivity.id).length === 0 ? (
+              {activityComments.filter(
+                (c) => c.entityId === selectedActivity.id,
+              ).length === 0 ? (
                 <p className="text-xs text-slate-400 italic py-2">
                   No review comments recorded for this activity yet.
                 </p>
@@ -1552,7 +1562,9 @@ export function DirectorActivitiesListView({
                     >
                       <div className="flex items-center justify-between text-[11px] text-slate-500">
                         <span className="font-bold text-slate-800">
-                          {c.author?.displayName || c.author?.name || "Reviewer"}
+                          {c.author?.displayName ||
+                            c.author?.name ||
+                            "Reviewer"}
                         </span>
                         <span className="font-mono text-[10px]">
                           {new Date(c.createdAt).toLocaleString()}
@@ -1570,7 +1582,9 @@ export function DirectorActivitiesListView({
             {onAddActivityComment && (
               <div className="pt-2 border-t border-slate-100 space-y-2">
                 <label className="block text-[11px] font-bold text-slate-800">
-                  {isManagement ? "Executive Management Comment on this Activity" : "Add Activity Note / Comment"}
+                  {isManagement
+                    ? "Executive Management Comment on this Activity"
+                    : "Add Activity Note / Comment"}
                 </label>
                 <div className="flex items-start gap-2">
                   <textarea
@@ -1586,12 +1600,17 @@ export function DirectorActivitiesListView({
                   />
                   <button
                     type="button"
-                    disabled={!newActivityCommentText.trim() || isSubmittingComment}
+                    disabled={
+                      !newActivityCommentText.trim() || isSubmittingComment
+                    }
                     onClick={async () => {
                       if (!newActivityCommentText.trim()) return;
                       setIsSubmittingComment(true);
                       try {
-                        await onAddActivityComment(selectedActivity.id, newActivityCommentText.trim());
+                        await onAddActivityComment(
+                          selectedActivity.id,
+                          newActivityCommentText.trim(),
+                        );
                         setActivityComments((prev) => [
                           ...prev,
                           {
@@ -1603,7 +1622,9 @@ export function DirectorActivitiesListView({
                             createdAt: new Date().toISOString(),
                             author: {
                               id: "current-user",
-                              name: isManagement ? "Executive Management" : "Director",
+                              name: isManagement
+                                ? "Executive Management"
+                                : "Director",
                             },
                           },
                         ]);
@@ -2283,7 +2304,8 @@ export function DirectorActivitiesListView({
                     Executive Management Decision &amp; Authorization
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Final executive approval gate. Review plan and activities, enter remarks or comments, and authorize or reject.
+                    Final executive approval gate. Review plan and activities,
+                    enter remarks or comments, and authorize or reject.
                   </p>
                 </div>
               </div>

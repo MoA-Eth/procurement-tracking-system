@@ -64,16 +64,30 @@ const workspaceSections = {
     label: "Vote Progress",
     href: "/workspace/vote-progress",
     icon: "progress",
-    description: "Monitor Endorsement Committee voting and Executive Management reviews.",
-    allowedRoles: ["DIRECTOR", "MANAGEMENT", "ENDORSING_COMMITTEE", "ADMIN", "OFFICER"],
+    description:
+      "Monitor Endorsement Committee voting and Executive Management reviews.",
+    allowedRoles: [
+      "DIRECTOR",
+      "MANAGEMENT",
+      "ENDORSING_COMMITTEE",
+      "ADMIN",
+      "OFFICER",
+    ],
   },
   "committee-progress": {
     section: "committee-progress",
     label: "Vote Progress",
     href: "/workspace/vote-progress",
     icon: "progress",
-    description: "Monitor Endorsement Committee voting and Executive Management reviews.",
-    allowedRoles: ["DIRECTOR", "MANAGEMENT", "ENDORSING_COMMITTEE", "ADMIN", "OFFICER"],
+    description:
+      "Monitor Endorsement Committee voting and Executive Management reviews.",
+    allowedRoles: [
+      "DIRECTOR",
+      "MANAGEMENT",
+      "ENDORSING_COMMITTEE",
+      "ADMIN",
+      "OFFICER",
+    ],
   },
   reports: {
     section: "reports",
@@ -81,7 +95,13 @@ const workspaceSections = {
     href: "/workspace/reports",
     icon: "reports",
     description: "Open directorate procurement reports and summaries.",
-    allowedRoles: ["DIRECTOR", "MANAGEMENT", "OFFICER", "ENDORSING_COMMITTEE", "ADMIN"],
+    allowedRoles: [
+      "DIRECTOR",
+      "MANAGEMENT",
+      "OFFICER",
+      "ENDORSING_COMMITTEE",
+      "ADMIN",
+    ],
   },
   "my-decisions": {
     section: "my-decisions",
@@ -114,7 +134,13 @@ const workspaceSections = {
     icon: "clipboard",
     description:
       "View alerts, reviews, milestone deadlines and system notifications.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT", "ENDORSING_COMMITTEE", "ADMIN"],
+    allowedRoles: [
+      "OFFICER",
+      "DIRECTOR",
+      "MANAGEMENT",
+      "ENDORSING_COMMITTEE",
+      "ADMIN",
+    ],
   },
 } as const satisfies Record<string, WorkspaceSection>;
 
@@ -122,18 +148,8 @@ type WorkspaceSectionKey = keyof typeof workspaceSections;
 
 const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
   OFFICER: ["projects", "contracts", "activity-tracker"],
-  DIRECTOR: [
-    "projects",
-    "plan-for-review",
-    "vote-progress",
-    "reports",
-  ],
-  MANAGEMENT: [
-    "projects",
-    "plan-for-review",
-    "vote-progress",
-    "reports",
-  ],
+  DIRECTOR: ["projects", "plan-for-review", "vote-progress", "reports"],
+  MANAGEMENT: ["projects", "plan-for-review", "vote-progress", "reports"],
   ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],
   ADMIN: ["user-management", "system-logs"],
 };

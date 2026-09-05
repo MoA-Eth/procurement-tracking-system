@@ -689,12 +689,7 @@ export function usePlanForReview({
       (comment !== undefined ? comment : returnRemarks).trim() || undefined;
 
     try {
-      await submitManagementDecision(
-        plan.id,
-        decision,
-        commentText,
-        user.id,
-      );
+      await submitManagementDecision(plan.id, decision, commentText, user.id);
     } catch (err) {
       console.warn("Backend submitManagementDecision note:", err);
     }

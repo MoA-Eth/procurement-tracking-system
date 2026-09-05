@@ -61,7 +61,8 @@ export interface VoteProgressItem {
   currency: string;
   description: string;
   rawStatus: string;
-  overallStatus: "Approved" | "Rejected" | "Pending Approval" | "Returned for Revision";
+  overallStatus:
+    "Approved" | "Rejected" | "Pending Approval" | "Returned for Revision";
   committeeStatus: "Approved" | "Rejected" | "Pending Approval";
   approvedCount: number;
   rejectedCount: number;
@@ -87,18 +88,25 @@ export interface CommitteeProgressViewProps {
   };
 }
 
-export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProps) {
+export function CommitteeProgressView({
+  currentUser,
+}: CommitteeProgressViewProps) {
   const [items, setItems] = useState<VoteProgressItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [sectorFilter, setSectorFilter] = useState<string>("ALL");
-  const [activeTab, setActiveTab] = useState<"ALL" | "COMMITTEE" | "MANAGEMENT" | "REVISIONS">("ALL");
+  const [activeTab, setActiveTab] = useState<
+    "ALL" | "COMMITTEE" | "MANAGEMENT" | "REVISIONS"
+  >("ALL");
 
   // Selected item for Detailed Decision Inspector
-  const [selectedPlan, setSelectedPlan] = useState<VoteProgressItem | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<VoteProgressItem | null>(
+    null,
+  );
 
   // Modal state for Returning to Officer for Revision
-  const [revisionModalPlan, setRevisionModalPlan] = useState<VoteProgressItem | null>(null);
+  const [revisionModalPlan, setRevisionModalPlan] =
+    useState<VoteProgressItem | null>(null);
   const [revisionInstructions, setRevisionInstructions] = useState("");
   const [isSubmittingRevision, setIsSubmittingRevision] = useState(false);
 
@@ -218,7 +226,8 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
           ).length;
 
           // Committee Status evaluation
-          let committeeStatus: "Approved" | "Rejected" | "Pending Approval" = "Pending Approval";
+          let committeeStatus: "Approved" | "Rejected" | "Pending Approval" =
+            "Pending Approval";
           if (rejectedCount >= 3 || bp.status === "COMMITTEE_REJECTED") {
             committeeStatus = "Rejected";
           } else if (
@@ -240,11 +249,19 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
             bp.status === "COMMITTEE_ENDORSED" ||
             bp.managementDecision != null;
 
-          let managementStatus: "Awaiting Review" | "Approved" | "Rejected" | "Not Reached" = "Not Reached";
+          let managementStatus:
+            "Awaiting Review" | "Approved" | "Rejected" | "Not Reached" =
+            "Not Reached";
           if (hasAdvancedToManagement) {
-            if (bp.status === "MANAGEMENT_APPROVED" || bp.managementDecision === "APPROVE") {
+            if (
+              bp.status === "MANAGEMENT_APPROVED" ||
+              bp.managementDecision === "APPROVE"
+            ) {
               managementStatus = "Approved";
-            } else if (bp.status === "MANAGEMENT_REJECTED" || bp.managementDecision === "REJECT") {
+            } else if (
+              bp.status === "MANAGEMENT_REJECTED" ||
+              bp.managementDecision === "REJECT"
+            ) {
               managementStatus = "Rejected";
             } else {
               managementStatus = "Awaiting Review";
@@ -252,12 +269,23 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
           }
 
           // Overall Status
-          let overallStatus: "Approved" | "Rejected" | "Pending Approval" | "Returned for Revision" = "Pending Approval";
+          let overallStatus:
+            | "Approved"
+            | "Rejected"
+            | "Pending Approval"
+            | "Returned for Revision" = "Pending Approval";
           if (bp.status === "RETURNED_FOR_REVISION") {
             overallStatus = "Returned for Revision";
-          } else if (managementStatus === "Approved" || bp.status === "APPROVED") {
+          } else if (
+            managementStatus === "Approved" ||
+            bp.status === "APPROVED"
+          ) {
             overallStatus = "Approved";
-          } else if (managementStatus === "Rejected" || committeeStatus === "Rejected" || bp.status === "REJECTED") {
+          } else if (
+            managementStatus === "Rejected" ||
+            committeeStatus === "Rejected" ||
+            bp.status === "REJECTED"
+          ) {
             overallStatus = "Rejected";
           } else {
             overallStatus = "Pending Approval";
@@ -361,12 +389,19 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
   }, []);
 
   // Handle Returning to Officer for Revision
-  const handleReturnToOfficer = async (planToReturn: VoteProgressItem, instructions: string) => {
+  const handleReturnToOfficer = async (
+    planToReturn: VoteProgressItem,
+    instructions: string,
+  ) => {
     if (!instructions.trim()) return;
 
     try {
       setIsSubmittingRevision(true);
-      await returnPlanForRevision(planToReturn.id, instructions, currentUser?.id);
+      await returnPlanForRevision(
+        planToReturn.id,
+        instructions,
+        currentUser?.id,
+      );
 
       setItems((prevItems) =>
         prevItems.map((item) =>
@@ -454,10 +489,18 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
 
   // Quick stats
   const stats = useMemo(() => {
-    const inCommittee = items.filter((it) => it.committeeStatus === "Pending Approval").length;
-    const committeeEndorsed = items.filter((it) => it.committeeStatus === "Approved").length;
-    const awaitingManagement = items.filter((it) => it.managementStatus === "Awaiting Review").length;
-    const managementApproved = items.filter((it) => it.managementStatus === "Approved").length;
+    const inCommittee = items.filter(
+      (it) => it.committeeStatus === "Pending Approval",
+    ).length;
+    const committeeEndorsed = items.filter(
+      (it) => it.committeeStatus === "Approved",
+    ).length;
+    const awaitingManagement = items.filter(
+      (it) => it.managementStatus === "Awaiting Review",
+    ).length;
+    const managementApproved = items.filter(
+      (it) => it.managementStatus === "Approved",
+    ).length;
     const needsRevision = items.filter(
       (it) =>
         it.overallStatus === "Rejected" ||
@@ -465,7 +508,13 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
         it.managementStatus === "Rejected",
     ).length;
 
-    return { inCommittee, committeeEndorsed, awaitingManagement, managementApproved, needsRevision };
+    return {
+      inCommittee,
+      committeeEndorsed,
+      awaitingManagement,
+      managementApproved,
+      needsRevision,
+    };
   }, [items]);
 
   return (
@@ -510,7 +559,8 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                   onClick={() => setSelectedPlan(null)}
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer mb-1"
                 >
-                  <ArrowLeft className="h-4 w-4" /> Back to Vote Progress Overview
+                  <ArrowLeft className="h-4 w-4" /> Back to Vote Progress
+                  Overview
                 </button>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -641,7 +691,8 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                       Section A: Endorsement Committee Votes
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                      Requires at least 3 of 5 approvals to endorse to Management.
+                      Requires at least 3 of 5 approvals to endorse to
+                      Management.
                     </p>
                   </div>
                 </div>
@@ -859,7 +910,8 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                   </p>
                   <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
                     This plan requires at least 3 approvals from the endorsement
-                    committee before it advances to Executive Management for review.
+                    committee before it advances to Executive Management for
+                    review.
                   </p>
                 </div>
               ) : (
@@ -903,8 +955,11 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                       </p>
                       {selectedPlan.managementByName && (
                         <p className="text-[10px] font-mono text-slate-500 pt-1">
-                          Decided by: <strong>{selectedPlan.managementByName}</strong>
-                          {selectedPlan.managementAt ? ` at ${selectedPlan.managementAt}` : ""}
+                          Decided by:{" "}
+                          <strong>{selectedPlan.managementByName}</strong>
+                          {selectedPlan.managementAt
+                            ? ` at ${selectedPlan.managementAt}`
+                            : ""}
                         </p>
                       )}
                     </div>
@@ -924,31 +979,40 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                   )}
 
                   {/* Detailed Comments on activities */}
-                  {selectedPlan.comments && selectedPlan.comments.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-slate-100">
-                      <h5 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <MessageSquare className="h-3.5 w-3.5 text-slate-500" />
-                        <span>Recorded Plan & Activity Annotations:</span>
-                      </h5>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {selectedPlan.comments.map((c) => (
-                          <div
-                            key={c.id}
-                            className="p-2.5 rounded-lg border border-slate-200/80 bg-white text-xs space-y-1"
-                          >
-                            <div className="flex items-center justify-between text-[10px] text-slate-500">
-                              <span className="font-semibold text-slate-700">
-                                {c.author?.displayName || c.author?.name || "Reviewer"}
-                                {c.entityType === "ACTIVITY" ? " (on Activity)" : " (on Plan)"}
-                              </span>
-                              <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                  {selectedPlan.comments &&
+                    selectedPlan.comments.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t border-slate-100">
+                        <h5 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <MessageSquare className="h-3.5 w-3.5 text-slate-500" />
+                          <span>Recorded Plan & Activity Annotations:</span>
+                        </h5>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {selectedPlan.comments.map((c) => (
+                            <div
+                              key={c.id}
+                              className="p-2.5 rounded-lg border border-slate-200/80 bg-white text-xs space-y-1"
+                            >
+                              <div className="flex items-center justify-between text-[10px] text-slate-500">
+                                <span className="font-semibold text-slate-700">
+                                  {c.author?.displayName ||
+                                    c.author?.name ||
+                                    "Reviewer"}
+                                  {c.entityType === "ACTIVITY"
+                                    ? " (on Activity)"
+                                    : " (on Plan)"}
+                                </span>
+                                <span>
+                                  {new Date(c.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-slate-800 italic">
+                                &quot;{c.body}&quot;
+                              </p>
                             </div>
-                            <p className="text-slate-800 italic">&quot;{c.body}&quot;</p>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               )}
             </div>
@@ -1083,7 +1147,9 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                       Return Plan to Officer for Revision
                     </h3>
                     <p className="text-xs text-amber-800/80">
-                      Synthesize committee and executive management rejection feedback into clear revision directives for the procurement officer.
+                      Synthesize committee and executive management rejection
+                      feedback into clear revision directives for the
+                      procurement officer.
                     </p>
                   </div>
                 </div>
@@ -1108,7 +1174,9 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                 <div className="flex justify-end pt-1">
                   <button
                     type="button"
-                    onClick={() => handleReturnToOfficer(selectedPlan, resendComment)}
+                    onClick={() =>
+                      handleReturnToOfficer(selectedPlan, resendComment)
+                    }
                     disabled={!resendComment.trim() || isSubmittingRevision}
                     className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-[#0A3C2F] hover:bg-[#072a21] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-2xs transition-all cursor-pointer"
                   >
@@ -1257,14 +1325,18 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                   <option value="Approved">Approved</option>
                   <option value="Rejected">Rejected</option>
                   <option value="Pending Approval">Pending Approval</option>
-                  <option value="Returned for Revision">Returned for Revision</option>
+                  <option value="Returned for Revision">
+                    Returned for Revision
+                  </option>
                 </select>
               </div>
             </div>
           </div>
 
           {/* SECTION A: ENDORSEMENT COMMITTEE PROGRESS TABLE */}
-          {(activeTab === "ALL" || activeTab === "COMMITTEE" || activeTab === "REVISIONS") && (
+          {(activeTab === "ALL" ||
+            activeTab === "COMMITTEE" ||
+            activeTab === "REVISIONS") && (
             <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
               <div className="p-4 bg-emerald-50/60 border-b border-emerald-100/80 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1276,7 +1348,9 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                       Section A: Endorsement Committee Progress
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                      Tracks 5-member Endorsement Committee deliberations. 3 approvals trigger auto-advancement to Executive Management.
+                      Tracks 5-member Endorsement Committee deliberations. 3
+                      approvals trigger auto-advancement to Executive
+                      Management.
                     </p>
                   </div>
                 </div>
@@ -1290,17 +1364,28 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                   <thead>
                     <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
                       <th className="py-3 px-4 min-w-36">Plan Number</th>
-                      <th className="py-3 px-4 min-w-56">Plan Title & Project</th>
+                      <th className="py-3 px-4 min-w-56">
+                        Plan Title & Project
+                      </th>
                       <th className="py-3 px-4 min-w-32">Total Budget</th>
-                      <th className="py-3 px-4 text-center min-w-44">Committee Votes</th>
-                      <th className="py-3 px-4 text-center min-w-36">Endorsement Status</th>
-                      <th className="py-3 px-4 text-center min-w-28">Actions</th>
+                      <th className="py-3 px-4 text-center min-w-44">
+                        Committee Votes
+                      </th>
+                      <th className="py-3 px-4 text-center min-w-36">
+                        Endorsement Status
+                      </th>
+                      <th className="py-3 px-4 text-center min-w-28">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                     {committeeItems.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-10 text-center text-slate-500">
+                        <td
+                          colSpan={6}
+                          className="py-10 text-center text-slate-500"
+                        >
                           <FileText className="mx-auto h-7 w-7 text-slate-300 mb-1.5" />
                           <p className="font-semibold text-slate-700 text-xs">
                             No committee records match current filters
@@ -1309,7 +1394,10 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                       </tr>
                     ) : (
                       committeeItems.map((item) => (
-                        <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                        <tr
+                          key={item.id}
+                          className="hover:bg-slate-50/70 transition-colors"
+                        >
                           {/* Plan Number */}
                           <td className="py-3 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">
                             {item.planNumber}
@@ -1430,7 +1518,9 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
           )}
 
           {/* SECTION B: EXECUTIVE MANAGEMENT PROGRESS TABLE */}
-          {(activeTab === "ALL" || activeTab === "MANAGEMENT" || activeTab === "REVISIONS") && (
+          {(activeTab === "ALL" ||
+            activeTab === "MANAGEMENT" ||
+            activeTab === "REVISIONS") && (
             <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
               <div className="p-4 bg-indigo-50/60 border-b border-indigo-100/80 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1442,7 +1532,9 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                       Section B: Executive Management Progress
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                      Final executive authorization gate after Endorsement Committee review. Management provides plan/activity review and approval/rejection.
+                      Final executive authorization gate after Endorsement
+                      Committee review. Management provides plan/activity review
+                      and approval/rejection.
                     </p>
                   </div>
                 </div>
@@ -1456,17 +1548,28 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                   <thead>
                     <tr className="bg-slate-900 text-white text-[11px] font-extrabold uppercase tracking-wider">
                       <th className="py-3 px-4 min-w-36">Plan Number</th>
-                      <th className="py-3 px-4 min-w-56">Plan Title & Project</th>
+                      <th className="py-3 px-4 min-w-56">
+                        Plan Title & Project
+                      </th>
                       <th className="py-3 px-4 min-w-32">Total Budget</th>
-                      <th className="py-3 px-4 text-center min-w-36">Committee Endorsement</th>
-                      <th className="py-3 px-4 text-center min-w-40">Management Status</th>
-                      <th className="py-3 px-4 text-center min-w-28">Actions</th>
+                      <th className="py-3 px-4 text-center min-w-36">
+                        Committee Endorsement
+                      </th>
+                      <th className="py-3 px-4 text-center min-w-40">
+                        Management Status
+                      </th>
+                      <th className="py-3 px-4 text-center min-w-28">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                     {managementItems.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-10 text-center text-slate-500">
+                        <td
+                          colSpan={6}
+                          className="py-10 text-center text-slate-500"
+                        >
                           <Building2 className="mx-auto h-7 w-7 text-slate-300 mb-1.5" />
                           <p className="font-semibold text-slate-700 text-xs">
                             No plans currently in Executive Management review
@@ -1475,7 +1578,10 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                       </tr>
                     ) : (
                       managementItems.map((item) => (
-                        <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                        <tr
+                          key={item.id}
+                          className="hover:bg-slate-50/70 transition-colors"
+                        >
                           {/* Plan Number */}
                           <td className="py-3 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">
                             {item.planNumber}
@@ -1518,10 +1624,14 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                                     : "bg-amber-50 text-amber-800 border-amber-200"
                               }`}
                             >
-                              {item.managementStatus === "Approved" && "Management Approved"}
-                              {item.managementStatus === "Rejected" && "Management Rejected"}
-                              {item.managementStatus === "Awaiting Review" && "Awaiting Approval"}
-                              {item.managementStatus === "Not Reached" && "Pending Committee"}
+                              {item.managementStatus === "Approved" &&
+                                "Management Approved"}
+                              {item.managementStatus === "Rejected" &&
+                                "Management Rejected"}
+                              {item.managementStatus === "Awaiting Review" &&
+                                "Awaiting Approval"}
+                              {item.managementStatus === "Not Reached" &&
+                                "Pending Committee"}
                             </span>
                           </td>
 
@@ -1593,12 +1703,18 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
             {/* Rejection Context Display */}
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs space-y-2">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-slate-500">Plan Title:</span>
-                <span className="font-bold text-slate-900">{revisionModalPlan.planTitle}</span>
+                <span className="font-semibold text-slate-500">
+                  Plan Title:
+                </span>
+                <span className="font-bold text-slate-900">
+                  {revisionModalPlan.planTitle}
+                </span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
                 <span className="font-semibold text-slate-500">Project:</span>
-                <span className="font-bold text-slate-900">{revisionModalPlan.projectName}</span>
+                <span className="font-bold text-slate-900">
+                  {revisionModalPlan.projectName}
+                </span>
               </div>
 
               {/* Committee Rejection info */}
@@ -1610,7 +1726,10 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
                   {revisionModalPlan.memberVotes
                     .filter((m) => m.voteStatus === "Rejected" && m.feedback)
                     .map((m) => (
-                      <p key={m.id} className="text-slate-700 italic pl-3 border-l-2 border-rose-300 text-[11px]">
+                      <p
+                        key={m.id}
+                        className="text-slate-700 italic pl-3 border-l-2 border-rose-300 text-[11px]"
+                      >
                         <strong>{m.name}:</strong> &quot;{m.feedback}&quot;
                       </p>
                     ))}
@@ -1618,16 +1737,17 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
               )}
 
               {/* Management Rejection info */}
-              {revisionModalPlan.managementStatus === "Rejected" && revisionModalPlan.managementComment && (
-                <div className="pt-1.5 border-t border-slate-200">
-                  <span className="text-rose-700 font-bold block text-[11px] mb-1">
-                    Management Rejection Rationale:
-                  </span>
-                  <p className="text-slate-700 italic pl-3 border-l-2 border-rose-300 text-[11px]">
-                    &quot;{revisionModalPlan.managementComment}&quot;
-                  </p>
-                </div>
-              )}
+              {revisionModalPlan.managementStatus === "Rejected" &&
+                revisionModalPlan.managementComment && (
+                  <div className="pt-1.5 border-t border-slate-200">
+                    <span className="text-rose-700 font-bold block text-[11px] mb-1">
+                      Management Rejection Rationale:
+                    </span>
+                    <p className="text-slate-700 italic pl-3 border-l-2 border-rose-300 text-[11px]">
+                      &quot;{revisionModalPlan.managementComment}&quot;
+                    </p>
+                  </div>
+                )}
             </div>
 
             {/* Revision Instructions Input */}
@@ -1659,13 +1779,17 @@ export function CommitteeProgressView({ currentUser }: CommitteeProgressViewProp
               </button>
               <button
                 type="button"
-                onClick={() => handleReturnToOfficer(revisionModalPlan, revisionInstructions)}
+                onClick={() =>
+                  handleReturnToOfficer(revisionModalPlan, revisionInstructions)
+                }
                 disabled={!revisionInstructions.trim() || isSubmittingRevision}
                 className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5" />
                 <span>
-                  {isSubmittingRevision ? "Returning..." : "Return Plan to Officer"}
+                  {isSubmittingRevision
+                    ? "Returning..."
+                    : "Return Plan to Officer"}
                 </span>
               </button>
             </div>
