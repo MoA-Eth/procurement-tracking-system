@@ -1,7 +1,8 @@
-import type {
-  ProcurementPlan,
-  PlanCategory,
-  PlanStatus,
+import {
+  type ProcurementPlan,
+  type PlanCategory,
+  type PlanStatus,
+  parseRejectionDetails,
 } from "@/features/plans/plansData";
 import { roadmapForMethod } from "@/features/projects/data/procurementActivityConfig";
 import {
@@ -418,6 +419,7 @@ export function mapBackendPlanToFrontend(
       : backendPlan.managementDecision === "REJECT"
         ? "Rejected"
         : undefined;
+  const parsedRejection = parseRejectionDetails(rejectionReason);
 
   return {
     id: backendPlan.id,
@@ -481,6 +483,8 @@ export function mapBackendPlanToFrontend(
     managementAt: backendPlan.managementAt || undefined,
     directorRevisionComment: backendPlan.directorRevisionComment || undefined,
     comments: backendPlan.comments || [],
+    rejectionScope: parsedRejection.scope,
+    rejectedActivityRefs: parsedRejection.rejectedActivityRefs,
     activities: backendPlan.activities || [],
   };
 }

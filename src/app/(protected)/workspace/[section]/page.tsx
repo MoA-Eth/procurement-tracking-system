@@ -82,8 +82,14 @@ export default async function WorkspaceSectionPage({
         : typeof query.planId === "string"
           ? query.planId
           : undefined;
+    const selectedActivityRef =
+      typeof query.activity === "string" ? query.activity : undefined;
     return (
-      <PlanForReviewView user={session.user} selectedPlanId={selectedPlanId} />
+      <PlanForReviewView
+        user={session.user}
+        selectedPlanId={selectedPlanId}
+        selectedActivityRef={selectedActivityRef}
+      />
     );
   }
 

@@ -38,6 +38,9 @@ export interface ProcurementPlanSummary {
   rejectionReason?: string;
   directorRevisionComment?: string;
   managementComment?: string;
+  rejectionScope?: "ALL" | "SPECIFIC";
+  rejectedActivityIds?: string[];
+  rejectedActivityRefs?: string[];
   version?: number;
   planActivities?: readonly import("./officerActivityDrafts").ProcurementActivitySummary[];
 }

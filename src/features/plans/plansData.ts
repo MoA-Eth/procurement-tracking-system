@@ -53,7 +53,50 @@ export interface ProcurementPlan {
   managementAt?: string;
   directorRevisionComment?: string;
   comments?: any[];
+  rejectionScope?: "ALL" | "SPECIFIC";
+  rejectedActivityIds?: string[];
+  rejectedActivityRefs?: string[];
   activities?: any[];
+}
+
+export interface ParsedRejectionDetails {
+  scope: "ALL" | "SPECIFIC";
+  rejectedActivityRefs: string[];
+  cleanRemarks: string;
+}
+
+export function parseRejectionDetails(
+  rejectionReason?: string | null,
+): ParsedRejectionDetails {
+  if (!rejectionReason) {
+    return {
+      scope: "ALL",
+      rejectedActivityRefs: [],
+      cleanRemarks: "",
+    };
+  }
+
+  // Check pattern: [Flagged Activities: REF1, REF2] Remarks text...
+  const match = rejectionReason.match(
+    /^\[Flagged Activities:\s*([^\]]+)\]\s*([\s\S]*)$/i,
+  );
+  if (match) {
+    const refs = match[1]
+      .split(",")
+      .map((r) => r.trim())
+      .filter(Boolean);
+    return {
+      scope: "SPECIFIC",
+      rejectedActivityRefs: refs,
+      cleanRemarks: match[2]?.trim() || "",
+    };
+  }
+
+  return {
+    scope: "ALL",
+    rejectedActivityRefs: [],
+    cleanRemarks: rejectionReason.trim(),
+  };
 }
 
 export const PLAN_CATEGORY_CHOICES: {
