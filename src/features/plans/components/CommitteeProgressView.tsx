@@ -19,9 +19,14 @@ import {
   Send,
   MessageSquare,
   AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  ExternalLink,
+  ListChecks,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { parseRejectionDetails } from "../plansData";
 
 export interface CommitteeMemberVote {
   id: string;
@@ -48,6 +53,7 @@ export interface CommitteeProgressItem {
   approvedCount: number;
   rejectedCount: number;
   memberVotes: CommitteeMemberVote[];
+  activities?: any[];
 }
 
 export function CommitteeProgressView() {
@@ -196,6 +202,7 @@ export function CommitteeProgressView() {
             approvedCount,
             rejectedCount,
             memberVotes,
+            activities: bp.activities || [],
           };
         });
 
@@ -467,36 +474,97 @@ export function CommitteeProgressView() {
                     </span>
                   </div>
 
-                  {member.feedback && (
-                    <div
-                      className={`mt-2.5 p-3 rounded-xl border text-xs ${
-                        member.voteStatus === "Rejected"
-                          ? "bg-rose-50 border-rose-200 text-rose-950"
-                          : "bg-emerald-50 border-emerald-200 text-emerald-950"
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 font-bold mb-1">
-                        {member.voteStatus === "Rejected" ? (
-                          <>
-                            <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0" />
-                            <span className="text-rose-900">
-                              Rejection Reason:
+                  {member.feedback &&
+                    (() => {
+                      const parsed = parseRejectionDetails(member.feedback);
+                      const isRejectedWithSpecific =
+                        member.voteStatus === "Rejected" &&
+                        parsed.rejectedActivityRefs.length > 0;
+
+                      return (
+                        <div
+                          className={`mt-2.5 p-3.5 rounded-xl border text-xs ${
+                            member.voteStatus === "Rejected"
+                              ? "bg-rose-50 border-rose-200 text-rose-950"
+                              : "bg-emerald-50 border-emerald-200 text-emerald-950"
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2 font-bold mb-1.5">
+                            <div className="flex items-center gap-1.5">
+                              {member.voteStatus === "Rejected" ? (
+                                <>
+                                  <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                                  <span className="text-rose-900">
+                                    Rejection Reason:
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                  <span className="text-emerald-900">
+                                    Deliberation Remarks:
+                                  </span>
+                                </>
+                              )}
+                            </div>
+
+                            {isRejectedWithSpecific && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-rose-200/80 text-rose-900 border border-rose-300">
+                                Specific Activity Objection
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Interactive Clickable Flagged Activity Badges: Clicking takes Director directly to that specific activity */}
+                          {parsed.rejectedActivityRefs.length > 0 && (
+                            <div className="my-2.5 p-3 rounded-xl bg-white/95 border border-rose-200 shadow-2xs space-y-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-[11px] font-extrabold text-rose-950 flex items-center gap-1.5">
+                                  <AlertTriangle className="h-3.5 w-3.5 text-rose-600" />
+                                  <span>
+                                    Flagged Activities (Click to Take to
+                                    Activity):
+                                  </span>
+                                </span>
+                                <span className="text-[10px] font-medium text-rose-700">
+                                  Direct Link to Plan Review
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-2">
+                                {parsed.rejectedActivityRefs.map((ref) => (
+                                  <Link
+                                    key={ref}
+                                    href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}&activity=${encodeURIComponent(ref)}`}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-mono font-bold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-2xs hover:shadow-xs transition-all cursor-pointer group"
+                                    title={`Click to open Director Review focused on activity ${ref}`}
+                                  >
+                                    <span>{ref}</span>
+                                    <span className="h-3.5 w-px bg-rose-400/80" />
+                                    <span className="font-sans text-[11px] font-semibold text-rose-100 group-hover:text-white flex items-center gap-1">
+                                      Take to Activity
+                                      <ArrowRight className="h-3.5 w-3.5 text-rose-200 group-hover:translate-x-0.5 transition-transform" />
+                                    </span>
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="pl-1 pt-1">
+                            {parsed.rejectedActivityRefs.length > 0 && (
+                              <span className="text-[11px] font-bold text-slate-700">
+                                Member Notes:{" "}
+                              </span>
+                            )}
+                            <span className="font-medium italic leading-relaxed text-slate-800">
+                              &quot;{parsed.cleanRemarks || member.feedback}
+                              &quot;
                             </span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                            <span className="text-emerald-900">
-                              Deliberation Remarks:
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      <p className="font-medium italic leading-relaxed pl-5">
-                        &quot;{member.feedback}&quot;
-                      </p>
-                    </div>
-                  )}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                   {member.votedAt && (
                     <p className="text-[11px] text-slate-400 font-mono pt-1">
@@ -507,6 +575,120 @@ export function CommitteeProgressView() {
               ))}
             </div>
           </div>
+
+          {/* Plan Package Activities Directory */}
+          {selectedPlan.activities && selectedPlan.activities.length > 0 && (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="h-5 w-5 text-[#0A3C2F]" />
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Package Activities in this Plan
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {selectedPlan.activities.length} activity packages
+                      registered
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold transition-colors shadow-2xs"
+                >
+                  <span>Open Full Plan Review</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-[#A3E635]" />
+                </Link>
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-50 text-slate-700 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3 w-10 text-center">#</th>
+                      <th className="py-2.5 px-3">Ref No</th>
+                      <th className="py-2.5 px-3">Description</th>
+                      <th className="py-2.5 px-3">Method</th>
+                      <th className="py-2.5 px-3 text-right">
+                        Estimated Budget
+                      </th>
+                      <th className="py-2.5 px-3 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedPlan.activities.map((act: any, idx: number) => {
+                      const ref =
+                        act.reference || act.activityRefNo || `ACT-${idx + 1}`;
+                      const isFlaggedInVotes = selectedPlan.memberVotes.some(
+                        (mv) => {
+                          if (!mv.feedback) return false;
+                          const parsed = parseRejectionDetails(mv.feedback);
+                          return parsed.rejectedActivityRefs.some(
+                            (r) =>
+                              r.toLowerCase().trim() ===
+                              ref.toLowerCase().trim(),
+                          );
+                        },
+                      );
+
+                      return (
+                        <tr
+                          key={act.id || idx}
+                          id={`committee-activity-row-${ref}`}
+                          className={`hover:bg-slate-50 transition-colors ${
+                            isFlaggedInVotes
+                              ? "bg-rose-50/70 border-l-4 border-l-rose-500"
+                              : ""
+                          }`}
+                        >
+                          <td className="py-2.5 px-3 text-center font-mono text-slate-400">
+                            {idx + 1}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
+                            <div className="flex items-center gap-1.5">
+                              <span>{ref}</span>
+                              {isFlaggedInVotes && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">
+                                  <AlertTriangle className="h-2.5 w-2.5 text-rose-600" />
+                                  Flagged
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 max-w-xs truncate text-slate-800 font-medium">
+                            {act.description || "Activity package"}
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-600">
+                            {act.procurementMethod?.label ||
+                              act.method ||
+                              "RFB - National"}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-[#0A3C2F] text-right">
+                            {selectedPlan.currency}{" "}
+                            {(
+                              act.estimatedBudget ||
+                              act.estimatedAmount ||
+                              0
+                            ).toLocaleString()}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <Link
+                              href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}&activity=${encodeURIComponent(ref)}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-[#0A3C2F] hover:text-white text-slate-700 transition-colors shadow-2xs"
+                            >
+                              <span>Take to Activity</span>
+                              <ArrowRight className="h-3 w-3" />
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* IN-PAGE REVISION & RESEND SECTION FOR REJECTED PLANS */}
           {selectedPlan.overallStatus === "Rejected" && (
