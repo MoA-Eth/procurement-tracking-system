@@ -75,6 +75,11 @@ export function OfficerProcurementPlanDetailView({
       ? "Submitted to Director"
       : currentPlan.status;
 
+  const isReturned =
+    activePlanStatus === "Returned" ||
+    activePlanStatus === "Returned for Revision" ||
+    (activePlanStatus as string) === "RETURNED_FOR_REVISION";
+
   // Modals state
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
@@ -187,8 +192,7 @@ export function OfficerProcurementPlanDetailView({
   const handleSubmitToDirector = (reason?: string) => {
     setSubmittedPlanReference(currentPlan.reference);
 
-    const nextVer =
-      currentPlan.status === "Returned" ? versionNumber + 1 : versionNumber;
+    const nextVer = isReturned ? versionNumber + 1 : versionNumber;
 
     // Record audit revision
     recordPlanVersionEvent({
@@ -196,16 +200,15 @@ export function OfficerProcurementPlanDetailView({
       planReference: currentPlan.reference,
       projectCode: project.code,
       versionNumber: nextVer,
-      action: currentPlan.status === "Returned" ? "RESUBMITTED" : "SUBMITTED",
-      actionLabel:
-        currentPlan.status === "Returned"
-          ? `Plan Resubmitted (v${nextVer})`
-          : "Plan Submitted for Director Review",
+      action: isReturned ? "RESUBMITTED" : "SUBMITTED",
+      actionLabel: isReturned
+        ? `Plan Resubmitted (v${nextVer})`
+        : "Plan Submitted for Director Review",
       changedBy: "Procurement Officer",
       changedByRole: "Procurement Officer",
       reason:
         reason ||
-        (currentPlan.status === "Returned"
+        (isReturned
           ? "Resubmitted with revisions addressing Director feedback."
           : "Submitted for review."),
     });
@@ -327,7 +330,7 @@ export function OfficerProcurementPlanDetailView({
             </button>
 
             {/* Edit Plan Details Button (ONLY visible when Returned) */}
-            {activePlanStatus === "Returned" && (
+            {isReturned && (
               <Link
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition cursor-pointer"
                 href={
@@ -353,8 +356,7 @@ export function OfficerProcurementPlanDetailView({
             </button>
 
             {/* Add Activity Button (Enabled if Draft or Returned) */}
-            {(activePlanStatus === "Draft" ||
-              activePlanStatus === "Returned") && (
+            {(activePlanStatus === "Draft" || isReturned) && (
               <Link
                 className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-xs font-bold text-white hover:bg-[#125f4c] shadow-xs transition"
                 href={
@@ -374,7 +376,7 @@ export function OfficerProcurementPlanDetailView({
       </header>
 
       {/* ── RETURNED FEEDBACK ALERT BANNER ───────────────────────────── */}
-      {activePlanStatus === "Returned" && (
+      {isReturned && (
         <section
           aria-label="Plan returned feedback"
           className="overflow-hidden rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50/90 via-amber-50/40 to-white p-5 shadow-sm space-y-4"
@@ -392,17 +394,32 @@ export function OfficerProcurementPlanDetailView({
                   Action Required
                 </span>
               </div>
-              <div className="mt-2 rounded-xl border border-amber-200 bg-white/90 p-3.5 text-xs text-amber-950 shadow-2xs">
-                <p className="font-semibold text-amber-900 mb-1 flex items-center gap-1.5">
-                  <MessageSquare className="h-3.5 w-3.5 text-amber-700" />
-                  Director Feedback &amp; Revision Instructions:
-                </p>
-                <p className="italic leading-relaxed text-slate-800">
-                  &ldquo;
-                  {currentPlan.rejectionReason ||
-                    "Please review the activity details, budget estimates, and milestone dates, then resubmit for approval."}
-                  &rdquo;
-                </p>
+              <div className="mt-2 space-y-2.5">
+                <div className="rounded-xl border border-amber-200 bg-white/90 p-3.5 text-xs text-amber-950 shadow-2xs">
+                  <p className="font-semibold text-amber-900 mb-1 flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5 text-amber-700" />
+                    Director Feedback &amp; Revision Instructions:
+                  </p>
+                  <p className="italic leading-relaxed text-slate-800">
+                    &ldquo;
+                    {currentPlan.directorRevisionComment ||
+                      currentPlan.rejectionReason ||
+                      "Please review the activity details, budget estimates, and milestone dates, then resubmit for approval."}
+                    &rdquo;
+                  </p>
+                </div>
+
+                {Boolean(currentPlan.managementComment) && (
+                  <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-3.5 text-xs text-indigo-950 shadow-2xs">
+                    <p className="font-semibold text-indigo-900 mb-1 flex items-center gap-1.5">
+                      <MessageSquare className="h-3.5 w-3.5 text-indigo-700" />
+                      Executive Management Feedback:
+                    </p>
+                    <p className="italic leading-relaxed text-slate-800">
+                      &ldquo;{currentPlan.managementComment}&rdquo;
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -664,10 +681,7 @@ export function OfficerProcurementPlanDetailView({
                   <ActivityRow
                     key={activity.reference}
                     activity={activity}
-                    canEdit={
-                      activePlanStatus === "Draft" ||
-                      activePlanStatus === "Returned"
-                    }
+                    canEdit={activePlanStatus === "Draft" || isReturned}
                     editHref={
                       "/workspace/projects?project=" +
                       encodeURIComponent(project.code) +

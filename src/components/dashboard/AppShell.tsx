@@ -49,6 +49,7 @@ const roleContext = {
   OFFICER: "Procurement Operations",
   DIRECTOR: "Directorate Oversight",
   ENDORSING_COMMITTEE: "Committee Review",
+  MANAGEMENT: "Executive Management",
   ADMIN: "System Administration",
 } as const;
 

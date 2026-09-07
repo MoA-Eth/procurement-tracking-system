@@ -6,7 +6,13 @@ export type PlanStatus =
   | "Submitted to Director"
   | "Returned"
   | "Committee Review"
-  | "Finally Approved";
+  | "Finally Approved"
+  | "Awaiting Management Approval"
+  | "Committee Endorsed"
+  | "Committee Rejected"
+  | "Management Approved"
+  | "Management Rejected"
+  | "Returned for Revision";
 
 export interface ProcurementPlan {
   id: string;
@@ -40,6 +46,13 @@ export interface ProcurementPlan {
   decisionRecordedDate?: string;
   committeeDecision?: "Approved" | "Rejected";
   rejectionReason?: string;
+  managementDecision?: "Approved" | "Rejected";
+  managementComment?: string;
+  managementById?: string;
+  managementByName?: string;
+  managementAt?: string;
+  directorRevisionComment?: string;
+  comments?: any[];
   rejectionScope?: "ALL" | "SPECIFIC";
   rejectedActivityIds?: string[];
   rejectedActivityRefs?: string[];

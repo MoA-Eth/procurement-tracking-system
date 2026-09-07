@@ -7,6 +7,8 @@ import {
   sendPlanToCommittee,
   rejectPlan,
   submitVote,
+  submitManagementDecision,
+  addPlanComment,
   mapBackendPlanToFrontend,
 } from "../../../../lib/plansApi";
 import type { AuthUser } from "../../../../lib/authTypes";
@@ -293,6 +295,14 @@ export function usePlanForReview({
         (p.status === "Committee Review" ||
           (p as any).status === "WITH_COMMITTEE") &&
         !alreadyVoted;
+    } else if (user?.role === "MANAGEMENT") {
+      const alreadyDecided = p.managementDecision !== undefined;
+      isAwaitingReview =
+        ((p as any).status === "AWAITING_MANAGEMENT_APPROVAL" ||
+          p.status === "Awaiting Management Approval" ||
+          p.status === "Committee Endorsed" ||
+          (p as any).committeeStatus === "Endorsed") &&
+        !alreadyDecided;
     } else {
       isAwaitingReview =
         p.status === "Submitted to Director" || p.status === "Returned";
@@ -669,6 +679,80 @@ export function usePlanForReview({
     showToast(`Restricted plan edits saved for "${savedPlan.planName}".`);
   };
 
+  // Management Decision: Authorize or Reject
+  const handleManagementDecision = async (
+    plan: ProcurementPlan,
+    decision: "APPROVE" | "REJECT",
+    comment?: string,
+  ) => {
+    const commentText =
+      (comment !== undefined ? comment : returnRemarks).trim() || undefined;
+
+    try {
+      await submitManagementDecision(plan.id, decision, commentText, user.id);
+    } catch (err) {
+      console.warn("Backend submitManagementDecision note:", err);
+    }
+
+    const nextStatus = decision === "APPROVE" ? "Finally Approved" : "Returned";
+    const nextActStatus = decision === "APPROVE" ? "In Progress" : undefined;
+
+    updateLocalStoragePlanAndActivities(
+      plan,
+      nextStatus,
+      nextActStatus,
+      decision === "REJECT" ? commentText : undefined,
+    );
+
+    recordPlanVersionEvent({
+      planId: plan.id,
+      planReference: plan.reference || plan.planName,
+      projectCode: plan.projectCode,
+      versionNumber: getCurrentPlanVersionNumber(plan.id),
+      action: decision === "APPROVE" ? "FINALLY_APPROVED" : "RETURNED",
+      actionLabel:
+        decision === "APPROVE"
+          ? "Plan Authorized by Executive Management"
+          : "Plan Rejected by Executive Management",
+      changedBy: user.displayName || user.email || "Executive Management",
+      changedByRole: "Management",
+      reason:
+        commentText ||
+        (decision === "APPROVE"
+          ? "Executive authorization granted"
+          : "Rejected by Executive Management"),
+    });
+
+    await loadPlans();
+    setSelectedPlanForReview(null);
+    setReturnRemarks("");
+    showToast(
+      decision === "APPROVE"
+        ? `Executive Authorization granted for plan "${plan.planName}".`
+        : `Executive Decision "Rejected" recorded for plan "${plan.planName}".`,
+    );
+  };
+
+  const handleAddActivityComment = async (
+    activityId: string,
+    comment: string,
+  ) => {
+    if (!activitiesPlan) return;
+    try {
+      await addPlanComment(
+        activitiesPlan.id,
+        "ACTIVITY",
+        activityId,
+        comment,
+        user.id,
+      );
+      showToast("Activity comment recorded.");
+    } catch (err) {
+      console.warn("Failed to add activity comment:", err);
+      showToast("Could not save comment to server.");
+    }
+  };
+
   return {
     plans,
     setPlans,
@@ -712,6 +796,8 @@ export function usePlanForReview({
     handleApprovePlan,
     handleReturnPlan,
     handleCommitteeVote,
+    handleManagementDecision,
+    handleAddActivityComment,
     handleSavePlanEdits,
     loadPlans,
     filteredPlans,

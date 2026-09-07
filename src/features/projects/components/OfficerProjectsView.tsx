@@ -355,7 +355,8 @@ export function OfficerProjectsView({
 
     const activitiesList = Array.from(combinedMap.values()).map((act) => {
       if (
-        selectedPlan.status === "Returned" &&
+        (selectedPlan.status === "Returned" ||
+          selectedPlan.status === "Returned for Revision") &&
         (act.status === "Submitted to Director" ||
           (act as any).status === "Under Review" ||
           !act.status)

@@ -66,6 +66,15 @@ export function PlanForReviewView({
               }
             : undefined
         }
+        onManagementDecision={
+          user.role === "MANAGEMENT"
+            ? (p, decision, comment) => {
+                review.handleManagementDecision(p, decision, comment);
+                review.setActivitiesPlan(null);
+              }
+            : undefined
+        }
+        onAddActivityComment={review.handleAddActivityComment}
       />
     );
   }
@@ -119,6 +128,14 @@ export function PlanForReviewView({
         onApprovePlan={review.handleApprovePlan}
         onReturnPlan={review.handleReturnPlan}
         onCommitteeVote={review.handleCommitteeVote}
+        onManagementDecision={
+          user.role === "MANAGEMENT"
+            ? (p, decision, comment) => {
+                review.handleManagementDecision(p, decision, comment);
+                review.setSelectedPlanForReview(null);
+              }
+            : undefined
+        }
         isCommitteeRejectionModalOpen={review.isCommitteeRejectionModalOpen}
         setIsCommitteeRejectionModalOpen={
           review.setIsCommitteeRejectionModalOpen

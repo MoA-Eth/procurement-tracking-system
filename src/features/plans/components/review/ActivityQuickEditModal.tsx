@@ -32,6 +32,9 @@ export function ActivityQuickEditModal({
 
   if (!activity || !editingActivity) return null;
 
+  const isReadOnly =
+    userRole === "ENDORSING_COMMITTEE" || userRole === "MANAGEMENT";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in">
       <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl space-y-5 border border-slate-200 animate-in zoom-in-95">
@@ -50,7 +53,7 @@ export function ActivityQuickEditModal({
               </span>
             </div>
             <h3 className="text-base font-bold text-slate-900">
-              Edit Package Activity Details
+              {isReadOnly ? "View" : "Edit"} Package Activity Details
             </h3>
           </div>
           <button
@@ -72,12 +75,13 @@ export function ActivityQuickEditModal({
             <textarea
               rows={3}
               value={editingActivity.description}
+              disabled={isReadOnly}
               onChange={(e) =>
                 setEditingActivity((prev) =>
                   prev ? { ...prev, description: e.target.value } : null,
                 )
               }
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all leading-relaxed"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all leading-relaxed disabled:opacity-75 disabled:cursor-not-allowed"
               placeholder="Enter activity description..."
             />
           </div>
@@ -86,6 +90,7 @@ export function ActivityQuickEditModal({
           <DualCalendarField
             id="review-target-planned-date"
             label="Target Planned Date (Roadmap Milestone)"
+            disabled={isReadOnly}
             gregorianValue={
               editingActivity.roadmap.find(
                 (s: ActivityStage) =>
@@ -114,13 +119,14 @@ export function ActivityQuickEditModal({
             <input
               type="text"
               value={editingActivity.remarks || ""}
+              disabled={isReadOnly}
               onChange={(e) =>
                 setEditingActivity((prev) =>
                   prev ? { ...prev, remarks: e.target.value } : null,
                 )
               }
               placeholder="Add clarification notes..."
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all disabled:opacity-75 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -132,20 +138,21 @@ export function ActivityQuickEditModal({
             <input
               type="text"
               value={editingActivity.additionalRemarks || ""}
+              disabled={isReadOnly}
               onChange={(e) =>
                 setEditingActivity((prev) =>
                   prev ? { ...prev, additionalRemarks: e.target.value } : null,
                 )
               }
               placeholder="Add technical notes..."
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all disabled:opacity-75 disabled:cursor-not-allowed"
             />
           </div>
         </div>
 
         {/* Modal Footer Actions */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-          {userRole === "ENDORSING_COMMITTEE" ? (
+          {isReadOnly ? (
             <button
               type="button"
               onClick={onClose}
