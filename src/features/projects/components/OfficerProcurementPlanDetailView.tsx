@@ -35,6 +35,8 @@ import {
   recordPlanVersionEvent,
 } from "@/features/plans/data/planRevisions";
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
+import { exportPlanActivitiesToExcel } from "@/features/projects/utils/projectExcelUtils";
+import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
 
 type ActivityStatus = ProcurementActivityStatus;
 
@@ -83,6 +85,7 @@ export function OfficerProcurementPlanDetailView({
   // Modals state
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
+  const [isImportExcelOpen, setIsImportExcelOpen] = useState(false);
   const [editingActivity, setEditingActivity] =
     useState<ProcurementActivitySummary | null>(null);
 
@@ -217,35 +220,27 @@ export function OfficerProcurementPlanDetailView({
   };
 
   function exportActivities() {
-    const headings = [
-      "Reference",
-      "Description",
-      "Category",
-      "Method",
-      "Estimated Amount",
-      "Current Stage",
-      "Status",
-    ];
-    const rows = filteredActivities.map((activity) => [
-      activity.reference,
-      activity.description,
-      activity.category,
-      activity.method,
-      activity.estimatedAmount,
-      activity.currentStage,
-      activity.status,
-    ]);
-    const csv = [headings, ...rows]
-      .map((row) => row.map(escapeCsvValue).join(","))
-      .join("\r\n");
-    const url = URL.createObjectURL(
-      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    exportPlanActivitiesToExcel(
+      currentPlan,
+      filteredActivities,
+      project.code,
     );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${currentPlan.reference}-activities.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  }
+
+  function handleBulkImport(imported: ProcurementActivitySummary[]) {
+    imported.forEach((act) => {
+      onUpdateActivity?.(act);
+    });
+
+    if (currentPlan.planActivities) {
+      const nextPlan = {
+        ...currentPlan,
+        activities: currentPlan.activities + imported.length,
+        planActivities: [...currentPlan.planActivities, ...imported],
+      };
+      setCurrentPlan(nextPlan);
+      onUpdatePlan?.(nextPlan);
+    }
   }
 
   return (
@@ -347,12 +342,21 @@ export function OfficerProcurementPlanDetailView({
             )}
 
             <button
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
               onClick={exportActivities}
               type="button"
             >
               <Download aria-hidden="true" className="h-3.5 w-3.5" />
-              Export
+              Export Excel
+            </button>
+
+            <button
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-[#176c55] shadow-2xs hover:bg-[#edf5f1] transition cursor-pointer"
+              onClick={() => setIsImportExcelOpen(true)}
+              type="button"
+            >
+              <Upload aria-hidden="true" className="h-3.5 w-3.5" />
+              Import Excel
             </button>
 
             {/* Add Activity Button (Enabled if Draft or Returned) */}
@@ -760,6 +764,14 @@ export function OfficerProcurementPlanDetailView({
         isOpen={isVersionHistoryOpen}
         onClose={() => setIsVersionHistoryOpen(false)}
         planId={currentPlan.id || currentPlan.reference}
+        planName={currentPlan.name}
+        projectCode={project.code}
+      />
+
+      <ExcelImportModal
+        isOpen={isImportExcelOpen}
+        onClose={() => setIsImportExcelOpen(false)}
+        onImport={handleBulkImport}
         planName={currentPlan.name}
         projectCode={project.code}
       />

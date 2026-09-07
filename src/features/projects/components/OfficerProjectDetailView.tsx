@@ -1,17 +1,24 @@
+"use client";
+
+import { useState } from "react";
 import { StatusText } from "../../../components/dashboard/StatusText";
 import type { OfficerProject } from "@/features/projects/data/officerProjects";
 import {
   Building2,
   CalendarRange,
+  Download,
   FileText,
   HandCoins,
   Info,
   Landmark,
   MapPin,
   Plus,
+  Upload,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
+import { exportProjectDetailsToExcel } from "@/features/projects/utils/projectExcelUtils";
+import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
 
 function formatProjectPeriod(project: OfficerProject): string | undefined {
   const from = project.projectPeriod?.from?.trim();
@@ -25,9 +32,13 @@ function formatProjectPeriod(project: OfficerProject): string | undefined {
 
 export function OfficerProjectDetailView({
   project,
+  onImportActivities,
 }: {
   project: OfficerProject;
+  onImportActivities?: (imported: any[]) => void;
 }) {
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   const overviewFacts: Array<{
     icon: typeof Info;
     label: string;
@@ -137,6 +148,24 @@ export function OfficerProjectDetailView({
           </div>
 
           <div className="flex shrink-0 items-center gap-2.5">
+            <button
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
+              onClick={() => exportProjectDetailsToExcel(project)}
+              type="button"
+            >
+              <Download aria-hidden="true" className="h-4 w-4" />
+              Export Excel
+            </button>
+
+            <button
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-[#176c55] shadow-2xs hover:bg-[#edf5f1] transition cursor-pointer"
+              onClick={() => setIsImportModalOpen(true)}
+              type="button"
+            >
+              <Upload aria-hidden="true" className="h-4 w-4" />
+              Import Excel
+            </button>
+
             <Link
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
               href={`/workspace/projects?project=${encodeURIComponent(
@@ -148,6 +177,7 @@ export function OfficerProjectDetailView({
               Create Plan
             </Link>
           </div>
+
         </div>
       </header>
 
@@ -259,9 +289,19 @@ export function OfficerProjectDetailView({
           </table>
         </div>
       </section>
+
+      <ExcelImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={(imported) => {
+          onImportActivities?.(imported);
+        }}
+        projectCode={project.code}
+      />
     </div>
   );
 }
+
 
 function ProjectFact({
   icon: Icon,

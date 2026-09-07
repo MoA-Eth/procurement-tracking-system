@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Loader2,
   Plus,
   Search,
   Upload,
@@ -70,6 +71,59 @@ export function OfficerContractsView({
   );
   const [status, setStatus] = useState<"all" | ContractStatus>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [importNotification, setImportNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setIsUploading(true);
+      setImportNotification(null);
+      const res = await fetch("http://localhost:5000/api/contracts/import", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setImportNotification({
+          type: "success",
+          message: `Contracts imported successfully! (${data.created || 0} created, ${data.updated || 0} updated)`,
+        });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } else {
+        setImportNotification({
+          type: "error",
+          message: data.error || data.message || "Failed to import contracts.",
+        });
+      }
+    } catch (err) {
+      console.error("Import error:", err);
+      setImportNotification({
+        type: "error",
+        message: "Error uploading contract file. Please check server connection.",
+      });
+    } finally {
+      setIsUploading(false);
+      if (e.target) e.target.value = "";
+    }
+  };
 
   if (selectedContractNumber !== prevSelectedContractNumber) {
     setPrevSelectedContractNumber(selectedContractNumber);
@@ -294,16 +348,32 @@ export function OfficerContractsView({
           <h1 className="sr-only">Contracts</h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Hidden File Input */}
+          <input
+            accept=".xlsx, .xls, .csv"
+            className="hidden"
+            onChange={handleFileChange}
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            type="file"
+          />
+
           <button
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] disabled:opacity-60 cursor-pointer"
+            disabled={isUploading}
+            onClick={handleImportClick}
             type="button"
           >
-            <Upload aria-hidden="true" className="h-4 w-4 text-slate-500" />
-            Import Contracts
+            {isUploading ? (
+              <Loader2 className="h-4 w-4 animate-spin text-[#176c55]" />
+            ) : (
+              <Upload aria-hidden="true" className="h-4 w-4 text-slate-500" />
+            )}
+            {isUploading ? "Uploading..." : "Import Contracts"}
           </button>
           <Link
-            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] transition"
             href="/workspace/contracts?mode=register"
             style={{ backgroundColor: "#176c55", color: "#ffffff" }}
           >
@@ -312,6 +382,26 @@ export function OfficerContractsView({
           </Link>
         </div>
       </header>
+
+      {importNotification && (
+        <div
+          className={`flex items-center justify-between gap-3 rounded-lg border p-3.5 text-xs font-medium ${
+            importNotification.type === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-red-200 bg-red-50 text-red-800"
+          }`}
+        >
+          <span>{importNotification.message}</span>
+          <button
+            className="font-bold underline cursor-pointer"
+            onClick={() => setImportNotification(null)}
+            type="button"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
 
       <section
         aria-label="Contract filters and table controls"
