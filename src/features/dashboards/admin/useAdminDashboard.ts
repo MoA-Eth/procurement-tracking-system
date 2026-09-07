@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { AuthUser } from "@/lib/authTypes";
+import { normalizeUserRole } from "@/lib/authTypes";
 import {
   fetchUsers,
   fetchAuditLogs,
@@ -100,15 +101,19 @@ export function useAdminDashboard(currentUser: AuthUser) {
     ).length;
     const deactivatedAccounts = users.filter((u) => !u.isActive).length;
 
-    const officersCount = users.filter(
-      (u) => u.authRole === "OFFICER" || u.role === "ProcurementOfficer",
-    ).length;
-    const directorsCount = users.filter(
-      (u) => u.authRole === "DIRECTOR" || u.role === "ProcurementDirector",
-    ).length;
-    const adminsCount = users.filter(
-      (u) => u.authRole === "ADMIN" || u.role === "Administrator",
-    ).length;
+    let officersCount = 0;
+    let directorsCount = 0;
+    let committeeCount = 0;
+    let adminsCount = 0;
+
+    for (const u of users) {
+      const roleStr = u.authRole || u.role;
+      const normalized = normalizeUserRole(roleStr);
+      if (normalized === "OFFICER") officersCount++;
+      else if (normalized === "DIRECTOR") directorsCount++;
+      else if (normalized === "ENDORSING_COMMITTEE") committeeCount++;
+      else if (normalized === "ADMIN") adminsCount++;
+    }
 
     return {
       totalAccounts,
@@ -116,6 +121,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
       deactivatedAccounts,
       officersCount,
       directorsCount,
+      committeeCount,
       adminsCount,
     };
   }, [totalUserCount, users]);
