@@ -177,7 +177,6 @@ export function OfficerProjectDetailView({
               Create Plan
             </Link>
           </div>
-
         </div>
       </header>
 
@@ -301,7 +300,6 @@ export function OfficerProjectDetailView({
     </div>
   );
 }
-
 
 function ProjectFact({
   icon: Icon,

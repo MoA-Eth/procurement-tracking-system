@@ -117,7 +117,8 @@ export function OfficerContractsView({
       console.error("Import error:", err);
       setImportNotification({
         type: "error",
-        message: "Error uploading contract file. Please check server connection.",
+        message:
+          "Error uploading contract file. Please check server connection.",
       });
     } finally {
       setIsUploading(false);
@@ -401,7 +402,6 @@ export function OfficerContractsView({
           </button>
         </div>
       )}
-
 
       <section
         aria-label="Contract filters and table controls"

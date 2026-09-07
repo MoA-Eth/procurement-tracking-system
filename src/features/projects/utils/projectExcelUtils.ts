@@ -69,9 +69,7 @@ function getColumnValue(row: Record<string, any>, aliases: string[]): any {
   const keys = Object.keys(row);
   for (const alias of aliases) {
     const normalizedAlias = normalizeHeader(alias);
-    const foundKey = keys.find(
-      (k) => normalizeHeader(k) === normalizedAlias,
-    );
+    const foundKey = keys.find((k) => normalizeHeader(k) === normalizedAlias);
     if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) {
       return row[foundKey];
     }
@@ -219,10 +217,7 @@ export async function parseActivitiesFromExcel(
       "State",
     ]);
     const rawFunding = getColumnValue(row, ["Funding Source", "Funding"]);
-    const rawMarket = getColumnValue(row, [
-      "Market Approach",
-      "Approach",
-    ]);
+    const rawMarket = getColumnValue(row, ["Market Approach", "Approach"]);
     const rawReview = getColumnValue(row, ["Review Type", "Review"]);
 
     const description = String(rawDesc || "").trim();
@@ -270,9 +265,7 @@ export async function parseActivitiesFromExcel(
       status = "Submitted to Director";
     else if (statusStr.includes("draft")) status = "Draft";
 
-    const currentStage = String(
-      rawStage || "Draft Bidding Documents",
-    ).trim();
+    const currentStage = String(rawStage || "Draft Bidding Documents").trim();
     const currency = String(rawCurrency || "ETB").trim();
     const fundingSource = rawFunding ? String(rawFunding).trim() : undefined;
     const marketApproach = rawMarket ? String(rawMarket).trim() : undefined;
@@ -415,7 +408,10 @@ export function exportProjectDetailsToExcel(project: OfficerProject) {
     { Field: "Project Code", Value: project.code },
     { Field: "Short Name", Value: project.shortName || "" },
     { Field: "Status", Value: project.status },
-    { Field: "Country / Organization", Value: project.countryOrganisation || "" },
+    {
+      Field: "Country / Organization",
+      Value: project.countryOrganisation || "",
+    },
     { Field: "Executing Agency", Value: project.executingAgency || "" },
     { Field: "Funding Source", Value: project.fundingSource || "" },
     { Field: "Funding Type", Value: project.fundingType || "" },
@@ -533,7 +529,11 @@ export function exportOfficerProjectsToExcel(projects: OfficerProject[]) {
       { wch: 16 },
       { wch: 18 },
     ];
-    XLSX.utils.book_append_sheet(workbook, plansWorksheet, "All Procurement Plans");
+    XLSX.utils.book_append_sheet(
+      workbook,
+      plansWorksheet,
+      "All Procurement Plans",
+    );
   }
 
   const timestamp = new Date().toISOString().slice(0, 10);

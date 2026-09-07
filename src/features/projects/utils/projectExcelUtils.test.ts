@@ -6,7 +6,10 @@ import {
   exportOfficerProjectsToExcel,
   parseActivitiesFromExcel,
 } from "./projectExcelUtils";
-import type { OfficerProject, ProcurementPlanSummary } from "../data/officerProjects";
+import type {
+  OfficerProject,
+  ProcurementPlanSummary,
+} from "../data/officerProjects";
 import type { ProcurementActivitySummary } from "../data/officerActivityDrafts";
 import * as XLSX from "xlsx";
 

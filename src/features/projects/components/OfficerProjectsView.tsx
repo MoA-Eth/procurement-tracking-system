@@ -1278,7 +1278,6 @@ function OfficerProjectsList({
         </div>
       </header>
 
-
       {projects.length === 0 ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e6f4ef] text-[#0A3C2F]">
@@ -1581,4 +1580,3 @@ function OfficerProjectsList({
     </div>
   );
 }
-

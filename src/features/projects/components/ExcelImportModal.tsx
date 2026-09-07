@@ -51,7 +51,9 @@ export function ExcelImportModal({
   async function handleFileSelect(selectedFile: File) {
     const ext = selectedFile.name.split(".").pop()?.toLowerCase();
     if (!["xlsx", "xls", "csv"].includes(ext || "")) {
-      setParseError("Please select a valid Excel (.xlsx, .xls) or CSV (.csv) file.");
+      setParseError(
+        "Please select a valid Excel (.xlsx, .xls) or CSV (.csv) file.",
+      );
       return;
     }
 
@@ -223,7 +225,8 @@ export function ExcelImportModal({
                       Need the standard Excel format?
                     </p>
                     <p className="text-[11px] text-slate-500">
-                      Download our pre-formatted template with sample columns &amp; rows
+                      Download our pre-formatted template with sample columns
+                      &amp; rows
                     </p>
                   </div>
                 </div>
@@ -342,7 +345,9 @@ export function ExcelImportModal({
                       <th className="px-3 py-2.5">Description</th>
                       <th className="px-3 py-2.5">Category</th>
                       <th className="px-3 py-2.5">Method</th>
-                      <th className="px-3 py-2.5 text-right">Estimated Amount</th>
+                      <th className="px-3 py-2.5 text-right">
+                        Estimated Amount
+                      </th>
                       <th className="px-3 py-2.5">Stage</th>
                     </tr>
                   </thead>

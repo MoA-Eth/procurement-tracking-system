@@ -220,11 +220,7 @@ export function OfficerProcurementPlanDetailView({
   };
 
   function exportActivities() {
-    exportPlanActivitiesToExcel(
-      currentPlan,
-      filteredActivities,
-      project.code,
-    );
+    exportPlanActivitiesToExcel(currentPlan, filteredActivities, project.code);
   }
 
   function handleBulkImport(imported: ProcurementActivitySummary[]) {
