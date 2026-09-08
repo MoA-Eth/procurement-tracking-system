@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { UserRole } from "@/types";
 
 interface DirectorSummaryCardsProps {
   totalProjectsCount: number;
@@ -9,6 +10,7 @@ interface DirectorSummaryCardsProps {
   criticalDelaysCount: number;
   selectedFiscalYear: string;
   selectedSector: string;
+  userRole?: UserRole;
 }
 
 export function DirectorSummaryCards({
@@ -18,6 +20,7 @@ export function DirectorSummaryCards({
   criticalDelaysCount,
   selectedFiscalYear,
   selectedSector,
+  userRole = "DIRECTOR",
 }: DirectorSummaryCardsProps) {
   const sectorSubtitle =
     selectedSector === "All Sectors"
@@ -64,7 +67,9 @@ export function DirectorSummaryCards({
         <div>
           <div className="flex items-start justify-between">
             <h3 className="text-xs font-bold text-slate-800 tracking-tight">
-              Awaiting Review
+              {userRole === "MANAGEMENT"
+                ? "Executive Authorization"
+                : "Awaiting Review"}
             </h3>
             <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0 mt-0.5" />
           </div>
@@ -77,7 +82,9 @@ export function DirectorSummaryCards({
         </div>
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
           <span className="text-slate-400 font-medium text-[11px]">
-            Pending
+            {userRole === "MANAGEMENT"
+              ? "Pending Decision"
+              : "Pending Director"}
           </span>
           <Link
             href="/workspace/plan-for-review"
@@ -94,7 +101,9 @@ export function DirectorSummaryCards({
         <div>
           <div className="flex items-start justify-between">
             <h3 className="text-xs font-bold text-slate-800 tracking-tight">
-              Committee Progress
+              {userRole === "MANAGEMENT"
+                ? "Committee Endorsed"
+                : "Committee Progress"}
             </h3>
             <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-0.5" />
           </div>
@@ -106,9 +115,11 @@ export function DirectorSummaryCards({
           </div>
         </div>
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">Voting</span>
+          <span className="text-slate-400 font-medium text-[11px]">
+            {userRole === "MANAGEMENT" ? "Deliberations" : "Voting"}
+          </span>
           <Link
-            href="/workspace/committee-progress"
+            href="/workspace/vote-progress"
             className="text-blue-600 hover:text-blue-700 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
           >
             <span>Check Votes</span>

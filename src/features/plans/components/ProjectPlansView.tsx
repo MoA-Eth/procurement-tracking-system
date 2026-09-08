@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  ArrowLeft,
   Calendar,
   CheckCircle2,
   ChevronRight,
@@ -18,11 +19,12 @@ import {
 import Link from "next/link";
 import type { ProjectItem } from "@/features/projects/management/projectsData";
 import type { PlanCategory, ProcurementPlan } from "../plansData";
+import type { UserRole } from "@/types";
 
 interface ProjectPlansViewProps {
   project: ProjectItem;
   plans: ProcurementPlan[];
-  userRole?: "OFFICER" | "DIRECTOR" | "ADMIN";
+  userRole?: UserRole;
   onBackToProjects: () => void;
   onCreatePlanClick?: () => void;
   onEditPlanClick?: (plan: ProcurementPlan) => void;
@@ -390,6 +392,15 @@ export function ProjectPlansView({
           {project.code} Plans
         </span>
       </nav>
+
+      <div>
+        <button
+          onClick={onBackToProjects}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Projects Directory
+        </button>
+      </div>
 
       {/* 2. Page Title Header Section */}
       <div className="space-y-3 pb-2 border-b border-slate-200/60">

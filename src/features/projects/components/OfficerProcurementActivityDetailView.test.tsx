@@ -173,4 +173,46 @@ describe("OfficerProcurementActivityDetailView", () => {
     expect(markup).toContain("/workspace/activity-tracker?project=");
     expect(markup).toContain("Activity Tracker");
   });
+
+  it("does not show creator or editor attribution for single-officer project", () => {
+    const activityWithMeta: ProcurementActivitySummary = {
+      ...detailedActivity,
+      createdByName: "Yeabsira Fikre",
+      updatedByName: "Abebe Kebede",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={activityWithMeta}
+        plan={plan}
+        project={project}
+      />,
+    );
+
+    expect(markup).not.toContain("Created by:");
+    expect(markup).not.toContain("Last edited by:");
+  });
+
+  it("shows creator and editor attribution when more than one officer is assigned", () => {
+    const multiOfficerProject: OfficerProject = {
+      ...project,
+      assignedOfficers: ["Yeabsira Fikre", "Abebe Kebede"],
+    };
+    const activityWithMeta: ProcurementActivitySummary = {
+      ...detailedActivity,
+      createdByName: "Yeabsira Fikre",
+      updatedByName: "Abebe Kebede",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={activityWithMeta}
+        plan={plan}
+        project={multiOfficerProject}
+      />,
+    );
+
+    expect(markup).toContain("Created by:");
+    expect(markup).toContain("Yeabsira Fikre");
+    expect(markup).toContain("Last edited by:");
+    expect(markup).toContain("Abebe Kebede");
+  });
 });

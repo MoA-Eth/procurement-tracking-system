@@ -84,11 +84,13 @@ export default async function WorkspaceSectionPage({
           : undefined;
     const selectedActivityRef =
       typeof query.activity === "string" ? query.activity : undefined;
+    const from = typeof query.from === "string" ? query.from : undefined;
     return (
       <PlanForReviewView
         user={session.user}
         selectedPlanId={selectedPlanId}
         selectedActivityRef={selectedActivityRef}
+        from={from}
       />
     );
   }
@@ -121,8 +123,22 @@ export default async function WorkspaceSectionPage({
     section === "projects" &&
     (session.user.role === "DIRECTOR" || session.user.role === "MANAGEMENT")
   ) {
+    const selectedProjectCode =
+      typeof query.project === "string" ? query.project : undefined;
+    const selectedPlanReference =
+      typeof query.plan === "string"
+        ? query.plan
+        : typeof query.planId === "string"
+          ? query.planId
+          : undefined;
+    const from = typeof query.from === "string" ? query.from : undefined;
     return (
-      <ProjectsManagementView readOnly={session.user.role === "MANAGEMENT"} />
+      <ProjectsManagementView
+        readOnly={session.user.role === "MANAGEMENT"}
+        selectedProjectCode={selectedProjectCode}
+        selectedPlanReference={selectedPlanReference}
+        from={from}
+      />
     );
   }
 
@@ -151,6 +167,7 @@ export default async function WorkspaceSectionPage({
     ) {
       return (
         <DirectorActivityTrackerView
+          userRole={session.user.role}
           selectedActivityReference={
             typeof query.activity === "string" ? query.activity : undefined
           }

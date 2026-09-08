@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { BellRing } from "lucide-react";
 import {
   INITIAL_PROJECTS,
@@ -42,10 +42,16 @@ type ViewMode =
 
 interface ProjectsManagementViewProps {
   readOnly?: boolean;
+  selectedProjectCode?: string;
+  selectedPlanReference?: string;
+  from?: string;
 }
 
 export function ProjectsManagementView({
   readOnly = false,
+  selectedProjectCode,
+  selectedPlanReference,
+  from,
 }: ProjectsManagementViewProps = {}) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [projects, setProjects] = useState<ProjectItem[]>(INITIAL_PROJECTS);
@@ -139,6 +145,104 @@ export function ProjectsManagementView({
     return () => window.removeEventListener("pts:sidebar-reset", handleReset);
   }, []);
 
+  const dismissedProjectRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      selectedProjectCode &&
+      selectedProjectCode !== dismissedProjectRef.current
+    ) {
+      dismissedProjectRef.current = null;
+    }
+  }, [selectedProjectCode]);
+
+  useEffect(() => {
+    if (
+      selectedProjectCode &&
+      projects.length > 0 &&
+      !selectedProject &&
+      dismissedProjectRef.current !== selectedProjectCode
+    ) {
+      const match = projects.find(
+        (p) =>
+          p.code.toLowerCase() === selectedProjectCode.toLowerCase() ||
+          p.id === selectedProjectCode,
+      );
+      if (match) {
+        setSelectedProject(match);
+        if (selectedPlanReference && plans.length > 0) {
+          const matchedPlan = plans.find(
+            (pl) =>
+              pl.reference?.toLowerCase() ===
+                selectedPlanReference.toLowerCase() ||
+              pl.id === selectedPlanReference ||
+              pl.planName.toLowerCase() === selectedPlanReference.toLowerCase(),
+          );
+          if (matchedPlan) {
+            setSelectedPlanForActivities(matchedPlan);
+            setViewMode("activities-list");
+            return;
+          }
+        }
+        setViewMode("plans-list");
+      }
+    }
+  }, [
+    selectedProjectCode,
+    selectedPlanReference,
+    projects,
+    plans,
+    selectedProject,
+  ]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const projParam = params.get("project");
+      const planParam = params.get("plan");
+
+      if (!projParam) {
+        setSelectedProject(null);
+        setSelectedPlanForActivities(null);
+        setEditingProject(null);
+        setEditingPlan(null);
+        setViewMode("list");
+        dismissedProjectRef.current = null;
+        return;
+      }
+
+      if (projects.length > 0) {
+        const matchedProject = projects.find(
+          (p) =>
+            p.code.toLowerCase() === projParam.toLowerCase() ||
+            p.id === projParam,
+        );
+        if (matchedProject) {
+          setSelectedProject(matchedProject);
+          if (planParam && plans.length > 0) {
+            const matchedPlan = plans.find(
+              (pl) =>
+                pl.reference?.toLowerCase() === planParam.toLowerCase() ||
+                pl.id === planParam ||
+                pl.planName.toLowerCase() === planParam.toLowerCase(),
+            );
+            if (matchedPlan) {
+              setSelectedPlanForActivities(matchedPlan);
+              setViewMode("activities-list");
+              return;
+            }
+          }
+          setSelectedPlanForActivities(null);
+          setViewMode("plans-list");
+          return;
+        }
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [projects, plans]);
+
   // Open Project Create Form
   const handleCreateProjectClick = () => {
     setEditingProject(null);
@@ -153,8 +257,16 @@ export function ProjectsManagementView({
 
   // Eye Icon -> Open Tabular Plans View for Project
   const handleViewPlansClick = (project: ProjectItem) => {
+    dismissedProjectRef.current = null;
     setSelectedProject(project);
     setViewMode("plans-list");
+    if (typeof window !== "undefined") {
+      window.history.pushState(
+        {},
+        "",
+        `/workspace/projects?project=${encodeURIComponent(project.code)}`,
+      );
+    }
   };
 
   // Save/Update Project Handler (connected to backend)
@@ -467,6 +579,13 @@ export function ProjectsManagementView({
   const handleViewActivitiesClick = (plan: ProcurementPlan) => {
     setSelectedPlanForActivities(plan);
     setViewMode("activities-list");
+    if (typeof window !== "undefined" && selectedProject) {
+      window.history.pushState(
+        {},
+        "",
+        `/workspace/projects?project=${encodeURIComponent(selectedProject.code)}&plan=${encodeURIComponent(plan.reference || plan.id)}`,
+      );
+    }
   };
 
   return (
@@ -499,6 +618,9 @@ export function ProjectsManagementView({
           onBackClick={() => {
             setEditingProject(null);
             setViewMode("list");
+            if (typeof window !== "undefined") {
+              window.history.replaceState({}, "", "/workspace/projects");
+            }
           }}
           onSaveProject={handleSaveProject}
         />
@@ -508,10 +630,15 @@ export function ProjectsManagementView({
         <ProjectPlansView
           project={selectedProject}
           plans={plans}
-          userRole={readOnly ? ("MANAGEMENT" as any) : "DIRECTOR"}
+          userRole={readOnly ? "MANAGEMENT" : "DIRECTOR"}
           onBackToProjects={() => {
+            dismissedProjectRef.current =
+              selectedProject?.code || selectedProjectCode || "dismissed";
             setSelectedProject(null);
             setViewMode("list");
+            if (typeof window !== "undefined") {
+              window.history.replaceState({}, "", "/workspace/projects");
+            }
           }}
           onEditPlanClick={readOnly ? undefined : handleEditPlanClick}
           onViewActivitiesClick={handleViewActivitiesClick}
@@ -522,7 +649,7 @@ export function ProjectsManagementView({
         <CreatePlanForm
           project={selectedProject}
           initialData={editingPlan}
-          userRole="DIRECTOR"
+          userRole={readOnly ? "MANAGEMENT" : "DIRECTOR"}
           readOnly={true}
           onBackClick={() => {
             setEditingPlan(null);
@@ -543,6 +670,13 @@ export function ProjectsManagementView({
             onBackClick={() => {
               setSelectedPlanForActivities(null);
               setViewMode("plans-list");
+              if (typeof window !== "undefined" && selectedProject) {
+                window.history.replaceState(
+                  {},
+                  "",
+                  `/workspace/projects?project=${encodeURIComponent(selectedProject.code)}`,
+                );
+              }
             }}
             onApprovePlan={
               readOnly

@@ -29,12 +29,14 @@ interface DetailValue {
 
 export function OfficerProcurementActivityDetailView({
   activity: initialActivity,
+  currentUser,
   fromTracker,
   onUpdateActivity,
   plan,
   project,
 }: {
   activity: ProcurementActivitySummary;
+  currentUser?: { name?: string; role?: string } | null;
   fromTracker?: boolean;
   onUpdateActivity?: (updated: ProcurementActivitySummary) => void;
   plan: ProcurementPlanSummary;
@@ -44,6 +46,10 @@ export function OfficerProcurementActivityDetailView({
     useState<ProcurementActivitySummary>(initialActivity);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  const isMultiOfficerProject =
+    (project.assignedOfficers?.length ?? 0) > 1 ||
+    (project.assignedOfficerIds?.length ?? 0) > 1;
 
   const activity = currentActivity;
   const trackerHref =
@@ -186,6 +192,32 @@ export function OfficerProcurementActivityDetailView({
                 •
               </span>
               <StatusText className="text-[10px]" label={activity.status} />
+              {isMultiOfficerProject && activity.createdByName && (
+                <>
+                  <span aria-hidden="true" className="text-slate-300">
+                    •
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-200">
+                    Created by:{" "}
+                    <strong className="font-semibold text-slate-800">
+                      {activity.createdByName}
+                    </strong>
+                  </span>
+                </>
+              )}
+              {isMultiOfficerProject && activity.updatedByName && (
+                <>
+                  <span aria-hidden="true" className="text-slate-300">
+                    •
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-900 border border-emerald-200">
+                    Last edited by:{" "}
+                    <strong className="font-semibold text-emerald-950">
+                      {activity.updatedByName}
+                    </strong>
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -254,9 +286,29 @@ export function OfficerProcurementActivityDetailView({
             <DetailItem label="Plan Reference" value={plan.reference} />
             <DetailItem label="Fiscal Year" value={plan.budgetYear} />
             <DetailItem
-              label="Responsible Officer"
-              value={project.assignedOfficers[0] ?? "Not assigned"}
+              label={
+                project.assignedOfficers.length > 1
+                  ? "Assigned Officers"
+                  : "Responsible Officer"
+              }
+              value={
+                project.assignedOfficers.length
+                  ? project.assignedOfficers.join(", ")
+                  : "Not assigned"
+              }
             />
+            {isMultiOfficerProject && activity.createdByName && (
+              <DetailItem
+                label="Activity Created By"
+                value={activity.createdByName}
+              />
+            )}
+            {isMultiOfficerProject && activity.updatedByName && (
+              <DetailItem
+                label="Activity Last Edited By"
+                value={activity.updatedByName}
+              />
+            )}
           </dl>
         </section>
 
@@ -365,6 +417,8 @@ export function OfficerProcurementActivityDetailView({
           onClose={() => setIsEditModalOpen(false)}
           plan={plan}
           projectCode={project.code}
+          userName={currentUser?.name || "Procurement Officer"}
+          userRole={currentUser?.role || "Procurement Officer"}
         />
       )}
     </div>

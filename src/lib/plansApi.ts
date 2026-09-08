@@ -83,6 +83,17 @@ export interface BackendPlanActivity {
     }[];
   }[];
   status?: string;
+  createdById?: string;
+  creator?: { id: string; name: string; displayName?: string; email?: string };
+  updatedById?: string;
+  updatedByUser?: {
+    id: string;
+    name: string;
+    displayName?: string;
+    email?: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BackendComment {
@@ -145,6 +156,13 @@ export interface BackendPlan {
   comments?: BackendComment[];
   createdBy?: string;
   creator?: { id: string; name: string; displayName?: string; email?: string };
+  updatedById?: string;
+  updatedByUser?: {
+    id: string;
+    name: string;
+    displayName?: string;
+    email?: string;
+  } | null;
   createdAt: string;
   updatedAt?: string;
   activities?: BackendPlanActivity[];
@@ -409,6 +427,13 @@ export function mapBackendPlanToFrontend(
     }
   }
 
+  // If rejectionReason is not set yet (e.g. current viewer is Director, Management, or an approving member),
+  // pull the rejection reason/comments from any rejecting committee votes:
+  const rejectVotes = votes.filter((v) => v.decision === "REJECT" && v.comment);
+  if (!rejectionReason && rejectVotes.length > 0) {
+    rejectionReason = rejectVotes[0].comment || undefined;
+  }
+
   const managementDecision =
     backendPlan.managementDecision === "APPROVE"
       ? "Approved"
@@ -416,6 +441,25 @@ export function mapBackendPlanToFrontend(
         ? "Rejected"
         : undefined;
   const parsedRejection = parseRejectionDetails(rejectionReason);
+
+  // Harvest all rejected activity refs across backend plan, parsed rejection, rejecting votes, and reviews
+  const allRejectedActivityRefs = Array.from(
+    new Set<string>([
+      ...((backendPlan as any).rejectedActivityRefs || []),
+      ...parsedRejection.rejectedActivityRefs,
+      ...rejectVotes.flatMap(
+        (v) => parseRejectionDetails(v.comment).rejectedActivityRefs,
+      ),
+      ...((backendPlan as any).reviews?.flatMap(
+        (r: any) => parseRejectionDetails(r.notes).rejectedActivityRefs,
+      ) || []),
+    ]),
+  );
+
+  const effectiveRejectionScope =
+    allRejectedActivityRefs.length > 0
+      ? "SPECIFIC"
+      : (backendPlan as any).rejectionScope || parsedRejection.scope;
 
   return {
     id: backendPlan.id,
@@ -479,8 +523,8 @@ export function mapBackendPlanToFrontend(
     managementAt: backendPlan.managementAt || undefined,
     directorRevisionComment: backendPlan.directorRevisionComment || undefined,
     comments: backendPlan.comments || [],
-    rejectionScope: parsedRejection.scope,
-    rejectedActivityRefs: parsedRejection.rejectedActivityRefs,
+    rejectionScope: effectiveRejectionScope,
+    rejectedActivityRefs: allRejectedActivityRefs,
     activities: backendPlan.activities || [],
   };
 }
@@ -717,6 +761,17 @@ export function mapBackendPlanToOfficerPlanSummary(
         roadmap.find((st: any) => st.status === "Not Started") ||
         roadmap[0];
 
+      const createdByName =
+        a.creator?.displayName ||
+        a.creator?.name ||
+        a.createdByName ||
+        undefined;
+      const updatedByName =
+        a.updatedByUser?.displayName ||
+        a.updatedByUser?.name ||
+        a.updatedByName ||
+        undefined;
+
       return {
         id: a.id,
         activityId: a.id,
@@ -739,6 +794,12 @@ export function mapBackendPlanToOfficerPlanSummary(
               : a.status === "DELAYED"
                 ? "Delayed"
                 : "Not Started",
+        createdById: a.createdById || a.creator?.id,
+        createdByName,
+        updatedById: a.updatedById || a.updatedByUser?.id,
+        updatedByName,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
         details: {
           lots: a.lots || [],
           componentAllocations: (a.components || []).map((c: any) => ({
@@ -797,6 +858,18 @@ export function mapBackendPlanToOfficerPlanSummary(
     organizationRegion: backendPlan.organization || "Federal",
     description: backendPlan.description || undefined,
     planActivities,
+    createdById: backendPlan.createdBy,
+    createdByName:
+      backendPlan.creator?.displayName ||
+      backendPlan.creator?.name ||
+      "Assigned Officer",
+    updatedById: backendPlan.updatedById || undefined,
+    updatedByName:
+      backendPlan.updatedByUser?.displayName ||
+      backendPlan.updatedByUser?.name ||
+      undefined,
+    createdAt: backendPlan.createdAt,
+    updatedAt: backendPlan.updatedAt,
     planPeriod: backendPlan.periodStart
       ? {
           from: {

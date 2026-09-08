@@ -42,6 +42,12 @@ export interface ProcurementPlanSummary {
   rejectedActivityIds?: string[];
   rejectedActivityRefs?: string[];
   version?: number;
+  createdById?: string;
+  createdByName?: string;
+  updatedById?: string;
+  updatedByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
   planActivities?: readonly import("./officerActivityDrafts").ProcurementActivitySummary[];
 }
 

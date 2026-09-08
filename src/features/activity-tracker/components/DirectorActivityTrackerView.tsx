@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { StatusText } from "../../../components/dashboard/StatusText";
 import {
@@ -53,6 +53,7 @@ import {
 } from "@/lib/projectsApi";
 import { fetchPlans, mapBackendPlanToOfficerPlanSummary } from "@/lib/plansApi";
 import { fetchActivities, type BackendActivity } from "@/lib/activitiesApi";
+import type { UserRole } from "@/types";
 
 export interface DirectorTrackedActivityItem {
   activity: ProcurementActivitySummary;
@@ -82,12 +83,14 @@ export interface DirectorActivityTrackerViewProps {
   selectedActivityReference?: string;
   selectedPlanReference?: string;
   selectedProjectCode?: string;
+  userRole?: UserRole;
 }
 
 export function DirectorActivityTrackerView({
   selectedActivityReference,
   selectedPlanReference,
   selectedProjectCode,
+  userRole,
 }: DirectorActivityTrackerViewProps = {}) {
   const [backendProjects, setBackendProjects] = useState<OfficerProject[]>([]);
   const [savedPlanRecords, setSavedPlanRecords] = useState<
@@ -234,8 +237,77 @@ export function DirectorActivityTrackerView({
     [projects, effectiveActivityRecords, trackingRecords],
   );
 
+  const dismissedActivityRef = useRef<string | null>(null);
+
+  const handleSelectActivity = (item: DirectorTrackedActivityItem) => {
+    dismissedActivityRef.current = null;
+    setSelectedActivity(item);
+    if (typeof window !== "undefined") {
+      window.history.pushState(
+        {},
+        "",
+        `/workspace/activity-tracker?activity=${encodeURIComponent(item.activity.reference)}`,
+      );
+    }
+  };
+
+  const handleBackFromDetail = () => {
+    dismissedActivityRef.current =
+      selectedActivity?.activity?.reference ||
+      selectedActivityReference ||
+      "dismissed";
+    setSelectedActivity(null);
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", "/workspace/activity-tracker");
+    }
+  };
+
   useEffect(() => {
-    if (selectedActivityReference && items.length > 0 && !selectedActivity) {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const actRef = params.get("activity");
+      if (actRef && items.length > 0) {
+        const match = items.find(
+          (it) =>
+            it.activity.reference.toLowerCase() === actRef.toLowerCase() ||
+            it.activity.description
+              .toLowerCase()
+              .includes(actRef.toLowerCase()) ||
+            it.tracking.activityReference.toLowerCase() ===
+              actRef.toLowerCase() ||
+            (it.activity as any).id === actRef ||
+            (it as any).id === actRef,
+        );
+        if (match) {
+          dismissedActivityRef.current = null;
+          setSelectedActivity(match);
+          return;
+        }
+      }
+      setSelectedActivity(null);
+      dismissedActivityRef.current = null;
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [items]);
+
+  useEffect(() => {
+    if (
+      selectedActivityReference &&
+      selectedActivityReference !== dismissedActivityRef.current
+    ) {
+      dismissedActivityRef.current = null;
+    }
+  }, [selectedActivityReference]);
+
+  useEffect(() => {
+    if (
+      selectedActivityReference &&
+      items.length > 0 &&
+      !selectedActivity &&
+      dismissedActivityRef.current !== selectedActivityReference
+    ) {
       const match = items.find(
         (it) =>
           it.activity.reference.toLowerCase() ===
@@ -261,7 +333,8 @@ export function DirectorActivityTrackerView({
     return (
       <DirectorActivityDetailView
         item={selectedActivity}
-        onBack={() => setSelectedActivity(null)}
+        onBack={handleBackFromDetail}
+        userRole={userRole}
       />
     );
   }
@@ -269,7 +342,8 @@ export function DirectorActivityTrackerView({
   return (
     <DirectorActivityTrackerList
       items={items}
-      onViewActivity={setSelectedActivity}
+      onViewActivity={handleSelectActivity}
+      userRole={userRole}
     />
   );
 }
@@ -556,9 +630,11 @@ function differenceInIsoDays(fromIso: string, toIso: string) {
 function DirectorActivityTrackerList({
   items,
   onViewActivity,
+  userRole,
 }: {
   items: readonly DirectorTrackedActivityItem[];
   onViewActivity: (item: DirectorTrackedActivityItem) => void;
+  userRole?: UserRole;
 }) {
   const todayIso = new Date().toISOString().slice(0, 10);
   const [searchQuery, setSearchQuery] = useState("");
@@ -783,12 +859,22 @@ function DirectorActivityTrackerList({
       {/* 2. Page Header & Description */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
-            Director Activity Tracker
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+              {userRole === "MANAGEMENT"
+                ? "Management Activity Tracker"
+                : "Director Activity Tracker"}
+            </h1>
+            {userRole === "MANAGEMENT" && (
+              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                View-Only Oversight
+              </span>
+            )}
+          </div>
           <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-3xl">
-            Track active officer progress, procurement milestones, stage
-            completion, and critical project delays across the directorate.
+            {userRole === "MANAGEMENT"
+              ? "Executive view-only oversight of active officer progress, procurement milestones, stage completion, and critical project delays."
+              : "Track active officer progress, procurement milestones, stage completion, and critical project delays across the directorate."}
           </p>
         </div>
       </div>
@@ -1335,9 +1421,11 @@ function formatAmount(value: number | undefined | null) {
 function DirectorActivityDetailView({
   item,
   onBack,
+  userRole,
 }: {
   item: DirectorTrackedActivityItem;
   onBack: () => void;
+  userRole?: UserRole;
 }) {
   const [activeTab, setActiveTab] = useState<
     "overview" | "roadmap" | "contract"
@@ -1386,6 +1474,11 @@ function DirectorActivityDetailView({
             <ArrowLeft className="h-4 w-4" /> Back to Activity Tracker List
           </button>
           <div className="flex items-center gap-2">
+            {userRole === "MANAGEMENT" && (
+              <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                View-Only
+              </span>
+            )}
             <span className="font-mono text-xs font-bold text-[#0A3C2F] bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
               {item.project.code}
             </span>
@@ -1821,8 +1914,9 @@ function DirectorActivityDetailView({
           <div className="flex items-center gap-2 border-t border-slate-100 pt-3 text-[11px] text-slate-500 font-medium">
             <LockKeyhole className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <span>
-              Activity Tracker execution handoff details are read-only for
-              Director oversight.
+              Activity Tracker execution handoff details are read-only for{" "}
+              {userRole === "MANAGEMENT" ? "Executive Management" : "Director"}{" "}
+              oversight.
             </span>
           </div>
         </div>

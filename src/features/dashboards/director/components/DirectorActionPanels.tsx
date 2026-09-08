@@ -4,19 +4,24 @@ import Link from "next/link";
 import { FileText, AlertCircle, ChevronRight } from "lucide-react";
 import type { DirectorPlan, CriticalDelay } from "../directorData";
 import { formatETB } from "../directorFormatters";
+import type { UserRole } from "@/types";
 
 interface DirectorActionPanelsProps {
   pendingPlans: DirectorPlan[];
   criticalDelays: CriticalDelay[];
+  userRole?: UserRole;
 }
 
 export function DirectorActionPanels({
   pendingPlans,
   criticalDelays,
+  userRole = "DIRECTOR",
 }: DirectorActionPanelsProps) {
+  const isManagement = userRole === "MANAGEMENT";
+
   return (
     <section className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 items-start">
-      {/* LEFT PANEL: Plans Awaiting Director Review */}
+      {/* LEFT PANEL: Plans Awaiting Review */}
       <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
         {/* Header */}
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
@@ -26,10 +31,14 @@ export function DirectorActionPanels({
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-xs sm:text-sm leading-tight">
-                Plans Awaiting Review ({pendingPlans.length})
+                {isManagement
+                  ? `Plans Awaiting Executive Authorization (${pendingPlans.length})`
+                  : `Plans Awaiting Director Review (${pendingPlans.length})`}
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Requires approval or revision
+                {isManagement
+                  ? "Requires executive authorization or rejection"
+                  : "Requires approval or revision"}
               </p>
             </div>
           </div>
@@ -55,8 +64,16 @@ export function DirectorActionPanels({
               >
                 {/* Top row: Badge and Budget */}
                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <span className="px-2 py-0.5 rounded-full border border-amber-300 bg-amber-50 text-amber-800 text-[10px] font-bold tracking-wide">
-                    Awaiting Review
+                  <span
+                    className={`px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide ${
+                      isManagement
+                        ? "border-indigo-300 bg-indigo-50 text-indigo-800"
+                        : "border-amber-300 bg-amber-50 text-amber-800"
+                    }`}
+                  >
+                    {isManagement
+                      ? "Awaiting Executive Review"
+                      : "Awaiting Review"}
                   </span>
                   <div className="text-right">
                     <span className="font-extrabold text-slate-900 text-xs sm:text-sm">
