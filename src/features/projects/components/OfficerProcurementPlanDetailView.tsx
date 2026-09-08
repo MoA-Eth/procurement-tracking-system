@@ -95,6 +95,10 @@ export function OfficerProcurementPlanDetailView({
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const isMultiOfficerProject =
+    (project.assignedOfficers?.length ?? 0) > 1 ||
+    (project.assignedOfficerIds?.length ?? 0) > 1;
+
   const versionNumber = getCurrentPlanVersionNumber(
     currentPlan.reference || currentPlan.id || "",
   );
@@ -315,6 +319,32 @@ export function OfficerProcurementPlanDetailView({
                 •
               </span>
               <span>{activities.length} Activities</span>
+              {isMultiOfficerProject && currentPlan.createdByName && (
+                <>
+                  <span aria-hidden="true" className="text-slate-300">
+                    •
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-200">
+                    Created by:{" "}
+                    <strong className="font-semibold text-slate-800">
+                      {currentPlan.createdByName}
+                    </strong>
+                  </span>
+                </>
+              )}
+              {isMultiOfficerProject && currentPlan.updatedByName && (
+                <>
+                  <span aria-hidden="true" className="text-slate-300">
+                    •
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-900 border border-emerald-200">
+                    Last edited by:{" "}
+                    <strong className="font-semibold text-emerald-950">
+                      {currentPlan.updatedByName}
+                    </strong>
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -682,6 +712,7 @@ export function OfficerProcurementPlanDetailView({
                     key={activity.reference}
                     activity={activity}
                     canEdit={activePlanStatus === "Draft" || isReturned}
+                    isMultiOfficer={isMultiOfficerProject}
                     editHref={
                       "/workspace/projects?project=" +
                       encodeURIComponent(project.code) +
@@ -772,11 +803,13 @@ function ActivityRow({
   canEdit = true,
   editHref,
   href,
+  isMultiOfficer = false,
 }: {
   activity: PlanActivity;
   canEdit?: boolean;
   editHref: string;
   href: string;
+  isMultiOfficer?: boolean;
 }) {
   return (
     <tr className="even:bg-[#fbfcff] hover:bg-[#f7fbf9] transition-colors">
@@ -785,6 +818,30 @@ function ActivityRow({
       </td>
       <td className="px-3 py-2.5 align-top text-[10px] font-medium leading-4 text-slate-700 wrap-break-word">
         <p className="wrap-break-word line-clamp-2">{activity.description}</p>
+        {isMultiOfficer && (activity.createdByName || activity.updatedByName) && (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-slate-400">
+            {activity.createdByName && (
+              <span>
+                Created by{" "}
+                <span className="font-semibold text-slate-600">
+                  {activity.createdByName}
+                </span>
+              </span>
+            )}
+            {activity.updatedByName &&
+              activity.updatedByName !== activity.createdByName && (
+                <>
+                  <span>•</span>
+                  <span>
+                    Edited by{" "}
+                    <span className="font-semibold text-slate-600">
+                      {activity.updatedByName}
+                    </span>
+                  </span>
+                </>
+              )}
+          </div>
+        )}
       </td>
       <td className="px-3 py-2.5 align-top text-[10px] text-slate-500">
         {activity.category}

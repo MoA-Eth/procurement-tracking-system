@@ -75,6 +75,15 @@ export interface BackendActivity {
     title: string;
     project?: { id: string; code: string; name: string };
   };
+  createdById?: string;
+  creator?: { id: string; name: string; displayName?: string; email?: string };
+  updatedById?: string;
+  updatedByUser?: {
+    id: string;
+    name: string;
+    displayName?: string;
+    email?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }

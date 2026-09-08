@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   fetchPlans,
   returnPlanForRevision,
@@ -95,9 +95,6 @@ export function CommitteeProgressView({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [sectorFilter, setSectorFilter] = useState<string>("ALL");
-  const [activeTab, setActiveTab] = useState<
-    "ALL" | "COMMITTEE" | "MANAGEMENT" | "REVISIONS"
-  >("ALL");
 
   // Selected item for Detailed Decision Inspector
   const [selectedPlan, setSelectedPlan] = useState<VoteProgressItem | null>(
@@ -353,8 +350,58 @@ export function CommitteeProgressView({
     ? searchParams.get("planId") || searchParams.get("plan")
     : null;
 
+  const dismissedPlanIdRef = useRef<string | null>(null);
+
+  const handleInspectPlan = useCallback((item: VoteProgressItem) => {
+    dismissedPlanIdRef.current = null;
+    setSelectedPlan(item);
+    if (typeof window !== "undefined") {
+      window.history.pushState(
+        null,
+        "",
+        `/workspace/vote-progress?plan=${encodeURIComponent(item.planNumber || item.id)}`,
+      );
+    }
+  }, []);
+
+  const handleBackToOverview = useCallback(() => {
+    dismissedPlanIdRef.current =
+      selectedPlan?.id || selectedPlan?.planNumber || "dismissed";
+    setSelectedPlan(null);
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", "/workspace/vote-progress");
+    }
+  }, [selectedPlan]);
+
+  // Listen to browser popstate (browser back/forward buttons)
   useEffect(() => {
-    if (planIdFromQuery && items.length > 0) {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const planParam = urlParams.get("plan") || urlParams.get("planId");
+      if (!planParam) {
+        setSelectedPlan(null);
+      } else if (items.length > 0) {
+        const target = items.find(
+          (it) =>
+            it.id === planParam ||
+            it.planNumber.toLowerCase() === planParam.toLowerCase() ||
+            it.planTitle.toLowerCase().includes(planParam.toLowerCase()),
+        );
+        if (target) {
+          setSelectedPlan(target);
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [items]);
+
+  useEffect(() => {
+    if (
+      planIdFromQuery &&
+      items.length > 0 &&
+      dismissedPlanIdRef.current !== planIdFromQuery
+    ) {
       const target = items.find(
         (it) =>
           it.id === planIdFromQuery ||
@@ -378,6 +425,7 @@ export function CommitteeProgressView({
         customEvent.detail.href === "/workspace/vote-progress" ||
         customEvent.detail.href === "/workspace/committee-progress"
       ) {
+        dismissedPlanIdRef.current = null;
         setSelectedPlan(null);
         setRevisionModalPlan(null);
         setResendComment("");
@@ -457,25 +505,9 @@ export function CommitteeProgressView({
       const matchesSector =
         sectorFilter === "ALL" || item.sector === sectorFilter;
 
-      if (!matchesSearch || !matchesStatus || !matchesSector) return false;
-
-      if (activeTab === "COMMITTEE") {
-        return true;
-      }
-      if (activeTab === "MANAGEMENT") {
-        return item.hasAdvancedToManagement;
-      }
-      if (activeTab === "REVISIONS") {
-        return (
-          item.overallStatus === "Rejected" ||
-          item.overallStatus === "Returned for Revision" ||
-          item.committeeStatus === "Rejected" ||
-          item.managementStatus === "Rejected"
-        );
-      }
-      return true;
+      return matchesSearch && matchesStatus && matchesSector;
     });
-  }, [items, searchTerm, statusFilter, sectorFilter, activeTab]);
+  }, [items, searchTerm, statusFilter, sectorFilter]);
 
   // Section A items: All plans in committee voting or beyond
   const committeeItems = useMemo(() => {
@@ -529,7 +561,7 @@ export function CommitteeProgressView({
         </Link>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
         <button
-          onClick={() => setSelectedPlan(null)}
+          onClick={handleBackToOverview}
           className={`transition-colors cursor-pointer ${
             selectedPlan
               ? "text-slate-500 hover:text-slate-900"
@@ -556,7 +588,7 @@ export function CommitteeProgressView({
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-4">
               <div className="space-y-1.5">
                 <button
-                  onClick={() => setSelectedPlan(null)}
+                  onClick={handleBackToOverview}
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer mb-1"
                 >
                   <ArrowLeft className="h-4 w-4" /> Back to Vote Progress
@@ -822,7 +854,7 @@ export function CommitteeProgressView({
                                   {parsed.rejectedActivityRefs.map((ref) => (
                                     <Link
                                       key={ref}
-                                      href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}&activity=${encodeURIComponent(ref)}`}
+                                      href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}&activity=${encodeURIComponent(ref)}&from=vote-progress`}
                                       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-mono font-bold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-2xs hover:shadow-xs transition-all cursor-pointer group"
                                       title={`Click to open Director Review focused on activity ${ref}`}
                                     >
@@ -867,7 +899,7 @@ export function CommitteeProgressView({
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-[#0A3C2F] flex items-center justify-center font-bold">
                     <Building2 className="h-4.5 w-4.5" />
                   </div>
                   <div>
@@ -969,7 +1001,7 @@ export function CommitteeProgressView({
                   {selectedPlan.managementComment && (
                     <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-1.5">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                        <MessageSquare className="h-3.5 w-3.5 text-indigo-700" />
+                        <MessageSquare className="h-3.5 w-3.5 text-[#0A3C2F]" />
                         <span>Executive Review Comments & Directives:</span>
                       </div>
                       <p className="text-xs text-slate-700 italic leading-relaxed pl-5">
@@ -1036,7 +1068,7 @@ export function CommitteeProgressView({
                 </div>
 
                 <Link
-                  href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}`}
+                  href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}&from=vote-progress`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold transition-colors shadow-2xs"
                 >
                   <span>Open Full Plan Review</span>
@@ -1116,7 +1148,7 @@ export function CommitteeProgressView({
                           </td>
                           <td className="py-2.5 px-3 text-center">
                             <Link
-                              href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}&activity=${encodeURIComponent(ref)}`}
+                              href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}&activity=${encodeURIComponent(ref)}&from=vote-progress`}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-[#0A3C2F] hover:text-white text-slate-700 transition-colors shadow-2xs"
                             >
                               <span>Take to Activity</span>
@@ -1257,420 +1289,358 @@ export function CommitteeProgressView({
             </div>
           </div>
 
-          {/* TAB BAR & FILTER / SEARCH CONTROLS */}
+          {/* FILTER / SEARCH CONTROLS */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-              <button
-                onClick={() => setActiveTab("ALL")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-colors whitespace-nowrap cursor-pointer ${
-                  activeTab === "ALL"
-                    ? "bg-[#0A3C2F] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                All Vote Streams ({items.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("COMMITTEE")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-colors whitespace-nowrap cursor-pointer ${
-                  activeTab === "COMMITTEE"
-                    ? "bg-[#0A3C2F] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                Section A: Committee ({committeeItems.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("MANAGEMENT")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-colors whitespace-nowrap cursor-pointer ${
-                  activeTab === "MANAGEMENT"
-                    ? "bg-[#0A3C2F] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                Section B: Management ({managementItems.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("REVISIONS")}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-colors whitespace-nowrap cursor-pointer ${
-                  activeTab === "REVISIONS"
-                    ? "bg-rose-700 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                Revisions ({stats.needsRevision})
-              </button>
+            <div className="relative min-w-56 flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search plan number, title or project..."
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:border-[#0A3C2F] outline-none"
+              />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative min-w-56 flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search plan number, title or project..."
-                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:border-[#0A3C2F] outline-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-xl text-xs">
-                <Filter className="h-3 w-3 text-slate-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-transparent font-semibold text-slate-700 outline-none text-xs"
-                >
-                  <option value="ALL">All Statuses</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
-                  <option value="Pending Approval">Pending Approval</option>
-                  <option value="Returned for Revision">
-                    Returned for Revision
-                  </option>
-                </select>
-              </div>
+            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-xl text-xs">
+              <Filter className="h-3 w-3 text-slate-400" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-transparent font-semibold text-slate-700 outline-none text-xs"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Pending Approval">Pending Approval</option>
+                <option value="Returned for Revision">
+                  Returned for Revision
+                </option>
+              </select>
             </div>
           </div>
 
           {/* SECTION A: ENDORSEMENT COMMITTEE PROGRESS TABLE */}
-          {(activeTab === "ALL" ||
-            activeTab === "COMMITTEE" ||
-            activeTab === "REVISIONS") && (
-            <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
-              <div className="p-4 bg-emerald-50/60 border-b border-emerald-100/80 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-[#0A3C2F] text-white flex items-center justify-center font-bold text-xs">
-                    <Users className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold text-[#0A3C2F] uppercase tracking-wider">
-                      Section A: Endorsement Committee Progress
-                    </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Tracks 5-member Endorsement Committee deliberations. 3
-                      approvals trigger auto-advancement to Executive
-                      Management.
-                    </p>
-                  </div>
+          <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
+            <div className="p-4 bg-emerald-50/60 border-b border-emerald-100/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-[#0A3C2F] text-white flex items-center justify-center font-bold text-xs">
+                  <Users className="h-4 w-4" />
                 </div>
-                <span className="text-xs font-bold text-[#0A3C2F]">
-                  {committeeItems.length} Plans
-                </span>
+                <div>
+                  <h3 className="text-xs font-extrabold text-[#0A3C2F] uppercase tracking-wider">
+                    Section A: Endorsement Committee Progress
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Tracks 5-member Endorsement Committee deliberations. 3
+                    approvals trigger auto-advancement to Executive Management.
+                  </p>
+                </div>
               </div>
+              <span className="text-xs font-bold text-[#0A3C2F]">
+                {committeeItems.length} Plans
+              </span>
+            </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-240">
-                  <thead>
-                    <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
-                      <th className="py-3 px-4 min-w-36">Plan Number</th>
-                      <th className="py-3 px-4 min-w-56">
-                        Plan Title & Project
-                      </th>
-                      <th className="py-3 px-4 min-w-32">Total Budget</th>
-                      <th className="py-3 px-4 text-center min-w-44">
-                        Committee Votes
-                      </th>
-                      <th className="py-3 px-4 text-center min-w-36">
-                        Endorsement Status
-                      </th>
-                      <th className="py-3 px-4 text-center min-w-28">
-                        Actions
-                      </th>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-240">
+                <thead>
+                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+                    <th className="py-3 px-4 min-w-36">Plan Number</th>
+                    <th className="py-3 px-4 min-w-56">Plan Title & Project</th>
+                    <th className="py-3 px-4 min-w-32">Total Budget</th>
+                    <th className="py-3 px-4 text-center min-w-44">
+                      Committee Votes
+                    </th>
+                    <th className="py-3 px-4 text-center min-w-36">
+                      Endorsement Status
+                    </th>
+                    <th className="py-3 px-4 text-center min-w-28">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                  {committeeItems.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-10 text-center text-slate-500"
+                      >
+                        <FileText className="mx-auto h-7 w-7 text-slate-300 mb-1.5" />
+                        <p className="font-semibold text-slate-700 text-xs">
+                          No committee records match current filters
+                        </p>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                    {committeeItems.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="py-10 text-center text-slate-500"
-                        >
-                          <FileText className="mx-auto h-7 w-7 text-slate-300 mb-1.5" />
-                          <p className="font-semibold text-slate-700 text-xs">
-                            No committee records match current filters
+                  ) : (
+                    committeeItems.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-slate-50/70 transition-colors"
+                      >
+                        {/* Plan Number */}
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">
+                          {item.planNumber}
+                        </td>
+
+                        {/* Plan Title & Project */}
+                        <td className="py-3 px-4 min-w-56 max-w-xs">
+                          <p className="font-bold text-slate-950 text-xs leading-snug line-clamp-1">
+                            {item.planTitle}
+                          </p>
+                          <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                            {item.projectName}
                           </p>
                         </td>
-                      </tr>
-                    ) : (
-                      committeeItems.map((item) => (
-                        <tr
-                          key={item.id}
-                          className="hover:bg-slate-50/70 transition-colors"
-                        >
-                          {/* Plan Number */}
-                          <td className="py-3 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">
-                            {item.planNumber}
-                          </td>
 
-                          {/* Plan Title & Project */}
-                          <td className="py-3 px-4 min-w-56 max-w-xs">
-                            <p className="font-bold text-slate-950 text-xs leading-snug line-clamp-1">
-                              {item.planTitle}
-                            </p>
-                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
-                              {item.projectName}
-                            </p>
-                          </td>
+                        {/* Total Budget */}
+                        <td className="py-3 px-4 font-mono font-semibold text-slate-800 whitespace-nowrap">
+                          {item.currency}{" "}
+                          {item.totalBudget.toLocaleString("en-US", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </td>
 
-                          {/* Total Budget */}
-                          <td className="py-3 px-4 font-mono font-semibold text-slate-800 whitespace-nowrap">
-                            {item.currency}{" "}
-                            {item.totalBudget.toLocaleString("en-US", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </td>
-
-                          {/* Committee Members Voting Boxes */}
-                          <td className="py-3 px-4 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              {item.memberVotes.map((member, idx) => {
-                                const boxNum = idx + 1;
-                                if (member.voteStatus === "Approved") {
-                                  return (
-                                    <div
-                                      key={member.id}
-                                      title={`${member.name}: Approved`}
-                                      className="h-6 w-6 rounded bg-[#0A3C2F] text-white flex items-center justify-center text-[11px] font-bold"
-                                    >
-                                      ✓
-                                    </div>
-                                  );
-                                }
-                                if (member.voteStatus === "Rejected") {
-                                  return (
-                                    <div
-                                      key={member.id}
-                                      title={`${member.name}: Rejected`}
-                                      className="h-6 w-6 rounded bg-rose-700 text-white flex items-center justify-center text-[11px] font-bold"
-                                    >
-                                      ✕
-                                    </div>
-                                  );
-                                }
+                        {/* Committee Members Voting Boxes */}
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {item.memberVotes.map((member, idx) => {
+                              const boxNum = idx + 1;
+                              if (member.voteStatus === "Approved") {
                                 return (
                                   <div
                                     key={member.id}
-                                    title={`${member.name}: Pending Vote`}
-                                    className="h-6 w-6 rounded bg-slate-100 text-slate-500 flex items-center justify-center text-[11px] font-semibold"
+                                    title={`${member.name}: Approved`}
+                                    className="h-6 w-6 rounded bg-[#0A3C2F] text-white flex items-center justify-center text-[11px] font-bold"
                                   >
-                                    {boxNum}
+                                    ✓
                                   </div>
                                 );
-                              })}
-                            </div>
-                          </td>
-
-                          {/* Endorsement Status */}
-                          <td className="py-3 px-4 text-center whitespace-nowrap">
-                            <span
-                              className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                                item.committeeStatus === "Approved"
-                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                  : item.committeeStatus === "Rejected"
-                                    ? "bg-rose-50 text-rose-800 border-rose-200"
-                                    : "bg-blue-50 text-blue-800 border-blue-200"
-                              }`}
-                            >
-                              {item.committeeStatus === "Approved"
-                                ? "Endorsed (3+ Approved)"
-                                : item.committeeStatus === "Rejected"
-                                  ? "Committee Rejected"
-                                  : `Pending (${item.approvedCount}/5)`}
-                            </span>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="py-3 px-4 text-center whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                onClick={() => setSelectedPlan(item)}
-                                title="Inspect voting details"
-                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                              </button>
-
-                              {isDirector &&
-                                item.committeeStatus === "Rejected" &&
-                                item.rawStatus !== "RETURNED_FOR_REVISION" && (
-                                  <button
-                                    onClick={() => {
-                                      setRevisionModalPlan(item);
-                                      setRevisionInstructions("");
-                                    }}
-                                    title="Return plan to Officer for revision"
-                                    className="flex h-7 items-center gap-1 px-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer text-[11px] font-bold"
+                              }
+                              if (member.voteStatus === "Rejected") {
+                                return (
+                                  <div
+                                    key={member.id}
+                                    title={`${member.name}: Rejected`}
+                                    className="h-6 w-6 rounded bg-rose-700 text-white flex items-center justify-center text-[11px] font-bold"
                                   >
-                                    <RotateCcw className="h-3 w-3" />
-                                    <span>Return</span>
-                                  </button>
-                                )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+                                    ✕
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div
+                                  key={member.id}
+                                  title={`${member.name}: Pending Vote`}
+                                  className="h-6 w-6 rounded bg-slate-100 text-slate-500 flex items-center justify-center text-[11px] font-semibold"
+                                >
+                                  {boxNum}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </td>
 
-          {/* SECTION B: EXECUTIVE MANAGEMENT PROGRESS TABLE */}
-          {(activeTab === "ALL" ||
-            activeTab === "MANAGEMENT" ||
-            activeTab === "REVISIONS") && (
-            <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
-              <div className="p-4 bg-indigo-50/60 border-b border-indigo-100/80 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-indigo-700 text-white flex items-center justify-center font-bold text-xs">
-                    <Building2 className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold text-indigo-950 uppercase tracking-wider">
-                      Section B: Executive Management Progress
-                    </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Final executive authorization gate after Endorsement
-                      Committee review. Management provides plan/activity review
-                      and approval/rejection.
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-bold text-indigo-900">
-                  {managementItems.length} Plans
-                </span>
-              </div>
+                        {/* Endorsement Status */}
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                              item.committeeStatus === "Approved"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                : item.committeeStatus === "Rejected"
+                                  ? "bg-rose-50 text-rose-800 border-rose-200"
+                                  : "bg-blue-50 text-blue-800 border-blue-200"
+                            }`}
+                          >
+                            {item.committeeStatus === "Approved"
+                              ? "Endorsed (3+ Approved)"
+                              : item.committeeStatus === "Rejected"
+                                ? "Committee Rejected"
+                                : `Pending (${item.approvedCount}/5)`}
+                          </span>
+                        </td>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-240">
-                  <thead>
-                    <tr className="bg-slate-900 text-white text-[11px] font-extrabold uppercase tracking-wider">
-                      <th className="py-3 px-4 min-w-36">Plan Number</th>
-                      <th className="py-3 px-4 min-w-56">
-                        Plan Title & Project
-                      </th>
-                      <th className="py-3 px-4 min-w-32">Total Budget</th>
-                      <th className="py-3 px-4 text-center min-w-36">
-                        Committee Endorsement
-                      </th>
-                      <th className="py-3 px-4 text-center min-w-40">
-                        Management Status
-                      </th>
-                      <th className="py-3 px-4 text-center min-w-28">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                    {managementItems.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={6}
-                          className="py-10 text-center text-slate-500"
-                        >
-                          <Building2 className="mx-auto h-7 w-7 text-slate-300 mb-1.5" />
-                          <p className="font-semibold text-slate-700 text-xs">
-                            No plans currently in Executive Management review
-                          </p>
+                        {/* Actions */}
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleInspectPlan(item)}
+                              title="Inspect voting details"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </button>
+
+                            {isDirector &&
+                              item.committeeStatus === "Rejected" &&
+                              item.rawStatus !== "RETURNED_FOR_REVISION" && (
+                                <button
+                                  onClick={() => {
+                                    setRevisionModalPlan(item);
+                                    setRevisionInstructions("");
+                                  }}
+                                  title="Return plan to Officer for revision"
+                                  className="flex h-7 items-center gap-1 px-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer text-[11px] font-bold"
+                                >
+                                  <RotateCcw className="h-3 w-3" />
+                                  <span>Return</span>
+                                </button>
+                              )}
+                          </div>
                         </td>
                       </tr>
-                    ) : (
-                      managementItems.map((item) => (
-                        <tr
-                          key={item.id}
-                          className="hover:bg-slate-50/70 transition-colors"
-                        >
-                          {/* Plan Number */}
-                          <td className="py-3 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">
-                            {item.planNumber}
-                          </td>
-
-                          {/* Plan Title & Project */}
-                          <td className="py-3 px-4 min-w-56 max-w-xs">
-                            <p className="font-bold text-slate-950 text-xs leading-snug line-clamp-1">
-                              {item.planTitle}
-                            </p>
-                            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
-                              {item.projectName}
-                            </p>
-                          </td>
-
-                          {/* Total Budget */}
-                          <td className="py-3 px-4 font-mono font-semibold text-slate-800 whitespace-nowrap">
-                            {item.currency}{" "}
-                            {item.totalBudget.toLocaleString("en-US", {
-                              maximumFractionDigits: 0,
-                            })}
-                          </td>
-
-                          {/* Committee Result */}
-                          <td className="py-3 px-4 text-center whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                              <span>{item.approvedCount}/5 Endorsed</span>
-                            </span>
-                          </td>
-
-                          {/* Management Status */}
-                          <td className="py-3 px-4 text-center whitespace-nowrap">
-                            <span
-                              className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                                item.managementStatus === "Approved"
-                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                  : item.managementStatus === "Rejected"
-                                    ? "bg-rose-50 text-rose-800 border-rose-200"
-                                    : "bg-amber-50 text-amber-800 border-amber-200"
-                              }`}
-                            >
-                              {item.managementStatus === "Approved" &&
-                                "Management Approved"}
-                              {item.managementStatus === "Rejected" &&
-                                "Management Rejected"}
-                              {item.managementStatus === "Awaiting Review" &&
-                                "Awaiting Approval"}
-                              {item.managementStatus === "Not Reached" &&
-                                "Pending Committee"}
-                            </span>
-                          </td>
-
-                          {/* Actions */}
-                          <td className="py-3 px-4 text-center whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                onClick={() => setSelectedPlan(item)}
-                                title="Inspect executive review details"
-                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors cursor-pointer shadow-2xs"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                              </button>
-
-                              {isDirector &&
-                                item.managementStatus === "Rejected" &&
-                                item.rawStatus !== "RETURNED_FOR_REVISION" && (
-                                  <button
-                                    onClick={() => {
-                                      setRevisionModalPlan(item);
-                                      setRevisionInstructions("");
-                                    }}
-                                    title="Return plan to Officer for revision"
-                                    className="flex h-7 items-center gap-1 px-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer text-[11px] font-bold"
-                                  >
-                                    <RotateCcw className="h-3 w-3" />
-                                    <span>Return</span>
-                                  </button>
-                                )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
+          </div>
+
+          {/* SECTION B: EXECUTIVE MANAGEMENT PROGRESS TABLE */}
+          <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
+            <div className="p-4 bg-emerald-50/60 border-b border-emerald-100/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-[#0A3C2F] text-white flex items-center justify-center font-bold text-xs">
+                  <Building2 className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-[#0A3C2F] uppercase tracking-wider">
+                    Section B: Executive Management Progress
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Final executive authorization gate after Endorsement
+                    Committee review. Management provides plan/activity review
+                    and approval/rejection.
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-[#0A3C2F]">
+                {managementItems.length} Plans
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-240">
+                <thead>
+                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+                    <th className="py-3 px-4 min-w-36">Plan Number</th>
+                    <th className="py-3 px-4 min-w-56">Plan Title & Project</th>
+                    <th className="py-3 px-4 min-w-32">Total Budget</th>
+                    <th className="py-3 px-4 text-center min-w-36">
+                      Committee Endorsement
+                    </th>
+                    <th className="py-3 px-4 text-center min-w-40">
+                      Management Status
+                    </th>
+                    <th className="py-3 px-4 text-center min-w-28">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                  {managementItems.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-10 text-center text-slate-500"
+                      >
+                        <Building2 className="mx-auto h-7 w-7 text-slate-300 mb-1.5" />
+                        <p className="font-semibold text-slate-700 text-xs">
+                          No plans currently in Executive Management review
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    managementItems.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-slate-50/70 transition-colors"
+                      >
+                        {/* Plan Number */}
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">
+                          {item.planNumber}
+                        </td>
+
+                        {/* Plan Title & Project */}
+                        <td className="py-3 px-4 min-w-56 max-w-xs">
+                          <p className="font-bold text-slate-950 text-xs leading-snug line-clamp-1">
+                            {item.planTitle}
+                          </p>
+                          <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+                            {item.projectName}
+                          </p>
+                        </td>
+
+                        {/* Total Budget */}
+                        <td className="py-3 px-4 font-mono font-semibold text-slate-800 whitespace-nowrap">
+                          {item.currency}{" "}
+                          {item.totalBudget.toLocaleString("en-US", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </td>
+
+                        {/* Committee Result */}
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                            <span>{item.approvedCount}/5 Endorsed</span>
+                          </span>
+                        </td>
+
+                        {/* Management Status */}
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                              item.managementStatus === "Approved"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                : item.managementStatus === "Rejected"
+                                  ? "bg-rose-50 text-rose-800 border-rose-200"
+                                  : "bg-amber-50 text-amber-800 border-amber-200"
+                            }`}
+                          >
+                            {item.managementStatus === "Approved" &&
+                              "Management Approved"}
+                            {item.managementStatus === "Rejected" &&
+                              "Management Rejected"}
+                            {item.managementStatus === "Awaiting Review" &&
+                              "Awaiting Approval"}
+                            {item.managementStatus === "Not Reached" &&
+                              "Pending Committee"}
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleInspectPlan(item)}
+                              title="Inspect executive review details"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </button>
+
+                            {isDirector &&
+                              item.managementStatus === "Rejected" &&
+                              item.rawStatus !== "RETURNED_FOR_REVISION" && (
+                                <button
+                                  onClick={() => {
+                                    setRevisionModalPlan(item);
+                                    setRevisionInstructions("");
+                                  }}
+                                  title="Return plan to Officer for revision"
+                                  className="flex h-7 items-center gap-1 px-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer text-[11px] font-bold"
+                                >
+                                  <RotateCcw className="h-3 w-3" />
+                                  <span>Return</span>
+                                </button>
+                              )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 

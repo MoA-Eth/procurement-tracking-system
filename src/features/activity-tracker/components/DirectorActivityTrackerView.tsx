@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { StatusText } from "../../../components/dashboard/StatusText";
 import {
@@ -234,8 +234,77 @@ export function DirectorActivityTrackerView({
     [projects, effectiveActivityRecords, trackingRecords],
   );
 
+  const dismissedActivityRef = useRef<string | null>(null);
+
+  const handleSelectActivity = (item: DirectorTrackedActivityItem) => {
+    dismissedActivityRef.current = null;
+    setSelectedActivity(item);
+    if (typeof window !== "undefined") {
+      window.history.pushState(
+        {},
+        "",
+        `/workspace/activity-tracker?activity=${encodeURIComponent(item.activity.reference)}`,
+      );
+    }
+  };
+
+  const handleBackFromDetail = () => {
+    dismissedActivityRef.current =
+      selectedActivity?.activity?.reference ||
+      selectedActivityReference ||
+      "dismissed";
+    setSelectedActivity(null);
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", "/workspace/activity-tracker");
+    }
+  };
+
   useEffect(() => {
-    if (selectedActivityReference && items.length > 0 && !selectedActivity) {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const actRef = params.get("activity");
+      if (actRef && items.length > 0) {
+        const match = items.find(
+          (it) =>
+            it.activity.reference.toLowerCase() === actRef.toLowerCase() ||
+            it.activity.description
+              .toLowerCase()
+              .includes(actRef.toLowerCase()) ||
+            it.tracking.activityReference.toLowerCase() ===
+              actRef.toLowerCase() ||
+            (it.activity as any).id === actRef ||
+            (it as any).id === actRef,
+        );
+        if (match) {
+          dismissedActivityRef.current = null;
+          setSelectedActivity(match);
+          return;
+        }
+      }
+      setSelectedActivity(null);
+      dismissedActivityRef.current = null;
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [items]);
+
+  useEffect(() => {
+    if (
+      selectedActivityReference &&
+      selectedActivityReference !== dismissedActivityRef.current
+    ) {
+      dismissedActivityRef.current = null;
+    }
+  }, [selectedActivityReference]);
+
+  useEffect(() => {
+    if (
+      selectedActivityReference &&
+      items.length > 0 &&
+      !selectedActivity &&
+      dismissedActivityRef.current !== selectedActivityReference
+    ) {
       const match = items.find(
         (it) =>
           it.activity.reference.toLowerCase() ===
@@ -261,7 +330,7 @@ export function DirectorActivityTrackerView({
     return (
       <DirectorActivityDetailView
         item={selectedActivity}
-        onBack={() => setSelectedActivity(null)}
+        onBack={handleBackFromDetail}
       />
     );
   }
@@ -269,7 +338,7 @@ export function DirectorActivityTrackerView({
   return (
     <DirectorActivityTrackerList
       items={items}
-      onViewActivity={setSelectedActivity}
+      onViewActivity={handleSelectActivity}
     />
   );
 }

@@ -53,6 +53,7 @@ interface DirectorActivitiesListViewProps {
   plan: ProcurementPlan;
   project: ProjectItem;
   parentSection?: "projects" | "plan-for-review" | "activities";
+  from?: string;
   userRole?: string;
   targetActivityRef?: string;
   onBackClick: () => void;
@@ -292,6 +293,7 @@ export function DirectorActivitiesListView({
   plan,
   project,
   parentSection = "plan-for-review",
+  from,
   userRole,
   targetActivityRef,
   onBackClick,
@@ -826,7 +828,11 @@ export function DirectorActivitiesListView({
           onClick={onBackClick}
           className="text-slate-500 hover:text-slate-900 transition-colors cursor-pointer shrink-0"
         >
-          {parentSection === "plan-for-review" ? "Plan for Review" : "Projects"}
+          {from === "vote-progress"
+            ? "Vote Progress"
+            : parentSection === "plan-for-review"
+              ? "Plan for Review"
+              : "Projects"}
         </button>
         <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
         <button
@@ -1653,7 +1659,12 @@ export function DirectorActivitiesListView({
                   onClick={onBackClick}
                   className="inline-flex items-center gap-1 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer"
                 >
-                  <ArrowLeft className="h-3.5 w-3.5" /> Back
+                  <ArrowLeft className="h-3.5 w-3.5" />{" "}
+                  {from === "vote-progress"
+                    ? "Back to Vote Progress"
+                    : parentSection === "plan-for-review"
+                      ? "Back to Plans List"
+                      : "Back to Projects"}
                 </button>
                 <span className="text-slate-300">•</span>
                 <span className="font-mono text-xs font-extrabold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">

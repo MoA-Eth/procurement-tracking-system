@@ -109,6 +109,12 @@ export interface ProcurementActivitySummary {
   method: string;
   reference: string;
   status: ProcurementActivityStatus;
+  createdById?: string;
+  createdByName?: string;
+  updatedById?: string;
+  updatedByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SavedOfficerActivityRecord {
@@ -462,6 +468,17 @@ export function mapBackendActivityToProcurementActivitySummary(
     }
   }
 
+  const createdByName =
+    ba.creator?.displayName ||
+    ba.creator?.name ||
+    ba.createdByName ||
+    undefined;
+  const updatedByName =
+    ba.updatedByUser?.displayName ||
+    ba.updatedByUser?.name ||
+    ba.updatedByName ||
+    undefined;
+
   return {
     id: ba.id,
     activityId: ba.id,
@@ -473,6 +490,12 @@ export function mapBackendActivityToProcurementActivitySummary(
     method: ba.procurementMethod?.label || ba.procurementMethod?.code || "RFB",
     reference: ba.reference || ba.id,
     status,
+    createdById: ba.createdById || ba.creator?.id,
+    createdByName,
+    updatedById: ba.updatedById || ba.updatedByUser?.id,
+    updatedByName,
+    createdAt: ba.createdAt,
+    updatedAt: ba.updatedAt,
     details: {
       componentAllocations: (ba.components || []).map((c: any) => ({
         id: c.component || "comp-1",

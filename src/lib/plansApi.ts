@@ -83,6 +83,12 @@ export interface BackendPlanActivity {
     }[];
   }[];
   status?: string;
+  createdById?: string;
+  creator?: { id: string; name: string; displayName?: string; email?: string };
+  updatedById?: string;
+  updatedByUser?: { id: string; name: string; displayName?: string; email?: string };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BackendComment {
@@ -145,6 +151,8 @@ export interface BackendPlan {
   comments?: BackendComment[];
   createdBy?: string;
   creator?: { id: string; name: string; displayName?: string; email?: string };
+  updatedById?: string;
+  updatedByUser?: { id: string; name: string; displayName?: string; email?: string } | null;
   createdAt: string;
   updatedAt?: string;
   activities?: BackendPlanActivity[];
@@ -717,6 +725,17 @@ export function mapBackendPlanToOfficerPlanSummary(
         roadmap.find((st: any) => st.status === "Not Started") ||
         roadmap[0];
 
+      const createdByName =
+        a.creator?.displayName ||
+        a.creator?.name ||
+        a.createdByName ||
+        undefined;
+      const updatedByName =
+        a.updatedByUser?.displayName ||
+        a.updatedByUser?.name ||
+        a.updatedByName ||
+        undefined;
+
       return {
         id: a.id,
         activityId: a.id,
@@ -739,6 +758,12 @@ export function mapBackendPlanToOfficerPlanSummary(
               : a.status === "DELAYED"
                 ? "Delayed"
                 : "Not Started",
+        createdById: a.createdById || a.creator?.id,
+        createdByName,
+        updatedById: a.updatedById || a.updatedByUser?.id,
+        updatedByName,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
         details: {
           lots: a.lots || [],
           componentAllocations: (a.components || []).map((c: any) => ({
@@ -797,6 +822,18 @@ export function mapBackendPlanToOfficerPlanSummary(
     organizationRegion: backendPlan.organization || "Federal",
     description: backendPlan.description || undefined,
     planActivities,
+    createdById: backendPlan.createdBy,
+    createdByName:
+      backendPlan.creator?.displayName ||
+      backendPlan.creator?.name ||
+      "Assigned Officer",
+    updatedById: backendPlan.updatedById || undefined,
+    updatedByName:
+      backendPlan.updatedByUser?.displayName ||
+      backendPlan.updatedByUser?.name ||
+      undefined,
+    createdAt: backendPlan.createdAt,
+    updatedAt: backendPlan.updatedAt,
     planPeriod: backendPlan.periodStart
       ? {
           from: {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import type { AuthUser } from "../../../lib/authTypes";
 import { DirectorActivitiesListView } from "../../activities/components/DirectorActivitiesListView";
 import { usePlanForReview } from "./review/usePlanForReview";
@@ -11,13 +12,16 @@ export interface PlanForReviewViewProps {
   user: AuthUser;
   selectedPlanId?: string;
   selectedActivityRef?: string;
+  from?: string;
 }
 
 export function PlanForReviewView({
   user,
   selectedPlanId,
   selectedActivityRef,
+  from,
 }: PlanForReviewViewProps) {
+  const router = useRouter();
   const review = usePlanForReview({
     user,
     selectedPlanId,
@@ -27,19 +31,30 @@ export function PlanForReviewView({
   // VIEW 1: Activity List Table under Particular Plan
   if (review.activitiesPlan) {
     const proj = review.getProjectForPlan(review.activitiesPlan.projectCode);
+    const handleActivitiesBack = () => {
+      if (from === "vote-progress") {
+        router.push(
+          `/workspace/vote-progress?plan=${encodeURIComponent(review.activitiesPlan?.reference || review.activitiesPlan?.planName || review.activitiesPlan?.id || "")}`,
+        );
+      } else {
+        review.closeActivitiesPlan();
+      }
+    };
+
     return (
       <DirectorActivitiesListView
         plan={review.activitiesPlan}
         project={proj}
         parentSection="plan-for-review"
+        from={from}
         userRole={user.role}
         targetActivityRef={selectedActivityRef}
-        onBackClick={() => review.setActivitiesPlan(null)}
+        onBackClick={handleActivitiesBack}
         onApprovePlan={
           user.role === "DIRECTOR"
             ? (p) => {
                 review.handleApprovePlan(p);
-                review.setActivitiesPlan(null);
+                review.closeActivitiesPlan();
               }
             : undefined
         }
@@ -48,7 +63,7 @@ export function PlanForReviewView({
             ? (p, remarks) => {
                 review.setReturnRemarks(remarks);
                 review.handleReturnPlan(p, remarks);
-                review.setActivitiesPlan(null);
+                review.closeActivitiesPlan();
               }
             : undefined
         }
@@ -62,7 +77,7 @@ export function PlanForReviewView({
                   remarks,
                   rejectionDetails,
                 );
-                review.setActivitiesPlan(null);
+                review.closeActivitiesPlan();
               }
             : undefined
         }
@@ -70,7 +85,7 @@ export function PlanForReviewView({
           user.role === "MANAGEMENT"
             ? (p, decision, comment) => {
                 review.handleManagementDecision(p, decision, comment);
-                review.setActivitiesPlan(null);
+                review.closeActivitiesPlan();
               }
             : undefined
         }
@@ -86,7 +101,7 @@ export function PlanForReviewView({
       <PlanRestrictedEditView
         editingPlan={review.editingPlan}
         project={proj}
-        onBackClick={() => review.setEditingPlan(null)}
+        onBackClick={() => review.closeEditingPlan()}
         onSavePlan={review.handleSavePlanEdits}
       />
     );
@@ -99,8 +114,8 @@ export function PlanForReviewView({
         plan={review.selectedPlanForReview}
         userRole={user.role}
         toastMessage={review.toastMessage}
-        onBackClick={() => review.setSelectedPlanForReview(null)}
-        onOpenActivitiesPlan={(p) => review.setActivitiesPlan(p)}
+        onBackClick={() => review.closeSelectedPlanForReview()}
+        onOpenActivitiesPlan={(p) => review.openActivitiesPlan(p)}
         onOpenHistoryModal={(p) => review.setHistoryModalPlan(p)}
         onUpdatePlanName={(newName) => {
           review.setSelectedPlanForReview((prev) =>
@@ -132,7 +147,7 @@ export function PlanForReviewView({
           user.role === "MANAGEMENT"
             ? (p, decision, comment) => {
                 review.handleManagementDecision(p, decision, comment);
-                review.setSelectedPlanForReview(null);
+                review.closeSelectedPlanForReview();
               }
             : undefined
         }
@@ -159,7 +174,7 @@ export function PlanForReviewView({
       setRegionFilter={review.setRegionFilter}
       filteredPlans={review.filteredPlans}
       loading={review.loading}
-      onSelectPlan={(plan) => review.setActivitiesPlan(plan)}
+      onSelectPlan={(plan) => review.openActivitiesPlan(plan)}
       historyModalPlan={review.historyModalPlan}
       setHistoryModalPlan={review.setHistoryModalPlan}
       pendingApprovePlan={review.pendingApprovePlan}

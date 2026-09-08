@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { type ProcurementPlan, parseRejectionDetails } from "../../plansData";
 import {
   fetchPlans,
@@ -221,6 +221,48 @@ export function usePlanForReview({
   const [isCommitteeRejectionModalOpen, setIsCommitteeRejectionModalOpen] =
     useState(false);
 
+  // Track if user explicitly closed the activities/plan view so auto-open doesn't immediately re-open it
+  const dismissedPlanIdRef = useRef<string | null>(null);
+
+  const closeActivitiesPlan = useCallback(() => {
+    dismissedPlanIdRef.current =
+      selectedPlanId || activitiesPlan?.id || "dismissed";
+    setActivitiesPlan(null);
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", "/workspace/plan-for-review");
+    }
+  }, [selectedPlanId, activitiesPlan]);
+
+  const closeSelectedPlanForReview = useCallback(() => {
+    dismissedPlanIdRef.current =
+      selectedPlanId || selectedPlanForReview?.id || "dismissed";
+    setSelectedPlanForReview(null);
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", "/workspace/plan-for-review");
+    }
+  }, [selectedPlanId, selectedPlanForReview]);
+
+  const closeEditingPlan = useCallback(() => {
+    dismissedPlanIdRef.current =
+      selectedPlanId || editingPlan?.id || "dismissed";
+    setEditingPlan(null);
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", "/workspace/plan-for-review");
+    }
+  }, [selectedPlanId, editingPlan]);
+
+  const openActivitiesPlan = useCallback((p: ProcurementPlan) => {
+    dismissedPlanIdRef.current = null;
+    setActivitiesPlan(p);
+    if (typeof window !== "undefined") {
+      window.history.pushState(
+        null,
+        "",
+        `/workspace/plan-for-review?plan=${encodeURIComponent(p.id)}`,
+      );
+    }
+  }, []);
+
   useEffect(() => {
     const handleReset = (event: Event) => {
       const customEvent = event as CustomEvent<{ href?: string }>;
@@ -228,6 +270,7 @@ export function usePlanForReview({
         !customEvent.detail?.href ||
         customEvent.detail.href === "/workspace/plan-for-review"
       ) {
+        dismissedPlanIdRef.current = null;
         setSelectedPlanForReview(null);
         setEditingPlan(null);
         setActivitiesPlan(null);
@@ -239,8 +282,38 @@ export function usePlanForReview({
     return () => window.removeEventListener("pts:sidebar-reset", handleReset);
   }, []);
 
+  // Listen to browser popstate (browser back/forward button)
   useEffect(() => {
-    if (selectedPlanId && plans.length > 0 && !activitiesPlan) {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const planParam = urlParams.get("plan") || urlParams.get("planId");
+      if (!planParam) {
+        setActivitiesPlan(null);
+        setSelectedPlanForReview(null);
+        setEditingPlan(null);
+      } else if (plans.length > 0) {
+        const match = plans.find(
+          (p) =>
+            p.id === planParam ||
+            p.reference?.toLowerCase() === planParam.toLowerCase() ||
+            p.planName?.toLowerCase() === planParam.toLowerCase(),
+        );
+        if (match) {
+          setActivitiesPlan(match);
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [plans]);
+
+  useEffect(() => {
+    if (
+      selectedPlanId &&
+      plans.length > 0 &&
+      !activitiesPlan &&
+      dismissedPlanIdRef.current !== selectedPlanId
+    ) {
       const match = plans.find(
         (p) =>
           p.id === selectedPlanId ||
@@ -803,5 +876,9 @@ export function usePlanForReview({
     filteredPlans,
     getProjectForPlan,
     selectedActivityRef,
+    closeActivitiesPlan,
+    closeSelectedPlanForReview,
+    closeEditingPlan,
+    openActivitiesPlan,
   };
 }
