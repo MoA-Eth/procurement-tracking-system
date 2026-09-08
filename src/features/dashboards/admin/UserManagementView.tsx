@@ -33,7 +33,8 @@ const AUTH_ROLE_LABELS: Record<string, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsement Committee",
-  MANAGEMENT_TEAM: "Management Team",
+  MANAGEMENT: "Management",
+  MANAGEMENT_TEAM: "Management",
   ADMIN: "Administrator",
 };
 
@@ -42,22 +43,14 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
   ProcurementDirector: "Director",
   Administrator: "Administrator",
   EndorsingCommittee: "Endorsement Committee",
-  ManagementTeam: "Management Team",
-  MANAGEMENT_TEAM: "Management Team",
+  ManagementTeam: "Management",
+  MANAGEMENT_TEAM: "Management",
+  MANAGEMENT: "Management",
+  Management: "Management",
   ProjectManager: "Project Manager",
 };
 
 function displayRole(user: ApiUser): string {
-  const roleVal = user.role || "";
-  const authRoleVal = user.authRole || "";
-  if (
-    roleVal === "ManagementTeam" ||
-    roleVal === "MANAGEMENT_TEAM" ||
-    authRoleVal === "MANAGEMENT_TEAM" ||
-    authRoleVal === "ManagementTeam"
-  ) {
-    return "Management Team";
-  }
   const normalized = normalizeUserRole(user.authRole || user.role);
   return (
     AUTH_ROLE_LABELS[normalized] ??
@@ -255,6 +248,7 @@ export function UserManagementView({
         OFFICER: "ProcurementOfficer",
         DIRECTOR: "ProcurementDirector",
         ENDORSING_COMMITTEE: "EndorsingCommittee",
+        MANAGEMENT: "ManagementTeam",
         MANAGEMENT_TEAM: "ManagementTeam",
         ManagementTeam: "ManagementTeam",
         ADMIN: "Administrator",
@@ -288,6 +282,7 @@ export function UserManagementView({
       OFFICER: "ProcurementOfficer",
       DIRECTOR: "ProcurementDirector",
       ENDORSING_COMMITTEE: "EndorsingCommittee",
+      MANAGEMENT: "ManagementTeam",
       MANAGEMENT_TEAM: "ManagementTeam",
       ManagementTeam: "ManagementTeam",
       ADMIN: "Administrator",
@@ -578,8 +573,8 @@ export function UserManagementView({
                   <option value="ENDORSING_COMMITTEE">
                     Endorsement Committee (Committee Review)
                   </option>
-                  <option value="MANAGEMENT_TEAM">
-                    Management Team (Management Oversight)
+                  <option value="MANAGEMENT">
+                    Management (Executive Review &amp; Approval)
                   </option>
                   <option value="ADMIN">
                     Administrator (System Administration / Governance)
@@ -676,9 +671,7 @@ export function UserManagementView({
                   <option value="ENDORSING_COMMITTEE">
                     Endorsement Committee
                   </option>
-                  <option value="MANAGEMENT_TEAM">
-                    Management Team
-                  </option>
+                  <option value="MANAGEMENT">Management</option>
                   <option value="ADMIN">Administrator</option>
                 </select>
 

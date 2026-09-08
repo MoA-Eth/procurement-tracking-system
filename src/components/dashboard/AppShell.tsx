@@ -50,6 +50,7 @@ const roleContext: Record<UserRole, string> = {
   OFFICER: "Procurement Operations",
   DIRECTOR: "Directorate Oversight",
   ENDORSING_COMMITTEE: "Committee Review",
+  MANAGEMENT: "Executive Management",
   MANAGEMENT_TEAM: "Executive Management",
   ADMIN: "System Administration",
 };

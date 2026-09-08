@@ -98,8 +98,8 @@ export default async function WorkspaceSectionPage({
     return <MyDecisionsView user={session.user} />;
   }
 
-  if (section === "committee-progress") {
-    return <CommitteeProgressView />;
+  if (section === "vote-progress" || section === "committee-progress") {
+    return <CommitteeProgressView currentUser={session.user} />;
   }
 
   if (section === "reports") {
@@ -120,9 +120,17 @@ export default async function WorkspaceSectionPage({
 
   if (
     section === "projects" &&
-    (userRole === "DIRECTOR" || userRole === "MANAGEMENT_TEAM")
+    (userRole === "DIRECTOR" ||
+      userRole === "MANAGEMENT" ||
+      userRole === "MANAGEMENT_TEAM")
   ) {
-    return <ProjectsManagementView />;
+    return (
+      <ProjectsManagementView
+        readOnly={
+          userRole === "MANAGEMENT" || userRole === "MANAGEMENT_TEAM"
+        }
+      />
+    );
   }
 
   if (section === "contracts" && userRole === "OFFICER") {
@@ -144,7 +152,11 @@ export default async function WorkspaceSectionPage({
   }
 
   if (section === "activity-tracker") {
-    if (userRole === "DIRECTOR" || userRole === "MANAGEMENT_TEAM") {
+    if (
+      userRole === "DIRECTOR" ||
+      userRole === "MANAGEMENT" ||
+      userRole === "MANAGEMENT_TEAM"
+    ) {
       return (
         <DirectorActivityTrackerView
           selectedActivityReference={

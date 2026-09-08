@@ -198,7 +198,9 @@ export function OfficerProcurementActivityDetailView({
               Audit Trail
             </button>
 
-            {(plan.status === "Draft" || plan.status === "Returned") && (
+            {(plan.status === "Draft" ||
+              plan.status === "Returned" ||
+              plan.status === "Returned for Revision") && (
               <Link
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition"
                 href={

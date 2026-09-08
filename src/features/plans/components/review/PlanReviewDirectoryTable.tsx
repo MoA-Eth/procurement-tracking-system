@@ -80,7 +80,9 @@ export function PlanReviewDirectoryTable({
         <span className="font-bold text-[#0A3C2F]">
           {userRole === "ENDORSING_COMMITTEE"
             ? "Committee Plan for Review"
-            : "Plan for Review"}
+            : userRole === "MANAGEMENT"
+              ? "Management Executive Review"
+              : "Plan for Review"}
         </span>
       </nav>
 
@@ -90,12 +92,16 @@ export function PlanReviewDirectoryTable({
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
             {userRole === "ENDORSING_COMMITTEE"
               ? "Endorsement Committee — Plans for Review"
-              : "Director — Plan for Review"}
+              : userRole === "MANAGEMENT"
+                ? "Executive Management — Plans for Review"
+                : "Director — Plan for Review"}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             {userRole === "ENDORSING_COMMITTEE"
               ? "Review procurement plans awaiting committee endorsement and record your approval or rejection vote."
-              : "Review procurement plans submitted by Officers, examine activities, and approve or return for revision."}
+              : userRole === "MANAGEMENT"
+                ? "Review procurement plans endorsed by the committee and record final executive authorization or rejection."
+                : "Review procurement plans submitted by Officers, examine activities, and approve or return for revision."}
           </p>
         </div>
       </div>
@@ -281,9 +287,15 @@ export function PlanReviewDirectoryTable({
                             ? "bg-amber-50 text-amber-800 border border-amber-200"
                             : plan.status === "Committee Review"
                               ? "bg-blue-50 text-blue-800 border border-blue-200"
-                              : plan.status === "Returned"
-                                ? "bg-rose-50 text-rose-800 border border-rose-200"
-                                : "bg-slate-100 text-slate-700"
+                              : (plan as any).status ===
+                                    "AWAITING_MANAGEMENT_APPROVAL" ||
+                                  plan.status ===
+                                    "Awaiting Management Approval" ||
+                                  plan.status === "Committee Endorsed"
+                                ? "bg-indigo-50 text-indigo-800 border border-indigo-200"
+                                : plan.status === "Returned"
+                                  ? "bg-rose-50 text-rose-800 border border-rose-200"
+                                  : "bg-slate-100 text-slate-700"
                         }`}
                       >
                         {plan.status}

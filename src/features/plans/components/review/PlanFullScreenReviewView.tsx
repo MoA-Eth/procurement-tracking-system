@@ -52,6 +52,11 @@ export interface PlanFullScreenReviewViewProps {
     remarks?: string,
     rejectionDetails?: any,
   ) => void;
+  onManagementDecision?: (
+    plan: ProcurementPlan,
+    decision: "APPROVE" | "REJECT",
+    comment?: string,
+  ) => void;
   isCommitteeRejectionModalOpen: boolean;
   setIsCommitteeRejectionModalOpen: (open: boolean) => void;
 }
@@ -78,6 +83,7 @@ export function PlanFullScreenReviewView({
   onApprovePlan,
   onReturnPlan,
   onCommitteeVote,
+  onManagementDecision,
   isCommitteeRejectionModalOpen,
   setIsCommitteeRejectionModalOpen,
 }: PlanFullScreenReviewViewProps) {
@@ -578,7 +584,9 @@ export function PlanFullScreenReviewView({
             placeholder={
               userRole === "ENDORSING_COMMITTEE"
                 ? "Enter your voting remarks or rejection reason (visible to Director)..."
-                : "Specify required corrections, missing documents or revision notes for the Procurement Officer..."
+                : userRole === "MANAGEMENT"
+                  ? "Enter executive review comments or directives..."
+                  : "Specify required corrections, missing documents or revision notes for the Procurement Officer..."
             }
             className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
           />
@@ -587,17 +595,30 @@ export function PlanFullScreenReviewView({
               A comment is required before rejecting a plan.
             </p>
           )}
-          {userRole !== "ENDORSING_COMMITTEE" && !returnRemarks.trim() && (
+          {userRole === "MANAGEMENT" && !returnRemarks.trim() && (
             <p className="text-[10px] text-slate-400 font-medium">
-              Revision notes are required before returning a plan to the
-              Procurement Officer.
+              Review comments are required before rejecting a plan.
             </p>
           )}
+          {userRole !== "ENDORSING_COMMITTEE" &&
+            userRole !== "MANAGEMENT" &&
+            !returnRemarks.trim() && (
+              <p className="text-[10px] text-slate-400 font-medium">
+                Revision notes are required before returning a plan to the
+                Procurement Officer.
+              </p>
+            )}
           {userRole === "ENDORSING_COMMITTEE" && (
             <p className="text-[11px] text-slate-500 font-medium pt-1">
               Note: A plan requires at least 3 approval votes from the
               Endorsement Committee to be officially endorsed. Rejection
               comments will be visible in the Director review panel.
+            </p>
+          )}
+          {userRole === "MANAGEMENT" && (
+            <p className="text-[11px] text-slate-500 font-medium pt-1">
+              Note: Executive management decision grants final authorization for
+              procurement plan activities.
             </p>
           )}
         </div>
@@ -621,6 +642,37 @@ export function PlanFullScreenReviewView({
             >
               <RotateCcw className="h-4 w-4" />
               <span>Vote: Reject / Return Plan</span>
+            </button>
+          </div>
+        ) : userRole === "MANAGEMENT" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() =>
+                onManagementDecision &&
+                onManagementDecision(plan, "APPROVE", returnRemarks)
+              }
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            >
+              <ShieldCheck className="h-4 w-4 text-indigo-200" />
+              <span>Grant Executive Authorization</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={!returnRemarks.trim()}
+              onClick={() =>
+                onManagementDecision &&
+                onManagementDecision(plan, "REJECT", returnRemarks)
+              }
+              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors ${
+                returnRemarks.trim()
+                  ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
+                  : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
+              }`}
+            >
+              <RotateCcw className="h-4 w-4" />
+              <span>Reject Plan (Return to Director)</span>
             </button>
           </div>
         ) : (

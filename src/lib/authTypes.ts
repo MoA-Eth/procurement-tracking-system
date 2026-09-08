@@ -32,6 +32,7 @@ export const ROLE_LABELS: Record<UserRole, string> & Record<string, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsement Committee Member",
+  MANAGEMENT: "Management",
   MANAGEMENT_TEAM: "Management",
   ManagementTeam: "Management",
   ADMIN: "Administrator",
@@ -41,7 +42,8 @@ export const ROLE_SLUGS: Record<UserRole, string> = {
   OFFICER: "officer",
   DIRECTOR: "director",
   ENDORSING_COMMITTEE: "endorsing-committee",
-  MANAGEMENT_TEAM: "management-team",
+  MANAGEMENT: "management",
+  MANAGEMENT_TEAM: "management",
   ADMIN: "admin",
 };
 
@@ -58,18 +60,18 @@ export function normalizeUserRole(role: string): UserRole {
     return "DIRECTOR";
   }
   if (
+    r === "MANAGEMENT" ||
+    r === "MANAGEMENT_TEAM" ||
+    r === "MANAGEMENTTEAM"
+  ) {
+    return "MANAGEMENT";
+  }
+  if (
     r === "ENDORSING_COMMITTEE" ||
     r === "ENDORSINGCOMMITTEE" ||
     r === "COMMITTEE"
   ) {
     return "ENDORSING_COMMITTEE";
-  }
-  if (
-    r === "MANAGEMENT_TEAM" ||
-    r === "MANAGEMENTTEAM" ||
-    r === "MANAGEMENT"
-  ) {
-    return "MANAGEMENT_TEAM";
   }
   if (r === "ADMIN" || r === "ADMINISTRATOR") return "ADMIN";
   return "OFFICER";
@@ -83,15 +85,15 @@ export function dashboardPath(role: string): string {
 export function roleFromSlug(slug: string): UserRole | undefined {
   if (!slug) return undefined;
   const clean = slug.toLowerCase().replace(/_/g, "-").trim();
+  if (
+    clean === "management" ||
+    clean === "management-team" ||
+    clean === "managementteam"
+  ) {
+    return "MANAGEMENT";
+  }
   if (clean === "endorsing-committee" || clean === "committee") {
     return "ENDORSING_COMMITTEE";
-  }
-  if (
-    clean === "management-team" ||
-    clean === "managementteam" ||
-    clean === "management"
-  ) {
-    return "MANAGEMENT_TEAM";
   }
   if (clean === "director" || clean === "procurementdirector")
     return "DIRECTOR";

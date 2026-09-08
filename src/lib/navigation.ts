@@ -33,7 +33,7 @@ const workspaceSections = {
     href: "/workspace/projects",
     icon: "projects",
     description: "View and follow procurement projects assigned to your role.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT_TEAM"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT", "MANAGEMENT_TEAM"],
   },
   contracts: {
     section: "contracts",
@@ -49,7 +49,7 @@ const workspaceSections = {
     href: "/workspace/activity-tracker",
     icon: "activity",
     description: "Track procurement activities, milestones and upcoming work.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT_TEAM"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT", "MANAGEMENT_TEAM"],
   },
   "plan-for-review": {
     section: "plan-for-review",
@@ -57,15 +57,39 @@ const workspaceSections = {
     href: "/workspace/plan-for-review",
     icon: "clipboard",
     description: "Review procurement plans awaiting action from your role.",
-    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT_TEAM"],
+    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT", "MANAGEMENT_TEAM"],
+  },
+  "vote-progress": {
+    section: "vote-progress",
+    label: "Vote Progress",
+    href: "/workspace/vote-progress",
+    icon: "progress",
+    description:
+      "Monitor Endorsement Committee voting and Executive Management reviews.",
+    allowedRoles: [
+      "DIRECTOR",
+      "MANAGEMENT",
+      "MANAGEMENT_TEAM",
+      "ENDORSING_COMMITTEE",
+      "ADMIN",
+      "OFFICER",
+    ],
   },
   "committee-progress": {
     section: "committee-progress",
-    label: "Committee Progress",
-    href: "/workspace/committee-progress",
+    label: "Vote Progress",
+    href: "/workspace/vote-progress",
     icon: "progress",
-    description: "Monitor the progress of plans submitted to the committee.",
-    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT_TEAM", "ADMIN", "OFFICER"],
+    description:
+      "Monitor Endorsement Committee voting and Executive Management reviews.",
+    allowedRoles: [
+      "DIRECTOR",
+      "MANAGEMENT",
+      "MANAGEMENT_TEAM",
+      "ENDORSING_COMMITTEE",
+      "ADMIN",
+      "OFFICER",
+    ],
   },
   reports: {
     section: "reports",
@@ -73,7 +97,14 @@ const workspaceSections = {
     href: "/workspace/reports",
     icon: "reports",
     description: "Open directorate procurement reports and summaries.",
-    allowedRoles: ["DIRECTOR", "OFFICER", "ENDORSING_COMMITTEE", "MANAGEMENT_TEAM", "ADMIN"],
+    allowedRoles: [
+      "DIRECTOR",
+      "MANAGEMENT",
+      "MANAGEMENT_TEAM",
+      "OFFICER",
+      "ENDORSING_COMMITTEE",
+      "ADMIN",
+    ],
   },
   "my-decisions": {
     section: "my-decisions",
@@ -106,7 +137,14 @@ const workspaceSections = {
     icon: "clipboard",
     description:
       "View alerts, reviews, milestone deadlines and system notifications.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT_TEAM", "ADMIN"],
+    allowedRoles: [
+      "OFFICER",
+      "DIRECTOR",
+      "MANAGEMENT",
+      "MANAGEMENT_TEAM",
+      "ENDORSING_COMMITTEE",
+      "ADMIN",
+    ],
   },
 } as const satisfies Record<string, WorkspaceSection>;
 
@@ -114,31 +152,23 @@ type WorkspaceSectionKey = keyof typeof workspaceSections;
 
 const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
   OFFICER: ["projects", "contracts", "activity-tracker"],
-  DIRECTOR: [
-    "projects",
-    "plan-for-review",
-    "committee-progress",
-    "activity-tracker",
-    "reports",
-  ],
+  DIRECTOR: ["projects", "plan-for-review", "vote-progress", "reports"],
+  MANAGEMENT: ["projects", "plan-for-review", "vote-progress", "reports"],
+  MANAGEMENT_TEAM: ["projects", "plan-for-review", "vote-progress", "reports"],
   ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],
-  MANAGEMENT_TEAM: [
-    "projects",
-    "plan-for-review",
-    "activity-tracker",
-    "reports",
-  ],
   ADMIN: ["user-management", "system-logs"],
 };
 
 export function getNavigationForRole(role: UserRole): NavigationItem[] {
+  const normRole = normalizeUserRole(role);
+  const sections = roleSectionOrder[role] || roleSectionOrder[normRole] || [];
   return [
     {
       label: "Dashboard",
       href: dashboardPath(role),
       icon: "dashboard",
     },
-    ...roleSectionOrder[role].map((section) => workspaceSections[section]),
+    ...sections.map((section) => workspaceSections[section]),
   ];
 }
 
@@ -153,5 +183,10 @@ export function canAccessWorkspaceSection(
   section: string,
 ): boolean {
   const normRole = normalizeUserRole(role);
-  return getWorkspaceSection(section)?.allowedRoles.includes(normRole) ?? false;
+  const sec = getWorkspaceSection(section);
+  if (!sec) return false;
+  return (
+    sec.allowedRoles.includes(role) ||
+    sec.allowedRoles.includes(normRole)
+  );
 }
