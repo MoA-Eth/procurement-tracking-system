@@ -60,10 +60,16 @@ describe("directorPipeline role isolation", () => {
   });
 
   it("computes committee counts based on role", () => {
-    const directorCommitteeCount = computeCommitteePlansCount(samplePlans, "DIRECTOR");
+    const directorCommitteeCount = computeCommitteePlansCount(
+      samplePlans,
+      "DIRECTOR",
+    );
     expect(directorCommitteeCount).toBe(1); // plan-3 is under Committee Review
 
-    const managementCommitteeCount = computeCommitteePlansCount(samplePlans, "MANAGEMENT");
+    const managementCommitteeCount = computeCommitteePlansCount(
+      samplePlans,
+      "MANAGEMENT",
+    );
     expect(managementCommitteeCount).toBe(1); // plan-3 is under Committee Review
   });
 });

@@ -1915,7 +1915,8 @@ function DirectorActivityDetailView({
             <LockKeyhole className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <span>
               Activity Tracker execution handoff details are read-only for{" "}
-              {userRole === "MANAGEMENT" ? "Executive Management" : "Director"} oversight.
+              {userRole === "MANAGEMENT" ? "Executive Management" : "Director"}{" "}
+              oversight.
             </span>
           </div>
         </div>

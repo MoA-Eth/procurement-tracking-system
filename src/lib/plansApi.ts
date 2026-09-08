@@ -86,7 +86,12 @@ export interface BackendPlanActivity {
   createdById?: string;
   creator?: { id: string; name: string; displayName?: string; email?: string };
   updatedById?: string;
-  updatedByUser?: { id: string; name: string; displayName?: string; email?: string };
+  updatedByUser?: {
+    id: string;
+    name: string;
+    displayName?: string;
+    email?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -152,7 +157,12 @@ export interface BackendPlan {
   createdBy?: string;
   creator?: { id: string; name: string; displayName?: string; email?: string };
   updatedById?: string;
-  updatedByUser?: { id: string; name: string; displayName?: string; email?: string } | null;
+  updatedByUser?: {
+    id: string;
+    name: string;
+    displayName?: string;
+    email?: string;
+  } | null;
   createdAt: string;
   updatedAt?: string;
   activities?: BackendPlanActivity[];

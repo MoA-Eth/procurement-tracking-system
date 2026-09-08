@@ -82,7 +82,9 @@ export function DirectorSummaryCards({
         </div>
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
           <span className="text-slate-400 font-medium text-[11px]">
-            {userRole === "MANAGEMENT" ? "Pending Decision" : "Pending Director"}
+            {userRole === "MANAGEMENT"
+              ? "Pending Decision"
+              : "Pending Director"}
           </span>
           <Link
             href="/workspace/plan-for-review"

@@ -159,7 +159,9 @@ export function usePlanForReview({
           const effectiveScope =
             allRefs.length > 0
               ? "SPECIFIC"
-              : p.rejectionScope || matchingDraft.rejectionScope || parsedEff.scope;
+              : p.rejectionScope ||
+                matchingDraft.rejectionScope ||
+                parsedEff.scope;
 
           const merged: ProcurementPlan = {
             ...p,
@@ -490,24 +492,23 @@ export function usePlanForReview({
                   itemName === planId));
 
             if (matches) {
-              const updatedPlanActivities =
-                item.plan?.planActivities
-                  ? item.plan.planActivities.map((act: any) => {
-                      const flagged = isActivityFlagged(
-                        act.id,
-                        act.activityRefNo || act.reference,
-                      );
-                      return {
-                        ...act,
-                        status: isSpecific
-                          ? flagged
-                            ? newActivityStatus || "Returned for Revision"
-                            : act.status || "Approved"
-                          : newActivityStatus || "Returned for Revision",
-                        isFlaggedByCommittee: flagged,
-                      };
-                    })
-                  : item.plan?.planActivities;
+              const updatedPlanActivities = item.plan?.planActivities
+                ? item.plan.planActivities.map((act: any) => {
+                    const flagged = isActivityFlagged(
+                      act.id,
+                      act.activityRefNo || act.reference,
+                    );
+                    return {
+                      ...act,
+                      status: isSpecific
+                        ? flagged
+                          ? newActivityStatus || "Returned for Revision"
+                          : act.status || "Approved"
+                        : newActivityStatus || "Returned for Revision",
+                      isFlaggedByCommittee: flagged,
+                    };
+                  })
+                : item.plan?.planActivities;
 
               return {
                 ...item,

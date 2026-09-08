@@ -145,13 +145,13 @@ export function isPlanAwaitingManagementReview(
   // 3. Must be actively waiting for Executive Management authorization
   return Boolean(
     rawStatus === "AWAITING_MANAGEMENT_APPROVAL" ||
-      rawStatus === "COMMITTEE_ENDORSED" ||
-      plan.status === "Awaiting Management Approval" ||
-      plan.status === "Committee Endorsed" ||
-      plan.committeeStatus === "Endorsed" ||
-      plan.committeeStatus === "Approved" ||
-      plan.managementStatus === "Awaiting Review" ||
-      plan.hasAdvancedToManagement,
+    rawStatus === "COMMITTEE_ENDORSED" ||
+    plan.status === "Awaiting Management Approval" ||
+    plan.status === "Committee Endorsed" ||
+    plan.committeeStatus === "Endorsed" ||
+    plan.committeeStatus === "Approved" ||
+    plan.managementStatus === "Awaiting Review" ||
+    plan.hasAdvancedToManagement,
   );
 }
 

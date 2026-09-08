@@ -646,8 +646,12 @@ export function DirectorActivitiesListView({
         if (!fRef) continue;
         const cleanF = fRef.toLowerCase().trim();
         const exists = loadedActs.some((a) => {
-          const aRef = (a.activityRefNo || (a as any).reference || a.id || "").toLowerCase().trim();
-          return aRef === cleanF || aRef.includes(cleanF) || cleanF.includes(aRef);
+          const aRef = (a.activityRefNo || (a as any).reference || a.id || "")
+            .toLowerCase()
+            .trim();
+          return (
+            aRef === cleanF || aRef.includes(cleanF) || cleanF.includes(aRef)
+          );
         });
         if (!exists) {
           loadedActs.push({
@@ -717,7 +721,9 @@ export function DirectorActivitiesListView({
 
     const trimmedRemarks = directorReturnRemarks.trim();
     if (!trimmedRemarks) {
-      alert("Please provide Committee Feedback / Deliberation Notes before rejecting.");
+      alert(
+        "Please provide Committee Feedback / Deliberation Notes before rejecting.",
+      );
       return;
     }
 
@@ -725,7 +731,9 @@ export function DirectorActivitiesListView({
       committeeRejectionScope === "SPECIFIC" &&
       selectedActivityIdsForRejection.size === 0
     ) {
-      alert("Please select at least one activity with issues before rejecting.");
+      alert(
+        "Please select at least one activity with issues before rejecting.",
+      );
       return;
     }
 
@@ -796,8 +804,9 @@ export function DirectorActivitiesListView({
         const el =
           document.getElementById(`activity-row-${targetRef}`) ||
           (targetAct
-            ? document.getElementById(`activity-row-${targetAct.activityRefNo}`) ||
-              document.getElementById(`activity-row-${targetAct.id}`)
+            ? document.getElementById(
+                `activity-row-${targetAct.activityRefNo}`,
+              ) || document.getElementById(`activity-row-${targetAct.id}`)
             : null);
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -817,7 +826,11 @@ export function DirectorActivitiesListView({
           ((a as any).reference || "").toLowerCase().trim() === cleanRef,
       );
 
-      if (autoOpenDetail && targetAct && dismissedActivityRef.current !== cleanRef) {
+      if (
+        autoOpenDetail &&
+        targetAct &&
+        dismissedActivityRef.current !== cleanRef
+      ) {
         setSelectedActivity(targetAct);
       }
 
@@ -825,8 +838,9 @@ export function DirectorActivitiesListView({
         const el =
           document.getElementById(`activity-row-${targetActivityRef}`) ||
           (targetAct
-            ? document.getElementById(`activity-row-${targetAct.activityRefNo}`) ||
-              document.getElementById(`activity-row-${targetAct.id}`)
+            ? document.getElementById(
+                `activity-row-${targetAct.activityRefNo}`,
+              ) || document.getElementById(`activity-row-${targetAct.id}`)
             : null);
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -865,7 +879,9 @@ export function DirectorActivitiesListView({
     (act: ProcurementActivity) => {
       const actRef = (act.activityRefNo || "").toLowerCase().trim();
       const actId = (act.id || "").toLowerCase().trim();
-      const actRawRef = ((act as any).reference || (act as any).refNo || "").toLowerCase().trim();
+      const actRawRef = ((act as any).reference || (act as any).refNo || "")
+        .toLowerCase()
+        .trim();
 
       if ((act as any).isFlaggedByCommittee) return true;
 
@@ -883,12 +899,20 @@ export function DirectorActivitiesListView({
       };
 
       if (parsedRejection.rejectedActivityRefs.some(matchesRef)) return true;
-      if (plan.rejectedActivityRefs && plan.rejectedActivityRefs.some(matchesRef)) return true;
+      if (
+        plan.rejectedActivityRefs &&
+        plan.rejectedActivityRefs.some(matchesRef)
+      )
+        return true;
       if (
         plan.rejectedActivityIds &&
         plan.rejectedActivityIds.some((id) => {
           const cleanId = id.toLowerCase().trim();
-          return cleanId === actId || cleanId === actRef || (actRawRef && cleanId === actRawRef);
+          return (
+            cleanId === actId ||
+            cleanId === actRef ||
+            (actRawRef && cleanId === actRawRef)
+          );
         })
       ) {
         return true;
@@ -1053,14 +1077,18 @@ export function DirectorActivitiesListView({
                   <button
                     onClick={() => {
                       handleCloseSelectedActivity();
-                      if (from === "vote-progress" || parentSection === "vote-progress") {
+                      if (
+                        from === "vote-progress" ||
+                        parentSection === "vote-progress"
+                      ) {
                         onBackClick?.();
                       }
                     }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" /> Back to{" "}
-                    {from === "vote-progress" || parentSection === "vote-progress"
+                    {from === "vote-progress" ||
+                    parentSection === "vote-progress"
                       ? "Vote Progress"
                       : "Activities Table"}
                   </button>
@@ -1856,7 +1884,8 @@ export function DirectorActivitiesListView({
                   <ArrowLeft className="h-3.5 w-3.5" />{" "}
                   {from === "vote-progress"
                     ? "Back to Vote Progress"
-                    : from === "my-decisions" || parentSection === "my-decisions"
+                    : from === "my-decisions" ||
+                        parentSection === "my-decisions"
                       ? "Back to My Decisions"
                       : parentSection === "plan-for-review"
                         ? "Back to Plans List"
@@ -1928,99 +1957,100 @@ export function DirectorActivitiesListView({
           {userRole !== "ENDORSING_COMMITTEE" &&
             (parsedRejection.scope === "SPECIFIC" ? (
               <section className="rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50/40 p-4 shadow-2xs space-y-2.5 animate-in fade-in">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="flex items-start gap-2.5">
-                  <div className="p-1 rounded-lg bg-amber-100 border border-amber-200 shrink-0 mt-0.5">
-                    <AlertTriangle className="h-4 w-4 text-amber-700" />
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex items-start gap-2.5">
+                    <div className="p-1 rounded-lg bg-amber-100 border border-amber-200 shrink-0 mt-0.5">
+                      <AlertTriangle className="h-4 w-4 text-amber-700" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-extrabold text-amber-950 uppercase tracking-wider">
+                        Committee Objection: Specific Activities Flagged (
+                        {parsedRejection.rejectedActivityRefs.length} of{" "}
+                        {activities.length} Activities)
+                      </h3>
+                      <p className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
+                        The Endorsement Committee returned this plan due to
+                        objections on specific activities (highlighted in red in
+                        the directory below). Per directorate regulations, the
+                        entire plan package is on hold until these specific
+                        activities are revised by the Procurement Officer.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold text-amber-950 uppercase tracking-wider">
-                      Committee Objection: Specific Activities Flagged (
-                      {parsedRejection.rejectedActivityRefs.length} of{" "}
-                      {activities.length} Activities)
-                    </h3>
-                    <p className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
-                      The Endorsement Committee returned this plan due to
-                      objections on specific activities (highlighted in red in
-                      the directory below). Per directorate regulations, the
-                      entire plan package is on hold until these specific
-                      activities are revised by the Procurement Officer.
-                    </p>
-                  </div>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-200/70 text-amber-900 border border-amber-300 shrink-0">
+                    Targeted Revision Required
+                  </span>
                 </div>
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-200/70 text-amber-900 border border-amber-300 shrink-0">
-                  Targeted Revision Required
-                </span>
-              </div>
 
-              {/* Flagged Activities Badges */}
-              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-amber-200/60 text-xs">
-                <span className="font-bold text-amber-950 text-[11px]">
-                  Flagged Activities:
-                </span>
-                {parsedRejection.rejectedActivityRefs.map((ref: string) => (
-                  <button
-                    key={ref}
-                    type="button"
-                    onClick={() => scrollToActivity(ref, false)}
-                    className="inline-flex items-center gap-1.5 font-mono font-bold text-rose-900 bg-rose-100 hover:bg-rose-200 border border-rose-300 hover:border-rose-400 px-2.5 py-1 rounded-md text-[11px] transition-all cursor-pointer shadow-2xs group"
-                    title={`Click to jump to activity ${ref}`}
-                  >
-                    <AlertCircle className="h-3 w-3 text-rose-600" />
-                    <span>{ref}</span>
-                    <span className="font-sans text-[10px] text-rose-700 group-hover:underline">
-                      ↓ Jump to Activity
+                {/* Flagged Activities Badges */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-amber-200/60 text-xs">
+                  <span className="font-bold text-amber-950 text-[11px]">
+                    Flagged Activities:
+                  </span>
+                  {parsedRejection.rejectedActivityRefs.map((ref: string) => (
+                    <button
+                      key={ref}
+                      type="button"
+                      onClick={() => scrollToActivity(ref, false)}
+                      className="inline-flex items-center gap-1.5 font-mono font-bold text-rose-900 bg-rose-100 hover:bg-rose-200 border border-rose-300 hover:border-rose-400 px-2.5 py-1 rounded-md text-[11px] transition-all cursor-pointer shadow-2xs group"
+                      title={`Click to jump to activity ${ref}`}
+                    >
+                      <AlertCircle className="h-3 w-3 text-rose-600" />
+                      <span>{ref}</span>
+                      <span className="font-sans text-[10px] text-rose-700 group-hover:underline">
+                        ↓ Jump to Activity
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {parsedRejection.cleanRemarks && (
+                  <div className="text-xs bg-white/90 rounded-lg p-3 border border-amber-200/80 shadow-2xs text-amber-950">
+                    <span className="font-bold text-slate-800">
+                      Committee Feedback &amp; Deliberation Notes:{" "}
                     </span>
-                  </button>
-                ))}
-              </div>
-
-              {parsedRejection.cleanRemarks && (
-                <div className="text-xs bg-white/90 rounded-lg p-3 border border-amber-200/80 shadow-2xs text-amber-950">
-                  <span className="font-bold text-slate-800">
-                    Committee Feedback &amp; Deliberation Notes:{" "}
-                  </span>
-                  <span className="italic text-slate-700 font-medium">
-                    &ldquo;{parsedRejection.cleanRemarks}&rdquo;
-                  </span>
-                </div>
-              )}
-            </section>
-          ) : (plan.status === "Returned" || plan.rejectionReason) &&
-            parsedRejection.cleanRemarks ? (
-            <section className="rounded-xl border border-rose-200 bg-rose-50/70 p-4 shadow-2xs space-y-2 animate-in fade-in">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 rounded-lg bg-rose-100 border border-rose-200 shrink-0">
-                    <RotateCcw className="h-4 w-4 text-rose-700" />
+                    <span className="italic text-slate-700 font-medium">
+                      &ldquo;{parsedRejection.cleanRemarks}&rdquo;
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="text-xs font-extrabold text-rose-950 uppercase tracking-wider">
-                      Plan Returned: Common / Entire Plan Package Rejection
-                    </h3>
-                    <p className="text-xs text-rose-900/90 mt-0.5">
-                      The Endorsement Committee returned the entire procurement
-                      plan package for general revisions across all activities.
-                    </p>
+                )}
+              </section>
+            ) : (plan.status === "Returned" || plan.rejectionReason) &&
+              parsedRejection.cleanRemarks ? (
+              <section className="rounded-xl border border-rose-200 bg-rose-50/70 p-4 shadow-2xs space-y-2 animate-in fade-in">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded-lg bg-rose-100 border border-rose-200 shrink-0">
+                      <RotateCcw className="h-4 w-4 text-rose-700" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-extrabold text-rose-950 uppercase tracking-wider">
+                        Plan Returned: Common / Entire Plan Package Rejection
+                      </h3>
+                      <p className="text-xs text-rose-900/90 mt-0.5">
+                        The Endorsement Committee returned the entire
+                        procurement plan package for general revisions across
+                        all activities.
+                      </p>
+                    </div>
                   </div>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
+                    General Rejection (All Activities)
+                  </span>
                 </div>
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
-                  General Rejection (All Activities)
-                </span>
-              </div>
 
-              {parsedRejection.cleanRemarks && (
-                <div className="text-xs bg-white/90 rounded-lg p-3 border border-rose-200/80 shadow-2xs text-rose-950">
-                  <span className="font-bold text-slate-800">
-                    Revision Notes:{" "}
-                  </span>
-                  <span className="italic text-slate-700 font-medium">
-                    &ldquo;{parsedRejection.cleanRemarks}&rdquo;
-                  </span>
-                </div>
-              )}
-            </section>
-          ) : null)}
+                {parsedRejection.cleanRemarks && (
+                  <div className="text-xs bg-white/90 rounded-lg p-3 border border-rose-200/80 shadow-2xs text-rose-950">
+                    <span className="font-bold text-slate-800">
+                      Revision Notes:{" "}
+                    </span>
+                    <span className="italic text-slate-700 font-medium">
+                      &ldquo;{parsedRejection.cleanRemarks}&rdquo;
+                    </span>
+                  </div>
+                )}
+              </section>
+            ) : null)}
 
           {/* Search & Filter Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">

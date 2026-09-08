@@ -26,7 +26,8 @@ vi.mock("../../../lib/plansApi", () => ({
           id: "vote-1",
           memberId: "committee-user-1",
           decision: "REJECT",
-          comment: "[Flagged Activities: BREFONS-G-01] Excessive pricing needs recalculation.",
+          comment:
+            "[Flagged Activities: BREFONS-G-01] Excessive pricing needs recalculation.",
           createdAt: new Date().toISOString(),
         },
       ],
@@ -37,7 +38,10 @@ vi.mock("../../../lib/plansApi", () => ({
           description: "Supply of high-yield drought resistant wheat seeds",
           estimatedBudget: 15000000,
           currency: "ETB",
-          procurementMethod: { label: "National Competitive Bidding", code: "NCB" },
+          procurementMethod: {
+            label: "National Competitive Bidding",
+            code: "NCB",
+          },
           reviewType: "Prior",
         },
         {
@@ -64,7 +68,8 @@ vi.mock("../../../lib/plansApi", () => ({
     planPeriodFrom: "2026-07-08",
     planPeriodTo: "2027-07-07",
     organizationRegion: "Federal",
-    description: "Crucial strategic seed reserve procurement for food resilience.",
+    description:
+      "Crucial strategic seed reserve procurement for food resilience.",
     status: "Finally Approved" as const,
     createdBy: "Procurement Officer",
     createdAt: new Date().toISOString(),
@@ -75,7 +80,8 @@ vi.mock("../../../lib/plansApi", () => ({
     progressText: "4 of 5 approved",
     committeeDecision: "Rejected" as const,
     decisionRecordedDate: "8 Sep 2026",
-    rejectionReason: "[Flagged Activities: BREFONS-G-01] Excessive pricing needs recalculation.",
+    rejectionReason:
+      "[Flagged Activities: BREFONS-G-01] Excessive pricing needs recalculation.",
     rejectionScope: "SPECIFIC" as const,
     rejectedActivityRefs: ["BREFONS-G-01"],
     activities: bp.activities || [],
@@ -116,7 +122,8 @@ describe("MyDecisionsView", () => {
       projectCode: "BREFONS",
       projectName: "BREFONS Project",
       committeeDecision: "Rejected" as const,
-      rejectionReason: "[Flagged Activities: BREFONS-G-01] Excessive pricing needs recalculation.",
+      rejectionReason:
+        "[Flagged Activities: BREFONS-G-01] Excessive pricing needs recalculation.",
       rejectionScope: "SPECIFIC" as const,
       rejectedActivityRefs: ["BREFONS-G-01"],
       activities: [
@@ -153,7 +160,8 @@ describe("MyDecisionsView", () => {
       projectName: "BREFONS Project",
       organizationRegion: "Federal",
       committeeDecision: "Rejected" as const,
-      rejectionReason: "[Flagged Activities: BREFONS-G-01] Excessive pricing needs recalculation.",
+      rejectionReason:
+        "[Flagged Activities: BREFONS-G-01] Excessive pricing needs recalculation.",
       rejectionScope: "SPECIFIC" as const,
       rejectedActivityRefs: ["BREFONS-G-01"],
       activities: [
@@ -193,7 +201,9 @@ describe("MyDecisionsView", () => {
     );
     // Verifies full plan tracker components
     expect(markup).toContain("Back to My Decisions");
-    expect(markup).toContain("Search package activities by Ref No or Description...");
+    expect(markup).toContain(
+      "Search package activities by Ref No or Description...",
+    );
     expect(markup).toContain("All Methods");
     expect(markup).toContain("All Reviews");
     expect(markup).toContain("All Statuses");
@@ -226,7 +236,10 @@ describe("MyDecisionsView", () => {
     };
 
     const markup = renderToStaticMarkup(
-      <MyDecisionsView user={mockUser} initialSelectedPlan={mockApprovedPlan as any} />,
+      <MyDecisionsView
+        user={mockUser}
+        initialSelectedPlan={mockApprovedPlan as any}
+      />,
     );
 
     // Verifies Inspect Full Activities Tracker is present

@@ -44,7 +44,9 @@ export function MyDecisionsView({
 }: MyDecisionsViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const planIdFromUrl = searchParams ? searchParams.get("planId") || searchParams.get("plan") : null;
+  const planIdFromUrl = searchParams
+    ? searchParams.get("planId") || searchParams.get("plan")
+    : null;
 
   // Track if user explicitly closed the plan view so auto-open doesn't immediately re-open it
   const dismissedPlanIdRef = useRef<string | null>(null);
@@ -63,15 +65,23 @@ export function MyDecisionsView({
   const [isFullPlanTrackerOpen, setIsFullPlanTrackerOpen] = useState(
     initialFullPlanTracker || false,
   );
-  const [targetActivityForTracker, setTargetActivityForTracker] = useState<string | null>(() => {
-    if (initialFullPlanTracker && initialSelectedPlan?.rejectedActivityRefs?.length) {
+  const [targetActivityForTracker, setTargetActivityForTracker] = useState<
+    string | null
+  >(() => {
+    if (
+      initialFullPlanTracker &&
+      initialSelectedPlan?.rejectedActivityRefs?.length
+    ) {
       return initialSelectedPlan.rejectedActivityRefs[0];
     }
     return null;
   });
   const [autoOpenTrackerDetail, setAutoOpenTrackerDetail] = useState(false);
   const [planActivities, setPlanActivities] = useState<any[]>(() => {
-    if (initialSelectedPlan?.activities && initialSelectedPlan.activities.length > 0) {
+    if (
+      initialSelectedPlan?.activities &&
+      initialSelectedPlan.activities.length > 0
+    ) {
       return initialSelectedPlan.activities;
     }
     return [];
@@ -194,11 +204,23 @@ export function MyDecisionsView({
 
         const combined = [...planBackendActs];
         for (const ba of allBackendActs) {
-          const baPlanId = (ba.planId || ba.plan?.id || "").toLowerCase().trim();
-          const baPlanTitle = (ba.plan?.title || (ba as any).planReference || "").toLowerCase().trim();
+          const baPlanId = (ba.planId || ba.plan?.id || "")
+            .toLowerCase()
+            .trim();
+          const baPlanTitle = (
+            ba.plan?.title ||
+            (ba as any).planReference ||
+            ""
+          )
+            .toLowerCase()
+            .trim();
           if (
-            (baPlanId && (baPlanId === cleanPlanId.toLowerCase().trim() || cleanPlanId.includes(baPlanId))) ||
-            (baPlanTitle && selectedPlan?.planName && selectedPlan.planName.toLowerCase().includes(baPlanTitle))
+            (baPlanId &&
+              (baPlanId === cleanPlanId.toLowerCase().trim() ||
+                cleanPlanId.includes(baPlanId))) ||
+            (baPlanTitle &&
+              selectedPlan?.planName &&
+              selectedPlan.planName.toLowerCase().includes(baPlanTitle))
           ) {
             if (!combined.some((x) => x.id === ba.id)) {
               combined.push(ba);
@@ -209,26 +231,47 @@ export function MyDecisionsView({
         // Also merge local storage draft activities
         if (typeof window !== "undefined" && selectedPlan) {
           try {
-            const rawDrafts = localStorage.getItem(OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY);
+            const rawDrafts = localStorage.getItem(
+              OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+            );
             if (rawDrafts) {
               const drafts = parseSavedActivityRecords(rawDrafts);
               for (const d of drafts) {
-                const draftPlanRef = (d.planReference || "").toLowerCase().trim();
-                const planRef = (selectedPlan.reference || selectedPlan.planName || "").toLowerCase().trim();
+                const draftPlanRef = (d.planReference || "")
+                  .toLowerCase()
+                  .trim();
+                const planRef = (
+                  selectedPlan.reference ||
+                  selectedPlan.planName ||
+                  ""
+                )
+                  .toLowerCase()
+                  .trim();
                 const planId = (selectedPlan.id || "").toLowerCase().trim();
                 if (
                   draftPlanRef === planRef ||
                   draftPlanRef === planId ||
-                  (d.projectCode && selectedPlan.projectCode && d.projectCode.toLowerCase() === selectedPlan.projectCode.toLowerCase())
+                  (d.projectCode &&
+                    selectedPlan.projectCode &&
+                    d.projectCode.toLowerCase() ===
+                      selectedPlan.projectCode.toLowerCase())
                 ) {
                   const act = d.activity;
-                  if (act && !combined.some((x) => x.id === act.id || x.reference === act.reference)) {
+                  if (
+                    act &&
+                    !combined.some(
+                      (x) => x.id === act.id || x.reference === act.reference,
+                    )
+                  ) {
                     combined.push({
                       id: act.id || `draft-${Date.now()}`,
                       reference: act.reference,
                       description: act.description,
                       estimatedBudget: act.estimatedAmount || 0,
-                      currency: act.details?.form?.currency || selectedPlan.currency || "ETB",
+                      currency:
+                        act.details?.form?.currency ||
+                        selectedPlan.currency ||
+                        "ETB",
                       procurementMethod: {
                         label: act.method || "National Competitive Bidding",
                         code: (act as any).methodCode || "NCB",
@@ -249,20 +292,33 @@ export function MyDecisionsView({
         if (combined.length > 0) {
           const normalized = combined.map((act) => ({
             id: act.id,
-            activityRefNo: act.reference || (act as any).activityRefNo || `ACT-${act.id.slice(0, 4)}`,
+            activityRefNo:
+              act.reference ||
+              (act as any).activityRefNo ||
+              `ACT-${act.id.slice(0, 4)}`,
             description: act.description || "Procurement activity",
-            method: act.procurementMethod?.label || act.procurementMethod?.code || (act as any).method || "NCB",
+            method:
+              act.procurementMethod?.label ||
+              act.procurementMethod?.code ||
+              (act as any).method ||
+              "NCB",
             marketApproach: (act as any).marketApproach || "Open - National",
             reviewType: act.reviewType || (act as any).reviewType || "Post",
             currency: act.currency || selectedPlan?.currency || "ETB",
-            estimatedAmount: act.estimatedBudget || (act as any).estimatedAmount || 0,
+            estimatedAmount:
+              act.estimatedBudget || (act as any).estimatedAmount || 0,
             roadmap: act.stages || (act as any).roadmap || [],
           }));
           if (isMounted) setPlanActivities(normalized);
-        } else if (selectedPlan && selectedPlan.activities && selectedPlan.activities.length > 0) {
+        } else if (
+          selectedPlan &&
+          selectedPlan.activities &&
+          selectedPlan.activities.length > 0
+        ) {
           const normalized = selectedPlan.activities.map((act) => ({
             id: act.id,
-            activityRefNo: act.activityRefNo || act.reference || `ACT-${act.id.slice(0, 4)}`,
+            activityRefNo:
+              act.activityRefNo || act.reference || `ACT-${act.id.slice(0, 4)}`,
             description: act.description || "Procurement activity",
             method: act.method || act.procurementMethod?.label || "NCB",
             marketApproach: act.marketApproach || "Open - National",
@@ -327,11 +383,13 @@ export function MyDecisionsView({
         p.planName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.projectCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.projectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.reference && p.reference.toLowerCase().includes(searchQuery.toLowerCase()));
+        (p.reference &&
+          p.reference.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesDecision =
         decisionFilter === "ALL" ||
-        (p.committeeDecision && p.committeeDecision.toUpperCase() === decisionFilter);
+        (p.committeeDecision &&
+          p.committeeDecision.toUpperCase() === decisionFilter);
 
       const matchesProject =
         projectFilter === "ALL" ||
@@ -342,11 +400,17 @@ export function MyDecisionsView({
   }, [votedPlans, searchQuery, decisionFilter, projectFilter]);
 
   const parsedRejection = useMemo(() => {
-    if (!selectedPlan) return { scope: "ALL" as const, rejectedActivityRefs: [], cleanRemarks: "" };
+    if (!selectedPlan)
+      return {
+        scope: "ALL" as const,
+        rejectedActivityRefs: [],
+        cleanRemarks: "",
+      };
     const fromReason = parseRejectionDetails(selectedPlan.rejectionReason);
     const scope =
       selectedPlan.rejectionScope ||
-      (selectedPlan.rejectedActivityRefs && selectedPlan.rejectedActivityRefs.length > 0
+      (selectedPlan.rejectedActivityRefs &&
+      selectedPlan.rejectedActivityRefs.length > 0
         ? "SPECIFIC"
         : fromReason.scope);
     const rejectedActivityRefs = Array.from(
@@ -358,7 +422,8 @@ export function MyDecisionsView({
     return {
       scope,
       rejectedActivityRefs,
-      cleanRemarks: fromReason.cleanRemarks || selectedPlan.rejectionReason || "",
+      cleanRemarks:
+        fromReason.cleanRemarks || selectedPlan.rejectionReason || "",
     };
   }, [selectedPlan]);
 
@@ -399,14 +464,21 @@ export function MyDecisionsView({
         parsedRejection.rejectedActivityRefs.some((r: string) => {
           const cleanR = r.toLowerCase().trim();
           return (
-            (cleanR && (cleanR === actRef || cleanR === actId || (actRawRef && cleanR === actRawRef))) ||
+            (cleanR &&
+              (cleanR === actRef ||
+                cleanR === actId ||
+                (actRawRef && cleanR === actRawRef))) ||
             (actRef && actRef.includes(cleanR))
           );
         }) ||
         (selectedPlan?.rejectedActivityIds &&
           selectedPlan.rejectedActivityIds.some((id: string) => {
             const cleanId = id.toLowerCase().trim();
-            return cleanId === actId || cleanId === actRef || (actRawRef && cleanId === actRawRef);
+            return (
+              cleanId === actId ||
+              cleanId === actRef ||
+              (actRawRef && cleanId === actRawRef)
+            );
           }))
       );
     },
@@ -420,17 +492,30 @@ export function MyDecisionsView({
       return planActivities.filter((act) => isActivityFlagged(act));
     }
     return planActivities;
-  }, [selectedPlan?.committeeDecision, parsedRejection.scope, planActivities, isActivityFlagged]);
+  }, [
+    selectedPlan?.committeeDecision,
+    parsedRejection.scope,
+    planActivities,
+    isActivityFlagged,
+  ]);
 
   // Compute status badge style
   const getOverallStatusStyle = (status: string) => {
     if (status === "Finally Approved" || status === "Approved") {
       return "bg-emerald-50 text-emerald-800 border-emerald-200";
     }
-    if (status === "Returned" || status === "Returned for Revision" || status === "Committee Rejected" || status === "Management Rejected") {
+    if (
+      status === "Returned" ||
+      status === "Returned for Revision" ||
+      status === "Committee Rejected" ||
+      status === "Management Rejected"
+    ) {
       return "bg-rose-50 text-rose-800 border-rose-200";
     }
-    if (status === "Awaiting Management Approval" || status === "Committee Endorsed") {
+    if (
+      status === "Awaiting Management Approval" ||
+      status === "Committee Endorsed"
+    ) {
       return "bg-indigo-50 text-indigo-800 border-indigo-200";
     }
     return "bg-amber-50 text-amber-800 border-amber-200";
@@ -556,7 +641,10 @@ export function MyDecisionsView({
                   ) : (
                     <XCircle className="h-4 w-4 text-rose-600" />
                   )}
-                  My Vote: {selectedPlan.committeeDecision === "Approved" ? "Endorsed & Approved" : "Rejected / Returned"}
+                  My Vote:{" "}
+                  {selectedPlan.committeeDecision === "Approved"
+                    ? "Endorsed & Approved"
+                    : "Rejected / Returned"}
                 </span>
 
                 <span
@@ -646,7 +734,8 @@ export function MyDecisionsView({
                     My Deliberation &amp; Voting Record
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Official feedback submitted during Endorsement Committee review.
+                    Official feedback submitted during Endorsement Committee
+                    review.
                   </p>
                 </div>
               </div>
@@ -654,7 +743,9 @@ export function MyDecisionsView({
               {selectedPlan.committeeDecision === "Rejected" ? (
                 <div className="space-y-3.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700">Rejection Scope:</span>
+                    <span className="text-xs font-bold text-slate-700">
+                      Rejection Scope:
+                    </span>
                     {parsedRejection.scope === "SPECIFIC" ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-50 text-amber-900 border border-amber-300">
                         <AlertTriangle className="h-3 w-3 text-amber-700" />
@@ -669,28 +760,34 @@ export function MyDecisionsView({
                   </div>
 
                   {/* Flagged Activities List Pills */}
-                  {parsedRejection.scope === "SPECIFIC" && parsedRejection.rejectedActivityRefs.length > 0 && (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5 space-y-2">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wide text-amber-900 block">
-                        Flagged Activities ({parsedRejection.rejectedActivityRefs.length}):
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {parsedRejection.rejectedActivityRefs.map((ref) => (
-                          <button
-                            key={ref}
-                            type="button"
-                            onClick={() => handleOpenFlaggedActivityInTracker(ref)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-rose-100 text-rose-900 border border-rose-300 hover:bg-rose-200 transition-colors cursor-pointer shadow-3xs"
-                            title="Inspect this flagged activity in full tracker"
-                          >
-                            <AlertTriangle className="h-3 w-3 text-rose-700" />
-                            <span>{ref}</span>
-                            <span className="text-[10px] text-rose-600 underline font-sans ml-1">Open ↗</span>
-                          </button>
-                        ))}
+                  {parsedRejection.scope === "SPECIFIC" &&
+                    parsedRejection.rejectedActivityRefs.length > 0 && (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5 space-y-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wide text-amber-900 block">
+                          Flagged Activities (
+                          {parsedRejection.rejectedActivityRefs.length}):
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {parsedRejection.rejectedActivityRefs.map((ref) => (
+                            <button
+                              key={ref}
+                              type="button"
+                              onClick={() =>
+                                handleOpenFlaggedActivityInTracker(ref)
+                              }
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-rose-100 text-rose-900 border border-rose-300 hover:bg-rose-200 transition-colors cursor-pointer shadow-3xs"
+                              title="Inspect this flagged activity in full tracker"
+                            >
+                              <AlertTriangle className="h-3 w-3 text-rose-700" />
+                              <span>{ref}</span>
+                              <span className="text-[10px] text-rose-600 underline font-sans ml-1">
+                                Open ↗
+                              </span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Deliberation Notes / Feedback Text */}
                   <div className="space-y-1">
@@ -698,7 +795,11 @@ export function MyDecisionsView({
                       Deliberation Feedback &amp; Directives:
                     </span>
                     <div className="bg-rose-50/60 border border-rose-200 rounded-xl p-4 text-xs text-slate-800 font-medium leading-relaxed italic">
-                      &ldquo;{parsedRejection.cleanRemarks || selectedPlan.rejectionReason || "No specific feedback text recorded."}&rdquo;
+                      &ldquo;
+                      {parsedRejection.cleanRemarks ||
+                        selectedPlan.rejectionReason ||
+                        "No specific feedback text recorded."}
+                      &rdquo;
                     </div>
                   </div>
                 </div>
@@ -709,7 +810,8 @@ export function MyDecisionsView({
                     <span>Plan Endorsed &amp; Approved</span>
                   </div>
                   <p className="leading-relaxed">
-                    You recorded an affirmative vote to endorse this procurement plan without reservation.
+                    You recorded an affirmative vote to endorse this procurement
+                    plan without reservation.
                   </p>
                   {selectedPlan.rejectionReason && (
                     <div className="pt-2 border-t border-emerald-200/60">
@@ -734,7 +836,8 @@ export function MyDecisionsView({
                     Consensus &amp; Quorum Status
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Requires at least 3 of 5 approvals to endorse to Executive Management.
+                    Requires at least 3 of 5 approvals to endorse to Executive
+                    Management.
                   </p>
                 </div>
               </div>
@@ -742,7 +845,9 @@ export function MyDecisionsView({
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                   <span>Committee Voting Progress</span>
-                  <span>{selectedPlan.progressText || "Voting in progress"}</span>
+                  <span>
+                    {selectedPlan.progressText || "Voting in progress"}
+                  </span>
                 </div>
 
                 <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
@@ -763,11 +868,13 @@ export function MyDecisionsView({
                 </div>
 
                 {selectedPlan.managementDecision ? (
-                  <div className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
-                    selectedPlan.managementDecision === "Approved"
-                      ? "bg-indigo-50/70 border-indigo-200 text-indigo-950"
-                      : "bg-rose-50/70 border-rose-200 text-rose-950"
-                  }`}>
+                  <div
+                    className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
+                      selectedPlan.managementDecision === "Approved"
+                        ? "bg-indigo-50/70 border-indigo-200 text-indigo-950"
+                        : "bg-rose-50/70 border-rose-200 text-rose-950"
+                    }`}
+                  >
                     <div className="flex items-center justify-between">
                       <strong className="font-extrabold">
                         Management Decision: {selectedPlan.managementDecision}
@@ -813,11 +920,16 @@ export function MyDecisionsView({
                       Package Activities Directory
                     </h3>
                     <span className="text-xs font-semibold text-slate-500">
-                      ({displayedActivities.length} {displayedActivities.length === 1 ? "Activities" : "Activities"})
+                      ({displayedActivities.length}{" "}
+                      {displayedActivities.length === 1
+                        ? "Activities"
+                        : "Activities"}
+                      )
                     </span>
                   </div>
                   <p className="text-xs text-slate-500">
-                    Review procurement activities and click inspect to see milestones, roadmap, and deliberation comments.
+                    Review procurement activities and click inspect to see
+                    milestones, roadmap, and deliberation comments.
                   </p>
                 </div>
 
@@ -839,22 +951,32 @@ export function MyDecisionsView({
                       <th className="py-3 px-3.5 w-10 text-center">#</th>
                       <th className="py-3 px-3.5 min-w-36">Activity Ref</th>
                       <th className="py-3 px-3.5 min-w-64">Description</th>
-                      <th className="py-3 px-3.5 min-w-36">Method &amp; Approach</th>
+                      <th className="py-3 px-3.5 min-w-36">
+                        Method &amp; Approach
+                      </th>
                       <th className="py-3 px-3.5 min-w-24">Review Type</th>
                       <th className="py-3 px-3.5 min-w-32">Est. Budget</th>
-                      <th className="py-3 px-3.5 text-center min-w-20">Action</th>
+                      <th className="py-3 px-3.5 text-center min-w-20">
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     {loadingActivities ? (
                       <tr>
-                        <td colSpan={7} className="py-8 text-center text-slate-400 font-medium">
+                        <td
+                          colSpan={7}
+                          className="py-8 text-center text-slate-400 font-medium"
+                        >
                           Loading package activities...
                         </td>
                       </tr>
                     ) : displayedActivities.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-8 text-center text-slate-400 font-medium">
+                        <td
+                          colSpan={7}
+                          className="py-8 text-center text-slate-400 font-medium"
+                        >
                           No flagged activities found for this plan package.
                         </td>
                       </tr>
@@ -863,7 +985,11 @@ export function MyDecisionsView({
                         return (
                           <tr
                             key={act.id}
-                            onClick={() => handleInspectSpecificActivity(act.activityRefNo || act.id)}
+                            onClick={() =>
+                              handleInspectSpecificActivity(
+                                act.activityRefNo || act.id,
+                              )
+                            }
                             className="bg-rose-50/80 hover:bg-rose-100/70 border-l-4 border-l-rose-600 transition-all duration-200 cursor-pointer"
                           >
                             <td className="py-3 px-3.5 text-center font-mono text-slate-400 font-semibold">
@@ -885,14 +1011,22 @@ export function MyDecisionsView({
                             </td>
 
                             <td className="py-3 px-3.5 text-xs">
-                              <div className="font-bold text-[#0A3C2F]">{act.method}</div>
-                              <div className="text-[10px] text-slate-500">{act.marketApproach}</div>
+                              <div className="font-bold text-[#0A3C2F]">
+                                {act.method}
+                              </div>
+                              <div className="text-[10px] text-slate-500">
+                                {act.marketApproach}
+                              </div>
                             </td>
 
                             <td className="py-3 px-3.5">
-                              <span className={`text-xs font-bold ${
-                                act.reviewType === "Prior" ? "text-amber-800" : "text-slate-700"
-                              }`}>
+                              <span
+                                className={`text-xs font-bold ${
+                                  act.reviewType === "Prior"
+                                    ? "text-amber-800"
+                                    : "text-slate-700"
+                                }`}
+                              >
                                 {act.reviewType}
                               </span>
                             </td>
@@ -907,7 +1041,9 @@ export function MyDecisionsView({
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleInspectSpecificActivity(act.activityRefNo || act.id);
+                                  handleInspectSpecificActivity(
+                                    act.activityRefNo || act.id,
+                                  );
                                 }}
                                 title="Inspect Activity Details"
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-[#0A3C2F] hover:text-white transition-colors cursor-pointer text-[11px] font-bold"
@@ -938,7 +1074,9 @@ export function MyDecisionsView({
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 max-w-2xl">
-                    All procurement activities have been endorsed without objections. Inspect the full activity tracker to view all procurement packages, milestone roadmap, and tender stages.
+                    All procurement activities have been endorsed without
+                    objections. Inspect the full activity tracker to view all
+                    procurement packages, milestone roadmap, and tender stages.
                   </p>
                 </div>
 
@@ -1048,7 +1186,8 @@ export function MyDecisionsView({
                             {plan.planName}
                           </span>
                           <div className="text-[10px] text-slate-400 font-normal mt-0.5 wrap-break-word line-clamp-2">
-                            {plan.budgetYear} • {plan.activitiesCount} Activities
+                            {plan.budgetYear} • {plan.activitiesCount}{" "}
+                            Activities
                           </div>
                         </td>
 

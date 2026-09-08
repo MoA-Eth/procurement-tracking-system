@@ -25,7 +25,9 @@ vi.mock("../../../lib/lookupsApi", () => ({
 describe("CommitteeProgressView", () => {
   it("renders Vote Progress header, metric tiles, and section tables for DIRECTOR", () => {
     const markup = renderToStaticMarkup(
-      <CommitteeProgressView currentUser={{ role: "DIRECTOR", name: "Director Abebe" }} />,
+      <CommitteeProgressView
+        currentUser={{ role: "DIRECTOR", name: "Director Abebe" }}
+      />,
     );
 
     expect(markup).toContain("Vote Progress");
@@ -39,7 +41,9 @@ describe("CommitteeProgressView", () => {
 
   it("renders Vote Progress correctly for MANAGEMENT", () => {
     const markup = renderToStaticMarkup(
-      <CommitteeProgressView currentUser={{ role: "MANAGEMENT", name: "Executive Manager" }} />,
+      <CommitteeProgressView
+        currentUser={{ role: "MANAGEMENT", name: "Executive Manager" }}
+      />,
     );
 
     expect(markup).toContain("Vote Progress");
@@ -49,12 +53,15 @@ describe("CommitteeProgressView", () => {
   });
 
   it("identifies and highlights specific flagged activities in committee deliberation and activity table", () => {
-    const sampleFlaggedComment = "[Flagged Activities: BREFONS-G-01] The unit cost estimate exceeds the budget cap by 30%.";
+    const sampleFlaggedComment =
+      "[Flagged Activities: BREFONS-G-01] The unit cost estimate exceeds the budget cap by 30%.";
     const parsed = parseRejectionDetails(sampleFlaggedComment);
 
     expect(parsed.scope).toBe("SPECIFIC");
     expect(parsed.rejectedActivityRefs).toEqual(["BREFONS-G-01"]);
-    expect(parsed.cleanRemarks).toBe("The unit cost estimate exceeds the budget cap by 30%.");
+    expect(parsed.cleanRemarks).toBe(
+      "The unit cost estimate exceeds the budget cap by 30%.",
+    );
   });
 
   it("renders Package Activities Directory banner with Plan Endorsed & Approved badge for approved plans in Director role", () => {
@@ -97,7 +104,9 @@ describe("CommitteeProgressView", () => {
 
     expect(markup).toContain("Package Activities Directory");
     expect(markup).toContain("Plan Endorsed &amp; Approved");
-    expect(markup).toContain("All procurement activities have been endorsed without objections.");
+    expect(markup).toContain(
+      "All procurement activities have been endorsed without objections.",
+    );
     expect(markup).toContain("Inspect Full Activities Tracker");
     // Verifies the regular table headers are NOT shown in the approved state
     expect(markup).not.toContain("Package Activities in this Plan");
@@ -157,4 +166,3 @@ describe("CommitteeProgressView", () => {
     expect(markup).not.toContain("Plan Endorsed &amp; Approved");
   });
 });
-

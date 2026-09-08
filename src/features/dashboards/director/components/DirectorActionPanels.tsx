@@ -71,7 +71,9 @@ export function DirectorActionPanels({
                         : "border-amber-300 bg-amber-50 text-amber-800"
                     }`}
                   >
-                    {isManagement ? "Awaiting Executive Review" : "Awaiting Review"}
+                    {isManagement
+                      ? "Awaiting Executive Review"
+                      : "Awaiting Review"}
                   </span>
                   <div className="text-right">
                     <span className="font-extrabold text-slate-900 text-xs sm:text-sm">

@@ -167,7 +167,10 @@ export function CommitteeProgressView({
           }
         }
       } catch (storageErr) {
-        console.warn("Storage read error in CommitteeProgressView:", storageErr);
+        console.warn(
+          "Storage read error in CommitteeProgressView:",
+          storageErr,
+        );
       }
 
       const mappedItems: VoteProgressItem[] = rawPlans
@@ -224,7 +227,9 @@ export function CommitteeProgressView({
               ? bpReviews[0]?.notes
               : null) ||
             null;
-          const parsedRejection = parseRejectionDetails(effectiveRejectionReason);
+          const parsedRejection = parseRejectionDetails(
+            effectiveRejectionReason,
+          );
 
           const effectiveRejectedRefs = Array.from(
             new Set([
@@ -238,7 +243,9 @@ export function CommitteeProgressView({
           );
 
           const effectiveRejectionScope =
-            effectiveRejectedRefs.length > 0 ? "SPECIFIC" : parsedRejection.scope;
+            effectiveRejectedRefs.length > 0
+              ? "SPECIFIC"
+              : parsedRejection.scope;
 
           const committeeUsers =
             bp.committeeMembers && bp.committeeMembers.length > 0
@@ -429,7 +436,8 @@ export function CommitteeProgressView({
               : matchingDraft?.planActivities || [];
 
           const totalBudget = effectiveActivities.reduce(
-            (sum: number, a: any) => sum + (a.estimatedBudget || a.estimatedAmount || 0),
+            (sum: number, a: any) =>
+              sum + (a.estimatedBudget || a.estimatedAmount || 0),
             0,
           );
 
@@ -481,7 +489,6 @@ export function CommitteeProgressView({
     }
   }, []);
 
-
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void loadData();
@@ -494,9 +501,7 @@ export function CommitteeProgressView({
   const planIdFromQuery = searchParams
     ? searchParams.get("planId") || searchParams.get("plan")
     : null;
-  const activityFromQuery = searchParams
-    ? searchParams.get("activity")
-    : null;
+  const activityFromQuery = searchParams ? searchParams.get("activity") : null;
   const trackerFromQuery = searchParams
     ? searchParams.get("tracker") === "full"
     : false;
@@ -617,15 +622,33 @@ export function CommitteeProgressView({
 
         const combined = [...(selectedPlan?.activities || [])];
         for (const ba of [...planBackendActs, ...allBackendActs]) {
-          const baPlanId = (ba.planId || ba.plan?.id || "").toLowerCase().trim();
-          const baPlanTitle = (ba.plan?.title || (ba as any).planReference || "").toLowerCase().trim();
+          const baPlanId = (ba.planId || ba.plan?.id || "")
+            .toLowerCase()
+            .trim();
+          const baPlanTitle = (
+            ba.plan?.title ||
+            (ba as any).planReference ||
+            ""
+          )
+            .toLowerCase()
+            .trim();
           const matches =
-            (baPlanId && (baPlanId === cleanPlanId.toLowerCase().trim() || cleanPlanId.includes(baPlanId))) ||
-            (baPlanTitle && selectedPlan?.planTitle && selectedPlan.planTitle.toLowerCase().includes(baPlanTitle)) ||
-            (baPlanTitle && selectedPlan?.planNumber && selectedPlan.planNumber.toLowerCase().includes(baPlanTitle));
+            (baPlanId &&
+              (baPlanId === cleanPlanId.toLowerCase().trim() ||
+                cleanPlanId.includes(baPlanId))) ||
+            (baPlanTitle &&
+              selectedPlan?.planTitle &&
+              selectedPlan.planTitle.toLowerCase().includes(baPlanTitle)) ||
+            (baPlanTitle &&
+              selectedPlan?.planNumber &&
+              selectedPlan.planNumber.toLowerCase().includes(baPlanTitle));
           if (matches) {
             const baRef = ba.reference || (ba as any).activityRefNo || ba.id;
-            if (!combined.some((x: any) => (x.reference || x.activityRefNo || x.id) === baRef)) {
+            if (
+              !combined.some(
+                (x: any) => (x.reference || x.activityRefNo || x.id) === baRef,
+              )
+            ) {
               combined.push(ba);
             }
           }
@@ -634,26 +657,46 @@ export function CommitteeProgressView({
         // Also merge local storage draft activities
         if (typeof window !== "undefined" && selectedPlan) {
           try {
-            const rawDrafts = localStorage.getItem(OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY);
+            const rawDrafts = localStorage.getItem(
+              OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+            );
             if (rawDrafts) {
               const drafts = parseSavedActivityRecords(rawDrafts);
               for (const d of drafts) {
-                const draftPlanRef = (d.planReference || "").toLowerCase().trim();
-                const planRef = (selectedPlan.planNumber || selectedPlan.planTitle || "").toLowerCase().trim();
+                const draftPlanRef = (d.planReference || "")
+                  .toLowerCase()
+                  .trim();
+                const planRef = (
+                  selectedPlan.planNumber ||
+                  selectedPlan.planTitle ||
+                  ""
+                )
+                  .toLowerCase()
+                  .trim();
                 const planId = (selectedPlan.id || "").toLowerCase().trim();
                 if (
                   draftPlanRef === planRef ||
                   draftPlanRef === planId ||
-                  (d.projectCode && selectedPlan.projectCode && d.projectCode.toLowerCase() === selectedPlan.projectCode.toLowerCase())
+                  (d.projectCode &&
+                    selectedPlan.projectCode &&
+                    d.projectCode.toLowerCase() ===
+                      selectedPlan.projectCode.toLowerCase())
                 ) {
                   const act = d.activity;
                   if (act) {
-                    const actRef = act.reference || (act as any).activityRefNo || act.id;
-                    if (!combined.some((x: any) => (x.reference || x.activityRefNo || x.id) === actRef)) {
+                    const actRef =
+                      act.reference || (act as any).activityRefNo || act.id;
+                    if (
+                      !combined.some(
+                        (x: any) =>
+                          (x.reference || x.activityRefNo || x.id) === actRef,
+                      )
+                    ) {
                       combined.push({
                         id: act.id || `draft-${Date.now()}`,
                         reference: act.reference || (act as any).activityRefNo,
-                        activityRefNo: (act as any).activityRefNo || act.reference,
+                        activityRefNo:
+                          (act as any).activityRefNo || act.reference,
                         description: act.description,
                         estimatedBudget: act.estimatedAmount || 0,
                         estimatedAmount: act.estimatedAmount || 0,
@@ -675,21 +718,29 @@ export function CommitteeProgressView({
           }
         }
 
-
         // Ensure flagged activity refs from committee votes appear in the list
-        const flaggedRefs = Array.from(new Set<string>([
-          ...(selectedPlan?.rejectedActivityRefs || []),
-          ...parseRejectionDetails(selectedPlan?.rejectionReason).rejectedActivityRefs,
-          ...(selectedPlan?.memberVotes || []).flatMap((mv) =>
-            mv.feedback ? parseRejectionDetails(mv.feedback).rejectedActivityRefs : []
-          ),
-        ]));
+        const flaggedRefs = Array.from(
+          new Set<string>([
+            ...(selectedPlan?.rejectedActivityRefs || []),
+            ...parseRejectionDetails(selectedPlan?.rejectionReason)
+              .rejectedActivityRefs,
+            ...(selectedPlan?.memberVotes || []).flatMap((mv) =>
+              mv.feedback
+                ? parseRejectionDetails(mv.feedback).rejectedActivityRefs
+                : [],
+            ),
+          ]),
+        );
         for (const fRef of flaggedRefs) {
           if (!fRef) continue;
           const cleanF = fRef.toLowerCase().trim();
           const exists = combined.some((a: any) => {
-            const aRef = (a.reference || a.activityRefNo || a.id || "").toLowerCase().trim();
-            return aRef === cleanF || aRef.includes(cleanF) || cleanF.includes(aRef);
+            const aRef = (a.reference || a.activityRefNo || a.id || "")
+              .toLowerCase()
+              .trim();
+            return (
+              aRef === cleanF || aRef.includes(cleanF) || cleanF.includes(aRef)
+            );
           });
           if (!exists) {
             combined.push({
@@ -937,7 +988,11 @@ export function CommitteeProgressView({
   }, [selectedPlan]);
 
   // CANONICAL DIRECTOR ACTIVITY INSPECTION VIEW
-  if ((isFullPlanTrackerOpen || activeActivityRef) && selectedPlan && activeProcurementPlan) {
+  if (
+    (isFullPlanTrackerOpen || activeActivityRef) &&
+    selectedPlan &&
+    activeProcurementPlan
+  ) {
     return (
       <DirectorActivitiesListView
         plan={activeProcurementPlan}
@@ -1302,7 +1357,6 @@ export function CommitteeProgressView({
                         );
                       })()}
 
-
                     {member.votedAt && (
                       <p className="text-[10px] text-slate-400 font-mono pt-1">
                         Voted at: {member.votedAt}
@@ -1484,21 +1538,21 @@ export function CommitteeProgressView({
                 selectedPlan.rawStatus === "APPROVED" ||
                 selectedPlan.rawStatus === "MANAGEMENT_APPROVED" ||
                 selectedPlan.rawStatus === "COMMITTEE_ENDORSED") &&
-                selectedPlan.overallStatus !== "Rejected" &&
-                selectedPlan.overallStatus !== "Returned for Revision" &&
-                selectedPlan.committeeStatus !== "Rejected" &&
-                selectedPlan.managementStatus !== "Rejected" &&
-                selectedPlan.rawStatus !== "REJECTED" &&
-                selectedPlan.rawStatus !== "COMMITTEE_REJECTED" &&
-                selectedPlan.rawStatus !== "MANAGEMENT_REJECTED" &&
-                selectedPlan.rawStatus !== "RETURNED_FOR_REVISION" &&
-                (selectedPlan.rejectedCount || 0) === 0 &&
-                (!selectedPlan.rejectedActivityRefs ||
-                  selectedPlan.rejectedActivityRefs.length === 0) &&
-                (!parseRejectionDetails(selectedPlan.rejectionReason)
-                  .rejectedActivityRefs ||
-                  parseRejectionDetails(selectedPlan.rejectionReason)
-                    .rejectedActivityRefs.length === 0),
+              selectedPlan.overallStatus !== "Rejected" &&
+              selectedPlan.overallStatus !== "Returned for Revision" &&
+              selectedPlan.committeeStatus !== "Rejected" &&
+              selectedPlan.managementStatus !== "Rejected" &&
+              selectedPlan.rawStatus !== "REJECTED" &&
+              selectedPlan.rawStatus !== "COMMITTEE_REJECTED" &&
+              selectedPlan.rawStatus !== "MANAGEMENT_REJECTED" &&
+              selectedPlan.rawStatus !== "RETURNED_FOR_REVISION" &&
+              (selectedPlan.rejectedCount || 0) === 0 &&
+              (!selectedPlan.rejectedActivityRefs ||
+                selectedPlan.rejectedActivityRefs.length === 0) &&
+              (!parseRejectionDetails(selectedPlan.rejectionReason)
+                .rejectedActivityRefs ||
+                parseRejectionDetails(selectedPlan.rejectionReason)
+                  .rejectedActivityRefs.length === 0),
             );
 
             if (isPlanApproved) {
@@ -1516,7 +1570,10 @@ export function CommitteeProgressView({
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 max-w-2xl">
-                        All procurement activities have been endorsed without objections. Inspect the full activity tracker to view all procurement packages, milestone roadmap, and tender stages.
+                        All procurement activities have been endorsed without
+                        objections. Inspect the full activity tracker to view
+                        all procurement packages, milestone roadmap, and tender
+                        stages.
                       </p>
                     </div>
 
@@ -1698,7 +1755,6 @@ export function CommitteeProgressView({
               selectedPlan.rejectedCount > 0 ||
               Boolean(selectedPlan.rejectionReason)) &&
             selectedPlan.rawStatus !== "RETURNED_FOR_REVISION" && (
-
               <div className="rounded-2xl border border-amber-200/90 bg-amber-50/60 p-6 shadow-2xs space-y-4">
                 <div className="flex items-center gap-2.5 border-b border-amber-200/60 pb-3">
                   <div className="h-8 w-8 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center font-bold shrink-0">

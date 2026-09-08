@@ -818,30 +818,31 @@ function ActivityRow({
       </td>
       <td className="px-3 py-2.5 align-top text-[10px] font-medium leading-4 text-slate-700 wrap-break-word">
         <p className="wrap-break-word line-clamp-2">{activity.description}</p>
-        {isMultiOfficer && (activity.createdByName || activity.updatedByName) && (
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-slate-400">
-            {activity.createdByName && (
-              <span>
-                Created by{" "}
-                <span className="font-semibold text-slate-600">
-                  {activity.createdByName}
-                </span>
-              </span>
-            )}
-            {activity.updatedByName &&
-              activity.updatedByName !== activity.createdByName && (
-                <>
-                  <span>•</span>
-                  <span>
-                    Edited by{" "}
-                    <span className="font-semibold text-slate-600">
-                      {activity.updatedByName}
-                    </span>
+        {isMultiOfficer &&
+          (activity.createdByName || activity.updatedByName) && (
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-slate-400">
+              {activity.createdByName && (
+                <span>
+                  Created by{" "}
+                  <span className="font-semibold text-slate-600">
+                    {activity.createdByName}
                   </span>
-                </>
+                </span>
               )}
-          </div>
-        )}
+              {activity.updatedByName &&
+                activity.updatedByName !== activity.createdByName && (
+                  <>
+                    <span>•</span>
+                    <span>
+                      Edited by{" "}
+                      <span className="font-semibold text-slate-600">
+                        {activity.updatedByName}
+                      </span>
+                    </span>
+                  </>
+                )}
+            </div>
+          )}
       </td>
       <td className="px-3 py-2.5 align-top text-[10px] text-slate-500">
         {activity.category}

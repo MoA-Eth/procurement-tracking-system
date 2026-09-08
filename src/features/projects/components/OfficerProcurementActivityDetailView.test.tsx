@@ -216,4 +216,3 @@ describe("OfficerProcurementActivityDetailView", () => {
     expect(markup).toContain("Abebe Kebede");
   });
 });
-

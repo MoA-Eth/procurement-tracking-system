@@ -59,7 +59,8 @@ describe("mapBackendPlanToFrontend for Director Role with flagged activities", (
           id: "vote-1",
           memberId: "committee-member-1",
           decision: "REJECT",
-          comment: "[Flagged Activities: MOA-RFB_NAT-000001] Price estimate is inflated.",
+          comment:
+            "[Flagged Activities: MOA-RFB_NAT-000001] Price estimate is inflated.",
           createdAt: "2026-09-08T10:00:00Z",
         },
         {
@@ -90,14 +91,15 @@ describe("mapBackendPlanToFrontend for Director Role with flagged activities", (
 
     expect(frontendPlan.rejectionScope).toBe("SPECIFIC");
     expect(frontendPlan.rejectedActivityRefs).toEqual(["MOA-RFB_NAT-000001"]);
-    expect(frontendPlan.rejectionReason).toContain("[Flagged Activities: MOA-RFB_NAT-000001]");
+    expect(frontendPlan.rejectionReason).toContain(
+      "[Flagged Activities: MOA-RFB_NAT-000001]",
+    );
   });
 
   it("renders DirectorActivitiesListView with flagged activities and objection banner", async () => {
     const { renderToStaticMarkup } = await import("react-dom/server");
-    const { DirectorActivitiesListView } = await import(
-      "../activities/components/DirectorActivitiesListView"
-    );
+    const { DirectorActivitiesListView } =
+      await import("../activities/components/DirectorActivitiesListView");
 
     const testPlan: any = {
       id: "plan-test-123",
@@ -152,7 +154,9 @@ describe("mapBackendPlanToFrontend for Director Role with flagged activities", (
     );
 
     expect(markup).toContain("Back to Vote Progress");
-    expect(markup).toContain("Committee Objection: Specific Activities Flagged");
+    expect(markup).toContain(
+      "Committee Objection: Specific Activities Flagged",
+    );
     expect(markup).toContain("MOA-RFB_NAT-000001");
     expect(markup).toContain("Flagged by Committee");
     expect(markup).toContain("Supply of high-yield wheat seeds");
@@ -257,9 +261,8 @@ describe("isPlanAwaitingManagementReview", () => {
 describe("Management Role Authorization Card Visibility", () => {
   it("does NOT render Executive Management Decision card when opened from vote-progress or for an approved plan", async () => {
     const { renderToStaticMarkup } = await import("react-dom/server");
-    const { DirectorActivitiesListView } = await import(
-      "../activities/components/DirectorActivitiesListView"
-    );
+    const { DirectorActivitiesListView } =
+      await import("../activities/components/DirectorActivitiesListView");
     const React = await import("react");
 
     const approvedPlan: any = {
@@ -286,15 +289,16 @@ describe("Management Role Authorization Card Visibility", () => {
       }),
     );
 
-    expect(markup).not.toContain("Executive Management Decision &amp; Authorization");
+    expect(markup).not.toContain(
+      "Executive Management Decision &amp; Authorization",
+    );
     expect(markup).not.toContain("Authorize &amp; Approve Plan");
   });
 
   it("renders Executive Management Decision card in plan-for-review for eligible awaiting plans", async () => {
     const { renderToStaticMarkup } = await import("react-dom/server");
-    const { DirectorActivitiesListView } = await import(
-      "../activities/components/DirectorActivitiesListView"
-    );
+    const { DirectorActivitiesListView } =
+      await import("../activities/components/DirectorActivitiesListView");
     const React = await import("react");
 
     const awaitingPlan: any = {
@@ -319,9 +323,10 @@ describe("Management Role Authorization Card Visibility", () => {
       }),
     );
 
-    expect(markup).toContain("Executive Management Decision &amp; Authorization");
+    expect(markup).toContain(
+      "Executive Management Decision &amp; Authorization",
+    );
     expect(markup).toContain("Authorize &amp; Approve Plan");
     expect(markup).toContain("Reject Plan");
   });
 });
-
