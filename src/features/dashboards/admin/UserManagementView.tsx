@@ -22,7 +22,7 @@ import {
   type ApiUser,
   type PaginatedResponse,
 } from "@/lib/adminApi";
-import type { AuthUser, ProvisionableRole } from "@/lib/authTypes";
+import { type AuthUser, type ProvisionableRole, normalizeUserRole } from "@/lib/authTypes";
 
 interface UserManagementViewProps {
   initialMode?: "list" | "invite";
@@ -33,6 +33,7 @@ const AUTH_ROLE_LABELS: Record<string, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsement Committee",
+  MANAGEMENT_TEAM: "Management Team",
   ADMIN: "Administrator",
 };
 
@@ -40,14 +41,28 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
   ProcurementOfficer: "Officer",
   ProcurementDirector: "Director",
   Administrator: "Administrator",
+  EndorsingCommittee: "Endorsement Committee",
   ManagementTeam: "Management Team",
+  MANAGEMENT_TEAM: "Management Team",
   ProjectManager: "Project Manager",
 };
 
 function displayRole(user: ApiUser): string {
+  const roleVal = user.role || "";
+  const authRoleVal = user.authRole || "";
+  if (
+    roleVal === "ManagementTeam" ||
+    roleVal === "MANAGEMENT_TEAM" ||
+    authRoleVal === "MANAGEMENT_TEAM" ||
+    authRoleVal === "ManagementTeam"
+  ) {
+    return "Management Team";
+  }
+  const normalized = normalizeUserRole(user.authRole || user.role);
   return (
-    AUTH_ROLE_LABELS[user.authRole] ??
+    AUTH_ROLE_LABELS[normalized] ??
     PRISMA_ROLE_LABELS[user.role] ??
+    AUTH_ROLE_LABELS[user.authRole] ??
     user.authRole ??
     user.role
   );
@@ -139,7 +154,7 @@ const DEFAULT_USERS_RESPONSE: PaginatedResponse<ApiUser> = {
       email: "genet@moa.gov.et",
       name: "Genet Tadesse",
       role: "ManagementTeam",
-      authRole: "ENDORSING_COMMITTEE",
+      authRole: "MANAGEMENT_TEAM",
       status: "ACTIVE",
       isActive: true,
       lastLoginAt: "2026-08-26T11:00:00Z",
@@ -239,7 +254,9 @@ export function UserManagementView({
         ALL: undefined,
         OFFICER: "ProcurementOfficer",
         DIRECTOR: "ProcurementDirector",
-        ENDORSING_COMMITTEE: "ManagementTeam",
+        ENDORSING_COMMITTEE: "EndorsingCommittee",
+        MANAGEMENT_TEAM: "ManagementTeam",
+        ManagementTeam: "ManagementTeam",
         ADMIN: "Administrator",
       };
 
@@ -270,7 +287,9 @@ export function UserManagementView({
       ALL: undefined,
       OFFICER: "ProcurementOfficer",
       DIRECTOR: "ProcurementDirector",
-      ENDORSING_COMMITTEE: "ManagementTeam",
+      ENDORSING_COMMITTEE: "EndorsingCommittee",
+      MANAGEMENT_TEAM: "ManagementTeam",
+      ManagementTeam: "ManagementTeam",
       ADMIN: "Administrator",
     };
 
@@ -357,7 +376,7 @@ export function UserManagementView({
     setErrorMessage(null);
     setInvitedInfo(null);
 
-    const role = (user.authRole as ProvisionableRole) || "OFFICER";
+    const role = (normalizeUserRole(user.authRole || user.role) as ProvisionableRole) || "OFFICER";
 
     try {
       await createInvitedUser(
@@ -559,11 +578,17 @@ export function UserManagementView({
                   <option value="ENDORSING_COMMITTEE">
                     Endorsement Committee (Committee Review)
                   </option>
+                  <option value="MANAGEMENT_TEAM">
+                    Management Team (Management Oversight)
+                  </option>
+                  <option value="ADMIN">
+                    Administrator (System Administration / Governance)
+                  </option>
                 </select>
 
                 <p className="text-xs text-[#64748b] font-medium mt-2 flex items-center gap-1.5">
                   <Info className="w-4 h-4 text-[#047857] shrink-0" />
-                  Admin roles are excluded from normal invitations.
+                  Select the appropriate PTS role and operational permissions for this account.
                 </p>
               </div>
 
@@ -651,6 +676,9 @@ export function UserManagementView({
                   <option value="ENDORSING_COMMITTEE">
                     Endorsement Committee
                   </option>
+                  <option value="MANAGEMENT_TEAM">
+                    Management Team
+                  </option>
                   <option value="ADMIN">Administrator</option>
                 </select>
 
@@ -730,9 +758,8 @@ export function UserManagementView({
                           return (
                             <tr
                               key={user.id}
-                              className={`border-b border-slate-100 transition-colors duration-150 hover:bg-[#f1f5f9] ${
-                                isOddRow ? "bg-[#f8fafc]/60" : "bg-white"
-                              }`}
+                              className={`border-b border-slate-100 transition-colors duration-150 hover:bg-[#f1f5f9] ${isOddRow ? "bg-[#f8fafc]/60" : "bg-white"
+                                }`}
                             >
                               <td className="py-4 px-4 align-middle max-w-xs wrap-break-word">
                                 <div className="font-bold text-[#0f172a] text-xs wrap-break-word line-clamp-2 flex items-center gap-1.5">
@@ -760,13 +787,12 @@ export function UserManagementView({
 
                               <td className="py-4 px-4 align-middle">
                                 <span
-                                  className={`text-xs font-bold ${
-                                    isPending
+                                  className={`text-xs font-bold ${isPending
                                       ? "text-[#b06000]"
                                       : isActive
                                         ? "text-[#137333]"
                                         : "text-[#c5221f]"
-                                  }`}
+                                    }`}
                                 >
                                   {status}
                                 </span>
@@ -810,11 +836,10 @@ export function UserManagementView({
                                     type="button"
                                     disabled={actionUserId === user.id}
                                     onClick={() => handleToggleStatus(user)}
-                                    className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
-                                      isActive
+                                    className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${isActive
                                         ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
                                         : "border-blue-200/90 bg-blue-50/90 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800"
-                                    }`}
+                                      }`}
                                   >
                                     {actionUserId === user.id ? (
                                       <Loader2 className="w-3 h-3 animate-spin inline" />

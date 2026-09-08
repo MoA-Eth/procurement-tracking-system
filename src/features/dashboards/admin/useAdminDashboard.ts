@@ -52,7 +52,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
           setTotalUserCount(usersRes.meta?.total ?? usersRes.data.length);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         if (active) setIsUsersLoading(false);
       });
@@ -63,7 +63,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
           setLogs(logsRes.data);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => {
         if (active) setIsLogsLoading(false);
       });
@@ -104,6 +104,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
     let officersCount = 0;
     let directorsCount = 0;
     let committeeCount = 0;
+    let managementTeamCount = 0;
     let adminsCount = 0;
 
     for (const u of users) {
@@ -112,6 +113,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
       if (normalized === "OFFICER") officersCount++;
       else if (normalized === "DIRECTOR") directorsCount++;
       else if (normalized === "ENDORSING_COMMITTEE") committeeCount++;
+      else if (normalized === "MANAGEMENT_TEAM") managementTeamCount++;
       else if (normalized === "ADMIN") adminsCount++;
     }
 
@@ -122,6 +124,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
       officersCount,
       directorsCount,
       committeeCount,
+      managementTeamCount,
       adminsCount,
     };
   }, [totalUserCount, users]);
@@ -133,6 +136,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
     isLogsLoading,
     togglingId,
     handleToggleStatus,
+    refreshData: loadData,
     metrics,
   };
 }

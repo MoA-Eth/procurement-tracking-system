@@ -28,6 +28,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
     isLogsLoading,
     togglingId,
     handleToggleStatus,
+    refreshData,
     metrics,
   } = useAdminDashboard(user);
 
@@ -50,6 +51,8 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         (q === "officer" && normalized === "officer") ||
         (q === "director" && normalized === "director") ||
         (q === "committee" && normalized === "endorsing_committee") ||
+        (q === "management" && (normalized === "management_team" || rawRole.includes("management"))) ||
+        (q === "management team" && (normalized === "management_team" || rawRole.includes("management"))) ||
         (q === "administrator" && normalized === "admin") ||
         (q === "admin" && normalized === "admin")
       );
@@ -125,216 +128,186 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
           aria-labelledby="user-roles-breakdown-heading"
           className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/80 bg-slate-50 shadow-2xs">
-              <ShieldCheck className="h-4.5 w-4.5 text-indigo-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200/80 bg-slate-50 shadow-2xs">
+                <ShieldCheck className="h-4.5 w-4.5 text-indigo-600" />
+              </div>
+              <div>
+                <h2
+                  id="user-roles-breakdown-heading"
+                  className="text-base font-bold text-slate-900"
+                >
+                  Access Role Allocation
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Current distribution of user permissions
+                </p>
+              </div>
             </div>
-            <div>
-              <h2
-                id="user-roles-breakdown-heading"
-                className="text-base font-bold text-slate-900"
+            {Boolean(searchQuery) && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
               >
-                Access Role Allocation
-              </h2>
-              <p className="text-xs text-slate-500">
-                Current distribution of user permissions
-              </p>
-            </div>
+                Reset filter
+              </button>
+            )}
           </div>
 
-          {/* Distribution bar across all 4 roles */}
+          {/* Donut chart & role allocation breakdown */}
           {(() => {
             const totalAllocated =
               metrics.officersCount +
               metrics.directorsCount +
               metrics.committeeCount +
+              metrics.managementTeamCount +
               metrics.adminsCount;
 
+            const roles = [
+              {
+                name: "Officers",
+                filter: "Officer",
+                count: metrics.officersCount,
+                color: "#2563eb",
+                dotBg: "bg-blue-600",
+              },
+              {
+                name: "Directors",
+                filter: "Director",
+                count: metrics.directorsCount,
+                color: "#4f46e5",
+                dotBg: "bg-indigo-600",
+              },
+              {
+                name: "Endorsement Committee",
+                filter: "Committee",
+                count: metrics.committeeCount,
+                color: "#f59e0b",
+                dotBg: "bg-amber-500",
+              },
+              {
+                name: "Management Team",
+                filter: "Management",
+                count: metrics.managementTeamCount,
+                color: "#9333ea",
+                dotBg: "bg-purple-600",
+              },
+              {
+                name: "Administrators",
+                filter: "Administrator",
+                count: metrics.adminsCount,
+                color: "#059669",
+                dotBg: "bg-emerald-600",
+              },
+            ];
+
+            const radius = 38;
+            const circumference = 2 * Math.PI * radius;
+            let accumulatedOffset = 0;
+
             return (
-              <>
-                {totalAllocated > 0 && (
-                  <div className="mt-4 h-2 w-full rounded-full bg-slate-100 flex overflow-hidden">
-                    <div
-                      style={{
-                        width: `${(metrics.officersCount / totalAllocated) * 100}%`,
-                      }}
-                      className="bg-blue-600 h-full transition-all"
-                      title={`Officers: ${metrics.officersCount}`}
+              <div className="mt-5 border-t border-slate-100 pt-5 flex flex-col sm:flex-row items-center gap-6">
+                {/* Donut Chart */}
+                <div className="relative flex items-center justify-center shrink-0 w-36 h-36">
+                  <svg
+                    className="w-36 h-36 -rotate-90 transform"
+                    viewBox="0 0 100 100"
+                  >
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r={radius}
+                      className="stroke-slate-100"
+                      strokeWidth="9"
+                      fill="none"
                     />
-                    <div
-                      style={{
-                        width: `${(metrics.directorsCount / totalAllocated) * 100}%`,
-                      }}
-                      className="bg-indigo-600 h-full transition-all"
-                      title={`Directors: ${metrics.directorsCount}`}
-                    />
-                    <div
-                      style={{
-                        width: `${(metrics.committeeCount / totalAllocated) * 100}%`,
-                      }}
-                      className="bg-amber-500 h-full transition-all"
-                      title={`Committee: ${metrics.committeeCount}`}
-                    />
-                    <div
-                      style={{
-                        width: `${(metrics.adminsCount / totalAllocated) * 100}%`,
-                      }}
-                      className="bg-emerald-600 h-full transition-all"
-                      title={`Administrators: ${metrics.adminsCount}`}
-                    />
+                    {totalAllocated > 0 &&
+                      roles.map((r) => {
+                        if (r.count === 0) return null;
+                        const pct = r.count / totalAllocated;
+                        const strokeLength = pct * circumference;
+                        const currentOffset = accumulatedOffset;
+                        accumulatedOffset += strokeLength;
+
+                        return (
+                          <circle
+                            key={r.name}
+                            cx="50"
+                            cy="50"
+                            r={radius}
+                            stroke={r.color}
+                            strokeWidth="9"
+                            strokeDasharray={`${strokeLength} ${circumference}`}
+                            strokeDashoffset={`-${currentOffset}`}
+                            fill="none"
+                            className="transition-all duration-500 ease-out"
+                          />
+                        );
+                      })}
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none select-none">
+                    <span className="text-2xl font-black tracking-tight text-slate-900 leading-none">
+                      {totalAllocated}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                      Users
+                    </span>
                   </div>
-                )}
-
-                <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3 border-t border-slate-100 pt-5 text-center">
-                  {/* 1. Officers */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSearchQuery(
-                        searchQuery.toLowerCase() === "officer" ? "" : "Officer",
-                      )
-                    }
-                    className={`rounded-xl p-3 transition-all text-center cursor-pointer border ${
-                      searchQuery.toLowerCase() === "officer"
-                        ? "bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/10"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/80 shadow-2xs"
-                    }`}
-                    title="Filter table by Officers"
-                  >
-                    <p
-                      className={`text-2xl font-bold ${
-                        searchQuery.toLowerCase() === "officer"
-                          ? "text-white"
-                          : "text-slate-900"
-                      }`}
-                    >
-                      {metrics.officersCount}
-                    </p>
-                    <p
-                      className={`text-xs font-semibold mt-0.5 flex items-center justify-center gap-1.5 ${
-                        searchQuery.toLowerCase() === "officer"
-                          ? "text-slate-300"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                      Officers
-                    </p>
-                  </button>
-
-                  {/* 2. Directors */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSearchQuery(
-                        searchQuery.toLowerCase() === "director" ? "" : "Director",
-                      )
-                    }
-                    className={`rounded-xl p-3 transition-all text-center cursor-pointer border ${
-                      searchQuery.toLowerCase() === "director"
-                        ? "bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/10"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/80 shadow-2xs"
-                    }`}
-                    title="Filter table by Directors"
-                  >
-                    <p
-                      className={`text-2xl font-bold ${
-                        searchQuery.toLowerCase() === "director"
-                          ? "text-white"
-                          : "text-slate-900"
-                      }`}
-                    >
-                      {metrics.directorsCount}
-                    </p>
-                    <p
-                      className={`text-xs font-semibold mt-0.5 flex items-center justify-center gap-1.5 ${
-                        searchQuery.toLowerCase() === "director"
-                          ? "text-slate-300"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
-                      Directors
-                    </p>
-                  </button>
-
-                  {/* 3. Endorsement Committee */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSearchQuery(
-                        searchQuery.toLowerCase() === "committee"
-                          ? ""
-                          : "Committee",
-                      )
-                    }
-                    className={`rounded-xl p-3 transition-all text-center cursor-pointer border ${
-                      searchQuery.toLowerCase() === "committee"
-                        ? "bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/10"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/80 shadow-2xs"
-                    }`}
-                    title="Filter table by Committee"
-                  >
-                    <p
-                      className={`text-2xl font-bold ${
-                        searchQuery.toLowerCase() === "committee"
-                          ? "text-white"
-                          : "text-slate-900"
-                      }`}
-                    >
-                      {metrics.committeeCount}
-                    </p>
-                    <p
-                      className={`text-xs font-semibold mt-0.5 flex items-center justify-center gap-1.5 ${
-                        searchQuery.toLowerCase() === "committee"
-                          ? "text-slate-300"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
-                      Committee
-                    </p>
-                  </button>
-
-                  {/* 4. Administrators */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSearchQuery(
-                        searchQuery.toLowerCase() === "administrator"
-                          ? ""
-                          : "Administrator",
-                      )
-                    }
-                    className={`rounded-xl p-3 transition-all text-center cursor-pointer border ${
-                      searchQuery.toLowerCase() === "administrator"
-                        ? "bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/10"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/80 shadow-2xs"
-                    }`}
-                    title="Filter table by Administrators"
-                  >
-                    <p
-                      className={`text-2xl font-bold ${
-                        searchQuery.toLowerCase() === "administrator"
-                          ? "text-white"
-                          : "text-slate-900"
-                      }`}
-                    >
-                      {metrics.adminsCount}
-                    </p>
-                    <p
-                      className={`text-xs font-semibold mt-0.5 flex items-center justify-center gap-1.5 ${
-                        searchQuery.toLowerCase() === "administrator"
-                          ? "text-slate-300"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
-                      Administrators
-                    </p>
-                  </button>
                 </div>
-              </>
+
+                {/* Role List / Legend */}
+                <div className="flex-1 w-full space-y-1">
+                  {roles.map((r) => {
+                    const isSelected =
+                      searchQuery.toLowerCase() === r.filter.toLowerCase();
+                    const pct =
+                      totalAllocated > 0
+                        ? Math.round((r.count / totalAllocated) * 100)
+                        : 0;
+
+                    return (
+                      <button
+                        key={r.name}
+                        type="button"
+                        onClick={() =>
+                          setSearchQuery(isSelected ? "" : r.filter)
+                        }
+                        className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer border ${
+                          isSelected
+                            ? "bg-slate-900 text-white border-slate-900 shadow-xs font-semibold"
+                            : "border-transparent hover:bg-slate-50 text-slate-700 hover:border-slate-200/70"
+                        }`}
+                        title={`Filter by ${r.name}`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full shrink-0 ${r.dotBg}`}
+                          />
+                          <span className="truncate font-medium">{r.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span
+                            className={`text-[11px] tabular-nums font-medium ${
+                              isSelected ? "text-slate-300" : "text-slate-400"
+                            }`}
+                          >
+                            {pct}%
+                          </span>
+                          <span
+                            className={`font-bold tabular-nums min-w-[20px] text-right ${
+                              isSelected ? "text-white" : "text-slate-900"
+                            }`}
+                          >
+                            {r.count}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })()}
         </section>
@@ -416,6 +389,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             currentUser={user}
             onToggleStatus={handleToggleStatus}
             togglingId={togglingId}
+            onRefresh={refreshData}
           />
         </div>
       </section>

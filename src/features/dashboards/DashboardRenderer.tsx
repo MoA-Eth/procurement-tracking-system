@@ -12,6 +12,8 @@ export function DashboardRenderer({ user }: { user: AuthUser }) {
       return <DirectorDashboard user={user} />;
     case "ENDORSING_COMMITTEE":
       return <CommitteeDashboard user={user} />;
+    case "MANAGEMENT_TEAM":
+      return <DirectorDashboard user={user} />;
     case "ADMIN":
       return <AdminDashboard user={user} />;
   }

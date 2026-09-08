@@ -1,5 +1,5 @@
 import type { UserRole } from "../types";
-import { dashboardPath } from "./authTypes";
+import { dashboardPath, normalizeUserRole } from "./authTypes";
 
 export type NavigationIconName =
   | "activity"
@@ -33,7 +33,7 @@ const workspaceSections = {
     href: "/workspace/projects",
     icon: "projects",
     description: "View and follow procurement projects assigned to your role.",
-    allowedRoles: ["OFFICER", "DIRECTOR"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT_TEAM"],
   },
   contracts: {
     section: "contracts",
@@ -49,7 +49,7 @@ const workspaceSections = {
     href: "/workspace/activity-tracker",
     icon: "activity",
     description: "Track procurement activities, milestones and upcoming work.",
-    allowedRoles: ["OFFICER", "DIRECTOR"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT_TEAM"],
   },
   "plan-for-review": {
     section: "plan-for-review",
@@ -57,7 +57,7 @@ const workspaceSections = {
     href: "/workspace/plan-for-review",
     icon: "clipboard",
     description: "Review procurement plans awaiting action from your role.",
-    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE"],
+    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT_TEAM"],
   },
   "committee-progress": {
     section: "committee-progress",
@@ -65,7 +65,7 @@ const workspaceSections = {
     href: "/workspace/committee-progress",
     icon: "progress",
     description: "Monitor the progress of plans submitted to the committee.",
-    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "ADMIN", "OFFICER"],
+    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT_TEAM", "ADMIN", "OFFICER"],
   },
   reports: {
     section: "reports",
@@ -73,7 +73,7 @@ const workspaceSections = {
     href: "/workspace/reports",
     icon: "reports",
     description: "Open directorate procurement reports and summaries.",
-    allowedRoles: ["DIRECTOR", "OFFICER", "ENDORSING_COMMITTEE", "ADMIN"],
+    allowedRoles: ["DIRECTOR", "OFFICER", "ENDORSING_COMMITTEE", "MANAGEMENT_TEAM", "ADMIN"],
   },
   "my-decisions": {
     section: "my-decisions",
@@ -106,7 +106,7 @@ const workspaceSections = {
     icon: "clipboard",
     description:
       "View alerts, reviews, milestone deadlines and system notifications.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "ENDORSING_COMMITTEE", "ADMIN"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT_TEAM", "ADMIN"],
   },
 } as const satisfies Record<string, WorkspaceSection>;
 
@@ -122,6 +122,12 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "reports",
   ],
   ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],
+  MANAGEMENT_TEAM: [
+    "projects",
+    "plan-for-review",
+    "activity-tracker",
+    "reports",
+  ],
   ADMIN: ["user-management", "system-logs"],
 };
 
@@ -146,5 +152,6 @@ export function canAccessWorkspaceSection(
   role: UserRole,
   section: string,
 ): boolean {
-  return getWorkspaceSection(section)?.allowedRoles.includes(role) ?? false;
+  const normRole = normalizeUserRole(role);
+  return getWorkspaceSection(section)?.allowedRoles.includes(normRole) ?? false;
 }

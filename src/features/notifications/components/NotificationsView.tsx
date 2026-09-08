@@ -17,19 +17,27 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import type { AuthUser } from "@/lib/authTypes";
+import { ROLE_LABELS, normalizeUserRole } from "@/lib/authTypes";
+import { getCurrentUser } from "@/lib/authApi";
 import {
-  INITIAL_NOTIFICATIONS,
+  fetchNotifications,
+  isNotificationForRole,
+  markAlertAsRead,
+  markAllAlertsAsRead,
   type NotificationPriority,
   type NotificationType,
   type SystemNotification,
-} from "../data/notificationsData";
-import { fetchNotifications, markAlertAsRead } from "@/lib/alertsApi";
+} from "@/lib/alertsApi";
 import { useEffect } from "react";
 
-export function NotificationsView() {
-  const [notifications, setNotifications] = useState<SystemNotification[]>(
-    INITIAL_NOTIFICATIONS,
-  );
+export function NotificationsView({ user }: { user?: AuthUser }) {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    if (user) return user;
+    if (typeof window !== "undefined") return getCurrentUser();
+    return null;
+  });
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "unread" | "urgent">(
     "all",
@@ -37,22 +45,67 @@ export function NotificationsView() {
   const [typeFilter, setTypeFilter] = useState<"all" | NotificationType>("all");
 
   useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+    } else if (typeof window !== "undefined") {
+      setCurrentUser(getCurrentUser());
+    }
+  }, [user]);
+
+  const userRole = currentUser?.role
+    ? normalizeUserRole(currentUser.role)
+    : undefined;
+
+  useEffect(() => {
+    let active = true;
     async function loadAlerts() {
-      const data = await fetchNotifications();
-      setNotifications(data);
+      const data = await fetchNotifications(userRole);
+      if (active) {
+        setNotifications(data);
+      }
     }
     loadAlerts();
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [userRole]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const urgentCount = notifications.filter(
-    (n) => n.priority === "urgent",
+  const roleNotifications = notifications.filter((n) =>
+    isNotificationForRole(n, userRole),
+  );
+
+  const unreadCount = roleNotifications.filter((n) => !n.read).length;
+  const urgentCount = roleNotifications.filter(
+    (n) => n.priority === "urgent" && !n.read,
   ).length;
+
+  useEffect(() => {
+    function handleReadAll() {
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    }
+    function handleReadOne(e: Event) {
+      const customEvent = e as CustomEvent<{ id: string }>;
+      const id = customEvent.detail?.id;
+      if (id) {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+        );
+      }
+    }
+
+    window.addEventListener("pts:notifications-read-all", handleReadAll);
+    window.addEventListener("pts:notification-read", handleReadOne);
+    return () => {
+      window.removeEventListener("pts:notifications-read-all", handleReadAll);
+      window.removeEventListener("pts:notification-read", handleReadOne);
+    };
+  }, []);
 
   const handleMarkAsRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
+    markAlertAsRead(id);
   };
 
   const handleToggleRead = (id: string) => {
@@ -63,13 +116,14 @@ export function NotificationsView() {
 
   const handleMarkAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    markAllAlertsAsRead();
   };
 
   const handleDeleteNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
-  const filteredNotifications = notifications.filter((n) => {
+  const filteredNotifications = roleNotifications.filter((n) => {
     if (activeTab === "unread" && n.read) return false;
     if (activeTab === "urgent" && n.priority !== "urgent") return false;
     if (typeFilter !== "all" && n.type !== typeFilter) return false;
@@ -112,7 +166,7 @@ export function NotificationsView() {
       case "normal":
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
-            Standard
+            Normal
           </span>
         );
       case "info":
@@ -134,14 +188,22 @@ export function NotificationsView() {
             <div className="p-2 rounded-xl bg-emerald-50 text-[#0A3C2F] border border-emerald-200">
               <Bell size={20} />
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-              Notifications &amp; Alerts Center
-            </h1>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                  Notifications &amp; Alerts Center
+                </h1>
+                {userRole && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    {ROLE_LABELS[userRole] || userRole}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Role-specific notifications and alerts for your account.
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Stay updated with procurement plan reviews, committee decisions,
-            activity deadlines, and contract milestones.
-          </p>
         </div>
 
         {unreadCount > 0 && (
@@ -236,13 +298,18 @@ export function NotificationsView() {
             <button
               type="button"
               onClick={() => setActiveTab("urgent")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === "urgent"
                   ? "bg-white text-rose-800 shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Urgent ({urgentCount})
+              <span>Urgent</span>
+              {urgentCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-rose-500 text-white">
+                  {urgentCount}
+                </span>
+              )}
             </button>
           </div>
 

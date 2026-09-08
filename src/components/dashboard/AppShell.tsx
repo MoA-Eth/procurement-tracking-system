@@ -23,6 +23,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type MouseEvent, type ReactNode } from "react";
 import type { AuthUser } from "../../lib/authTypes";
+import type { UserRole } from "@/types";
 import { NotificationHeaderDropdown } from "@/features/notifications/components/NotificationHeaderDropdown";
 import { ROLE_LABELS } from "../../lib/authTypes";
 import {
@@ -45,12 +46,13 @@ const navigationIcons: Record<NavigationIconName, LucideIcon> = {
   users: Users,
 };
 
-const roleContext = {
+const roleContext: Record<UserRole, string> = {
   OFFICER: "Procurement Operations",
   DIRECTOR: "Directorate Oversight",
   ENDORSING_COMMITTEE: "Committee Review",
+  MANAGEMENT_TEAM: "Executive Management",
   ADMIN: "System Administration",
-} as const;
+};
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -233,7 +235,7 @@ export function AppShell({
           </button>
 
           <div className="flex items-center gap-3">
-            <NotificationHeaderDropdown />
+            <NotificationHeaderDropdown user={user} />
 
             <div
               aria-label="Current language: English and Amharic"

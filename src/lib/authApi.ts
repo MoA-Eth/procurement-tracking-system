@@ -21,7 +21,8 @@ function mapPrismaRoleToUserRole(role: string): UserRole {
     case "ProjectManager":
       return "DIRECTOR";
     case "ManagementTeam":
-      return "ENDORSING_COMMITTEE";
+    case "MANAGEMENT_TEAM":
+      return "MANAGEMENT_TEAM";
     case "Administrator":
       return "ADMIN";
     case "ProcurementOfficer":
@@ -30,6 +31,7 @@ function mapPrismaRoleToUserRole(role: string): UserRole {
     case "ENDORSING_COMMITTEE":
     case "ADMIN":
     case "OFFICER":
+    case "MANAGEMENT_TEAM":
       return role as UserRole;
     default:
       return "OFFICER";
@@ -234,10 +236,11 @@ export async function createInvitedUser(
   const cleanEmail = email.trim().toLowerCase();
 
   try {
+    const payloadRole = role;
     const res = await apiClient.post<any>("/admin/users", {
       displayName: cleanDisplayName,
       email: cleanEmail,
-      role,
+      role: payloadRole,
     });
 
     const userObj = res.user || res.data || res;

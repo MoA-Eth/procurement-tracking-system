@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import { createInvitedUser, getCurrentUser } from "@/lib/authApi";
 import type { ApiUser } from "@/lib/adminApi";
-import type { AuthUser, ProvisionableRole } from "@/lib/authTypes";
+import { type AuthUser, type ProvisionableRole, normalizeUserRole, ROLE_LABELS } from "@/lib/authTypes";
 
 interface UserAccessTableProps {
   users: ApiUser[];
@@ -20,6 +20,8 @@ const AUTH_ROLE_LABELS: Record<string, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsement Committee",
+  MANAGEMENT_TEAM: "Management Team",
+  ManagementTeam: "Management Team",
   ADMIN: "Administrator",
 };
 
@@ -27,14 +29,28 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
   ProcurementOfficer: "Officer",
   ProcurementDirector: "Director",
   Administrator: "Administrator",
+  EndorsingCommittee: "Endorsement Committee",
   ManagementTeam: "Management Team",
+  MANAGEMENT_TEAM: "Management Team",
   ProjectManager: "Project Manager",
 };
 
 function displayRole(user: ApiUser): string {
+  const roleVal = user.role || "";
+  const authRoleVal = user.authRole || "";
+  if (
+    roleVal === "ManagementTeam" ||
+    roleVal === "MANAGEMENT_TEAM" ||
+    authRoleVal === "MANAGEMENT_TEAM" ||
+    authRoleVal === "ManagementTeam"
+  ) {
+    return "Management Team";
+  }
+  const normalized = normalizeUserRole(user.authRole || user.role);
   return (
-    AUTH_ROLE_LABELS[user.authRole] ??
+    AUTH_ROLE_LABELS[normalized] ??
     PRISMA_ROLE_LABELS[user.role] ??
+    AUTH_ROLE_LABELS[user.authRole] ??
     user.authRole ??
     user.role
   );
@@ -81,7 +97,9 @@ export function UserAccessTable({
 
   const handleResend = async (user: ApiUser) => {
     setResendingId(user.id);
-    const role = (user.authRole as ProvisionableRole) || "OFFICER";
+    const role =
+      (normalizeUserRole(user.authRole || user.role) as ProvisionableRole) ||
+      "OFFICER";
     try {
       await createInvitedUser(
         user.displayName || user.name || user.email,

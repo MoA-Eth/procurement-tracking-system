@@ -14,29 +14,58 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import Link from "next/link";
+import type { AuthUser } from "@/lib/authTypes";
+import { ROLE_LABELS, normalizeUserRole } from "@/lib/authTypes";
+import { getCurrentUser } from "@/lib/authApi";
 import {
-  INITIAL_NOTIFICATIONS,
+  fetchNotifications,
+  isNotificationForRole,
+  markAlertAsRead,
+  markAllAlertsAsRead,
   type NotificationType,
   type SystemNotification,
-} from "../data/notificationsData";
-import { fetchNotifications, markAlertAsRead } from "@/lib/alertsApi";
+} from "@/lib/alertsApi";
 
-export function NotificationHeaderDropdown() {
+export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<SystemNotification[]>(
-    INITIAL_NOTIFICATIONS,
-  );
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    if (user) return user;
+    if (typeof window !== "undefined") return getCurrentUser();
+    return null;
+  });
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+    } else if (typeof window !== "undefined") {
+      setCurrentUser(getCurrentUser());
+    }
+  }, [user]);
+
+  const userRole = currentUser?.role
+    ? normalizeUserRole(currentUser.role)
+    : undefined;
+
+  useEffect(() => {
+    let active = true;
     async function loadAlerts() {
-      const liveData = await fetchNotifications();
-      setNotifications(liveData);
+      const liveData = await fetchNotifications(userRole);
+      if (active) {
+        setNotifications(liveData);
+      }
     }
     loadAlerts();
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [userRole]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const roleNotifications = notifications.filter((n) =>
+    isNotificationForRole(n, userRole),
+  );
+  const unreadCount = roleNotifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -47,18 +76,40 @@ export function NotificationHeaderDropdown() {
         setIsOpen(false);
       }
     }
+    function handleReadAll() {
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    }
+    function handleReadOne(e: Event) {
+      const customEvent = e as CustomEvent<{ id: string }>;
+      const id = customEvent.detail?.id;
+      if (id) {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+        );
+      }
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener("pts:notifications-read-all", handleReadAll);
+    window.addEventListener("pts:notification-read", handleReadOne);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("pts:notifications-read-all", handleReadAll);
+      window.removeEventListener("pts:notification-read", handleReadOne);
+    };
   }, []);
 
   const handleMarkAsRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
+    markAlertAsRead(id);
   };
 
   const handleMarkAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    markAllAlertsAsRead();
   };
 
   function getNotificationIcon(type: NotificationType) {
@@ -107,6 +158,11 @@ export function NotificationHeaderDropdown() {
               <span className="text-xs font-extrabold text-slate-900">
                 Notifications
               </span>
+              {userRole && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200/80 text-slate-700">
+                  {ROLE_LABELS[userRole] || userRole}
+                </span>
+              )}
               {unreadCount > 0 ? (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
                   {unreadCount} New
@@ -132,12 +188,12 @@ export function NotificationHeaderDropdown() {
 
           {/* List */}
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-            {notifications.length === 0 ? (
+            {roleNotifications.length === 0 ? (
               <div className="p-6 text-center text-xs text-slate-400 font-medium">
-                No notifications right now.
+                No notifications for your role right now.
               </div>
             ) : (
-              notifications.slice(0, 5).map((n) => (
+              roleNotifications.slice(0, 5).map((n) => (
                 <div
                   key={n.id}
                   onClick={() => handleMarkAsRead(n.id)}
@@ -197,7 +253,7 @@ export function NotificationHeaderDropdown() {
               onClick={() => setIsOpen(false)}
               className="text-xs font-bold text-[#0A3C2F] hover:underline inline-flex items-center gap-1"
             >
-              <span>See All Notifications ({notifications.length})</span>
+              <span>See All Notifications ({roleNotifications.length})</span>
               <span>→</span>
             </Link>
           </div>
