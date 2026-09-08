@@ -99,6 +99,62 @@ export function parseRejectionDetails(
   };
 }
 
+export function isPlanAwaitingManagementReview(
+  plan?: ProcurementPlan | any | null,
+): boolean {
+  if (!plan) return false;
+
+  // 1. If management decision has already been recorded
+  if (
+    plan.managementDecision !== undefined &&
+    plan.managementDecision !== null
+  ) {
+    return false;
+  }
+  if (
+    plan.managementStatus === "Approved" ||
+    plan.managementStatus === "Rejected"
+  ) {
+    return false;
+  }
+
+  // 2. If plan is already finally approved, management approved, or rejected/returned
+  const rawStatus = (plan.rawStatus || plan.status || "").toUpperCase();
+  if (
+    rawStatus === "APPROVED" ||
+    rawStatus === "FINALLY APPROVED" ||
+    rawStatus === "MANAGEMENT_APPROVED" ||
+    rawStatus === "REJECTED" ||
+    rawStatus === "MANAGEMENT_REJECTED" ||
+    rawStatus === "COMMITTEE_REJECTED" ||
+    rawStatus === "RETURNED_FOR_REVISION"
+  ) {
+    return false;
+  }
+
+  if (
+    plan.status === "Approved" ||
+    plan.status === "Finally Approved" ||
+    plan.status === "Rejected" ||
+    plan.status === "Returned" ||
+    plan.status === "Returned for Revision"
+  ) {
+    return false;
+  }
+
+  // 3. Must be actively waiting for Executive Management authorization
+  return Boolean(
+    rawStatus === "AWAITING_MANAGEMENT_APPROVAL" ||
+      rawStatus === "COMMITTEE_ENDORSED" ||
+      plan.status === "Awaiting Management Approval" ||
+      plan.status === "Committee Endorsed" ||
+      plan.committeeStatus === "Endorsed" ||
+      plan.committeeStatus === "Approved" ||
+      plan.managementStatus === "Awaiting Review" ||
+      plan.hasAdvancedToManagement,
+  );
+}
+
 export const PLAN_CATEGORY_CHOICES: {
   category: PlanCategory;
   description: string;

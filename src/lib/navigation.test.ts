@@ -6,11 +6,25 @@ describe("role navigation permission matrix", () => {
     ["OFFICER", ["Dashboard", "Projects", "Contracts", "Activity Tracker"]],
     [
       "DIRECTOR",
-      ["Dashboard", "Projects", "Plan for Review", "Vote Progress", "Reports"],
+      [
+        "Dashboard",
+        "Projects",
+        "Plan for Review",
+        "Vote Progress",
+        "Activity Tracker",
+        "Reports",
+      ],
     ],
     [
       "MANAGEMENT",
-      ["Dashboard", "Projects", "Plan for Review", "Vote Progress", "Reports"],
+      [
+        "Dashboard",
+        "Projects",
+        "Plan for Review",
+        "Vote Progress",
+        "Activity Tracker",
+        "Reports",
+      ],
     ],
     ["ENDORSING_COMMITTEE", ["Dashboard", "Plan for Review", "My Decisions"]],
     ["ADMIN", ["Dashboard", "User Management", "System Logs (Timestamp)"]],

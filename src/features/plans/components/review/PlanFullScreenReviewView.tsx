@@ -14,6 +14,7 @@ import {
   History,
   AlertTriangle,
   AlertCircle,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 import { type ProcurementPlan, parseRejectionDetails } from "../../plansData";
@@ -44,9 +45,9 @@ export interface PlanFullScreenReviewViewProps {
   setCommitteeDeadlineDate: (date: string) => void;
   returnRemarks: string;
   setReturnRemarks: (remarks: string) => void;
-  onApprovePlan: (plan: ProcurementPlan, deadline?: string) => void;
-  onReturnPlan: (plan: ProcurementPlan, remarks?: string) => void;
-  onCommitteeVote: (
+  onApprovePlan?: (plan: ProcurementPlan, deadline?: string) => void;
+  onReturnPlan?: (plan: ProcurementPlan, remarks?: string) => void;
+  onCommitteeVote?: (
     plan: ProcurementPlan,
     decision: "APPROVE" | "REJECT",
     remarks?: string,
@@ -154,17 +155,17 @@ export function PlanFullScreenReviewView({
               <label className="block text-[11px] font-extrabold text-[#0A3C2F] uppercase tracking-wider">
                 Plan Title
               </label>
-              {userRole === "ENDORSING_COMMITTEE" ? (
-                <h2 className="text-lg sm:text-xl font-extrabold text-slate-950 tracking-tight pt-0.5">
-                  {plan.planName}
-                </h2>
-              ) : (
+              {userRole === "DIRECTOR" ? (
                 <input
                   type="text"
                   value={plan.planName}
                   onChange={(e) => onUpdatePlanName(e.target.value)}
                   className="w-full text-lg sm:text-xl font-extrabold text-slate-950 tracking-tight rounded-xl border border-emerald-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] outline-none"
                 />
+              ) : (
+                <h2 className="text-lg sm:text-xl font-extrabold text-slate-950 tracking-tight pt-0.5">
+                  {plan.planName}
+                </h2>
               )}
             </div>
 
@@ -213,10 +214,11 @@ export function PlanFullScreenReviewView({
       </section>
 
       {/* Rejection Alert Banner */}
-      {(() => {
-        const parsed = parseRejectionDetails(plan.rejectionReason);
-        if (parsed.scope === "SPECIFIC") {
-          return (
+      {userRole !== "ENDORSING_COMMITTEE" &&
+        (() => {
+          const parsed = parseRejectionDetails(plan.rejectionReason);
+          if (parsed.scope === "SPECIFIC") {
+            return (
             <section className="rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50/40 p-4 shadow-2xs space-y-2.5 animate-in fade-in">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex items-start gap-2.5">
@@ -336,20 +338,13 @@ export function PlanFullScreenReviewView({
             <label className="block text-xs font-bold text-slate-900">
               Procurement Plan Justification &amp; Directorate Notes
             </label>
-            {userRole !== "ENDORSING_COMMITTEE" && (
+            {userRole === "DIRECTOR" && (
               <span className="text-[11px] text-slate-400">
                 Auto-saved as Director edits
               </span>
             )}
           </div>
-          {userRole === "ENDORSING_COMMITTEE" ? (
-            <div className="w-full text-xs text-slate-800 leading-relaxed rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 italic">
-              &quot;
-              {plan.description ||
-                "No directorate justification notes provided for this plan."}
-              &quot;
-            </div>
-          ) : (
+          {userRole === "DIRECTOR" ? (
             <textarea
               rows={3}
               value={plan.description || ""}
@@ -357,6 +352,13 @@ export function PlanFullScreenReviewView({
               placeholder="Add justification notes or instructions for the procurement plan..."
               className="w-full text-xs text-slate-800 leading-relaxed rounded-xl border border-slate-300 bg-white p-3.5 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10 outline-none transition-all"
             />
+          ) : (
+            <div className="w-full text-xs text-slate-800 leading-relaxed rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 italic">
+              &quot;
+              {plan.description ||
+                "No directorate justification notes provided for this plan."}
+              &quot;
+            </div>
           )}
         </div>
 
@@ -511,11 +513,7 @@ export function PlanFullScreenReviewView({
 
                         {/* Action Cell */}
                         <td className="py-3.5 px-3.5 text-center align-top pt-3.5">
-                          {userRole === "ENDORSING_COMMITTEE" ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold text-slate-500 bg-slate-100">
-                              View Only
-                            </span>
-                          ) : (
+                          {userRole === "DIRECTOR" ? (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -526,6 +524,18 @@ export function PlanFullScreenReviewView({
                             >
                               <Edit className="h-3.5 w-3.5" />
                               <span>Edit</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingActivity(act);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>View</span>
                             </button>
                           )}
                         </td>
@@ -549,21 +559,34 @@ export function PlanFullScreenReviewView({
       </div>
 
       {/* Decision & Workflow Actions Card */}
-      <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-          <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
-          <h3 className="text-sm font-bold text-slate-900">
-            {userRole === "ENDORSING_COMMITTEE"
-              ? "Endorsement Committee Decision & Voting"
-              : "Director Decision & Workflow Actions"}
-          </h3>
-        </div>
+      {Boolean((userRole === "ENDORSING_COMMITTEE" && Boolean(onCommitteeVote)) ||
+        (userRole === "MANAGEMENT" && Boolean(onManagementDecision)) ||
+        (userRole === "DIRECTOR" &&
+          Boolean(onApprovePlan && onReturnPlan))) && (
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
+            <h3 className="text-sm font-bold text-slate-900">
+              {userRole === "ENDORSING_COMMITTEE"
+                ? "Endorsement Committee Decision & Voting"
+                : userRole === "MANAGEMENT"
+                  ? "Executive Management Decision & Authorization"
+                  : "Director Decision & Workflow Actions"}
+            </h3>
+          </div>
 
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-slate-800">
             {userRole === "ENDORSING_COMMITTEE" ? (
               <>
                 Committee Feedback / Deliberation Notes
+                <span className="ml-1 text-rose-500 text-[10px] font-semibold">
+                  (Required to reject)
+                </span>
+              </>
+            ) : userRole === "MANAGEMENT" ? (
+              <>
+                Executive Decision Notes / Directives
                 <span className="ml-1 text-rose-500 text-[10px] font-semibold">
                   (Required to reject)
                 </span>
@@ -628,7 +651,7 @@ export function PlanFullScreenReviewView({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
             <button
               type="button"
-              onClick={() => onCommitteeVote(plan, "APPROVE")}
+              onClick={() => onCommitteeVote && onCommitteeVote(plan, "APPROVE")}
               className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
             >
               <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
@@ -675,7 +698,7 @@ export function PlanFullScreenReviewView({
               <span>Reject Plan (Return to Director)</span>
             </button>
           </div>
-        ) : (
+        ) : userRole === "DIRECTOR" ? (
           <div className="space-y-4 pt-2 border-t border-slate-100">
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-800">
@@ -713,7 +736,7 @@ export function PlanFullScreenReviewView({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 type="button"
-                onClick={() => onApprovePlan(plan, committeeDeadlineDate)}
+                onClick={() => onApprovePlan && onApprovePlan(plan, committeeDeadlineDate)}
                 className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
               >
                 <Send className="h-4 w-4 text-[#A3E635]" />
@@ -723,7 +746,7 @@ export function PlanFullScreenReviewView({
               <button
                 type="button"
                 disabled={!returnRemarks.trim()}
-                onClick={() => onReturnPlan(plan)}
+                onClick={() => onReturnPlan && onReturnPlan(plan)}
                 className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors ${
                   returnRemarks.trim()
                     ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
@@ -735,8 +758,9 @@ export function PlanFullScreenReviewView({
               </button>
             </div>
           </div>
-        )}
+        ) : null}
       </section>
+      )}
 
       {/* Dedicated Activity Quick Edit Modal */}
       <ActivityQuickEditModal
@@ -751,11 +775,13 @@ export function PlanFullScreenReviewView({
         isOpen={isCommitteeRejectionModalOpen}
         onClose={() => setIsCommitteeRejectionModalOpen(false)}
         onConfirm={(scope, activityIds, activityRefs, remarks) => {
-          onCommitteeVote(plan, "REJECT", remarks, {
-            scope,
-            rejectedActivityIds: activityIds,
-            rejectedActivityRefs: activityRefs,
-          });
+          if (onCommitteeVote) {
+            onCommitteeVote(plan, "REJECT", remarks, {
+              scope,
+              rejectedActivityIds: activityIds,
+              rejectedActivityRefs: activityRefs,
+            });
+          }
         }}
         activities={(plan.activities || reviewActivities).map((a: any) => ({
           id: a.id,

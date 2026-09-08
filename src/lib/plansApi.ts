@@ -417,6 +417,13 @@ export function mapBackendPlanToFrontend(
     }
   }
 
+  // If rejectionReason is not set yet (e.g. current viewer is Director, Management, or an approving member),
+  // pull the rejection reason/comments from any rejecting committee votes:
+  const rejectVotes = votes.filter((v) => v.decision === "REJECT" && v.comment);
+  if (!rejectionReason && rejectVotes.length > 0) {
+    rejectionReason = rejectVotes[0].comment || undefined;
+  }
+
   const managementDecision =
     backendPlan.managementDecision === "APPROVE"
       ? "Approved"
@@ -424,6 +431,25 @@ export function mapBackendPlanToFrontend(
         ? "Rejected"
         : undefined;
   const parsedRejection = parseRejectionDetails(rejectionReason);
+
+  // Harvest all rejected activity refs across backend plan, parsed rejection, rejecting votes, and reviews
+  const allRejectedActivityRefs = Array.from(
+    new Set<string>([
+      ...((backendPlan as any).rejectedActivityRefs || []),
+      ...parsedRejection.rejectedActivityRefs,
+      ...rejectVotes.flatMap(
+        (v) => parseRejectionDetails(v.comment).rejectedActivityRefs,
+      ),
+      ...((backendPlan as any).reviews?.flatMap(
+        (r: any) => parseRejectionDetails(r.notes).rejectedActivityRefs,
+      ) || []),
+    ]),
+  );
+
+  const effectiveRejectionScope =
+    allRejectedActivityRefs.length > 0
+      ? "SPECIFIC"
+      : (backendPlan as any).rejectionScope || parsedRejection.scope;
 
   return {
     id: backendPlan.id,
@@ -487,8 +513,8 @@ export function mapBackendPlanToFrontend(
     managementAt: backendPlan.managementAt || undefined,
     directorRevisionComment: backendPlan.directorRevisionComment || undefined,
     comments: backendPlan.comments || [],
-    rejectionScope: parsedRejection.scope,
-    rejectedActivityRefs: parsedRejection.rejectedActivityRefs,
+    rejectionScope: effectiveRejectionScope,
+    rejectedActivityRefs: allRejectedActivityRefs,
     activities: backendPlan.activities || [],
   };
 }

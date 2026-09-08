@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   ArrowLeft,
   ChevronRight,
@@ -27,6 +27,7 @@ import Link from "next/link";
 import {
   type ProcurementPlan,
   parseRejectionDetails,
+  isPlanAwaitingManagementReview,
 } from "../../plans/plansData";
 import type { ProjectItem } from "@/features/projects/management/projectsData";
 import { fetchPlanComments, type BackendComment } from "@/lib/plansApi";
@@ -46,16 +47,21 @@ import {
   OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
 } from "@/features/projects/data/officerActivityDrafts";
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
-import { CommitteeRejectionModal } from "@/features/plans/components/CommitteeRejectionModal";
 import { getCurrentPlanVersionNumber } from "@/features/plans/data/planRevisions";
 
 interface DirectorActivitiesListViewProps {
   plan: ProcurementPlan;
-  project: ProjectItem;
-  parentSection?: "projects" | "plan-for-review" | "activities";
+  project?: ProjectItem | any;
+  parentSection?:
+    | "projects"
+    | "plan-for-review"
+    | "activities"
+    | "vote-progress"
+    | "my-decisions";
   from?: string;
   userRole?: string;
   targetActivityRef?: string;
+  autoOpenDetail?: boolean;
   onBackClick: () => void;
   onApprovePlan?: (plan: ProcurementPlan) => void;
   onReturnPlan?: (plan: ProcurementPlan, remarks: string) => void;
@@ -296,6 +302,7 @@ export function DirectorActivitiesListView({
   from,
   userRole,
   targetActivityRef,
+  autoOpenDetail = true,
   onBackClick,
   onApprovePlan,
   onReturnPlan,
@@ -305,8 +312,31 @@ export function DirectorActivitiesListView({
 }: DirectorActivitiesListViewProps) {
   const isCommittee = userRole === "ENDORSING_COMMITTEE";
   const isManagement = userRole === "MANAGEMENT";
+  const isDirector = userRole === "DIRECTOR";
+  const isManagementReviewEligible =
+    isManagement &&
+    Boolean(onManagementDecision) &&
+    from !== "vote-progress" &&
+    parentSection !== "vote-progress" &&
+    isPlanAwaitingManagementReview(plan);
+  const isCommitteeVoteEligible =
+    isCommittee &&
+    Boolean(onCommitteeVote) &&
+    from !== "vote-progress" &&
+    parentSection !== "vote-progress" &&
+    !plan.committeeDecision &&
+    (plan.status === "Committee Review" ||
+      (plan as any).status === "WITH_COMMITTEE");
+  const isDirectorActionEligible =
+    isDirector &&
+    Boolean(onApprovePlan && onReturnPlan) &&
+    from !== "vote-progress" &&
+    parentSection !== "vote-progress" &&
+    (plan.status === "Submitted to Director" || plan.status === "Returned");
   const isEditable =
-    parentSection === "plan-for-review" && !isCommittee && !isManagement;
+    isDirector &&
+    parentSection === "plan-for-review" &&
+    from !== "vote-progress";
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [activityComments, setActivityComments] = useState<BackendComment[]>(
     [],
@@ -605,6 +635,41 @@ export function DirectorActivitiesListView({
         }
       }
 
+      // Ensure flagged activity refs from committee votes appear in the list
+      const targetFlaggedRefs = Array.from(
+        new Set<string>([
+          ...(plan.rejectedActivityRefs || []),
+          ...parseRejectionDetails(plan.rejectionReason).rejectedActivityRefs,
+        ]),
+      );
+      for (const fRef of targetFlaggedRefs) {
+        if (!fRef) continue;
+        const cleanF = fRef.toLowerCase().trim();
+        const exists = loadedActs.some((a) => {
+          const aRef = (a.activityRefNo || (a as any).reference || a.id || "").toLowerCase().trim();
+          return aRef === cleanF || aRef.includes(cleanF) || cleanF.includes(aRef);
+        });
+        if (!exists) {
+          loadedActs.push({
+            id: `flagged-${cleanF}`,
+            activityRefNo: fRef,
+            description: `Flagged procurement activity (${fRef})`,
+            category: (plan.category as any) || "Goods",
+            method: "RFB - National",
+            marketApproach: "Open - National",
+            reviewType: "Prior",
+            estimatedAmount: 0,
+            currency: plan.currency || "ETB",
+            roadmap: [],
+            planId: plan.id,
+            planName: plan.planName,
+            projectCode: plan.projectCode,
+            status: "Returned for Revision",
+            isFlaggedByCommittee: true,
+          } as any);
+        }
+      }
+
       setActivities(loadedActs);
     } catch (err) {
       console.warn("loadActivitiesData error:", err);
@@ -637,12 +702,79 @@ export function DirectorActivitiesListView({
   >("ALL");
   const [selectedActivityIdsForRejection, setSelectedActivityIdsForRejection] =
     useState<Set<string>>(new Set());
-  const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [highlightedActivityRef, setHighlightedActivityRef] = useState<
     string | null
   >(targetActivityRef || null);
 
-  const parsedRejection = parseRejectionDetails(plan.rejectionReason);
+  useEffect(() => {
+    if (targetActivityRef) {
+      setHighlightedActivityRef(targetActivityRef);
+    }
+  }, [targetActivityRef]);
+
+  const handleCommitteeRejectVote = useCallback(() => {
+    if (!onCommitteeVote) return;
+
+    const trimmedRemarks = directorReturnRemarks.trim();
+    if (!trimmedRemarks) {
+      alert("Please provide Committee Feedback / Deliberation Notes before rejecting.");
+      return;
+    }
+
+    if (
+      committeeRejectionScope === "SPECIFIC" &&
+      selectedActivityIdsForRejection.size === 0
+    ) {
+      alert("Please select at least one activity with issues before rejecting.");
+      return;
+    }
+
+    const rejectedActivityIds =
+      committeeRejectionScope === "SPECIFIC"
+        ? Array.from(selectedActivityIdsForRejection)
+        : [];
+
+    const rejectedActivityRefs =
+      committeeRejectionScope === "SPECIFIC"
+        ? activities
+            .filter((a) => selectedActivityIdsForRejection.has(a.id))
+            .map((a) => a.activityRefNo || a.id)
+        : [];
+
+    onCommitteeVote(plan, "REJECT", trimmedRemarks, {
+      scope: committeeRejectionScope,
+      rejectedActivityIds,
+      rejectedActivityRefs,
+    });
+  }, [
+    onCommitteeVote,
+    directorReturnRemarks,
+    committeeRejectionScope,
+    selectedActivityIdsForRejection,
+    activities,
+    plan,
+  ]);
+
+  const parsedRejection = useMemo(() => {
+    const fromReason = parseRejectionDetails(plan.rejectionReason);
+    const rejectedActivityRefs: string[] = Array.from(
+      new Set<string>([
+        ...fromReason.rejectedActivityRefs,
+        ...(plan.rejectedActivityRefs || []),
+      ]),
+    );
+    const scope =
+      rejectedActivityRefs.length > 0
+        ? "SPECIFIC"
+        : plan.rejectionScope || fromReason.scope;
+    return {
+      scope,
+      rejectedActivityRefs,
+      cleanRemarks: fromReason.cleanRemarks || plan.rejectionReason || "",
+    };
+  }, [plan.rejectionReason, plan.rejectionScope, plan.rejectedActivityRefs]);
+
+  const dismissedActivityRef = useRef<string | null>(null);
 
   const scrollToActivity = useCallback(
     (targetRef: string, openDetail = false) => {
@@ -651,10 +783,12 @@ export function DirectorActivitiesListView({
       const targetAct = activities.find(
         (a) =>
           (a.activityRefNo || "").toLowerCase().trim() === cleanRef ||
-          (a.id || "").toLowerCase().trim() === cleanRef,
+          (a.id || "").toLowerCase().trim() === cleanRef ||
+          ((a as any).reference || "").toLowerCase().trim() === cleanRef,
       );
 
       if (openDetail && targetAct) {
+        dismissedActivityRef.current = null;
         setSelectedActivity(targetAct);
       }
 
@@ -662,7 +796,8 @@ export function DirectorActivitiesListView({
         const el =
           document.getElementById(`activity-row-${targetRef}`) ||
           (targetAct
-            ? document.getElementById(`activity-row-${targetAct.activityRefNo}`)
+            ? document.getElementById(`activity-row-${targetAct.activityRefNo}`) ||
+              document.getElementById(`activity-row-${targetAct.id}`)
             : null);
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -678,13 +813,20 @@ export function DirectorActivitiesListView({
       const targetAct = activities.find(
         (a) =>
           (a.activityRefNo || "").toLowerCase().trim() === cleanRef ||
-          (a.id || "").toLowerCase().trim() === cleanRef,
+          (a.id || "").toLowerCase().trim() === cleanRef ||
+          ((a as any).reference || "").toLowerCase().trim() === cleanRef,
       );
+
+      if (autoOpenDetail && targetAct && dismissedActivityRef.current !== cleanRef) {
+        setSelectedActivity(targetAct);
+      }
+
       const timer = setTimeout(() => {
         const el =
           document.getElementById(`activity-row-${targetActivityRef}`) ||
           (targetAct
-            ? document.getElementById(`activity-row-${targetAct.activityRefNo}`)
+            ? document.getElementById(`activity-row-${targetAct.activityRefNo}`) ||
+              document.getElementById(`activity-row-${targetAct.id}`)
             : null);
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -692,26 +834,69 @@ export function DirectorActivitiesListView({
       }, 150);
       return () => clearTimeout(timer);
     }
-  }, [targetActivityRef, activities]);
+  }, [targetActivityRef, activities, autoOpenDetail]);
+
+  useEffect(() => {
+    if (
+      targetActivityRef &&
+      targetActivityRef.toLowerCase().trim() !== dismissedActivityRef.current
+    ) {
+      dismissedActivityRef.current = null;
+    }
+  }, [targetActivityRef]);
+
+  const handleCloseSelectedActivity = useCallback(() => {
+    dismissedActivityRef.current =
+      selectedActivity?.activityRefNo?.toLowerCase().trim() ||
+      selectedActivity?.id?.toLowerCase().trim() ||
+      targetActivityRef?.toLowerCase().trim() ||
+      "dismissed";
+    setSelectedActivity(null);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("activity")) {
+        url.searchParams.delete("activity");
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+  }, [selectedActivity, targetActivityRef]);
 
   const isActivityFlagged = useCallback(
     (act: ProcurementActivity) => {
-      if (parsedRejection.scope !== "SPECIFIC") return false;
       const actRef = (act.activityRefNo || "").toLowerCase().trim();
       const actId = (act.id || "").toLowerCase().trim();
-      return (
-        parsedRejection.rejectedActivityRefs.some((r) => {
-          const cleanR = r.toLowerCase().trim();
-          return cleanR === actRef || cleanR === actId;
-        }) ||
-        (plan.rejectedActivityIds &&
-          plan.rejectedActivityIds.some((id) => {
-            const cleanId = id.toLowerCase().trim();
-            return cleanId === actId || cleanId === actRef;
-          }))
-      );
+      const actRawRef = ((act as any).reference || (act as any).refNo || "").toLowerCase().trim();
+
+      if ((act as any).isFlaggedByCommittee) return true;
+
+      const matchesRef = (r: string) => {
+        const cleanR = r.toLowerCase().trim();
+        if (!cleanR) return false;
+        return (
+          cleanR === actRef ||
+          cleanR === actId ||
+          (actRawRef && cleanR === actRawRef) ||
+          (actRef && actRef.includes(cleanR)) ||
+          (actRawRef && actRawRef.includes(cleanR)) ||
+          (actRef && cleanR.includes(actRef))
+        );
+      };
+
+      if (parsedRejection.rejectedActivityRefs.some(matchesRef)) return true;
+      if (plan.rejectedActivityRefs && plan.rejectedActivityRefs.some(matchesRef)) return true;
+      if (
+        plan.rejectedActivityIds &&
+        plan.rejectedActivityIds.some((id) => {
+          const cleanId = id.toLowerCase().trim();
+          return cleanId === actId || cleanId === actRef || (actRawRef && cleanId === actRawRef);
+        })
+      ) {
+        return true;
+      }
+
+      return false;
     },
-    [parsedRejection, plan.rejectedActivityIds],
+    [parsedRejection, plan.rejectedActivityIds, plan.rejectedActivityRefs],
   );
 
   // Active Detail Tab state (1: Key Details, 2: Related Info, 3: Additional Details, 4: Roadmap)
@@ -830,13 +1015,15 @@ export function DirectorActivitiesListView({
         >
           {from === "vote-progress"
             ? "Vote Progress"
-            : parentSection === "plan-for-review"
-              ? "Plan for Review"
-              : "Projects"}
+            : from === "my-decisions" || parentSection === "my-decisions"
+              ? "My Decisions"
+              : parentSection === "plan-for-review"
+                ? "Plan for Review"
+                : "Projects"}
         </button>
         <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
         <button
-          onClick={() => setSelectedActivity(null)}
+          onClick={handleCloseSelectedActivity}
           className={`transition-colors cursor-pointer truncate max-w-[260px] ${
             selectedActivity
               ? "text-slate-500 hover:text-slate-900"
@@ -864,11 +1051,18 @@ export function DirectorActivitiesListView({
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setSelectedActivity(null)}
+                    onClick={() => {
+                      handleCloseSelectedActivity();
+                      if (from === "vote-progress" || parentSection === "vote-progress") {
+                        onBackClick?.();
+                      }
+                    }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer"
                   >
-                    <ArrowLeft className="h-3.5 w-3.5" /> Back to Activities
-                    Table
+                    <ArrowLeft className="h-3.5 w-3.5" /> Back to{" "}
+                    {from === "vote-progress" || parentSection === "vote-progress"
+                      ? "Vote Progress"
+                      : "Activities Table"}
                   </button>
                   <span className="text-slate-300">•</span>
                   <span className="font-mono text-xs font-extrabold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-200">
@@ -1662,13 +1856,15 @@ export function DirectorActivitiesListView({
                   <ArrowLeft className="h-3.5 w-3.5" />{" "}
                   {from === "vote-progress"
                     ? "Back to Vote Progress"
-                    : parentSection === "plan-for-review"
-                      ? "Back to Plans List"
-                      : "Back to Projects"}
+                    : from === "my-decisions" || parentSection === "my-decisions"
+                      ? "Back to My Decisions"
+                      : parentSection === "plan-for-review"
+                        ? "Back to Plans List"
+                        : "Back to Projects"}
                 </button>
                 <span className="text-slate-300">•</span>
                 <span className="font-mono text-xs font-extrabold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  {project.code}
+                  {project?.code || plan.projectCode || "BREFONS"}
                 </span>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-700 border border-slate-300">
                   v{planVersion}
@@ -1689,11 +1885,7 @@ export function DirectorActivitiesListView({
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Plan Name
               </label>
-              {isManagement ? (
-                <p className="text-base sm:text-lg font-extrabold text-slate-950 py-1">
-                  {currentPlanName}
-                </p>
-              ) : (
+              {isEditable ? (
                 <input
                   type="text"
                   value={currentPlanName}
@@ -1701,6 +1893,10 @@ export function DirectorActivitiesListView({
                   placeholder="Enter plan name..."
                   className="w-full text-base sm:text-lg font-extrabold text-slate-950 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10 outline-none transition-all"
                 />
+              ) : (
+                <p className="text-base sm:text-lg font-extrabold text-slate-950 py-1">
+                  {currentPlanName}
+                </p>
               )}
             </div>
 
@@ -1729,8 +1925,9 @@ export function DirectorActivitiesListView({
           </section>
 
           {/* Rejection Alert Banner (Director & Viewer Insight) */}
-          {parsedRejection.scope === "SPECIFIC" ? (
-            <section className="rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50/40 p-4 shadow-2xs space-y-2.5 animate-in fade-in">
+          {userRole !== "ENDORSING_COMMITTEE" &&
+            (parsedRejection.scope === "SPECIFIC" ? (
+              <section className="rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50/40 p-4 shadow-2xs space-y-2.5 animate-in fade-in">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="flex items-start gap-2.5">
                   <div className="p-1 rounded-lg bg-amber-100 border border-amber-200 shrink-0 mt-0.5">
@@ -1761,7 +1958,7 @@ export function DirectorActivitiesListView({
                 <span className="font-bold text-amber-950 text-[11px]">
                   Flagged Activities:
                 </span>
-                {parsedRejection.rejectedActivityRefs.map((ref) => (
+                {parsedRejection.rejectedActivityRefs.map((ref: string) => (
                   <button
                     key={ref}
                     type="button"
@@ -1823,7 +2020,7 @@ export function DirectorActivitiesListView({
                 </div>
               )}
             </section>
-          ) : null}
+          ) : null)}
 
           {/* Search & Filter Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
@@ -1961,12 +2158,15 @@ export function DirectorActivitiesListView({
                         (act.activityRefNo?.toLowerCase().trim() ===
                           highlightedActivityRef.toLowerCase().trim() ||
                           act.id.toLowerCase().trim() ===
-                            highlightedActivityRef.toLowerCase().trim());
+                            highlightedActivityRef.toLowerCase().trim() ||
+                          ((act as any).reference &&
+                            (act as any).reference.toLowerCase().trim() ===
+                              highlightedActivityRef.toLowerCase().trim()));
 
                       return (
                         <tr
                           key={act.id}
-                          id={`activity-row-${act.activityRefNo}`}
+                          id={`activity-row-${act.activityRefNo || act.id}`}
                           onClick={() => setSelectedActivity(act)}
                           className={`transition-all duration-300 cursor-pointer ${
                             isTargeted
@@ -1993,11 +2193,6 @@ export function DirectorActivitiesListView({
                               <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">
                                 <AlertTriangle className="h-2.5 w-2.5 text-rose-600" />
                                 Flagged by Committee
-                              </span>
-                            ) : parsedRejection.scope === "SPECIFIC" ? (
-                              <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600" />
-                                No Objections
                               </span>
                             ) : null}
                           </td>
@@ -2065,7 +2260,7 @@ export function DirectorActivitiesListView({
           </div>
 
           {/* Decision & Workflow Actions Card */}
-          {isCommittee && onCommitteeVote ? (
+          {isCommitteeVoteEligible && onCommitteeVote ? (
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5 mt-6">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
@@ -2298,15 +2493,26 @@ export function DirectorActivitiesListView({
 
                 <button
                   type="button"
-                  onClick={() => setIsRejectionModalOpen(true)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer shadow-2xs"
+                  disabled={
+                    !directorReturnRemarks.trim() ||
+                    (committeeRejectionScope === "SPECIFIC" &&
+                      selectedActivityIdsForRejection.size === 0)
+                  }
+                  onClick={handleCommitteeRejectVote}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors ${
+                    !directorReturnRemarks.trim() ||
+                    (committeeRejectionScope === "SPECIFIC" &&
+                      selectedActivityIdsForRejection.size === 0)
+                      ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
+                      : "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer shadow-2xs"
+                  }`}
                 >
                   <RotateCcw className="h-4 w-4" />
                   <span>Vote: Reject / Return Plan</span>
                 </button>
               </div>
             </section>
-          ) : isManagement && onManagementDecision ? (
+          ) : isManagementReviewEligible && onManagementDecision ? (
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5 mt-6">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <Building2 className="h-5 w-5 text-indigo-700" />
@@ -2371,7 +2577,7 @@ export function DirectorActivitiesListView({
                 </button>
               </div>
             </section>
-          ) : onApprovePlan && onReturnPlan ? (
+          ) : isDirectorActionEligible && onApprovePlan && onReturnPlan ? (
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5 mt-6">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
@@ -2437,31 +2643,7 @@ export function DirectorActivitiesListView({
         onClose={() => setIsHistoryModalOpen(false)}
         planId={plan.id}
         planName={plan.planName}
-        projectCode={project.code}
-      />
-
-      <CommitteeRejectionModal
-        isOpen={isRejectionModalOpen}
-        onClose={() => setIsRejectionModalOpen(false)}
-        onConfirm={(scope, activityIds, activityRefs, remarks) => {
-          if (onCommitteeVote) {
-            onCommitteeVote(plan, "REJECT", remarks, {
-              scope,
-              rejectedActivityIds: activityIds,
-              rejectedActivityRefs: activityRefs,
-            });
-          }
-        }}
-        activities={activities.map((a) => ({
-          id: a.id,
-          activityRefNo: a.activityRefNo,
-          description: a.description,
-          method: a.method,
-          estimatedAmount: a.estimatedAmount,
-          currency: a.currency,
-        }))}
-        planName={plan.planName}
-        projectCode={project.code}
+        projectCode={project?.code || plan.projectCode || "BREFONS"}
       />
     </div>
   );

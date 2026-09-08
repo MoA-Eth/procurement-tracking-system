@@ -630,7 +630,7 @@ export function ProjectsManagementView({
         <ProjectPlansView
           project={selectedProject}
           plans={plans}
-          userRole={readOnly ? ("MANAGEMENT" as any) : "DIRECTOR"}
+          userRole={readOnly ? "MANAGEMENT" : "DIRECTOR"}
           onBackToProjects={() => {
             dismissedProjectRef.current =
               selectedProject?.code || selectedProjectCode || "dismissed";
@@ -649,7 +649,7 @@ export function ProjectsManagementView({
         <CreatePlanForm
           project={selectedProject}
           initialData={editingPlan}
-          userRole="DIRECTOR"
+          userRole={readOnly ? "MANAGEMENT" : "DIRECTOR"}
           readOnly={true}
           onBackClick={() => {
             setEditingPlan(null);

@@ -27,11 +27,12 @@ import {
   type ProcurementPlan,
 } from "../plansData";
 import { DualCalendarField } from "@/features/projects/components/DualCalendarField";
+import type { UserRole } from "@/types";
 
 interface CreatePlanFormProps {
   project: ProjectItem;
   initialData?: ProcurementPlan | null;
-  userRole?: "OFFICER" | "DIRECTOR" | "ADMIN";
+  userRole?: UserRole;
   readOnly?: boolean;
   onBackClick: () => void;
   onSavePlan: (plan: ProcurementPlan) => void;
@@ -67,7 +68,9 @@ export function CreatePlanForm({
   onBackClick,
   onSavePlan,
 }: CreatePlanFormProps) {
-  const isDirector = userRole === "DIRECTOR" || readOnly;
+  const isDirector = userRole === "DIRECTOR";
+  const isManagement = userRole === "MANAGEMENT";
+  const isReviewer = isDirector || isManagement || readOnly;
 
   const [budgetYear, setBudgetYear] = useState(
     initialData?.budgetYear || project.budgetYear || "2018 EFY (2025/2026)",
@@ -107,7 +110,7 @@ export function CreatePlanForm({
 
   const handleCategoryChange = (newCategory: PlanCategory) => {
     setCategory(newCategory);
-    if (!initialData && !isDirector) {
+    if (!initialData && !isReviewer) {
       const yearShort = budgetYear.split(" ")[0] || "2018 EFY";
       setPlanName(
         `${project.code} - ${newCategory} Procurement Plan - ${yearShort}`,
@@ -117,7 +120,7 @@ export function CreatePlanForm({
 
   const handleBudgetYearChange = (newYear: string) => {
     setBudgetYear(newYear);
-    if (!initialData && !isDirector) {
+    if (!initialData && !isReviewer) {
       const yearShort = newYear.split(" ")[0] || "2018 EFY";
       setPlanName(
         `${project.code} - ${category} Procurement Plan - ${yearShort}`,
@@ -198,11 +201,13 @@ export function CreatePlanForm({
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
         <span className="font-bold text-[#0A3C2F]">
-          {isDirector
-            ? "Director Plan Review & Edits"
-            : initialData
-              ? "Edit Procurement Plan"
-              : "Create Procurement Plan"}
+          {isManagement
+            ? "Executive Plan Overview"
+            : isDirector
+              ? "Director Plan Review & Edits"
+              : initialData
+                ? "Edit Procurement Plan"
+                : "Create Procurement Plan"}
         </span>
       </nav>
 
@@ -248,7 +253,7 @@ export function CreatePlanForm({
       {/* 2. Procurement Plan Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* RETURNED PLAN REVISION ALERT BANNER */}
-        {!isDirector &&
+        {!isReviewer &&
           (status === "Returned" || initialData?.status === "Returned") && (
             <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 space-y-2 animate-in fade-in duration-150">
               <div className="flex items-center gap-2 text-amber-900 font-extrabold text-sm">
@@ -275,10 +280,14 @@ export function CreatePlanForm({
                 Plan Identity & Scope
               </h3>
             </div>
-            {isDirector && (
+            {isReviewer && (
               <span className="text-xs text-slate-500 font-medium flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-lg">
                 <Lock className="h-3.5 w-3.5 text-slate-400" />
-                Restricted Director Controls
+                {isManagement
+                  ? "Executive View Mode"
+                  : isDirector
+                    ? "Restricted Director Controls"
+                    : "Read Only View"}
               </span>
             )}
           </div>
@@ -289,9 +298,14 @@ export function CreatePlanForm({
               <label className="block text-xs sm:text-sm font-semibold text-slate-800">
                 Procurement Category <span className="text-rose-500">*</span>
               </label>
-              {isDirector && (
+              {isReviewer && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-                  <Lock className="h-3 w-3" /> Locked for Director
+                  <Lock className="h-3 w-3" />{" "}
+                  {isManagement
+                    ? "Locked for Executive View"
+                    : isDirector
+                      ? "Locked for Director"
+                      : "Locked"}
                 </span>
               )}
             </div>
@@ -300,9 +314,9 @@ export function CreatePlanForm({
               onChange={(e) =>
                 handleCategoryChange(e.target.value as PlanCategory)
               }
-              disabled={readOnly || isDirector || isDraftPlanForDirector}
+              disabled={readOnly || isReviewer || isDraftPlanForDirector}
               className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors ${
-                readOnly || isDirector
+                readOnly || isReviewer
                   ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed font-medium"
                   : "bg-white text-slate-900 border-slate-300 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
               }`}
@@ -344,7 +358,7 @@ export function CreatePlanForm({
                 <label className="block text-xs sm:text-sm font-semibold text-slate-800">
                   Budget / Fiscal Year <span className="text-rose-500">*</span>
                 </label>
-                {isDirector && (
+                {isReviewer && (
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
                     <Lock className="h-3 w-3" /> Restricted
                   </span>
@@ -353,9 +367,9 @@ export function CreatePlanForm({
               <select
                 value={budgetYear}
                 onChange={(e) => handleBudgetYearChange(e.target.value)}
-                disabled={readOnly || isDirector || isDraftPlanForDirector}
+                disabled={readOnly || isReviewer || isDraftPlanForDirector}
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors ${
-                  readOnly || isDirector
+                  readOnly || isReviewer
                     ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed font-medium"
                     : "bg-white text-slate-900 border-slate-300 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
                 }`}
@@ -450,7 +464,7 @@ export function CreatePlanForm({
                   setGeneralNoticeDate(greg);
                   setGeneralNoticeDateEthiopian(eth);
                 }}
-                disabled={readOnly || isDirector || isDraftPlanForDirector}
+                disabled={readOnly || isReviewer || isDraftPlanForDirector}
                 required={false}
               />
             </div>
@@ -462,9 +476,9 @@ export function CreatePlanForm({
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as PlanStatus)}
-                disabled={readOnly || isDirector || isDraftPlanForDirector}
+                disabled={readOnly || isReviewer || isDraftPlanForDirector}
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors ${
-                  readOnly || isDirector
+                  readOnly || isReviewer
                     ? "bg-slate-100 text-slate-800 font-bold border-slate-200 cursor-not-allowed"
                     : "bg-white text-slate-900 border-slate-300 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
                 }`}
@@ -500,7 +514,7 @@ export function CreatePlanForm({
           </div>
 
           {/* Officer Revision Comment Box */}
-          {!isDirector &&
+          {!isReviewer &&
             (status === "Returned" || initialData?.status === "Returned") && (
               <div className="space-y-1.5 pt-1">
                 <label className="block text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
@@ -530,7 +544,7 @@ export function CreatePlanForm({
               Back to Plans List
             </button>
 
-            {!readOnly && !isDraftPlanForDirector && (
+            {!readOnly && !isManagement && !isDraftPlanForDirector && (
               <div className="flex items-center gap-2.5">
                 <button
                   type="submit"
@@ -546,7 +560,7 @@ export function CreatePlanForm({
                   </span>
                 </button>
 
-                {!isDirector &&
+                {!isReviewer &&
                   (status === "Returned" ||
                     initialData?.status === "Returned" ||
                     status === "Draft") && (

@@ -19,11 +19,12 @@ import {
 import Link from "next/link";
 import type { ProjectItem } from "@/features/projects/management/projectsData";
 import type { PlanCategory, ProcurementPlan } from "../plansData";
+import type { UserRole } from "@/types";
 
 interface ProjectPlansViewProps {
   project: ProjectItem;
   plans: ProcurementPlan[];
-  userRole?: "OFFICER" | "DIRECTOR" | "ADMIN";
+  userRole?: UserRole;
   onBackToProjects: () => void;
   onCreatePlanClick?: () => void;
   onEditPlanClick?: (plan: ProcurementPlan) => void;

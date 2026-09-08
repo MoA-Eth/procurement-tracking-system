@@ -7,6 +7,7 @@ import { usePlanForReview } from "./review/usePlanForReview";
 import { PlanRestrictedEditView } from "./review/PlanRestrictedEditView";
 import { PlanFullScreenReviewView } from "./review/PlanFullScreenReviewView";
 import { PlanReviewDirectoryTable } from "./review/PlanReviewDirectoryTable";
+import { isPlanAwaitingManagementReview } from "../plansData";
 
 export interface PlanForReviewViewProps {
   user: AuthUser;
@@ -51,7 +52,7 @@ export function PlanForReviewView({
         targetActivityRef={selectedActivityRef}
         onBackClick={handleActivitiesBack}
         onApprovePlan={
-          user.role === "DIRECTOR"
+          user.role === "DIRECTOR" && from !== "vote-progress"
             ? (p) => {
                 review.handleApprovePlan(p);
                 review.closeActivitiesPlan();
@@ -59,7 +60,7 @@ export function PlanForReviewView({
             : undefined
         }
         onReturnPlan={
-          user.role === "DIRECTOR"
+          user.role === "DIRECTOR" && from !== "vote-progress"
             ? (p, remarks) => {
                 review.setReturnRemarks(remarks);
                 review.handleReturnPlan(p, remarks);
@@ -68,7 +69,7 @@ export function PlanForReviewView({
             : undefined
         }
         onCommitteeVote={
-          user.role === "ENDORSING_COMMITTEE"
+          user.role === "ENDORSING_COMMITTEE" && from !== "vote-progress"
             ? (p, decision, remarks, rejectionDetails) => {
                 if (remarks) review.setReturnRemarks(remarks);
                 review.handleCommitteeVote(
@@ -82,7 +83,9 @@ export function PlanForReviewView({
             : undefined
         }
         onManagementDecision={
-          user.role === "MANAGEMENT"
+          user.role === "MANAGEMENT" &&
+          from !== "vote-progress" &&
+          isPlanAwaitingManagementReview(review.activitiesPlan)
             ? (p, decision, comment) => {
                 review.handleManagementDecision(p, decision, comment);
                 review.closeActivitiesPlan();
@@ -140,11 +143,25 @@ export function PlanForReviewView({
         setCommitteeDeadlineDate={review.setCommitteeDeadlineDate}
         returnRemarks={review.returnRemarks}
         setReturnRemarks={review.setReturnRemarks}
-        onApprovePlan={review.handleApprovePlan}
-        onReturnPlan={review.handleReturnPlan}
-        onCommitteeVote={review.handleCommitteeVote}
+        onApprovePlan={
+          user.role === "DIRECTOR" && from !== "vote-progress"
+            ? review.handleApprovePlan
+            : undefined
+        }
+        onReturnPlan={
+          user.role === "DIRECTOR" && from !== "vote-progress"
+            ? review.handleReturnPlan
+            : undefined
+        }
+        onCommitteeVote={
+          user.role === "ENDORSING_COMMITTEE" && from !== "vote-progress"
+            ? review.handleCommitteeVote
+            : undefined
+        }
         onManagementDecision={
-          user.role === "MANAGEMENT"
+          user.role === "MANAGEMENT" &&
+          from !== "vote-progress" &&
+          isPlanAwaitingManagementReview(review.selectedPlanForReview)
             ? (p, decision, comment) => {
                 review.handleManagementDecision(p, decision, comment);
                 review.closeSelectedPlanForReview();

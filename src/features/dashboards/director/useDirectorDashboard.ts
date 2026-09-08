@@ -18,8 +18,9 @@ import {
   computeDirectorHealthMetrics,
   computeSpendPercentages,
 } from "./directorCalculations";
+import type { UserRole } from "@/types";
 
-export function useDirectorDashboard() {
+export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
   const [projects, setProjects] = useState<BackendProject[]>([]);
   const [plans, setPlans] = useState<BackendPlan[]>([]);
   const [contracts, setContracts] = useState<BackendContract[]>([]);
@@ -117,15 +118,15 @@ export function useDirectorDashboard() {
 
   // Top KPI Metric: Awaiting Review Plans
   const pendingPlansLive = useMemo(
-    () => computePendingPlans(filteredPlans),
-    [filteredPlans],
+    () => computePendingPlans(filteredPlans, userRole),
+    [filteredPlans, userRole],
   );
   const awaitingReviewCount = pendingPlansLive.length;
 
   // Top KPI Metric: Committee Progress Plans
   const committeePlansCount = useMemo(
-    () => computeCommitteePlansCount(filteredPlans),
-    [filteredPlans],
+    () => computeCommitteePlansCount(filteredPlans, userRole),
+    [filteredPlans, userRole],
   );
 
   // Critical Delays

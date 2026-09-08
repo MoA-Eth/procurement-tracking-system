@@ -148,6 +148,19 @@ export function usePlanForReview({
             p.rejectionReason || matchingDraft.rejectionReason;
           const parsedEff = parseRejectionDetails(effectiveReason);
 
+          const allRefs = Array.from(
+            new Set<string>([
+              ...(p.rejectedActivityRefs || []),
+              ...(matchingDraft.rejectedActivityRefs || []),
+              ...parsedEff.rejectedActivityRefs,
+            ]),
+          );
+
+          const effectiveScope =
+            allRefs.length > 0
+              ? "SPECIFIC"
+              : p.rejectionScope || matchingDraft.rejectionScope || parsedEff.scope;
+
           const merged: ProcurementPlan = {
             ...p,
             projectCode:
@@ -157,18 +170,10 @@ export function usePlanForReview({
                 : p.projectCode,
             reference: matchingDraft.reference || (p as any).reference,
             rejectionReason: effectiveReason,
-            rejectionScope:
-              p.rejectionScope ||
-              matchingDraft.rejectionScope ||
-              parsedEff.scope,
+            rejectionScope: effectiveScope,
             rejectedActivityIds:
               p.rejectedActivityIds || matchingDraft.rejectedActivityIds,
-            rejectedActivityRefs:
-              p.rejectedActivityRefs ||
-              matchingDraft.rejectedActivityRefs ||
-              (parsedEff.scope === "SPECIFIC"
-                ? parsedEff.rejectedActivityRefs
-                : undefined),
+            rejectedActivityRefs: allRefs,
             activities:
               p.activities && p.activities.length > 0
                 ? p.activities
@@ -312,7 +317,7 @@ export function usePlanForReview({
       selectedPlanId &&
       plans.length > 0 &&
       !activitiesPlan &&
-      dismissedPlanIdRef.current !== selectedPlanId
+      (dismissedPlanIdRef.current !== selectedPlanId || selectedActivityRef)
     ) {
       const match = plans.find(
         (p) =>
@@ -322,13 +327,16 @@ export function usePlanForReview({
           p.projectCode?.toLowerCase() === selectedPlanId.toLowerCase(),
       );
       if (match) {
+        if (selectedActivityRef) {
+          dismissedPlanIdRef.current = null;
+        }
         const timer = setTimeout(() => {
           setActivitiesPlan(match);
         }, 0);
         return () => clearTimeout(timer);
       }
     }
-  }, [selectedPlanId, plans, activitiesPlan]);
+  }, [selectedPlanId, plans, activitiesPlan, selectedActivityRef]);
 
   // Auto-save feedback state
   const [isSaving, setIsSaving] = useState(false);
@@ -483,7 +491,7 @@ export function usePlanForReview({
 
             if (matches) {
               const updatedPlanActivities =
-                newActivityStatus && item.plan?.planActivities
+                item.plan?.planActivities
                   ? item.plan.planActivities.map((act: any) => {
                       const flagged = isActivityFlagged(
                         act.id,
@@ -493,9 +501,9 @@ export function usePlanForReview({
                         ...act,
                         status: isSpecific
                           ? flagged
-                            ? newActivityStatus
+                            ? newActivityStatus || "Returned for Revision"
                             : act.status || "Approved"
-                          : newActivityStatus,
+                          : newActivityStatus || "Returned for Revision",
                         isFlaggedByCommittee: flagged,
                       };
                     })

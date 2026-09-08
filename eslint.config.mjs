@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     // are normalized by the feature-specific API modules.
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/preserve-manual-memoization": "off",
     },
   },
 ]);

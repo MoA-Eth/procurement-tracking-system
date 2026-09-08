@@ -167,6 +167,7 @@ export default async function WorkspaceSectionPage({
     ) {
       return (
         <DirectorActivityTrackerView
+          userRole={session.user.role}
           selectedActivityReference={
             typeof query.activity === "string" ? query.activity : undefined
           }
