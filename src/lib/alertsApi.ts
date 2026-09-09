@@ -36,34 +36,13 @@ export function isNotificationForRole(
       ? [notification.targetRole]
       : [];
 
-  if (targets.length > 0) {
-    return targets.some((t) => {
-      if (t === "ALL" || t === "*") return true;
-      return normalizeUserRole(t) === normalizedUserRole;
-    });
-  }
+  // No targetRole = broadcast to ALL users
+  if (targets.length === 0) return true;
 
-  // If no explicit targetRole is tagged on the alert, infer from content
-  const text = `${notification.title} ${notification.message}`.toLowerCase();
-  const isCommitteeAlert =
-    text.includes("endorsement vote") ||
-    text.includes("committee vote") ||
-    notification.type === "approval";
-
-  if (isCommitteeAlert && normalizedUserRole !== "ENDORSING_COMMITTEE") {
-    return false;
-  }
-
-  const isDirectorAlert =
-    text.includes("awaiting director") ||
-    text.includes("director approval") ||
-    text.includes("director review");
-
-  if (isDirectorAlert && normalizedUserRole !== "DIRECTOR") {
-    return false;
-  }
-
-  return true;
+  return targets.some((t) => {
+    if (t === "ALL" || t === "*" || t === null) return true;
+    return normalizeUserRole(t) === normalizedUserRole;
+  });
 }
 
 export interface BackendAlert {
@@ -137,8 +116,7 @@ function getLinkForType(
 ): string {
   switch (type) {
     case "plan":
-      if (targetRole === "OFFICER" || targetRole === "MANAGEMENT_TEAM")
-        return "/workspace/plans";
+      if (targetRole === "OFFICER") return "/workspace/projects";
       return "/workspace/plan-for-review";
     case "contract":
       return "/workspace/contracts";
@@ -170,15 +148,22 @@ function getActionLabel(type: SystemNotification["type"]): string {
   }
 }
 
+/**
+ * Fetch notifications for the current user.
+ * The backend already knows who the user is via the session cookie —
+ * no role param is needed. It returns personal + role-based alerts.
+ * Alerts with no targetRole are broadcast to ALL users.
+ */
 export async function fetchNotifications(
   userRole?: string,
 ): Promise<SystemNotification[]> {
   try {
-    const rawAlerts = await apiClient.get<BackendAlert[]>("/alerts", {
-      params: userRole ? { role: userRole } : undefined,
-    });
+    // Backend uses session to determine user — no role param needed
+    const rawAlerts = await apiClient.get<BackendAlert[]>("/alerts");
     if (Array.isArray(rawAlerts) && rawAlerts.length > 0) {
       const mapped = rawAlerts.map(mapBackendAlertToNotification);
+      // Client-side guard: filter out alerts not intended for this role
+      // (null targetRole = all users, so they always pass)
       if (userRole) {
         return mapped.filter((n) => isNotificationForRole(n, userRole));
       }
@@ -188,7 +173,6 @@ export async function fetchNotifications(
     console.warn("Could not fetch alerts from backend:", err);
   }
 
-  // Purely dynamic: returns empty array if no backend alerts exist
   return [];
 }
 
@@ -215,3 +199,4 @@ export async function markAllAlertsAsRead(): Promise<void> {
     console.warn("Failed to mark all alerts as read on backend:", err);
   }
 }
+

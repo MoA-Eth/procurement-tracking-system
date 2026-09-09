@@ -8,6 +8,7 @@ import {
 import type { UserRole } from "../types";
 import { apiClient, ApiClientError } from "./apiClient";
 import { authTokenManager } from "./authTokenManager";
+import { tabSessionManager } from "./tabSessionManager";
 
 export class AuthApiError extends Error {
   constructor(message: string) {
@@ -47,16 +48,16 @@ function writeSessionCookie(
   rememberMe: boolean = false,
 ): void {
   if (typeof document === "undefined") return;
-  const maxAge = rememberMe ? 30 * 86400 : 86400;
+  const maxAgeDirective = rememberMe ? `; max-age=${30 * 86400}` : "";
   try {
     const jsonStr = JSON.stringify(session);
     const base64Str = btoa(unescape(encodeURIComponent(jsonStr)));
-    document.cookie = `${FRONTEND_SESSION_COOKIE}=${base64Str}; path=/; max-age=${maxAge}; SameSite=Lax`;
-    document.cookie = `moa_session=${base64Str}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    document.cookie = `${FRONTEND_SESSION_COOKIE}=${base64Str}; path=/${maxAgeDirective}; SameSite=Lax`;
+    document.cookie = `moa_session=${base64Str}; path=/${maxAgeDirective}; SameSite=Lax`;
   } catch {
     const encoded = encodeURIComponent(JSON.stringify(session));
-    document.cookie = `${FRONTEND_SESSION_COOKIE}=${encoded}; path=/; max-age=${maxAge}; SameSite=Lax`;
-    document.cookie = `moa_session=${encoded}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    document.cookie = `${FRONTEND_SESSION_COOKIE}=${encoded}; path=/${maxAgeDirective}; SameSite=Lax`;
+    document.cookie = `moa_session=${encoded}; path=/${maxAgeDirective}; SameSite=Lax`;
   }
 }
 
@@ -110,6 +111,7 @@ export async function authenticate(
     };
 
     writeSessionCookie(session, rememberMe);
+    tabSessionManager.setTabSession(session);
 
     return session;
   } catch (err) {
@@ -284,6 +286,7 @@ export async function createInvitedUser(
 
 export async function signOut(): Promise<void> {
   authTokenManager.clearToken();
+  tabSessionManager.clearTabSession();
   if (typeof document !== "undefined") {
     document.cookie = `${FRONTEND_SESSION_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
     document.cookie = "moa_session=; path=/; max-age=0; SameSite=Lax";
@@ -296,6 +299,8 @@ export async function signOut(): Promise<void> {
 }
 
 export function getClientSession(): AuthSession | null {
+  const tabSession = tabSessionManager.getTabSession();
+  if (tabSession) return tabSession;
   if (typeof document === "undefined") return null;
   const cookies = document.cookie.split(";").map((c) => c.trim());
   const targetNames = [FRONTEND_SESSION_COOKIE, "moa_session"];
@@ -319,20 +324,20 @@ export function getClientSession(): AuthSession | null {
         const decoded = decodeURIComponent(escape(atob(val)));
         const res = tryNormalize(JSON.parse(decoded));
         if (res) return res;
-      } catch {}
+      } catch { }
       try {
         const decoded = atob(val);
         const res = tryNormalize(JSON.parse(decoded));
         if (res) return res;
-      } catch {}
+      } catch { }
       try {
         const res = tryNormalize(JSON.parse(decodeURIComponent(val)));
         if (res) return res;
-      } catch {}
+      } catch { }
       try {
         const res = tryNormalize(JSON.parse(val));
         if (res) return res;
-      } catch {}
+      } catch { }
     }
   }
   return null;

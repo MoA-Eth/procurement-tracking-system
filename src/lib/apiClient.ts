@@ -107,6 +107,18 @@ export async function directApiFetch<T>(
     if (response.status === 401) {
       if (typeof window !== "undefined") {
         authTokenManager.clearToken();
+        try {
+          window.sessionStorage.removeItem("pts_tab_session");
+          window.sessionStorage.removeItem("pts_auth_token");
+          window.sessionStorage.removeItem("moa_auth_token");
+        } catch {}
+        if (typeof document !== "undefined") {
+          document.cookie = "moa_user_session=; path=/; max-age=0; SameSite=Lax";
+          document.cookie = "moa_session=; path=/; max-age=0; SameSite=Lax";
+        }
+        if (window.location.pathname !== "/") {
+          window.location.href = "/";
+        }
       }
     }
 

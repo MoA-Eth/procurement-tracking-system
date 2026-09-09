@@ -49,9 +49,31 @@ describe("directorPipeline role isolation", () => {
     } as unknown as BackendPlan,
   ];
 
-  it("filters Director pending plans correctly without leaking Management plans", () => {
-    const directorPending = computePendingPlans(samplePlans, "DIRECTOR");
-    expect(directorPending.map((p) => p.id)).toEqual(["plan-1"]);
+  it("filters Director pending plans correctly including returned and rejected plans", () => {
+    const plansWithReturned: BackendPlan[] = [
+      ...samplePlans,
+      {
+        id: "plan-5",
+        title: "Returned Plan",
+        status: "RETURNED_FOR_REVISION",
+        projectId: "proj-1",
+        createdAt: "2026-01-05T00:00:00Z",
+        activities: [],
+      } as unknown as BackendPlan,
+      {
+        id: "plan-6",
+        title: "Committee Rejected Plan",
+        status: "COMMITTEE_REJECTED",
+        projectId: "proj-1",
+        createdAt: "2026-01-06T00:00:00Z",
+        activities: [],
+      } as unknown as BackendPlan,
+    ];
+
+    const directorPending = computePendingPlans(plansWithReturned, "DIRECTOR");
+    expect(directorPending.map((p) => p.id)).toEqual(["plan-1", "plan-5", "plan-6"]);
+    expect(directorPending.find((p) => p.id === "plan-5")?.status).toBe("Returned for Revision");
+    expect(directorPending.find((p) => p.id === "plan-6")?.status).toBe("Rejected");
   });
 
   it("filters Management pending plans correctly without leaking Director plans", () => {

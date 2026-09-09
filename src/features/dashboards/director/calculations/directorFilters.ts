@@ -71,7 +71,13 @@ export function filterPlans(
           p.status === "SUBMITTED" ||
           p.status === "PENDING_REVIEW" ||
           p.status === "UPDATE_REQUESTED" ||
-          (p as any).status === "Submitted to Director";
+          p.status === "RETURNED_FOR_REVISION" ||
+          p.status === "REJECTED" ||
+          p.status === "COMMITTEE_REJECTED" ||
+          (p as any).status === "Submitted to Director" ||
+          (p as any).status === "Returned for Revision" ||
+          (p as any).status === "Returned" ||
+          (p as any).status === "Committee Rejected";
         if (!isAwaiting) return false;
       } else if (status === "In Progress") {
         const isInProgress =

@@ -48,19 +48,32 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
     ? normalizeUserRole(currentUser.role)
     : undefined;
 
+  // Fetch on mount and whenever userRole resolves
   useEffect(() => {
     let active = true;
     async function loadAlerts() {
       const liveData = await fetchNotifications(userRole);
-      if (active) {
-        setNotifications(liveData);
-      }
+      if (active) setNotifications(liveData);
     }
     loadAlerts();
+    return () => { active = false; };
+  }, [userRole]);
+
+  // Re-fetch when dropdown opens + poll every 30s while open
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    async function refresh() {
+      const liveData = await fetchNotifications(userRole);
+      if (active) setNotifications(liveData);
+    }
+    refresh(); // immediate refresh on open
+    const interval = setInterval(refresh, 30_000);
     return () => {
       active = false;
+      clearInterval(interval);
     };
-  }, [userRole]);
+  }, [isOpen, userRole]);
 
   const roleNotifications = notifications.filter((n) =>
     isNotificationForRole(n, userRole),

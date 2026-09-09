@@ -75,6 +75,9 @@ export const getServerSession = cache(async (): Promise<AuthSession | null> => {
             );
             return remoteSession;
           }
+        } else if (response.status === 401 || response.status === 403) {
+          // Backend explicitly rejected the session (token expired or invalidated)
+          return null;
         }
       } catch {
         // Fall back to local cookie parsing if backend is unreachable

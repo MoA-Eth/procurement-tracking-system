@@ -388,7 +388,14 @@ export function usePlanForReview({
         !alreadyDecided;
     } else {
       isAwaitingReview =
-        p.status === "Submitted to Director" || p.status === "Returned";
+        p.status === "Submitted to Director" ||
+        p.status === "Returned" ||
+        p.status === "Returned for Revision" ||
+        p.status === "Committee Rejected" ||
+        (p as any).status === "SUBMITTED" ||
+        (p as any).status === "RETURNED_FOR_REVISION" ||
+        (p as any).status === "REJECTED" ||
+        (p as any).status === "COMMITTEE_REJECTED";
     }
     const matchesSearch =
       p.planName.toLowerCase().includes(searchTerm.toLowerCase()) ||

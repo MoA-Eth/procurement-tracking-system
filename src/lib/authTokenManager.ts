@@ -23,9 +23,7 @@ export const authTokenManager = {
     }
 
     if (typeof window !== "undefined") {
-      const stored =
-        window.sessionStorage.getItem("moa_auth_token") ||
-        window.localStorage.getItem("moa_auth_token");
+      const stored = window.sessionStorage.getItem("moa_auth_token");
       if (stored) {
         inMemoryAccessToken = stored;
         return stored;
@@ -82,10 +80,8 @@ export const authTokenManager = {
     if (typeof window !== "undefined") {
       if (token) {
         window.sessionStorage.setItem("moa_auth_token", token);
-        window.localStorage.setItem("moa_auth_token", token);
       } else {
         window.sessionStorage.removeItem("moa_auth_token");
-        window.localStorage.removeItem("moa_auth_token");
       }
     }
     listeners.forEach((listener) => {
