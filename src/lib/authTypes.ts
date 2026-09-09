@@ -17,7 +17,7 @@ export interface AuthSession {
   accessToken?: string;
 }
 
-export type ProvisionableRole = Exclude<UserRole, "ADMIN">;
+export type ProvisionableRole = UserRole | "MANAGEMENT_TEAM";
 
 export interface InvitedUserResponse {
   user: AuthUser;
@@ -26,11 +26,13 @@ export interface InvitedUserResponse {
   invitationLink?: string;
 }
 
-export const ROLE_LABELS: Record<UserRole, string> = {
+export const ROLE_LABELS: Record<UserRole, string> & Record<string, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
-  ENDORSING_COMMITTEE: "Endorsing Committee Member",
+  ENDORSING_COMMITTEE: "Endorsement Committee Member",
   MANAGEMENT: "Management",
+  MANAGEMENT_TEAM: "Management",
+  ManagementTeam: "Management",
   ADMIN: "Administrator",
 };
 
@@ -39,26 +41,33 @@ export const ROLE_SLUGS: Record<UserRole, string> = {
   DIRECTOR: "director",
   ENDORSING_COMMITTEE: "endorsing-committee",
   MANAGEMENT: "management",
+  MANAGEMENT_TEAM: "management",
   ADMIN: "admin",
 };
 
 export function normalizeUserRole(role: string): UserRole {
-  const r = (role || "").toUpperCase().trim();
-  if (r === "OFFICER" || r === "PROCUREMENTOFFICER") return "OFFICER";
+  const r = (role || "").toUpperCase().trim().replace(/[\s-]/g, "_");
+  if (
+    r === "OFFICER" ||
+    r === "PROCUREMENTOFFICER" ||
+    r === "PROCUREMENT_OFFICER"
+  )
+    return "OFFICER";
   if (
     r === "DIRECTOR" ||
     r === "PROCUREMENTDIRECTOR" ||
-    r === "PROJECTMANAGER"
+    r === "PROCUREMENT_DIRECTOR" ||
+    r === "PROJECTMANAGER" ||
+    r === "PROJECT_MANAGER"
   ) {
     return "DIRECTOR";
   }
-  if (r === "MANAGEMENT") {
+  if (r === "MANAGEMENT" || r === "MANAGEMENT_TEAM" || r === "MANAGEMENTTEAM") {
     return "MANAGEMENT";
   }
   if (
     r === "ENDORSING_COMMITTEE" ||
-    r === "ENDORSING-COMMITTEE" ||
-    r === "MANAGEMENTTEAM" ||
+    r === "ENDORSINGCOMMITTEE" ||
     r === "COMMITTEE"
   ) {
     return "ENDORSING_COMMITTEE";
@@ -75,14 +84,14 @@ export function dashboardPath(role: string): string {
 export function roleFromSlug(slug: string): UserRole | undefined {
   if (!slug) return undefined;
   const clean = slug.toLowerCase().replace(/_/g, "-").trim();
-  if (clean === "management") {
-    return "MANAGEMENT";
-  }
   if (
-    clean === "endorsing-committee" ||
-    clean === "committee" ||
+    clean === "management" ||
+    clean === "management-team" ||
     clean === "managementteam"
   ) {
+    return "MANAGEMENT";
+  }
+  if (clean === "endorsing-committee" || clean === "committee") {
     return "ENDORSING_COMMITTEE";
   }
   if (clean === "director" || clean === "procurementdirector")

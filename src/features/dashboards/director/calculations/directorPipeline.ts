@@ -51,25 +51,49 @@ export function computePendingPlans(
         p.status === "SUBMITTED" ||
         p.status === "PENDING_REVIEW" ||
         p.status === "UPDATE_REQUESTED" ||
-        (p as any).status === "Submitted to Director",
+        p.status === "RETURNED_FOR_REVISION" ||
+        p.status === "REJECTED" ||
+        p.status === "COMMITTEE_REJECTED" ||
+        (p as any).status === "Submitted to Director" ||
+        (p as any).status === "Returned for Revision" ||
+        (p as any).status === "Returned" ||
+        (p as any).status === "Committee Rejected",
     )
-    .map((p) => ({
-      id: p.id,
-      title: p.title || "Procurement Plan",
-      directorate: p.project?.name || p.organization || "—",
-      submittedBy:
-        p.creator?.displayName || p.creator?.name || "Assigned Officer",
-      submissionDate: formatRelativeTime(p.createdAt),
-      status: "Awaiting Review" as const,
-      totalActivitiesCount: p.activities?.length || 0,
-      estimatedBudgetETB: (p.activities || []).reduce((sum, a) => {
-        const budget = Number(a.estimatedBudget) || 0;
-        const rate = a.currency === "USD" ? 125 : 1;
-        return sum + budget * rate;
-      }, 0),
-      description: p.description || "",
-      activities: [],
-    }));
+    .map((p) => {
+      const rawStatus = (p.status || "").toUpperCase();
+      let displayStatus: DirectorPlan["status"] = "Awaiting Review";
+      if (
+        rawStatus === "RETURNED_FOR_REVISION" ||
+        (p as any).status === "Returned for Revision"
+      ) {
+        displayStatus = "Returned for Revision";
+      } else if (
+        rawStatus === "REJECTED" ||
+        rawStatus === "COMMITTEE_REJECTED" ||
+        (p as any).status === "Returned" ||
+        (p as any).status === "Committee Rejected"
+      ) {
+        displayStatus = "Rejected";
+      }
+
+      return {
+        id: p.id,
+        title: p.title || "Procurement Plan",
+        directorate: p.project?.name || p.organization || "—",
+        submittedBy:
+          p.creator?.displayName || p.creator?.name || "Assigned Officer",
+        submissionDate: formatRelativeTime(p.createdAt),
+        status: displayStatus,
+        totalActivitiesCount: p.activities?.length || 0,
+        estimatedBudgetETB: (p.activities || []).reduce((sum, a) => {
+          const budget = Number(a.estimatedBudget) || 0;
+          const rate = a.currency === "USD" ? 125 : 1;
+          return sum + budget * rate;
+        }, 0),
+        description: p.description || "",
+        activities: [],
+      };
+    });
 }
 
 /**

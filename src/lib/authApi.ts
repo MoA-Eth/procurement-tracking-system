@@ -8,6 +8,7 @@ import {
 import type { UserRole } from "../types";
 import { apiClient, ApiClientError } from "./apiClient";
 import { authTokenManager } from "./authTokenManager";
+import { tabSessionManager } from "./tabSessionManager";
 
 export class AuthApiError extends Error {
   constructor(message: string) {
@@ -24,8 +25,9 @@ function mapPrismaRoleToUserRole(role: string): UserRole {
       return "DIRECTOR";
     case "MANAGEMENT":
     case "Management":
-      return "MANAGEMENT";
     case "ManagementTeam":
+    case "MANAGEMENT_TEAM":
+      return "MANAGEMENT";
     case "ENDORSING_COMMITTEE":
       return "ENDORSING_COMMITTEE";
     case "Administrator":
@@ -46,16 +48,16 @@ function writeSessionCookie(
   rememberMe: boolean = false,
 ): void {
   if (typeof document === "undefined") return;
-  const maxAge = rememberMe ? 30 * 86400 : 86400;
+  const maxAgeDirective = rememberMe ? `; max-age=${30 * 86400}` : "";
   try {
     const jsonStr = JSON.stringify(session);
     const base64Str = btoa(unescape(encodeURIComponent(jsonStr)));
-    document.cookie = `${FRONTEND_SESSION_COOKIE}=${base64Str}; path=/; max-age=${maxAge}; SameSite=Lax`;
-    document.cookie = `moa_session=${base64Str}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    document.cookie = `${FRONTEND_SESSION_COOKIE}=${base64Str}; path=/${maxAgeDirective}; SameSite=Lax`;
+    document.cookie = `moa_session=${base64Str}; path=/${maxAgeDirective}; SameSite=Lax`;
   } catch {
     const encoded = encodeURIComponent(JSON.stringify(session));
-    document.cookie = `${FRONTEND_SESSION_COOKIE}=${encoded}; path=/; max-age=${maxAge}; SameSite=Lax`;
-    document.cookie = `moa_session=${encoded}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    document.cookie = `${FRONTEND_SESSION_COOKIE}=${encoded}; path=/${maxAgeDirective}; SameSite=Lax`;
+    document.cookie = `moa_session=${encoded}; path=/${maxAgeDirective}; SameSite=Lax`;
   }
 }
 
@@ -109,6 +111,7 @@ export async function authenticate(
     };
 
     writeSessionCookie(session, rememberMe);
+    tabSessionManager.setTabSession(session);
 
     return session;
   } catch (err) {
@@ -237,10 +240,11 @@ export async function createInvitedUser(
   const cleanEmail = email.trim().toLowerCase();
 
   try {
+    const payloadRole = role;
     const res = await apiClient.post<any>("/admin/users", {
       displayName: cleanDisplayName,
       email: cleanEmail,
-      role,
+      role: payloadRole,
     });
 
     const userObj = res.user || res.data || res;
@@ -282,6 +286,7 @@ export async function createInvitedUser(
 
 export async function signOut(): Promise<void> {
   authTokenManager.clearToken();
+  tabSessionManager.clearTabSession();
   if (typeof document !== "undefined") {
     document.cookie = `${FRONTEND_SESSION_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
     document.cookie = "moa_session=; path=/; max-age=0; SameSite=Lax";
@@ -294,6 +299,8 @@ export async function signOut(): Promise<void> {
 }
 
 export function getClientSession(): AuthSession | null {
+  const tabSession = tabSessionManager.getTabSession();
+  if (tabSession) return tabSession;
   if (typeof document === "undefined") return null;
   const cookies = document.cookie.split(";").map((c) => c.trim());
   const targetNames = [FRONTEND_SESSION_COOKIE, "moa_session"];

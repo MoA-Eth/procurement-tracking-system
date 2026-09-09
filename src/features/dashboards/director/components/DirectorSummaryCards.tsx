@@ -74,7 +74,7 @@ export function DirectorSummaryCards({
             <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-amber-700 leading-none">
+            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-black leading-none">
               {awaitingReviewCount}
             </p>
             <span className="text-xs font-semibold text-slate-500">plans</span>
@@ -108,7 +108,7 @@ export function DirectorSummaryCards({
             <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-slate-900 leading-none">
+            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-black leading-none">
               {committeePlansCount}
             </p>
             <span className="text-xs font-semibold text-slate-500">plans</span>
@@ -138,7 +138,7 @@ export function DirectorSummaryCards({
             <span className="h-2 w-2 rounded-full bg-rose-600 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-rose-600 leading-none">
+            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-black leading-none">
               {criticalDelaysCount}
             </p>
             <span className="text-xs font-semibold text-slate-600">

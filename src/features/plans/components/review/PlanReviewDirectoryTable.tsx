@@ -293,7 +293,9 @@ export function PlanReviewDirectoryTable({
                                     "Awaiting Management Approval" ||
                                   plan.status === "Committee Endorsed"
                                 ? "bg-indigo-50 text-indigo-800 border border-indigo-200"
-                                : plan.status === "Returned"
+                                : plan.status === "Returned" ||
+                                    plan.status === "Returned for Revision" ||
+                                    plan.status === "Committee Rejected"
                                   ? "bg-rose-50 text-rose-800 border border-rose-200"
                                   : "bg-slate-100 text-slate-700"
                         }`}

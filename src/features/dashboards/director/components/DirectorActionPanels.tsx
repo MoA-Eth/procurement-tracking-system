@@ -68,12 +68,20 @@ export function DirectorActionPanels({
                     className={`px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide ${
                       isManagement
                         ? "border-indigo-300 bg-indigo-50 text-indigo-800"
-                        : "border-amber-300 bg-amber-50 text-amber-800"
+                        : plan.status === "Returned for Revision"
+                          ? "border-amber-300 bg-amber-50 text-amber-800"
+                          : plan.status === "Rejected"
+                            ? "border-rose-300 bg-rose-50 text-rose-800"
+                            : "border-amber-300 bg-amber-50 text-amber-800"
                     }`}
                   >
                     {isManagement
                       ? "Awaiting Executive Review"
-                      : "Awaiting Review"}
+                      : plan.status === "Returned for Revision"
+                        ? "Returned for Revision"
+                        : plan.status === "Rejected"
+                          ? "Returned / Rejected"
+                          : "Awaiting Review"}
                   </span>
                   <div className="text-right">
                     <span className="font-extrabold text-slate-900 text-xs sm:text-sm">

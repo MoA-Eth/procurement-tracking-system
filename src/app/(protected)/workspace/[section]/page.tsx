@@ -12,7 +12,7 @@ import { MyDecisionsView } from "@/features/plans/components/MyDecisionsView";
 import { NotificationsView } from "@/features/notifications/components/NotificationsView";
 import { PanelsTopLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
-import { ROLE_LABELS } from "../../../../lib/authTypes";
+import { ROLE_LABELS, normalizeUserRole } from "../../../../lib/authTypes";
 import {
   canAccessWorkspaceSection,
   getWorkspaceSection,
@@ -42,11 +42,12 @@ export default async function WorkspaceSectionPage({
   if (!definition) notFound();
 
   const session = await requireAuthenticatedSession();
-  if (!canAccessWorkspaceSection(session.user.role, section)) {
+  const userRole = normalizeUserRole(session.user.role);
+  if (!canAccessWorkspaceSection(userRole, section)) {
     redirect("/access-denied");
   }
 
-  if (section === "projects" && session.user.role === "OFFICER") {
+  if (section === "projects" && userRole === "OFFICER") {
     const selectedProjectCode =
       typeof query.project === "string" ? query.project : undefined;
     const selectedPlanReference =
@@ -112,7 +113,7 @@ export default async function WorkspaceSectionPage({
   }
 
   if (section === "notifications") {
-    return <NotificationsView />;
+    return <NotificationsView user={session.user} />;
   }
 
   if (section === "user-management") {
@@ -121,7 +122,9 @@ export default async function WorkspaceSectionPage({
 
   if (
     section === "projects" &&
-    (session.user.role === "DIRECTOR" || session.user.role === "MANAGEMENT")
+    (userRole === "DIRECTOR" ||
+      userRole === "MANAGEMENT" ||
+      userRole === "MANAGEMENT_TEAM")
   ) {
     const selectedProjectCode =
       typeof query.project === "string" ? query.project : undefined;
@@ -134,7 +137,7 @@ export default async function WorkspaceSectionPage({
     const from = typeof query.from === "string" ? query.from : undefined;
     return (
       <ProjectsManagementView
-        readOnly={session.user.role === "MANAGEMENT"}
+        readOnly={userRole === "MANAGEMENT" || userRole === "MANAGEMENT_TEAM"}
         selectedProjectCode={selectedProjectCode}
         selectedPlanReference={selectedPlanReference}
         from={from}
@@ -142,7 +145,7 @@ export default async function WorkspaceSectionPage({
     );
   }
 
-  if (section === "contracts" && session.user.role === "OFFICER") {
+  if (section === "contracts" && userRole === "OFFICER") {
     const selectedContractNumber =
       typeof query.contract === "string" ? query.contract : undefined;
     const fromTracker =
@@ -162,8 +165,9 @@ export default async function WorkspaceSectionPage({
 
   if (section === "activity-tracker") {
     if (
-      session.user.role === "DIRECTOR" ||
-      session.user.role === "MANAGEMENT"
+      userRole === "DIRECTOR" ||
+      userRole === "MANAGEMENT" ||
+      userRole === "MANAGEMENT_TEAM"
     ) {
       return (
         <DirectorActivityTrackerView
@@ -180,7 +184,7 @@ export default async function WorkspaceSectionPage({
         />
       );
     }
-    if (session.user.role !== "OFFICER") {
+    if (userRole !== "OFFICER") {
       redirect("/access-denied");
     }
     return (

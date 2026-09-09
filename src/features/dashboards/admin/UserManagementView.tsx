@@ -22,7 +22,11 @@ import {
   type ApiUser,
   type PaginatedResponse,
 } from "@/lib/adminApi";
-import type { AuthUser, ProvisionableRole } from "@/lib/authTypes";
+import {
+  type AuthUser,
+  type ProvisionableRole,
+  normalizeUserRole,
+} from "@/lib/authTypes";
 
 interface UserManagementViewProps {
   initialMode?: "list" | "invite";
@@ -34,6 +38,7 @@ const AUTH_ROLE_LABELS: Record<string, string> = {
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsement Committee",
   MANAGEMENT: "Management",
+  MANAGEMENT_TEAM: "Management",
   ADMIN: "Administrator",
 };
 
@@ -41,16 +46,20 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
   ProcurementOfficer: "Officer",
   ProcurementDirector: "Director",
   Administrator: "Administrator",
-  ManagementTeam: "Management Team",
+  EndorsingCommittee: "Endorsement Committee",
+  ManagementTeam: "Management",
+  MANAGEMENT_TEAM: "Management",
+  MANAGEMENT: "Management",
+  Management: "Management",
   ProjectManager: "Project Manager",
 };
 
 function displayRole(user: ApiUser): string {
-  const authKey = (user.authRole || "").toUpperCase();
+  const normalized = normalizeUserRole(user.authRole || user.role);
   return (
-    AUTH_ROLE_LABELS[authKey] ??
-    AUTH_ROLE_LABELS[user.authRole] ??
+    AUTH_ROLE_LABELS[normalized] ??
     PRISMA_ROLE_LABELS[user.role] ??
+    AUTH_ROLE_LABELS[user.authRole] ??
     user.authRole ??
     user.role
   );
@@ -142,7 +151,7 @@ const DEFAULT_USERS_RESPONSE: PaginatedResponse<ApiUser> = {
       email: "genet@moa.gov.et",
       name: "Genet Tadesse",
       role: "ManagementTeam",
-      authRole: "ENDORSING_COMMITTEE",
+      authRole: "MANAGEMENT_TEAM",
       status: "ACTIVE",
       isActive: true,
       lastLoginAt: "2026-08-26T11:00:00Z",
@@ -242,8 +251,10 @@ export function UserManagementView({
         ALL: undefined,
         OFFICER: "ProcurementOfficer",
         DIRECTOR: "ProcurementDirector",
-        ENDORSING_COMMITTEE: "ManagementTeam",
+        ENDORSING_COMMITTEE: "EndorsingCommittee",
         MANAGEMENT: "ManagementTeam",
+        MANAGEMENT_TEAM: "ManagementTeam",
+        ManagementTeam: "ManagementTeam",
         ADMIN: "Administrator",
       };
 
@@ -274,8 +285,10 @@ export function UserManagementView({
       ALL: undefined,
       OFFICER: "ProcurementOfficer",
       DIRECTOR: "ProcurementDirector",
-      ENDORSING_COMMITTEE: "ManagementTeam",
+      ENDORSING_COMMITTEE: "EndorsingCommittee",
       MANAGEMENT: "ManagementTeam",
+      MANAGEMENT_TEAM: "ManagementTeam",
+      ManagementTeam: "ManagementTeam",
       ADMIN: "Administrator",
     };
 
@@ -362,7 +375,9 @@ export function UserManagementView({
     setErrorMessage(null);
     setInvitedInfo(null);
 
-    const role = (user.authRole as ProvisionableRole) || "OFFICER";
+    const role =
+      (normalizeUserRole(user.authRole || user.role) as ProvisionableRole) ||
+      "OFFICER";
 
     try {
       await createInvitedUser(
@@ -567,11 +582,15 @@ export function UserManagementView({
                   <option value="MANAGEMENT">
                     Management (Executive Review &amp; Approval)
                   </option>
+                  <option value="ADMIN">
+                    Administrator (System Administration / Governance)
+                  </option>
                 </select>
 
                 <p className="text-xs text-[#64748b] font-medium mt-2 flex items-center gap-1.5">
                   <Info className="w-4 h-4 text-[#047857] shrink-0" />
-                  Admin roles are excluded from normal invitations.
+                  Select the appropriate PTS role and operational permissions
+                  for this account.
                 </p>
               </div>
 
