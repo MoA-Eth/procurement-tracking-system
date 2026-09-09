@@ -17,7 +17,7 @@ const MainAppRouter: React.FC = () => {
     if (tabSessionManager.hasTabSession()) {
       const session = tabSessionManager.getTabSession();
       if (session?.user) {
-        router.replace(dashboardPath(session.user.role))
+        router.replace(dashboardPath(session.user.role));
       }
     }
   }, [router]);

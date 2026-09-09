@@ -57,7 +57,12 @@ const workspaceSections = {
     href: "/workspace/plan-for-review",
     icon: "clipboard",
     description: "Review procurement plans awaiting action from your role.",
-    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT", "MANAGEMENT_TEAM"],
+    allowedRoles: [
+      "DIRECTOR",
+      "ENDORSING_COMMITTEE",
+      "MANAGEMENT",
+      "MANAGEMENT_TEAM",
+    ],
   },
   "vote-progress": {
     section: "vote-progress",
@@ -203,8 +208,5 @@ export function canAccessWorkspaceSection(
   const normRole = normalizeUserRole(role);
   const sec = getWorkspaceSection(section);
   if (!sec) return false;
-  return (
-    sec.allowedRoles.includes(role) ||
-    sec.allowedRoles.includes(normRole)
-  );
+  return sec.allowedRoles.includes(role) || sec.allowedRoles.includes(normRole);
 }

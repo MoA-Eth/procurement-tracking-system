@@ -128,9 +128,7 @@ export function DashboardOverview({
                   <h3 className="text-sm font-semibold text-slate-600 leading-snug max-w-[160px]">
                     {label}
                   </h3>
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs group-hover:bg-slate-100/80 transition-colors"
-                  >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs group-hover:bg-slate-100/80 transition-colors">
                     <Icon
                       size={19}
                       strokeWidth={2}

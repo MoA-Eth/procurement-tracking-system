@@ -3,11 +3,7 @@ import { normalizeUserRole } from "./authTypes";
 
 export type NotificationPriority = "urgent" | "normal" | "info";
 export type NotificationType =
-  | "plan"
-  | "contract"
-  | "activity"
-  | "system"
-  | "approval";
+  "plan" | "contract" | "activity" | "system" | "approval";
 
 export interface SystemNotification {
   id: string;
@@ -123,7 +119,8 @@ function getLinkForType(
     case "activity":
       return "/workspace/activity-tracker";
     case "approval":
-      if (targetRole === "ENDORSING_COMMITTEE") return "/workspace/my-decisions";
+      if (targetRole === "ENDORSING_COMMITTEE")
+        return "/workspace/my-decisions";
       return "/workspace/committee-progress";
     case "system":
     default:
@@ -199,4 +196,3 @@ export async function markAllAlertsAsRead(): Promise<void> {
     console.warn("Failed to mark all alerts as read on backend:", err);
   }
 }
-

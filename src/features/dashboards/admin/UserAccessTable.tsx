@@ -5,7 +5,12 @@ import Link from "next/link";
 import { ChevronRight, Loader2, RefreshCw } from "lucide-react";
 import { createInvitedUser, getCurrentUser } from "@/lib/authApi";
 import type { ApiUser } from "@/lib/adminApi";
-import { type AuthUser, type ProvisionableRole, normalizeUserRole, ROLE_LABELS } from "@/lib/authTypes";
+import {
+  type AuthUser,
+  type ProvisionableRole,
+  normalizeUserRole,
+  ROLE_LABELS,
+} from "@/lib/authTypes";
 
 interface UserAccessTableProps {
   users: ApiUser[];

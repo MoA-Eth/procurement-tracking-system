@@ -324,20 +324,20 @@ export function getClientSession(): AuthSession | null {
         const decoded = decodeURIComponent(escape(atob(val)));
         const res = tryNormalize(JSON.parse(decoded));
         if (res) return res;
-      } catch { }
+      } catch {}
       try {
         const decoded = atob(val);
         const res = tryNormalize(JSON.parse(decoded));
         if (res) return res;
-      } catch { }
+      } catch {}
       try {
         const res = tryNormalize(JSON.parse(decodeURIComponent(val)));
         if (res) return res;
-      } catch { }
+      } catch {}
       try {
         const res = tryNormalize(JSON.parse(val));
         if (res) return res;
-      } catch { }
+      } catch {}
     }
   }
   return null;

@@ -137,9 +137,7 @@ export default async function WorkspaceSectionPage({
     const from = typeof query.from === "string" ? query.from : undefined;
     return (
       <ProjectsManagementView
-        readOnly={
-          userRole === "MANAGEMENT" || userRole === "MANAGEMENT_TEAM"
-        }
+        readOnly={userRole === "MANAGEMENT" || userRole === "MANAGEMENT_TEAM"}
         selectedProjectCode={selectedProjectCode}
         selectedPlanReference={selectedPlanReference}
         from={from}

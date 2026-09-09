@@ -22,7 +22,11 @@ import {
   type ApiUser,
   type PaginatedResponse,
 } from "@/lib/adminApi";
-import { type AuthUser, type ProvisionableRole, normalizeUserRole } from "@/lib/authTypes";
+import {
+  type AuthUser,
+  type ProvisionableRole,
+  normalizeUserRole,
+} from "@/lib/authTypes";
 
 interface UserManagementViewProps {
   initialMode?: "list" | "invite";
@@ -371,7 +375,9 @@ export function UserManagementView({
     setErrorMessage(null);
     setInvitedInfo(null);
 
-    const role = (normalizeUserRole(user.authRole || user.role) as ProvisionableRole) || "OFFICER";
+    const role =
+      (normalizeUserRole(user.authRole || user.role) as ProvisionableRole) ||
+      "OFFICER";
 
     try {
       await createInvitedUser(
@@ -583,7 +589,8 @@ export function UserManagementView({
 
                 <p className="text-xs text-[#64748b] font-medium mt-2 flex items-center gap-1.5">
                   <Info className="w-4 h-4 text-[#047857] shrink-0" />
-                  Select the appropriate PTS role and operational permissions for this account.
+                  Select the appropriate PTS role and operational permissions
+                  for this account.
                 </p>
               </div>
 
@@ -751,8 +758,9 @@ export function UserManagementView({
                           return (
                             <tr
                               key={user.id}
-                              className={`border-b border-slate-100 transition-colors duration-150 hover:bg-[#f1f5f9] ${isOddRow ? "bg-[#f8fafc]/60" : "bg-white"
-                                }`}
+                              className={`border-b border-slate-100 transition-colors duration-150 hover:bg-[#f1f5f9] ${
+                                isOddRow ? "bg-[#f8fafc]/60" : "bg-white"
+                              }`}
                             >
                               <td className="py-4 px-4 align-middle max-w-xs wrap-break-word">
                                 <div className="font-bold text-[#0f172a] text-xs wrap-break-word line-clamp-2 flex items-center gap-1.5">
@@ -780,12 +788,13 @@ export function UserManagementView({
 
                               <td className="py-4 px-4 align-middle">
                                 <span
-                                  className={`text-xs font-bold ${isPending
+                                  className={`text-xs font-bold ${
+                                    isPending
                                       ? "text-[#b06000]"
                                       : isActive
                                         ? "text-[#137333]"
                                         : "text-[#c5221f]"
-                                    }`}
+                                  }`}
                                 >
                                   {status}
                                 </span>
@@ -829,10 +838,11 @@ export function UserManagementView({
                                     type="button"
                                     disabled={actionUserId === user.id}
                                     onClick={() => handleToggleStatus(user)}
-                                    className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${isActive
+                                    className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
+                                      isActive
                                         ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
                                         : "border-blue-200/90 bg-blue-50/90 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800"
-                                      }`}
+                                    }`}
                                   >
                                     {actionUserId === user.id ? (
                                       <Loader2 className="w-3 h-3 animate-spin inline" />

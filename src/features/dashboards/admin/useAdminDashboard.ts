@@ -52,7 +52,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
           setTotalUserCount(usersRes.meta?.total ?? usersRes.data.length);
         }
       })
-      .catch(() => { })
+      .catch(() => {})
       .finally(() => {
         if (active) setIsUsersLoading(false);
       });
@@ -63,7 +63,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
           setLogs(logsRes.data);
         }
       })
-      .catch(() => { })
+      .catch(() => {})
       .finally(() => {
         if (active) setIsLogsLoading(false);
       });

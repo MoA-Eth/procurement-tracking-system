@@ -17,9 +17,7 @@ export interface AuthSession {
   accessToken?: string;
 }
 
-export type ProvisionableRole =
-  | UserRole
-  | "MANAGEMENT_TEAM";
+export type ProvisionableRole = UserRole | "MANAGEMENT_TEAM";
 
 export interface InvitedUserResponse {
   user: AuthUser;
@@ -49,7 +47,12 @@ export const ROLE_SLUGS: Record<UserRole, string> = {
 
 export function normalizeUserRole(role: string): UserRole {
   const r = (role || "").toUpperCase().trim().replace(/[\s-]/g, "_");
-  if (r === "OFFICER" || r === "PROCUREMENTOFFICER" || r === "PROCUREMENT_OFFICER") return "OFFICER";
+  if (
+    r === "OFFICER" ||
+    r === "PROCUREMENTOFFICER" ||
+    r === "PROCUREMENT_OFFICER"
+  )
+    return "OFFICER";
   if (
     r === "DIRECTOR" ||
     r === "PROCUREMENTDIRECTOR" ||
@@ -59,11 +62,7 @@ export function normalizeUserRole(role: string): UserRole {
   ) {
     return "DIRECTOR";
   }
-  if (
-    r === "MANAGEMENT" ||
-    r === "MANAGEMENT_TEAM" ||
-    r === "MANAGEMENTTEAM"
-  ) {
+  if (r === "MANAGEMENT" || r === "MANAGEMENT_TEAM" || r === "MANAGEMENTTEAM") {
     return "MANAGEMENT";
   }
   if (

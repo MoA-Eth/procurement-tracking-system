@@ -71,9 +71,17 @@ describe("directorPipeline role isolation", () => {
     ];
 
     const directorPending = computePendingPlans(plansWithReturned, "DIRECTOR");
-    expect(directorPending.map((p) => p.id)).toEqual(["plan-1", "plan-5", "plan-6"]);
-    expect(directorPending.find((p) => p.id === "plan-5")?.status).toBe("Returned for Revision");
-    expect(directorPending.find((p) => p.id === "plan-6")?.status).toBe("Rejected");
+    expect(directorPending.map((p) => p.id)).toEqual([
+      "plan-1",
+      "plan-5",
+      "plan-6",
+    ]);
+    expect(directorPending.find((p) => p.id === "plan-5")?.status).toBe(
+      "Returned for Revision",
+    );
+    expect(directorPending.find((p) => p.id === "plan-6")?.status).toBe(
+      "Rejected",
+    );
   });
 
   it("filters Management pending plans correctly without leaking Director plans", () => {

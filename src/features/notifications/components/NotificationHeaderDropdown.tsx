@@ -56,7 +56,9 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
       if (active) setNotifications(liveData);
     }
     loadAlerts();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [userRole]);
 
   // Re-fetch when dropdown opens + poll every 30s while open

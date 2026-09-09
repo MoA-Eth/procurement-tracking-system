@@ -221,7 +221,13 @@ export function AdminDashboardSearch({
 
           {/* Quick shortcuts footer */}
           <div className="bg-slate-50 px-3.5 py-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Press <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded text-[9px] font-semibold">ESC</kbd> to close</span>
+            <span>
+              Press{" "}
+              <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded text-[9px] font-semibold">
+                ESC
+              </kbd>{" "}
+              to close
+            </span>
             <Link
               href={`/workspace/admin?tab=users&search=${encodeURIComponent(value)}`}
               onClick={() => setIsOpen(false)}

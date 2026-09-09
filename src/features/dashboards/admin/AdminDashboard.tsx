@@ -51,8 +51,12 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         (q === "officer" && normalized === "officer") ||
         (q === "director" && normalized === "director") ||
         (q === "committee" && normalized === "endorsing_committee") ||
-        (q === "management" && (normalized === "management_team" || rawRole.includes("management"))) ||
-        (q === "management team" && (normalized === "management_team" || rawRole.includes("management"))) ||
+        (q === "management" &&
+          (normalized === "management_team" ||
+            rawRole.includes("management"))) ||
+        (q === "management team" &&
+          (normalized === "management_team" ||
+            rawRole.includes("management"))) ||
         (q === "administrator" && normalized === "admin") ||
         (q === "admin" && normalized === "admin")
       );
@@ -335,7 +339,9 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
 
           <div className="mt-6 space-y-3 border-t border-slate-100 pt-6 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 font-medium">Database Connection</span>
+              <span className="text-slate-600 font-medium">
+                Database Connection
+              </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-700 shadow-2xs">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 Connected (Online)
@@ -349,7 +355,9 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 font-medium">System Role Guards</span>
+              <span className="text-slate-600 font-medium">
+                System Role Guards
+              </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-700 shadow-2xs">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 Strict Enforced
@@ -416,7 +424,10 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         </div>
 
         <div className="mt-6">
-          <RecentAuditTrailTable logs={filteredLogs} isLoading={isLogsLoading} />
+          <RecentAuditTrailTable
+            logs={filteredLogs}
+            isLoading={isLogsLoading}
+          />
         </div>
       </section>
     </div>
