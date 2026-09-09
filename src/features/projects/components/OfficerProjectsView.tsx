@@ -61,12 +61,17 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Download,
   FolderLock,
   Search,
   ShieldAlert,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { exportOfficerProjectsToExcel } from "@/features/projects/utils/projectExcelUtils";
+import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export function OfficerProjectsView({
@@ -1277,6 +1282,8 @@ function OfficerProjectsList({
       ? "Showing 0 entries"
       : `Showing 1 to ${resultCount} of ${resultCount} entries`;
 
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   return (
     <div className="space-y-5 pb-6">
       <header>
@@ -1299,13 +1306,35 @@ function OfficerProjectsList({
           </ol>
         </nav>
 
-        <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-[#10243f]">
-          My Projects
-        </h1>
-        <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
-          Overview of projects specifically assigned to your account for
-          procurement planning and tracking.
-        </p>
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#10243f]">
+              My Projects
+            </h1>
+            <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
+              Overview of projects specifically assigned to your account for
+              procurement planning and tracking.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2.5">
+            <button
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
+              onClick={() => exportOfficerProjectsToExcel([...projects])}
+              type="button"
+            >
+              <Download aria-hidden="true" className="h-3.5 w-3.5" />
+              Export Excel
+            </button>
+            <button
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-[#176c55] shadow-2xs hover:bg-[#edf5f1] transition cursor-pointer"
+              onClick={() => setIsImportModalOpen(true)}
+              type="button"
+            >
+              <Upload aria-hidden="true" className="h-3.5 w-3.5" />
+              Import Excel
+            </button>
+          </div>
+        </div>
       </header>
 
       {projects.length === 0 ? (
@@ -1577,6 +1606,36 @@ function OfficerProjectsList({
           </section>
         </>
       )}
+
+      <ExcelImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={(imported) => {
+          if (typeof window !== "undefined") {
+            const raw = window.localStorage.getItem(
+              OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+            );
+            let existingRecords = parseSavedActivityRecords(raw);
+
+            imported.forEach((act) => {
+              const defaultProj = projects[0]?.code || "PRJ-24-001";
+              const defaultPlan =
+                projects[0]?.plans?.[0]?.reference || "PP-DRIVE-2016-01";
+              existingRecords = addSavedActivityRecord(existingRecords, {
+                activity: act,
+                planReference: defaultPlan,
+                projectCode: defaultProj,
+              });
+            });
+
+            window.localStorage.setItem(
+              OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+              JSON.stringify(existingRecords),
+            );
+            window.location.reload();
+          }
+        }}
+      />
     </div>
   );
 }
