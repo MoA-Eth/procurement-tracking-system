@@ -10,7 +10,7 @@ import { DirectorSpendCompositionChart } from "./components/DirectorSpendComposi
 import { DirectorFinancialPositionChart } from "./components/DirectorFinancialPositionChart";
 import { DirectorActionPanels } from "./components/DirectorActionPanels";
 
-export function DirectorDashboard({ user: _user }: { user: AuthUser }) {
+export function DirectorDashboard({ user }: { user: AuthUser }) {
   const {
     selectedFiscalYear,
     setSelectedFiscalYear,
@@ -35,7 +35,7 @@ export function DirectorDashboard({ user: _user }: { user: AuthUser }) {
     displayedPendingPlans,
     displayedCriticalDelays,
     availableFiscalYears,
-  } = useDirectorDashboard();
+  } = useDirectorDashboard(user.role);
 
   return (
     <div className="w-full max-w-full min-w-0 overflow-x-hidden space-y-4 sm:space-y-5 animate-in fade-in duration-200">
@@ -65,6 +65,7 @@ export function DirectorDashboard({ user: _user }: { user: AuthUser }) {
         criticalDelaysCount={criticalDelaysCount}
         selectedFiscalYear={selectedFiscalYear}
         selectedSector={selectedSector}
+        userRole={user.role}
       />
 
       {/* 3. PROCUREMENT FINANCIAL CAPITAL & CONTRACT SUMMARY */}
@@ -99,6 +100,7 @@ export function DirectorDashboard({ user: _user }: { user: AuthUser }) {
       <DirectorActionPanels
         pendingPlans={displayedPendingPlans}
         criticalDelays={displayedCriticalDelays}
+        userRole={user.role}
       />
 
       {/* 7. SYSTEM FOOTER BAR */}

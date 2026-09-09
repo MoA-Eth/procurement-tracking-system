@@ -3,12 +3,48 @@ import type { BackendContract } from "@/lib/contractsApi";
 import type { DirectorPlan, PipelineStageVolume } from "../directorData";
 import { formatRelativeTime } from "../directorFormatters";
 
+import type { UserRole } from "@/types";
+
 /**
- * Compute plans awaiting director review
+ * Compute plans awaiting review (Director review for DIRECTOR, Executive authorization for MANAGEMENT)
  */
 export function computePendingPlans(
   filteredPlans: BackendPlan[],
+  userRole: UserRole = "DIRECTOR",
 ): DirectorPlan[] {
+  if (userRole === "MANAGEMENT") {
+    return filteredPlans
+      .filter((p) => {
+        const rawStatus = (p.status || "").toUpperCase();
+        const hasDecision = (p as any).managementDecision != null;
+        return (
+          !hasDecision &&
+          (rawStatus === "AWAITING_MANAGEMENT_APPROVAL" ||
+            rawStatus === "COMMITTEE_ENDORSED" ||
+            p.status === "Awaiting Management Approval" ||
+            p.status === "Committee Endorsed" ||
+            (p as any).committeeStatus === "Endorsed")
+        );
+      })
+      .map((p) => ({
+        id: p.id,
+        title: p.title || "Procurement Plan",
+        directorate: p.project?.name || p.organization || "—",
+        submittedBy:
+          p.creator?.displayName || p.creator?.name || "Procurement Officer",
+        submissionDate: formatRelativeTime(p.createdAt),
+        status: "Awaiting Review" as const,
+        totalActivitiesCount: p.activities?.length || 0,
+        estimatedBudgetETB: (p.activities || []).reduce((sum, a) => {
+          const budget = Number(a.estimatedBudget) || 0;
+          const rate = a.currency === "USD" ? 125 : 1;
+          return sum + budget * rate;
+        }, 0),
+        description: p.description || "",
+        activities: [],
+      }));
+  }
+
   return filteredPlans
     .filter(
       (p) =>
@@ -37,10 +73,11 @@ export function computePendingPlans(
 }
 
 /**
- * Compute count of plans under committee review
+ * Compute count of plans under committee review or awaiting review
  */
 export function computeCommitteePlansCount(
   filteredPlans: BackendPlan[],
+  _userRole: UserRole = "DIRECTOR",
 ): number {
   return filteredPlans.filter(
     (p) =>

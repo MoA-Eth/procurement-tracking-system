@@ -80,7 +80,7 @@ export function CommitteeRecentDecisions({
                 )}
 
               <Link
-                href={`/workspace/committee-progress?planId=${plan.id}`}
+                href={`/workspace/my-decisions?planId=${plan.id}`}
                 className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-0.5 transition-colors cursor-pointer"
               >
                 View Read-only Details ↗

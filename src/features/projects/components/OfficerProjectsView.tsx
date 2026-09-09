@@ -39,6 +39,7 @@ import {
 } from "@/lib/plansApi";
 import {
   createActivity,
+  updateActivity,
   fetchActivities,
   resolveProcurementMethodId,
   type BackendActivity,
@@ -561,6 +562,13 @@ export function OfficerProjectsView({
         if (created && created.id) {
           planForNavigation.reference = created.id;
           planForNavigation.id = created.id;
+          planForNavigation.createdById = created.createdBy;
+          planForNavigation.createdByName =
+            created.creator?.displayName ||
+            created.creator?.name ||
+            effectiveUser?.displayName ||
+            "Assigned Officer";
+          planForNavigation.createdAt = created.createdAt;
         }
       } catch (err) {
         console.warn("Backend createPlan note:", err);
@@ -767,50 +775,100 @@ export function OfficerProjectsView({
           remarks: st.remarks || undefined,
         }));
 
-        try {
-          await createActivity({
-            planId: targetBackendPlanId,
-            procurementMethodId: resolvedMethodId,
-            description: activity.description || "Activity description",
-            estimatedBudget: Number(activity.estimatedAmount) || 500000,
-            currency: selectedPlan.currency || "ETB",
-            stages: customStages.length > 0 ? customStages : undefined,
-            fundings: [
-              {
-                fundingSource:
-                  selectedProject.fundingSource ||
-                  "African Development Bank (AfDB)",
-                loanGrantNumber:
-                  selectedProject.financingNumbers?.[0] || undefined,
-                allocationPct: 100,
-              },
-            ],
-          });
-        } catch (firstErr) {
-          console.warn(
-            "First createActivity attempt failed, attempting fallback without custom stages:",
-            firstErr,
-          );
-          await createActivity({
-            planId: targetBackendPlanId,
-            procurementMethodId: resolvedMethodId,
-            description: activity.description || "Activity description",
-            estimatedBudget: Number(activity.estimatedAmount) || 500000,
-            currency: selectedPlan.currency || "ETB",
-            fundings: [
-              {
-                fundingSource:
-                  selectedProject.fundingSource ||
-                  "African Development Bank (AfDB)",
-                loanGrantNumber:
-                  selectedProject.financingNumbers?.[0] || undefined,
-                allocationPct: 100,
-              },
-            ],
-          });
+        // Check if this activity already exists in the backend
+        const existingBackendAct = backendActivities.find(
+          (ba) =>
+            ba.activity.reference?.toLowerCase() ===
+              activity.reference?.toLowerCase() ||
+            (Boolean(activity.id) &&
+              Boolean(ba.activity.id) &&
+              ba.activity.id === activity.id) ||
+            (Boolean(activity.activityId) &&
+              Boolean(ba.activity.id) &&
+              ba.activity.id === activity.activityId),
+        );
+        const existingBackendId =
+          (activity.id && activity.id.includes("-") && activity.id.length > 20
+            ? activity.id
+            : undefined) ||
+          (activity.activityId &&
+          activity.activityId.includes("-") &&
+          activity.activityId.length > 20
+            ? activity.activityId
+            : undefined) ||
+          (existingBackendAct?.activity?.id &&
+          existingBackendAct.activity.id.includes("-")
+            ? existingBackendAct.activity.id
+            : undefined);
+
+        if (existingBackendId) {
+          try {
+            await updateActivity(existingBackendId, {
+              description: activity.description || "Activity description",
+              estimatedBudget: Number(activity.estimatedAmount) || 500000,
+              currency: selectedPlan.currency || "ETB",
+              procurementMethodId: resolvedMethodId,
+              stages: customStages.length > 0 ? customStages : undefined,
+              fundings: [
+                {
+                  fundingSource:
+                    selectedProject.fundingSource ||
+                    "African Development Bank (AfDB)",
+                  loanGrantNumber:
+                    selectedProject.financingNumbers?.[0] || undefined,
+                  allocationPct: 100,
+                },
+              ],
+            });
+          } catch (updateErr) {
+            console.warn("Backend updateActivity note:", updateErr);
+          }
+        } else {
+          try {
+            await createActivity({
+              planId: targetBackendPlanId,
+              procurementMethodId: resolvedMethodId,
+              description: activity.description || "Activity description",
+              estimatedBudget: Number(activity.estimatedAmount) || 500000,
+              currency: selectedPlan.currency || "ETB",
+              stages: customStages.length > 0 ? customStages : undefined,
+              fundings: [
+                {
+                  fundingSource:
+                    selectedProject.fundingSource ||
+                    "African Development Bank (AfDB)",
+                  loanGrantNumber:
+                    selectedProject.financingNumbers?.[0] || undefined,
+                  allocationPct: 100,
+                },
+              ],
+            });
+          } catch (firstErr) {
+            console.warn(
+              "First createActivity attempt failed, attempting fallback without custom stages:",
+              firstErr,
+            );
+            await createActivity({
+              planId: targetBackendPlanId,
+              procurementMethodId: resolvedMethodId,
+              description: activity.description || "Activity description",
+              estimatedBudget: Number(activity.estimatedAmount) || 500000,
+              currency: selectedPlan.currency || "ETB",
+              fundings: [
+                {
+                  fundingSource:
+                    selectedProject.fundingSource ||
+                    "African Development Bank (AfDB)",
+                  loanGrantNumber:
+                    selectedProject.financingNumbers?.[0] || undefined,
+                  allocationPct: 100,
+                },
+              ],
+            });
+          }
         }
       } catch (err) {
-        console.warn("Backend createActivity note:", err);
+        console.warn("Backend saveActivity note:", err);
       }
     }
 
@@ -1085,6 +1143,7 @@ export function OfficerProjectsView({
     return (
       <OfficerProcurementActivityDetailView
         activity={selectedActivity}
+        currentUser={effectiveUser}
         fromTracker={fromTracker}
         onUpdateActivity={handleActivityUpdated}
         plan={selectedPlan}

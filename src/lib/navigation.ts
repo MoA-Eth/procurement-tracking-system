@@ -152,9 +152,27 @@ type WorkspaceSectionKey = keyof typeof workspaceSections;
 
 const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
   OFFICER: ["projects", "contracts", "activity-tracker"],
-  DIRECTOR: ["projects", "plan-for-review", "vote-progress", "reports"],
-  MANAGEMENT: ["projects", "plan-for-review", "vote-progress", "reports"],
-  MANAGEMENT_TEAM: ["projects", "plan-for-review", "vote-progress", "reports"],
+  DIRECTOR: [
+    "projects",
+    "plan-for-review",
+    "vote-progress",
+    "activity-tracker",
+    "reports",
+  ],
+  MANAGEMENT: [
+    "projects",
+    "plan-for-review",
+    "vote-progress",
+    "activity-tracker",
+    "reports",
+  ],
+  MANAGEMENT_TEAM: [
+    "projects",
+    "plan-for-review",
+    "vote-progress",
+    "activity-tracker",
+    "reports",
+  ],
   ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],
   ADMIN: ["user-management", "system-logs"],
 };
