@@ -41,23 +41,23 @@ function mapPrismaRoleToUserRole(role: string): UserRole {
   }
 }
 
-export const FRONTEND_SESSION_COOKIE = "moa_user_session";
+export const FRONTEND_SESSION_COOKIE =
+  process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME || "moa_user_session";
 
-function writeSessionCookie(
-  session: AuthSession,
-  rememberMe: boolean = false,
-): void {
+function writeSessionCookie(session: AuthSession): void {
   if (typeof document === "undefined") return;
-  const maxAgeDirective = rememberMe ? `; max-age=${30 * 86400}` : "";
+  // Always use a session cookie (no max-age directive) so that closing the browser destroys the session cookie.
+  // Sensitive procurement information will strictly require re-entering the password on new sessions.
+  // "Remember Me" only persists the email address in local storage for login convenience.
   try {
     const jsonStr = JSON.stringify(session);
     const base64Str = btoa(unescape(encodeURIComponent(jsonStr)));
-    document.cookie = `${FRONTEND_SESSION_COOKIE}=${base64Str}; path=/${maxAgeDirective}; SameSite=Lax`;
-    document.cookie = `moa_session=${base64Str}; path=/${maxAgeDirective}; SameSite=Lax`;
+    document.cookie = `${FRONTEND_SESSION_COOKIE}=${base64Str}; path=/; SameSite=Lax`;
+    document.cookie = `moa_session=${base64Str}; path=/; SameSite=Lax`;
   } catch {
     const encoded = encodeURIComponent(JSON.stringify(session));
-    document.cookie = `${FRONTEND_SESSION_COOKIE}=${encoded}; path=/${maxAgeDirective}; SameSite=Lax`;
-    document.cookie = `moa_session=${encoded}; path=/${maxAgeDirective}; SameSite=Lax`;
+    document.cookie = `${FRONTEND_SESSION_COOKIE}=${encoded}; path=/; SameSite=Lax`;
+    document.cookie = `moa_session=${encoded}; path=/; SameSite=Lax`;
   }
 }
 
@@ -104,13 +104,11 @@ export async function authenticate(
         ? "PASSWORD_CHANGE_REQUIRED"
         : "AUTHENTICATED",
       user,
-      expiresAt: new Date(
-        Date.now() + (rememberMe ? 30 : 1) * 24 * 60 * 60 * 1000,
-      ).toISOString(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       accessToken: token,
     };
 
-    writeSessionCookie(session, rememberMe);
+    writeSessionCookie(session);
     tabSessionManager.setTabSession(session);
 
     return session;
