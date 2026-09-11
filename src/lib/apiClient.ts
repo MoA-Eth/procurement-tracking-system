@@ -113,8 +113,9 @@ export async function directApiFetch<T>(
           window.sessionStorage.removeItem("moa_auth_token");
         } catch {}
         if (typeof document !== "undefined") {
-          document.cookie =
-            "moa_user_session=; path=/; max-age=0; SameSite=Lax";
+          const cookieName =
+            process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME || "moa_user_session";
+          document.cookie = `${cookieName}=; path=/; max-age=0; SameSite=Lax`;
           document.cookie = "moa_session=; path=/; max-age=0; SameSite=Lax";
         }
         if (window.location.pathname !== "/") {
