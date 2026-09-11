@@ -34,7 +34,7 @@ const workspaceSections = {
     href: "/workspace/projects",
     icon: "projects",
     description: "View and follow procurement projects assigned to your role.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT", "MANAGEMENT_TEAM"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT"],
   },
   contracts: {
     section: "contracts",
@@ -50,7 +50,7 @@ const workspaceSections = {
     href: "/workspace/activity-tracker",
     icon: "activity",
     description: "Track procurement activities, milestones and upcoming work.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT", "MANAGEMENT_TEAM"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT"],
   },
   "plan-for-review": {
     section: "plan-for-review",
@@ -58,12 +58,7 @@ const workspaceSections = {
     href: "/workspace/plan-for-review",
     icon: "clipboard",
     description: "Review procurement plans awaiting action from your role.",
-    allowedRoles: [
-      "DIRECTOR",
-      "ENDORSING_COMMITTEE",
-      "MANAGEMENT",
-      "MANAGEMENT_TEAM",
-    ],
+    allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT"],
   },
   "vote-progress": {
     section: "vote-progress",
@@ -75,7 +70,6 @@ const workspaceSections = {
     allowedRoles: [
       "DIRECTOR",
       "MANAGEMENT",
-      "MANAGEMENT_TEAM",
       "ENDORSING_COMMITTEE",
       "ADMIN",
       "OFFICER",
@@ -91,7 +85,6 @@ const workspaceSections = {
     allowedRoles: [
       "DIRECTOR",
       "MANAGEMENT",
-      "MANAGEMENT_TEAM",
       "ENDORSING_COMMITTEE",
       "ADMIN",
       "OFFICER",
@@ -106,7 +99,6 @@ const workspaceSections = {
     allowedRoles: [
       "DIRECTOR",
       "MANAGEMENT",
-      "MANAGEMENT_TEAM",
       "OFFICER",
       "ENDORSING_COMMITTEE",
       "ADMIN",
@@ -147,7 +139,6 @@ const workspaceSections = {
       "OFFICER",
       "DIRECTOR",
       "MANAGEMENT",
-      "MANAGEMENT_TEAM",
       "ENDORSING_COMMITTEE",
       "ADMIN",
     ],
@@ -175,13 +166,6 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "reports",
   ],
   MANAGEMENT: [
-    "projects",
-    "plan-for-review",
-    "vote-progress",
-    "activity-tracker",
-    "reports",
-  ],
-  MANAGEMENT_TEAM: [
     "projects",
     "plan-for-review",
     "vote-progress",

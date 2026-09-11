@@ -127,9 +127,7 @@ export default async function WorkspaceSectionPage({
 
   if (
     section === "projects" &&
-    (userRole === "DIRECTOR" ||
-      userRole === "MANAGEMENT" ||
-      userRole === "MANAGEMENT_TEAM")
+    (userRole === "DIRECTOR" || userRole === "MANAGEMENT")
   ) {
     const selectedProjectCode =
       typeof query.project === "string" ? query.project : undefined;
@@ -142,7 +140,7 @@ export default async function WorkspaceSectionPage({
     const from = typeof query.from === "string" ? query.from : undefined;
     return (
       <ProjectsManagementView
-        readOnly={userRole === "MANAGEMENT" || userRole === "MANAGEMENT_TEAM"}
+        readOnly={userRole === "MANAGEMENT"}
         selectedProjectCode={selectedProjectCode}
         selectedPlanReference={selectedPlanReference}
         from={from}
@@ -169,11 +167,7 @@ export default async function WorkspaceSectionPage({
   }
 
   if (section === "activity-tracker") {
-    if (
-      userRole === "DIRECTOR" ||
-      userRole === "MANAGEMENT" ||
-      userRole === "MANAGEMENT_TEAM"
-    ) {
+    if (userRole === "DIRECTOR" || userRole === "MANAGEMENT") {
       return (
         <DirectorActivityTrackerView
           userRole={session.user.role}

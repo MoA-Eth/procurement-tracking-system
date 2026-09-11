@@ -29,11 +29,6 @@ export const DASHBOARD_HEADINGS: Record<
     description:
       "Manage authorized users and review timestamped authentication activity.",
   },
-  MANAGEMENT_TEAM: {
-    eyebrow: "Management oversight",
-    description:
-      "Review institutional procurement progress, operational decisions, and executive workflows.",
-  },
 };
 
 export function getDashboardHeading(role: UserRole) {

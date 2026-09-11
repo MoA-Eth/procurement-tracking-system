@@ -9,7 +9,7 @@ const roles: ProvisionableRole[] = [
   "OFFICER",
   "DIRECTOR",
   "ENDORSING_COMMITTEE",
-  "MANAGEMENT_TEAM",
+  "MANAGEMENT",
   "ADMIN",
 ];
 

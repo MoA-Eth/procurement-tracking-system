@@ -26,6 +26,7 @@ import {
   type AuthUser,
   type ProvisionableRole,
   normalizeUserRole,
+  ROLE_LABELS,
 } from "@/lib/authTypes";
 
 interface UserManagementViewProps {
@@ -33,35 +34,23 @@ interface UserManagementViewProps {
   currentUser?: AuthUser | null;
 }
 
-const AUTH_ROLE_LABELS: Record<string, string> = {
-  OFFICER: "Officer",
-  DIRECTOR: "Director",
-  ENDORSING_COMMITTEE: "Endorsement Committee",
-  MANAGEMENT: "Management",
-  MANAGEMENT_TEAM: "Management",
-  ADMIN: "Administrator",
-};
-
 const PRISMA_ROLE_LABELS: Record<string, string> = {
   ProcurementOfficer: "Officer",
   ProcurementDirector: "Director",
   Administrator: "Administrator",
   EndorsingCommittee: "Endorsement Committee",
   ManagementTeam: "Management",
-  MANAGEMENT_TEAM: "Management",
-  MANAGEMENT: "Management",
-  Management: "Management",
   ProjectManager: "Project Manager",
 };
 
 function displayRole(user: ApiUser): string {
   const normalized = normalizeUserRole(user.authRole || user.role);
   return (
-    AUTH_ROLE_LABELS[normalized] ??
+    ROLE_LABELS[normalized] ??
     PRISMA_ROLE_LABELS[user.role] ??
-    AUTH_ROLE_LABELS[user.authRole] ??
     user.authRole ??
-    user.role
+    user.role ??
+    "Unknown"
   );
 }
 
@@ -151,7 +140,7 @@ const DEFAULT_USERS_RESPONSE: PaginatedResponse<ApiUser> = {
       email: "genet@moa.gov.et",
       name: "Genet Tadesse",
       role: "ManagementTeam",
-      authRole: "MANAGEMENT_TEAM",
+      authRole: "MANAGEMENT",
       status: "ACTIVE",
       isActive: true,
       lastLoginAt: "2026-08-26T11:00:00Z",
@@ -253,8 +242,6 @@ export function UserManagementView({
         DIRECTOR: "ProcurementDirector",
         ENDORSING_COMMITTEE: "EndorsingCommittee",
         MANAGEMENT: "ManagementTeam",
-        MANAGEMENT_TEAM: "ManagementTeam",
-        ManagementTeam: "ManagementTeam",
         ADMIN: "Administrator",
       };
 
@@ -287,8 +274,6 @@ export function UserManagementView({
       DIRECTOR: "ProcurementDirector",
       ENDORSING_COMMITTEE: "EndorsingCommittee",
       MANAGEMENT: "ManagementTeam",
-      MANAGEMENT_TEAM: "ManagementTeam",
-      ManagementTeam: "ManagementTeam",
       ADMIN: "Administrator",
     };
 
