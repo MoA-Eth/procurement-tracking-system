@@ -12,6 +12,9 @@ import {
   Coins,
   FileSpreadsheet,
   AlertCircle,
+  Pencil,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/authTypes";
 import {
@@ -19,6 +22,7 @@ import {
   createLookup,
   updateLookup,
   deleteLookup,
+  subscribeToLookups,
   type LookupItem,
 } from "@/lib/lookupsApi";
 
@@ -73,12 +77,33 @@ export function SettingsManagementView({
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Form states
+  // Tab live counts
+  const [tabCounts, setTabCounts] = useState<Record<TabType, number>>({
+    PROJECT_CODE: 0,
+    SECTOR: 0,
+    FUNDING_SOURCE: 0,
+    PROCUREMENT_METHOD: 0,
+  });
+
+  // Form states (Add)
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCode, setNewCode] = useState("");
   const [newLabel, setNewLabel] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Form states (Edit Modal)
+  const [editingItem, setEditingItem] = useState<LookupItem | null>(null);
+  const [editCode, setEditCode] = useState("");
+  const [editLabel, setEditLabel] = useState("");
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+
+  // Custom Delete Modal
+  const [deleteItemModal, setDeleteItemModal] = useState<LookupItem | null>(
+    null,
+  );
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -97,12 +122,44 @@ export function SettingsManagementView({
     }
   };
 
+  const loadAllCounts = async () => {
+    try {
+      const all = await fetchLookups();
+      const counts: Record<TabType, number> = {
+        PROJECT_CODE: 0,
+        SECTOR: 0,
+        FUNDING_SOURCE: 0,
+        PROCUREMENT_METHOD: 0,
+      };
+      all.forEach((item) => {
+        if (counts[item.type as TabType] !== undefined) {
+          counts[item.type as TabType]++;
+        }
+      });
+      setTabCounts(counts);
+    } catch {
+      // Fallback
+    }
+  };
+
   useEffect(() => {
     loadData();
     setShowAddForm(false);
     setFormError(null);
     setNewCode("");
     setNewLabel("");
+  }, [activeTab]);
+
+  useEffect(() => {
+    loadAllCounts();
+
+    // Subscribe to cross-tab updates
+    const unsubscribe = subscribeToLookups(() => {
+      loadData();
+      loadAllCounts();
+    });
+
+    return () => unsubscribe();
   }, [activeTab]);
 
   const filteredLookups = useMemo(() => {
@@ -145,11 +202,66 @@ export function SettingsManagementView({
       setNewCode("");
       setNewLabel("");
       setShowAddForm(false);
+      loadAllCounts();
       showToast(`Added "${cleanCode}" successfully!`);
     } catch (err: any) {
       setFormError(err?.message || "Failed to create lookup value.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenEdit = (item: LookupItem) => {
+    setEditingItem(item);
+    setEditCode(item.code);
+    setEditLabel(item.label);
+    setEditIsActive(item.isActive);
+    setEditError(null);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+
+    const cleanCode = editCode.trim().toUpperCase();
+    const cleanLabel = editLabel.trim();
+
+    if (!cleanCode || !cleanLabel) {
+      setEditError("Both code and title/label are required.");
+      return;
+    }
+
+    if (
+      lookups.some(
+        (l) => l.id !== editingItem.id && l.code.toUpperCase() === cleanCode,
+      )
+    ) {
+      setEditError(`Another item with code "${cleanCode}" already exists.`);
+      return;
+    }
+
+    setIsEditSubmitting(true);
+    setEditError(null);
+
+    try {
+      const updated = await updateLookup(editingItem.id, {
+        code: cleanCode,
+        label: cleanLabel,
+        isActive: editIsActive,
+      });
+
+      if (updated) {
+        setLookups((prev) =>
+          prev.map((l) => (l.id === editingItem.id ? updated : l)),
+        );
+      }
+      setEditingItem(null);
+      loadAllCounts();
+      showToast(`Updated "${cleanCode}" successfully.`);
+    } catch (err: any) {
+      setEditError(err?.message || "Failed to update lookup value.");
+    } finally {
+      setIsEditSubmitting(false);
     }
   };
 
@@ -161,6 +273,7 @@ export function SettingsManagementView({
           l.id === item.id ? { ...l, isActive: !l.isActive } : l,
         ),
       );
+      loadAllCounts();
       showToast(`Status updated for "${item.code}".`);
     }
   };
@@ -223,6 +336,7 @@ export function SettingsManagementView({
         {TAB_CONFIGS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.type;
+          const count = tabCounts[tab.type] ?? 0;
           return (
             <button
               key={tab.type}
@@ -237,6 +351,15 @@ export function SettingsManagementView({
                 className={`h-4 w-4 ${isActive ? "text-[#A3E635]" : "text-slate-400"}`}
               />
               <span>{tab.label}</span>
+              <span
+                className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                  isActive
+                    ? "bg-[#145241] text-[#A3E635]"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {count}
+              </span>
             </button>
           );
         })}
@@ -373,8 +496,41 @@ export function SettingsManagementView({
                 </tr>
               ) : filteredLookups.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-slate-400">
-                    No lookup values found matching current filter.
+                  <td colSpan={5} className="py-12 px-4 text-center">
+                    <div className="max-w-xs mx-auto space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto">
+                        {searchQuery ? (
+                          <Search className="h-6 w-6" />
+                        ) : (
+                          <currentTabConfig.icon className="h-6 w-6" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">
+                          {searchQuery
+                            ? "No matching results"
+                            : `No ${currentTabConfig.label.toLowerCase()} configured yet`}
+                        </p>
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          {searchQuery
+                            ? `No values match "${searchQuery}". Try a different search term.`
+                            : `Get started by adding the first ${currentTabConfig.label.slice(0, -1).toLowerCase()} for projects.`}
+                        </p>
+                      </div>
+                      {!searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddForm(true);
+                            setFormError(null);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#006837] hover:bg-[#004f29] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>Add {currentTabConfig.label.slice(0, -1)}</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -407,13 +563,22 @@ export function SettingsManagementView({
                       </button>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => handleDelete(item)}
-                        title="Delete lookup"
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleOpenEdit(item)}
+                          title="Edit lookup"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteItemModal(item)}
+                          title="Delete lookup"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -422,6 +587,175 @@ export function SettingsManagementView({
           </table>
         </div>
       </div>
+
+      {/* Edit Lookup Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                  <Pencil className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Edit {currentTabConfig.label.slice(0, -1)}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Update short code, display name, or active status
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEdit} className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-800 block">
+                  Code / Acronym *
+                </label>
+                <input
+                  type="text"
+                  value={editCode}
+                  onChange={(e) => setEditCode(e.target.value)}
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-900 uppercase focus:bg-white focus:border-emerald-500 outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-800 block">
+                  {activeTab === "PROJECT_CODE"
+                    ? "Full Official Project Title *"
+                    : "Display Label *"}
+                </label>
+                <textarea
+                  rows={2}
+                  value={editLabel}
+                  onChange={(e) => setEditLabel(e.target.value)}
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                <div>
+                  <p className="text-xs font-bold text-slate-800">Status</p>
+                  <p className="text-[10px] text-slate-500">
+                    Enable or disable for project creation
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditIsActive(!editIsActive)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                    editIsActive
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : "bg-slate-200 text-slate-600 border border-slate-300"
+                  }`}
+                >
+                  {editIsActive ? "Active" : "Disabled"}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isEditSubmitting}
+                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#004f29] text-white text-xs font-bold cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isEditSubmitting ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Safe Delete Modal */}
+      {deleteItemModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Remove &ldquo;{deleteItemModal.code}&rdquo;?
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">
+                  {deleteItemModal.label}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 text-amber-900 text-xs space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <span>Data Integrity Recommendation</span>
+              </p>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                If existing projects or procurement activities reference this
+                code, permanently deleting it may cause reporting
+                inconsistencies. Deactivating it is recommended instead.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeleteItemModal(null)}
+                className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleToggleActive(deleteItemModal);
+                  setDeleteItemModal(null);
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+              >
+                Deactivate Instead
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await deleteLookup(deleteItemModal.id);
+                  setLookups((prev) =>
+                    prev.filter((l) => l.id !== deleteItemModal.id),
+                  );
+                  setDeleteItemModal(null);
+                  loadAllCounts();
+                  showToast(`Removed "${deleteItemModal.code}".`);
+                }}
+                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer shadow-xs"
+              >
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

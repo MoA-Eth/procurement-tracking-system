@@ -234,6 +234,67 @@ export async function fetchLookups(type?: string): Promise<LookupItem[]> {
   return all.filter((l) => l.isActive);
 }
 
+// Broadcast & cross-tab synchronization channel
+const LOOKUP_CHANNEL_NAME = "pts_lookups_channel";
+
+export function notifyLookupsChanged(): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    if (typeof BroadcastChannel !== "undefined") {
+      const channel = new BroadcastChannel(LOOKUP_CHANNEL_NAME);
+      channel.postMessage({ event: "lookups_changed", timestamp: Date.now() });
+      channel.close();
+    }
+  } catch {
+    // BroadcastChannel unsupported or blocked
+  }
+
+  try {
+    window.dispatchEvent(new CustomEvent("pts_lookups_changed"));
+    localStorage.setItem("pts_lookups_last_updated", String(Date.now()));
+  } catch {
+    // Storage event fallback
+  }
+}
+
+export function subscribeToLookups(callback: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  let bc: BroadcastChannel | null = null;
+  try {
+    if (typeof BroadcastChannel !== "undefined") {
+      bc = new BroadcastChannel(LOOKUP_CHANNEL_NAME);
+      bc.onmessage = () => callback();
+    }
+  } catch {
+    // Graceful fallback
+  }
+
+  const handleCustomEvent = () => callback();
+  const handleStorageEvent = (e: StorageEvent) => {
+    if (
+      e.key === "pts_lookups_last_updated" ||
+      e.key === "pts_custom_lookups"
+    ) {
+      callback();
+    }
+  };
+
+  window.addEventListener("pts_lookups_changed", handleCustomEvent);
+  window.addEventListener("storage", handleStorageEvent);
+
+  return () => {
+    if (bc) {
+      try {
+        bc.close();
+      } catch {}
+    }
+    window.removeEventListener("pts_lookups_changed", handleCustomEvent);
+    window.removeEventListener("storage", handleStorageEvent);
+  };
+}
+
 export async function createLookup(data: {
   type: string;
   code: string;
@@ -263,12 +324,13 @@ export async function createLookup(data: {
   }
 
   saveCustomLookupToStorage(newItem);
+  notifyLookupsChanged();
   return newItem;
 }
 
 export async function updateLookup(
   id: string,
-  data: { label?: string; isActive?: boolean },
+  data: { code?: string; label?: string; isActive?: boolean },
 ): Promise<LookupItem | null> {
   let updatedItem: LookupItem | null = null;
 
@@ -284,12 +346,14 @@ export async function updateLookup(
   const list = getStoredCustomLookups();
   const target = list.find((l) => l.id === id);
   if (target) {
-    if (data.label !== undefined) target.label = data.label;
+    if (data.code !== undefined) target.code = data.code.trim().toUpperCase();
+    if (data.label !== undefined) target.label = data.label.trim();
     if (data.isActive !== undefined) target.isActive = data.isActive;
     saveCustomLookupToStorage(target);
     if (!updatedItem) updatedItem = target;
   }
 
+  notifyLookupsChanged();
   return updatedItem;
 }
 
@@ -300,6 +364,7 @@ export async function deleteLookup(id: string): Promise<boolean> {
   } catch (err) {
     console.warn("Backend deleteLookup note:", err);
   }
+  notifyLookupsChanged();
   return true;
 }
 
