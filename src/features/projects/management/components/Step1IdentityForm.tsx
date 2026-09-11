@@ -1,6 +1,7 @@
-"use client";
-
-import { Building2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Building2, ExternalLink } from "lucide-react";
+import { fetchLookups, type LookupItem } from "@/lib/lookupsApi";
 import {
   SECTOR_OPTIONS,
   COUNTRY_ORG_OPTIONS,
@@ -26,6 +27,54 @@ interface Step1IdentityFormProps {
 }
 
 export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
+  const [projectCodeOptions, setProjectCodeOptions] = useState<LookupItem[]>(
+    [],
+  );
+  const [isCustomCode, setIsCustomCode] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCodes() {
+      try {
+        const list = await fetchLookups("PROJECT_CODE");
+        if (isMounted) {
+          setProjectCodeOptions(list);
+          if (data.code && !list.some((item) => item.code === data.code)) {
+            setIsCustomCode(true);
+          }
+        }
+      } catch {
+        // Fallback handled by API
+      }
+    }
+    loadCodes();
+    return () => {
+      isMounted = false;
+    };
+  }, [data.code]);
+
+  const handleSelectCode = (selectedCode: string) => {
+    if (selectedCode === "CUSTOM") {
+      setIsCustomCode(true);
+      return;
+    }
+
+    setIsCustomCode(false);
+    const matched = projectCodeOptions.find((p) => p.code === selectedCode);
+    if (matched) {
+      onChange({
+        code: matched.code,
+        // If official name is empty or matches another code, populate with matched label
+        name:
+          !data.name || projectCodeOptions.some((p) => p.label === data.name)
+            ? matched.label
+            : data.name,
+      });
+    } else {
+      onChange({ code: selectedCode });
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -49,16 +98,61 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Project Code */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-800 block">
-              Project Code / Acronym *
-            </label>
-            <input
-              type="text"
-              value={data.code}
-              onChange={(e) => onChange({ code: e.target.value })}
-              placeholder="e.g. DRIVE, BREFONS, CALM..."
-              className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
-            />
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-800 block">
+                Project Code / Acronym *
+              </label>
+              <Link
+                href="/workspace/settings"
+                target="_blank"
+                className="text-[11px] font-semibold text-[#006837] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                title="Configure project short codes in Settings"
+              >
+                <span>Manage Codes in Settings</span>
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+
+            {isCustomCode ? (
+              <div className="space-y-1.5">
+                <input
+                  type="text"
+                  value={data.code}
+                  onChange={(e) => onChange({ code: e.target.value })}
+                  placeholder="Enter custom project code (e.g. DRIVE, CALM)..."
+                  className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsCustomCode(false)}
+                  className="text-[11px] text-slate-500 hover:text-slate-800 font-medium underline cursor-pointer"
+                >
+                  &larr; Choose from configured codes
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <select
+                  value={data.code}
+                  onChange={(e) => handleSelectCode(e.target.value)}
+                  className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all cursor-pointer"
+                >
+                  <option value="">-- Select Project Short Code --</option>
+                  {projectCodeOptions.map((opt) => (
+                    <option key={opt.id || opt.code} value={opt.code}>
+                      {opt.code} — {opt.label}
+                    </option>
+                  ))}
+                  <option value="CUSTOM">+ Enter Custom Code...</option>
+                </select>
+                {data.code && (
+                  <p className="text-[11px] text-emerald-700 font-medium">
+                    Selected code:{" "}
+                    <strong className="font-mono">{data.code}</strong>
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Project Name */}

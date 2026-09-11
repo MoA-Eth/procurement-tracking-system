@@ -11,6 +11,7 @@ export type NavigationIconName =
   | "progress"
   | "projects"
   | "reports"
+  | "settings"
   | "sliders"
   | "users";
 
@@ -150,6 +151,15 @@ const workspaceSections = {
       "ENDORSING_COMMITTEE",
       "ADMIN",
     ],
+  },
+  settings: {
+    section: "settings",
+    label: "Settings",
+    href: "/workspace/settings",
+    icon: "settings",
+    description:
+      "Manage project short codes, acronyms and system lookup configurations.",
+    allowedRoles: ["DIRECTOR", "ADMIN"],
   },
 } as const satisfies Record<string, WorkspaceSection>;
 

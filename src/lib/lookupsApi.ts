@@ -91,6 +91,42 @@ const FALLBACK_LOOKUPS: LookupItem[] = [
     label: "National Competitive Bidding (NCB)",
     isActive: true,
   },
+  {
+    id: "proj-code-1",
+    type: "PROJECT_CODE",
+    code: "DRIVE",
+    label: "De-risking, Inclusion and Value Enhancement Project (DRIVE)",
+    isActive: true,
+  },
+  {
+    id: "proj-code-2",
+    type: "PROJECT_CODE",
+    code: "BREFONS",
+    label:
+      "Building Resilience for Food and Nutrition Security in the Horn of Africa (BREFONS)",
+    isActive: true,
+  },
+  {
+    id: "proj-code-3",
+    type: "PROJECT_CODE",
+    code: "CALM",
+    label: "Climate Action through Landscape Management Program (CALM)",
+    isActive: true,
+  },
+  {
+    id: "proj-code-4",
+    type: "PROJECT_CODE",
+    code: "RLLP",
+    label: "Resilient Landscapes and Livelihoods Project (RLLP)",
+    isActive: true,
+  },
+  {
+    id: "proj-code-5",
+    type: "PROJECT_CODE",
+    code: "AGP-II",
+    label: "Agricultural Growth Program II (AGP-II)",
+    isActive: true,
+  },
 ];
 
 const FALLBACK_OFFICERS: OfficerUserItem[] = [
@@ -110,19 +146,161 @@ const FALLBACK_OFFICERS: OfficerUserItem[] = [
   },
 ];
 
+const CUSTOM_LOOKUPS_STORAGE_KEY = "pts_custom_lookups";
+
+function getStoredCustomLookups(): LookupItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CUSTOM_LOOKUPS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomLookupToStorage(item: LookupItem) {
+  if (typeof window === "undefined") return;
+  try {
+    const list = getStoredCustomLookups();
+    const existingIdx = list.findIndex(
+      (l) => l.id === item.id || (l.type === item.type && l.code === item.code),
+    );
+    if (existingIdx >= 0) {
+      list[existingIdx] = item;
+    } else {
+      list.unshift(item);
+    }
+    window.localStorage.setItem(
+      CUSTOM_LOOKUPS_STORAGE_KEY,
+      JSON.stringify(list),
+    );
+  } catch (e) {
+    console.warn("Storage write error for custom lookup:", e);
+  }
+}
+
+function removeCustomLookupFromStorage(id: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const list = getStoredCustomLookups().filter((l) => l.id !== id);
+    window.localStorage.setItem(
+      CUSTOM_LOOKUPS_STORAGE_KEY,
+      JSON.stringify(list),
+    );
+  } catch (e) {
+    console.warn("Storage remove error for custom lookup:", e);
+  }
+}
+
 export async function fetchLookups(type?: string): Promise<LookupItem[]> {
+  const customItems = getStoredCustomLookups();
+  let serverItems: LookupItem[] = [];
+
   try {
     const payload = await apiClient.get<any>("/lookups", {
       params: type ? { type } : undefined,
     });
-    const items = Array.isArray(payload) ? payload : payload?.data || [];
-    if (items.length > 0) return items;
+    serverItems = Array.isArray(payload) ? payload : payload?.data || [];
   } catch {
-    // Graceful fallback to default baseline
+    // Graceful fallback
   }
-  return type
+
+  const baseline = type
     ? FALLBACK_LOOKUPS.filter((l) => l.type === type)
     : FALLBACK_LOOKUPS;
+
+  const combinedMap = new Map<string, LookupItem>();
+
+  // 1. Baseline
+  baseline.forEach((item) => {
+    combinedMap.set(`${item.type}:${item.code}`, item);
+  });
+
+  // 2. Server items
+  serverItems.forEach((item) => {
+    combinedMap.set(`${item.type}:${item.code}`, item);
+  });
+
+  // 3. Custom stored items
+  customItems.forEach((item) => {
+    if (!type || item.type === type) {
+      combinedMap.set(`${item.type}:${item.code}`, item);
+    }
+  });
+
+  const all = Array.from(combinedMap.values());
+  return all.filter((l) => l.isActive);
+}
+
+export async function createLookup(data: {
+  type: string;
+  code: string;
+  label: string;
+}): Promise<LookupItem> {
+  const cleanCode = data.code.trim().toUpperCase();
+  const cleanLabel = data.label.trim();
+  const newItem: LookupItem = {
+    id: `custom-${data.type.toLowerCase()}-${Date.now()}`,
+    type: data.type,
+    code: cleanCode,
+    label: cleanLabel,
+    isActive: true,
+  };
+
+  try {
+    const res = await apiClient.post<any>("/lookups", {
+      type: data.type,
+      code: cleanCode,
+      label: cleanLabel,
+    });
+    if (res?.data?.id) {
+      newItem.id = res.data.id;
+    }
+  } catch (err) {
+    console.warn("Backend createLookup note (saved locally):", err);
+  }
+
+  saveCustomLookupToStorage(newItem);
+  return newItem;
+}
+
+export async function updateLookup(
+  id: string,
+  data: { label?: string; isActive?: boolean },
+): Promise<LookupItem | null> {
+  let updatedItem: LookupItem | null = null;
+
+  try {
+    const res = await apiClient.patch<any>(`/lookups/${id}`, data);
+    if (res?.data) {
+      updatedItem = res.data;
+    }
+  } catch (err) {
+    console.warn("Backend updateLookup note (applied locally):", err);
+  }
+
+  const list = getStoredCustomLookups();
+  const target = list.find((l) => l.id === id);
+  if (target) {
+    if (data.label !== undefined) target.label = data.label;
+    if (data.isActive !== undefined) target.isActive = data.isActive;
+    saveCustomLookupToStorage(target);
+    if (!updatedItem) updatedItem = target;
+  }
+
+  return updatedItem;
+}
+
+export async function deleteLookup(id: string): Promise<boolean> {
+  removeCustomLookupFromStorage(id);
+  try {
+    await apiClient.delete<any>(`/lookups/${id}`);
+  } catch (err) {
+    console.warn("Backend deleteLookup note:", err);
+  }
+  return true;
 }
 
 export async function fetchSuppliers(): Promise<SupplierItem[]> {
