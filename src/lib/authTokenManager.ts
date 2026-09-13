@@ -31,7 +31,10 @@ export const authTokenManager = {
     }
 
     if (typeof document !== "undefined") {
-      const cookieNames = ["moa_user_session", "moa_session"];
+      const cookieNames = [
+        process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME || "moa_user_session",
+        "moa_session",
+      ];
       for (const name of cookieNames) {
         const regex = new RegExp(`(?:^|;\\s*)${name}=([^;]*)`);
         const match = document.cookie.match(regex);

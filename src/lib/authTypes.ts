@@ -17,7 +17,7 @@ export interface AuthSession {
   accessToken?: string;
 }
 
-export type ProvisionableRole = UserRole | "MANAGEMENT_TEAM";
+export type ProvisionableRole = UserRole;
 
 export interface InvitedUserResponse {
   user: AuthUser;
@@ -26,13 +26,11 @@ export interface InvitedUserResponse {
   invitationLink?: string;
 }
 
-export const ROLE_LABELS: Record<UserRole, string> & Record<string, string> = {
+export const ROLE_LABELS: Record<UserRole, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsement Committee Member",
   MANAGEMENT: "Management",
-  MANAGEMENT_TEAM: "Management",
-  ManagementTeam: "Management",
   ADMIN: "Administrator",
 };
 
@@ -41,39 +39,31 @@ export const ROLE_SLUGS: Record<UserRole, string> = {
   DIRECTOR: "director",
   ENDORSING_COMMITTEE: "endorsing-committee",
   MANAGEMENT: "management",
-  MANAGEMENT_TEAM: "management",
   ADMIN: "admin",
 };
 
+const ROLE_MAP: Record<string, UserRole> = {
+  OFFICER: "OFFICER",
+  DIRECTOR: "DIRECTOR",
+  ENDORSING_COMMITTEE: "ENDORSING_COMMITTEE",
+  MANAGEMENT: "MANAGEMENT",
+  ADMIN: "ADMIN",
+  // Prisma/backend aliases safely normalized to standard roles
+  PROCUREMENTOFFICER: "OFFICER",
+  PROCUREMENT_OFFICER: "OFFICER",
+  PROCUREMENTDIRECTOR: "DIRECTOR",
+  PROCUREMENT_DIRECTOR: "DIRECTOR",
+  PROJECTMANAGER: "DIRECTOR",
+  PROJECT_MANAGER: "DIRECTOR",
+  MANAGEMENTTEAM: "MANAGEMENT",
+  MANAGEMENT_TEAM: "MANAGEMENT",
+  COMMITTEE: "ENDORSING_COMMITTEE",
+  ADMINISTRATOR: "ADMIN",
+};
+
 export function normalizeUserRole(role: string): UserRole {
-  const r = (role || "").toUpperCase().trim().replace(/[\s-]/g, "_");
-  if (
-    r === "OFFICER" ||
-    r === "PROCUREMENTOFFICER" ||
-    r === "PROCUREMENT_OFFICER"
-  )
-    return "OFFICER";
-  if (
-    r === "DIRECTOR" ||
-    r === "PROCUREMENTDIRECTOR" ||
-    r === "PROCUREMENT_DIRECTOR" ||
-    r === "PROJECTMANAGER" ||
-    r === "PROJECT_MANAGER"
-  ) {
-    return "DIRECTOR";
-  }
-  if (r === "MANAGEMENT" || r === "MANAGEMENT_TEAM" || r === "MANAGEMENTTEAM") {
-    return "MANAGEMENT";
-  }
-  if (
-    r === "ENDORSING_COMMITTEE" ||
-    r === "ENDORSINGCOMMITTEE" ||
-    r === "COMMITTEE"
-  ) {
-    return "ENDORSING_COMMITTEE";
-  }
-  if (r === "ADMIN" || r === "ADMINISTRATOR") return "ADMIN";
-  return "OFFICER";
+  const clean = (role || "").toUpperCase().trim().replace(/[\s-]/g, "_");
+  return ROLE_MAP[clean] || "OFFICER";
 }
 
 export function dashboardPath(role: string): string {
@@ -84,21 +74,6 @@ export function dashboardPath(role: string): string {
 export function roleFromSlug(slug: string): UserRole | undefined {
   if (!slug) return undefined;
   const clean = slug.toLowerCase().replace(/_/g, "-").trim();
-  if (
-    clean === "management" ||
-    clean === "management-team" ||
-    clean === "managementteam"
-  ) {
-    return "MANAGEMENT";
-  }
-  if (clean === "endorsing-committee" || clean === "committee") {
-    return "ENDORSING_COMMITTEE";
-  }
-  if (clean === "director" || clean === "procurementdirector")
-    return "DIRECTOR";
-  if (clean === "officer" || clean === "procurementofficer") return "OFFICER";
-  if (clean === "admin" || clean === "administrator") return "ADMIN";
-
   return (Object.entries(ROLE_SLUGS) as [UserRole, string][]).find(
     ([, roleSlug]) => roleSlug.toLowerCase() === clean,
   )?.[0];

@@ -10,6 +10,7 @@ import { ProjectsManagementView } from "@/features/projects/management/ProjectsM
 import { PlanForReviewView } from "@/features/plans/components/PlanForReviewView";
 import { MyDecisionsView } from "@/features/plans/components/MyDecisionsView";
 import { NotificationsView } from "@/features/notifications/components/NotificationsView";
+import { SettingsManagementView } from "@/features/settings/SettingsManagementView";
 import { PanelsTopLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { ROLE_LABELS, normalizeUserRole } from "../../../../lib/authTypes";
@@ -120,11 +121,13 @@ export default async function WorkspaceSectionPage({
     return <UserManagementView currentUser={session.user} />;
   }
 
+  if (section === "settings") {
+    return <SettingsManagementView currentUser={session.user} />;
+  }
+
   if (
     section === "projects" &&
-    (userRole === "DIRECTOR" ||
-      userRole === "MANAGEMENT" ||
-      userRole === "MANAGEMENT_TEAM")
+    (userRole === "DIRECTOR" || userRole === "MANAGEMENT")
   ) {
     const selectedProjectCode =
       typeof query.project === "string" ? query.project : undefined;
@@ -137,7 +140,7 @@ export default async function WorkspaceSectionPage({
     const from = typeof query.from === "string" ? query.from : undefined;
     return (
       <ProjectsManagementView
-        readOnly={userRole === "MANAGEMENT" || userRole === "MANAGEMENT_TEAM"}
+        readOnly={userRole === "MANAGEMENT"}
         selectedProjectCode={selectedProjectCode}
         selectedPlanReference={selectedPlanReference}
         from={from}
@@ -164,11 +167,7 @@ export default async function WorkspaceSectionPage({
   }
 
   if (section === "activity-tracker") {
-    if (
-      userRole === "DIRECTOR" ||
-      userRole === "MANAGEMENT" ||
-      userRole === "MANAGEMENT_TEAM"
-    ) {
+    if (userRole === "DIRECTOR" || userRole === "MANAGEMENT") {
       return (
         <DirectorActivityTrackerView
           userRole={session.user.role}

@@ -113,7 +113,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
       if (normalized === "OFFICER") officersCount++;
       else if (normalized === "DIRECTOR") directorsCount++;
       else if (normalized === "ENDORSING_COMMITTEE") committeeCount++;
-      else if (normalized === "MANAGEMENT_TEAM") managementTeamCount++;
+      else if (normalized === "MANAGEMENT") managementTeamCount++;
       else if (normalized === "ADMIN") adminsCount++;
     }
 

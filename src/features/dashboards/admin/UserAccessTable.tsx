@@ -21,24 +21,12 @@ interface UserAccessTableProps {
   onRefresh?: () => void;
 }
 
-const AUTH_ROLE_LABELS: Record<string, string> = {
-  OFFICER: "Officer",
-  DIRECTOR: "Director",
-  ENDORSING_COMMITTEE: "Endorsement Committee",
-  MANAGEMENT: "Management",
-  MANAGEMENT_TEAM: "Management",
-  ADMIN: "Administrator",
-};
-
 const PRISMA_ROLE_LABELS: Record<string, string> = {
   ProcurementOfficer: "Officer",
   ProcurementDirector: "Director",
   Administrator: "Administrator",
   EndorsingCommittee: "Endorsement Committee",
   ManagementTeam: "Management",
-  MANAGEMENT_TEAM: "Management",
-  MANAGEMENT: "Management",
-  Management: "Management",
   ProjectManager: "Project Manager",
 };
 
@@ -46,11 +34,10 @@ function displayRole(user: ApiUser): string {
   const normalized = normalizeUserRole(user.authRole || user.role);
   return (
     ROLE_LABELS[normalized] ??
-    AUTH_ROLE_LABELS[normalized] ??
     PRISMA_ROLE_LABELS[user.role] ??
-    AUTH_ROLE_LABELS[user.authRole] ??
     user.authRole ??
-    user.role
+    user.role ??
+    "Unknown"
   );
 }
 

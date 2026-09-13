@@ -51,7 +51,9 @@ export const getServerSession = cache(async (): Promise<AuthSession | null> => {
     const cookieHeader = cookieStore.toString();
 
     // 1. Check primary isolated frontend session cookie
-    const primary = cookieStore.get("moa_user_session")?.value;
+    const primaryCookieName =
+      process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME || "moa_user_session";
+    const primary = cookieStore.get(primaryCookieName)?.value;
     const primaryParsed = primary ? parseSessionPayload(primary) : null;
 
     // 2. Fetch authoritative live session from backend /api/auth/session
