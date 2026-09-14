@@ -1,0 +1,27 @@
+model LookupValue {
+  id        String   @id @default(uuid())
+  type      String
+  code      String
+  label     String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  activitiesByMethod Activity[] @relation("ActivityMethod")
+
+  stageTemplatesByMethod StageTemplate[] @relation("StageTemplateMethod")
+
+  projectsByFundingSource Project[] @relation("ProjectFundingSource")
+  projectsBySector        Project[] @relation("ProjectSector")
+
+  stagesByType         Stage[]         @relation("StageType")
+  stageTemplatesByType StageTemplate[] @relation("StageTemplateStageType")
+
+  alertEntityTypes Alert[] @relation("AlertEntityType")
+  alertTypes       Alert[] @relation("AlertType")
+  alertSeverities  Alert[] @relation("AlertSeverity")
+  alertStatuses    Alert[] @relation("AlertStatus")
+
+  @@unique([type, code])
+  @@index([type])
+  @@index([isActive])
+}

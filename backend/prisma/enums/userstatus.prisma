@@ -1,0 +1,6 @@
+enum UserStatus {
+  INVITED
+  PENDING_INVITATION
+  ACTIVE
+  INACTIVE
+}

@@ -1,0 +1,7 @@
+enum StageStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  NOT_APPLICABLE
+}

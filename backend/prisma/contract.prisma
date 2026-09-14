@@ -1,0 +1,60 @@
+model Supplier {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  tinNumber String    @unique
+  address   String?
+  email     String?
+  phone     String?
+  status    String    @default("ACTIVE")
+  deletedAt DateTime?
+  contracts Contract[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Contract {
+  id         String   @id @default(uuid())
+  contractNo String   @unique
+  activityId String?
+  activity   Activity? @relation(fields: [activityId], references: [id])
+  supplierId String
+  supplier   Supplier  @relation(fields: [supplierId], references: [id])
+
+  // --- Financial values ---
+  totalValue            Decimal  @db.Decimal(15, 2)       // original contract amount (no VAT)
+  vatRate               Float?                             // e.g. 15.0 (%)
+  contractAmountWithVat Decimal? @db.Decimal(15, 2)       // totalValue + VAT
+  contractNetOfVat      Decimal? @db.Decimal(15, 2)       // net of VAT (for migrated records)
+  paidAmount            Decimal  @default(0.00) @db.Decimal(15, 2)
+  remainingValue        Decimal  @db.Decimal(15, 2)
+  currency              String   @default("ETB")
+
+  // --- Contract dates ---
+  awardDate            DateTime? // Contract Award Date
+  signatureDate        DateTime? // Contract Signature Date (= Signed Contract milestone)
+  startDate            DateTime? // Implementation start date
+  plannedEndDate       DateTime? // Planned Completion / End Date
+  actualCompletionDate DateTime? // Actual Completion Date
+
+  // --- Classification ---
+  region      String?
+  sector      String?
+  subcomponent String? // inherited from activity/project; stored for reporting
+
+  status    ContractStatus @default(DRAFT)
+  remarks   String?
+  deletedAt DateTime?
+
+  payments   Payment[]
+  documents  Document[]
+  amendments ContractAmendment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([activityId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([awardDate])
+  @@index([signatureDate])
+}
