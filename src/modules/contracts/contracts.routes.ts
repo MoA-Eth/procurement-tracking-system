@@ -1,6 +1,22 @@
+import path from 'path';
+import multer from 'multer';
+import os from 'os';
 import { Router } from 'express';
 import { contractsController } from './contracts.controller.js';
+import { excelController } from '../excel/excel.controller.js';
 import { authenticate, authorize } from '../../middleware/auth.js';
+
+const upload = multer({
+  dest: os.tmpdir(),
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ext === '.xlsx' || ext === '.xls' || ext === '.csv') {
+      return cb(null, true);
+    }
+    cb(new Error('Only Excel (.xlsx, .xls) and CSV (.csv) files are allowed'));
+  },
+});
 
 const router = Router();
 
@@ -203,6 +219,46 @@ router.post(
     'ADMIN',
   ),
   (req, res) => contractsController.recordPayment(req, res),
+);
+
+/**
+ * @openapi
+ * /api/contracts/template:
+ *   get:
+ *     summary: Export empty contracts spreadsheet template
+ *     tags: [Contracts]
+ *     responses:
+ *       200:
+ *         description: Excel template download
+ */
+router.get('/template', (req, res) =>
+  excelController.exportContractsTemplate(req, res),
+);
+
+/**
+ * @openapi
+ * /api/contracts/import:
+ *   post:
+ *     summary: Import contracts spreadsheet and update/insert records
+ *     tags: [Contracts]
+ *     responses:
+ *       200:
+ *         description: Success response with import counts
+ *       400:
+ *         description: Import parsing or validation error
+ */
+router.post(
+  '/import',
+  authorize(
+    'Administrator',
+    'ProcurementOfficer',
+    'ProcurementDirector',
+    'OFFICER',
+    'DIRECTOR',
+    'ADMIN',
+  ),
+  upload.any(),
+  (req, res) => excelController.importContracts(req, res),
 );
 
 export default router;
