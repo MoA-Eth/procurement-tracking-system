@@ -416,12 +416,10 @@ export function OfficerProjectsView({
         aRef === rawLower ||
         (aId && (aId === decoded || aId === rawLower));
       const matchesParent =
-        rec.projectCode?.toLowerCase() ===
-          selectedProject.code.toLowerCase() ||
+        rec.projectCode?.toLowerCase() === selectedProject.code.toLowerCase() ||
         rec.planReference?.toLowerCase() ===
           selectedPlan.reference.toLowerCase() ||
-        rec.planReference?.toLowerCase() ===
-          selectedPlan.name.toLowerCase();
+        rec.planReference?.toLowerCase() === selectedPlan.name.toLowerCase();
       return matchesRef && matchesParent;
     });
     if (inSaved) return inSaved.activity;
@@ -1311,8 +1309,7 @@ export function OfficerProjectsView({
           procurementCategory: catEnum,
           organization: selectedPlan.organizationRegion || "Federal / FPCU",
           description: selectedPlan.description || undefined,
-          periodStart:
-            selectedPlan.planPeriod?.from?.gregorian || "2025-07-08",
+          periodStart: selectedPlan.planPeriod?.from?.gregorian || "2025-07-08",
           periodEnd: selectedPlan.planPeriod?.to?.gregorian || "2026-07-07",
         });
         if (created && created.id) {
@@ -1376,7 +1373,10 @@ export function OfficerProjectsView({
           (ia) => ia.reference.toLowerCase() === a.reference.toLowerCase(),
         ),
     );
-    const combinedActivities = [...currentPlanActivities, ...importedActivities];
+    const combinedActivities = [
+      ...currentPlanActivities,
+      ...importedActivities,
+    ];
 
     const updatedPlan: ProcurementPlanSummary = {
       ...selectedPlan,

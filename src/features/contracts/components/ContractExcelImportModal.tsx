@@ -176,7 +176,8 @@ export function ContractExcelImportModal({
                 Import Contracts from Excel
               </h2>
               <p className="text-xs text-slate-300">
-                Upload Excel or CSV file to bulk import contracts into the tracking system
+                Upload Excel or CSV file to bulk import contracts into the
+                tracking system
               </p>
             </div>
           </div>
@@ -262,7 +263,8 @@ export function ContractExcelImportModal({
                       Need the standard Contract Excel format?
                     </p>
                     <p className="text-[11px] text-slate-500">
-                      Download our pre-formatted template with sample columns &amp; rows
+                      Download our pre-formatted template with sample columns
+                      &amp; rows
                     </p>
                   </div>
                 </div>
@@ -399,8 +401,12 @@ export function ContractExcelImportModal({
                       <th className="px-3 py-2.5">Supplier</th>
                       <th className="px-3 py-2.5">Project</th>
                       <th className="px-3 py-2.5">Activity</th>
-                      <th className="px-3 py-2.5 text-right">Original Amount</th>
-                      <th className="px-3 py-2.5 text-center">Contract Status</th>
+                      <th className="px-3 py-2.5 text-right">
+                        Original Amount
+                      </th>
+                      <th className="px-3 py-2.5 text-center">
+                        Contract Status
+                      </th>
                       <th className="px-3 py-2.5">Dates</th>
                     </tr>
                   </thead>

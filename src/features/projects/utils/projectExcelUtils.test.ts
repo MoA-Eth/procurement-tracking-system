@@ -260,7 +260,9 @@ describe("projectExcelUtils", () => {
     expect(result.activities[0].description).toBe("Test Equipment Supply");
     expect(result.activities[0].estimatedAmount).toBe(500000);
     expect(result.rows[1].isValid).toBe(false);
-    expect(result.rows[1].validationError).toContain("Estimated budget cannot be negative");
+    expect(result.rows[1].validationError).toContain(
+      "Estimated budget cannot be negative",
+    );
   });
 
   it("triggers Excel download for project template", async () => {

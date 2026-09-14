@@ -123,7 +123,10 @@ describe("ReportFiltersPanel - Dynamic Filter Sets per Report Type", () => {
 
   it("renders Detailed Procurement filters (Project, Category)", () => {
     const html = renderToStaticMarkup(
-      <ReportFiltersPanel {...dummyProps} activeReport="detailed-procurement" />,
+      <ReportFiltersPanel
+        {...dummyProps}
+        activeReport="detailed-procurement"
+      />,
     );
     expect(html).toContain("Project");
     expect(html).toContain("Category");
@@ -284,4 +287,3 @@ describe("ReportTables - Dedicated Tables & Empty State", () => {
     expect(html).toContain("USD 4,500,000");
   });
 });
-

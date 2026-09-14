@@ -127,8 +127,12 @@ describe("contractExcelUtils", () => {
     expect(result.validCount).toBe(1);
     expect(result.invalidCount).toBe(3);
     expect(result.rows[1].validationError).toContain("Missing Contract Number");
-    expect(result.rows[2].validationError).toContain("Original Contract Amount cannot be negative");
-    expect(result.rows[3].validationError).toContain("End Date cannot be before Start Date");
+    expect(result.rows[2].validationError).toContain(
+      "Original Contract Amount cannot be negative",
+    );
+    expect(result.rows[3].validationError).toContain(
+      "End Date cannot be before Start Date",
+    );
   });
 
   it("exports contracts to Excel file matching canonical structure", () => {
@@ -181,4 +185,3 @@ describe("contractExcelUtils", () => {
     );
   });
 });
-

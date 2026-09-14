@@ -35,7 +35,9 @@ export function PlanExcelImportModal({
   const [file, setFile] = useState<File | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
-  const [parseResult, setParseResult] = useState<ParsedPlansResult | null>(null);
+  const [parseResult, setParseResult] = useState<ParsedPlansResult | null>(
+    null,
+  );
   const [filterMode, setFilterMode] = useState<"all" | "valid" | "invalid">(
     "all",
   );

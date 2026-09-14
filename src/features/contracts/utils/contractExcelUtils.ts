@@ -272,7 +272,8 @@ export async function parseContractsFromExcel(
       ]) || "",
     ).trim();
     const contractNumber = String(
-      getColumnValue(row, ["Contract Number", "Contract No", "Contract #"]) || "",
+      getColumnValue(row, ["Contract Number", "Contract No", "Contract #"]) ||
+        "",
     ).trim();
 
     const rawAwardDate = getColumnValue(row, [
@@ -544,4 +545,3 @@ export function exportContractsToExcel(
   const filename = customFilename || `Contracts_Export_${timestamp}.xlsx`;
   XLSX.writeFile(workbook, filename);
 }
-

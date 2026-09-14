@@ -20,19 +20,19 @@ export async function importProjects(
   formData.append("file", file);
 
   try {
-    return await directApiFetch<ImportProjectsResult>("/excel/import/projects", {
-      method: "POST",
-      body: formData,
-    });
+    return await directApiFetch<ImportProjectsResult>(
+      "/excel/import/projects",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
   } catch (err) {
     if (err instanceof ApiClientError && err.status === 404) {
-      return await directApiFetch<ImportProjectsResult>(
-        "/projects/import",
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      return await directApiFetch<ImportProjectsResult>("/projects/import", {
+        method: "POST",
+        body: formData,
+      });
     }
     throw err;
   }

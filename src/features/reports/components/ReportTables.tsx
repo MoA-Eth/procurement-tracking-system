@@ -321,7 +321,8 @@ export function ReportTables({
                     {row.packageCount} item{row.packageCount === 1 ? "" : "s"}
                   </td>
                   <td className="py-2.5 px-3 font-mono font-extrabold text-slate-950">
-                    {row.currency || "ETB"} {row.totalAmountETB.toLocaleString()}
+                    {row.currency || "ETB"}{" "}
+                    {row.totalAmountETB.toLocaleString()}
                   </td>
                 </tr>
               ))}
@@ -491,7 +492,9 @@ export function ReportTables({
               No matching records
             </h5>
             <p className="text-xs text-slate-500 max-w-sm mt-1">
-              No data matches your active filter selection for {currentReportTitle}. Try adjusting or clearing your filters to see more results.
+              No data matches your active filter selection for{" "}
+              {currentReportTitle}. Try adjusting or clearing your filters to
+              see more results.
             </p>
           </div>
         )}

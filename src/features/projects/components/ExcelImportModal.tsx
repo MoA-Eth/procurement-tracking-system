@@ -146,7 +146,9 @@ export function ExcelImportModal({
                 Import Procurement Activities from Excel
               </h2>
               <p className="text-xs text-emerald-200/80">
-                {planName ? `Importing into plan: ${planName}` : "Import activities into plan"}
+                {planName
+                  ? `Importing into plan: ${planName}`
+                  : "Import activities into plan"}
                 {projectCode ? ` (${projectCode})` : ""}
               </p>
             </div>

@@ -15,7 +15,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AddContractPaymentView } from "./AddContractPaymentView";
 import { RegisterContractView } from "./RegisterContractView";
 import { ContractExcelImportModal } from "./ContractExcelImportModal";
@@ -482,7 +489,8 @@ export function OfficerContractsView({
               {selectedIds.size}
             </span>
             <span>
-              {selectedIds.size} {selectedIds.size === 1 ? "contract" : "contracts"} selected
+              {selectedIds.size}{" "}
+              {selectedIds.size === 1 ? "contract" : "contracts"} selected
             </span>
           </div>
           <div className="flex items-center gap-2">

@@ -111,7 +111,9 @@ describe("CreateProcurementActivityView", () => {
 
     const markup = renderToStaticMarkup(
       <CreateProcurementActivityView
-        initialActivity={existingActivity as unknown as ProcurementActivitySummary}
+        initialActivity={
+          existingActivity as unknown as ProcurementActivitySummary
+        }
         plan={plan}
         project={project}
       />,
@@ -144,4 +146,3 @@ describe("CreateProcurementActivityView", () => {
     expect(roadmapFromLabel[0]?.name).toBe(roadmapFromKey[0]?.name);
   });
 });
-

@@ -126,4 +126,3 @@ describe("CreateProcurementPlanView", () => {
     expect(markup).toContain("2017");
   });
 });
-

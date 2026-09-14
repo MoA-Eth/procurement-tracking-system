@@ -77,4 +77,3 @@ describe("OfficerProjectDetailView", () => {
     expect(markup).toContain("Create Plan");
   });
 });
-

@@ -89,10 +89,10 @@ export function CreateProcurementActivityView({
 
   const initialMethodKey = resolveMethodKey(
     initialActivity?.details?.form?.method ||
-    initialActivity?.method ||
-    (initialActivity as any)?.procurementMethod?.code ||
-    (initialActivity as any)?.procurementMethod?.label ||
-    ""
+      initialActivity?.method ||
+      (initialActivity as any)?.procurementMethod?.code ||
+      (initialActivity as any)?.procurementMethod?.label ||
+      "",
   );
 
   const [form, setForm] = useState<ActivityFormState>(() =>
@@ -116,14 +116,18 @@ export function CreateProcurementActivityView({
     if (initialActivity) {
       const resolvedKey = resolveMethodKey(
         initialActivity.details?.form?.method ||
-        initialActivity.method ||
-        (initialActivity as any)?.procurementMethod?.code ||
-        (initialActivity as any)?.procurementMethod?.label ||
-        ""
+          initialActivity.method ||
+          (initialActivity as any)?.procurementMethod?.code ||
+          (initialActivity as any)?.procurementMethod?.label ||
+          "",
       );
       setForm(createInitialForm(project, plan, category, initialActivity));
-      setFinancingAllocations(extractInitialFinancingAllocations(project, initialActivity));
-      setComponentAllocations(extractInitialComponentAllocations(project, initialActivity));
+      setFinancingAllocations(
+        extractInitialFinancingAllocations(project, initialActivity),
+      );
+      setComponentAllocations(
+        extractInitialComponentAllocations(project, initialActivity),
+      );
       setLots(extractInitialLots(initialActivity));
       setRoadmap(extractInitialRoadmap(initialActivity, resolvedKey));
     }
@@ -340,7 +344,8 @@ export function CreateProcurementActivityView({
                 </span>
               </div>
               <p className="mt-0.5 text-[11px] text-slate-600">
-                You can click any step below to jump directly to that part, edit it, and save.
+                You can click any step below to jump directly to that part, edit
+                it, and save.
               </p>
             </div>
           </div>
@@ -371,7 +376,11 @@ export function CreateProcurementActivityView({
         <p className="mt-1 text-[10px] leading-4 text-slate-500">
           Step {step}: {stepDescriptions[step]}
         </p>
-        <WizardProgress currentStep={step} isEditing={isEditing} onStepClick={moveTo} />
+        <WizardProgress
+          currentStep={step}
+          isEditing={isEditing}
+          onStepClick={moveTo}
+        />
       </header>
 
       {saved ? (
@@ -424,7 +433,12 @@ export function CreateProcurementActivityView({
                 />
               ) : null}
             </main>
-            <CheckEntriesPanel currentStep={step} isEditing={isEditing} issueCounts={issueCounts} onStepClick={moveTo} />
+            <CheckEntriesPanel
+              currentStep={step}
+              isEditing={isEditing}
+              issueCounts={issueCounts}
+              onStepClick={moveTo}
+            />
           </div>
 
           <WizardFooter
@@ -460,16 +474,26 @@ function createInitialForm(
 
     return {
       activityDescription:
-        initialActivity.description || d?.activityDescription || anyAct.description || "",
-      classificationCode: d?.classificationCode || anyAct.classificationCode || "",
+        initialActivity.description ||
+        d?.activityDescription ||
+        anyAct.description ||
+        "",
+      classificationCode:
+        d?.classificationCode || anyAct.classificationCode || "",
       comments: d?.comments || anyAct.comments || "",
       contractType: anyAct.contractType || d?.contractType || "Lump Sum",
-      currency: anyAct.currency || plan.currency || project.baseCurrency || "ETB",
-      domesticPreference: d?.domesticPreference || anyAct.domesticPreference || "No",
+      currency:
+        anyAct.currency || plan.currency || project.baseCurrency || "ETB",
+      domesticPreference:
+        d?.domesticPreference || anyAct.domesticPreference || "No",
       estimatedAmount: String(
-        initialActivity.estimatedAmount ?? d?.estimatedAmount ?? anyAct.estimatedBudget ?? "",
+        initialActivity.estimatedAmount ??
+          d?.estimatedAmount ??
+          anyAct.estimatedBudget ??
+          "",
       ),
-      evaluationOptionCode: d?.evaluationOptionCode || anyAct.evaluationOptionCode || "",
+      evaluationOptionCode:
+        d?.evaluationOptionCode || anyAct.evaluationOptionCode || "",
       fundingSource:
         anyAct.fundingSource ||
         d?.fundingSource ||
@@ -479,7 +503,8 @@ function createInitialForm(
       highRiskCode: d?.highRiskCode || anyAct.highRiskCode || "",
       inProcess:
         initialActivity.status === "In Progress" || Boolean(d?.inProcess),
-      invitationReference: d?.invitationReference || anyAct.invitationReference || "",
+      invitationReference:
+        d?.invitationReference || anyAct.invitationReference || "",
       latitude: d?.latitude || anyAct.latitude || "",
       location:
         anyAct.location ||
@@ -498,16 +523,25 @@ function createInitialForm(
       marketApproach:
         anyAct.marketApproach || d?.marketApproach || "Open - National",
       method: resolvedMethod,
-      oversightClassification: d?.oversightClassification || anyAct.oversightClassification || "",
+      oversightClassification:
+        d?.oversightClassification || anyAct.oversightClassification || "",
       pricingBasis:
-        category === "Works" ? (d?.pricingBasis || anyAct.pricingBasis || "") : "Not Applicable",
-      procurementDocumentType: d?.procurementDocumentType || anyAct.procurementDocumentType || "",
+        category === "Works"
+          ? d?.pricingBasis || anyAct.pricingBasis || ""
+          : "Not Applicable",
+      procurementDocumentType:
+        d?.procurementDocumentType || anyAct.procurementDocumentType || "",
       procurementProcess:
         anyAct.procurementProcess ||
         d?.procurementProcess ||
         "1 Envelope (Single Stage 1 Env)",
-      qualificationApproach: d?.qualificationApproach || anyAct.qualificationApproach || "",
-      requiresUnAgency: Boolean(d?.requiresUnAgency || anyAct.requiresUnAgency || resolvedMethod === "un-agency"),
+      qualificationApproach:
+        d?.qualificationApproach || anyAct.qualificationApproach || "",
+      requiresUnAgency: Boolean(
+        d?.requiresUnAgency ||
+        anyAct.requiresUnAgency ||
+        resolvedMethod === "un-agency",
+      ),
       reviewType: anyAct.reviewType || d?.reviewType || "Post Review",
       scopeNotes: d?.scopeNotes || anyAct.scopeNotes || "",
       specificMethod: d?.specificMethod || anyAct.specificMethod || "",
@@ -765,10 +799,16 @@ function WizardProgress({
               data-step={item.number}
               disabled={!canClick}
               onClick={() => canClick && onStepClick?.(item.number)}
-              title={canClick ? `Go to Step ${item.number}: ${item.label}` : undefined}
+              title={
+                canClick
+                  ? `Go to Step ${item.number}: ${item.label}`
+                  : undefined
+              }
               className={
                 "relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[10px] font-extrabold transition-all " +
-                (canClick ? "cursor-pointer hover:scale-110 " : "cursor-default ") +
+                (canClick
+                  ? "cursor-pointer hover:scale-110 "
+                  : "cursor-default ") +
                 (complete
                   ? "border-[#176c55] bg-[#176c55] text-white hover:bg-[#125f4c]"
                   : current
@@ -790,7 +830,9 @@ function WizardProgress({
               onClick={() => canClick && onStepClick?.(item.number)}
               className={
                 "mt-2 max-w-full truncate text-center text-[10px] font-semibold transition-colors " +
-                (canClick ? "cursor-pointer hover:text-[#176c55] " : "cursor-default ") +
+                (canClick
+                  ? "cursor-pointer hover:text-[#176c55] "
+                  : "cursor-default ") +
                 (current
                   ? "text-[#07523f] font-bold"
                   : complete
@@ -841,7 +883,9 @@ function CheckEntriesPanel({
                 onClick={() => canClick && onStepClick?.(item.number)}
                 className={
                   "flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors " +
-                  (canClick ? "cursor-pointer hover:bg-slate-50 " : "cursor-default ") +
+                  (canClick
+                    ? "cursor-pointer hover:bg-slate-50 "
+                    : "cursor-default ") +
                   (current && !ready
                     ? "border-red-200 bg-red-50"
                     : current
@@ -890,7 +934,9 @@ function CheckEntriesPanel({
                         ? ready
                           ? "Ready"
                           : issueCount +
-                            (issueCount === 1 ? " issue found" : " issues found")
+                            (issueCount === 1
+                              ? " issue found"
+                              : " issues found")
                         : "Pending"}
                   </p>
                 </div>
@@ -1157,7 +1203,9 @@ function WizardFooter({
           {step === 4 ? (
             <>
               <Save aria-hidden="true" className="h-4 w-4" />
-              {isEditing ? "Save Activity Changes" : "Save Procurement Activity"}
+              {isEditing
+                ? "Save Activity Changes"
+                : "Save Procurement Activity"}
             </>
           ) : (
             <>

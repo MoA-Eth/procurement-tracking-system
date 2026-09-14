@@ -297,7 +297,11 @@ export function resolveProcurementMethodOption(
       ? procurementMethodOptions.find((opt) => opt.key === "rfb-international")
       : procurementMethodOptions.find((opt) => opt.key === "rfb-national");
   }
-  if (needle.startsWith("rfq") || needle.includes("quotation") || needle.includes("shopping")) {
+  if (
+    needle.startsWith("rfq") ||
+    needle.includes("quotation") ||
+    needle.includes("shopping")
+  ) {
     return procurementMethodOptions.find((opt) => opt.key === "rfq-shopping");
   }
   if (needle.includes("direct")) {
@@ -318,14 +322,20 @@ export function resolveProcurementMethodOption(
   if (needle.includes("cqs")) {
     return procurementMethodOptions.find((opt) => opt.key === "cqs");
   }
-  if (needle.includes("indv") || needle.includes("ics") || needle.includes("individual")) {
+  if (
+    needle.includes("indv") ||
+    needle.includes("ics") ||
+    needle.includes("individual")
+  ) {
     return procurementMethodOptions.find((opt) => opt.key === "indv");
   }
 
   return undefined;
 }
 
-export function resolveMethodKey(methodOrKeyOrLabel?: string): ProcurementMethodKey | "" {
+export function resolveMethodKey(
+  methodOrKeyOrLabel?: string,
+): ProcurementMethodKey | "" {
   const opt = resolveProcurementMethodOption(methodOrKeyOrLabel);
   return opt ? opt.key : "";
 }

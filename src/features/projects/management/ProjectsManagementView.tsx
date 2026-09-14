@@ -607,7 +607,9 @@ export function ProjectsManagementView({
           onCreateClick={handleCreateProjectClick}
           onEditClick={handleEditProjectClick}
           onViewPlansClick={handleViewPlansClick}
-          onImportClick={readOnly ? undefined : () => setIsImportModalOpen(true)}
+          onImportClick={
+            readOnly ? undefined : () => setIsImportModalOpen(true)
+          }
           readOnly={readOnly}
         />
       )}

@@ -77,7 +77,11 @@ describe("contractsApi", () => {
 
   it("imports contracts via POST /api/contracts/import", async () => {
     const { importContracts } = await import("./contractsApi");
-    const mockResponse = { message: "Contracts imported successfully.", created: 5, updated: 2 };
+    const mockResponse = {
+      message: "Contracts imported successfully.",
+      created: 5,
+      updated: 2,
+    };
 
     vi.spyOn(global, "fetch").mockResolvedValueOnce(
       new Response(JSON.stringify(mockResponse), { status: 200 }),
@@ -101,11 +105,18 @@ describe("contractsApi", () => {
 
   it("falls back to /api/excel/import/contracts if /contracts/import returns 404", async () => {
     const { importContracts } = await import("./contractsApi");
-    const mockResponse = { message: "Contracts imported successfully.", created: 3, updated: 1 };
+    const mockResponse = {
+      message: "Contracts imported successfully.",
+      created: 3,
+      updated: 1,
+    };
 
     vi.spyOn(global, "fetch")
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ error: "Not Found" }), { status: 404, statusText: "Not Found" }),
+        new Response(JSON.stringify({ error: "Not Found" }), {
+          status: 404,
+          statusText: "Not Found",
+        }),
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify(mockResponse), { status: 200 }),
@@ -122,7 +133,8 @@ describe("contractsApi", () => {
   });
 
   it("maps signatureDate and plannedEndDate in mapBackendContractToOfficerContract", async () => {
-    const { mapBackendContractToOfficerContract } = await import("./contractsApi");
+    const { mapBackendContractToOfficerContract } =
+      await import("./contractsApi");
     const backendContract: BackendContract = {
       id: "con-3",
       contractNo: "CON-AGP2-003",
@@ -148,8 +160,12 @@ describe("contractsApi", () => {
     expect(mapped.project).toBe("AGP-II");
     expect(mapped.supplier).toBe("Acme Supplies Ltd");
     expect(mapped.procurementActivity).toBe("Supply of Agricultural Machinery");
-    expect(mapped.signingDate.gregorian).toBe(new Date("2026-03-15T00:00:00.000Z").toLocaleDateString("en-GB"));
-    expect(mapped.completionDate.gregorian).toBe(new Date("2026-12-31T00:00:00.000Z").toLocaleDateString("en-GB"));
+    expect(mapped.signingDate.gregorian).toBe(
+      new Date("2026-03-15T00:00:00.000Z").toLocaleDateString("en-GB"),
+    );
+    expect(mapped.completionDate.gregorian).toBe(
+      new Date("2026-12-31T00:00:00.000Z").toLocaleDateString("en-GB"),
+    );
     expect(mapped.status).toBe("Active");
   });
 });

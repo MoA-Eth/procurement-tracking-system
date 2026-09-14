@@ -4,10 +4,7 @@ import type {
   ProcurementPlanSummary,
   ProcurementCategory,
 } from "../data/officerProjects";
-import {
-  gregorianToEthiopian,
-  formatEthiopianDate,
-} from "./ethiopianCalendar";
+import { gregorianToEthiopian, formatEthiopianDate } from "./ethiopianCalendar";
 import type {
   ProcurementActivityStatus,
   ProcurementActivitySummary,
@@ -418,16 +415,16 @@ export function exportPlanActivitiesToExcel(
   const sheetName = (plan.name || "Activities").slice(0, 31);
   const rows = activities.map((a) => ({
     "Plan ID": plan.reference,
-    "Reference": a.reference,
-    "Description": a.description,
-    "Category": a.category,
+    Reference: a.reference,
+    Description: a.description,
+    Category: a.category,
     "Method ID": a.method,
     "Estimated Budget": a.estimatedAmount,
-    "Currency": a.details?.form?.currency || plan.currency || "ETB",
+    Currency: a.details?.form?.currency || plan.currency || "ETB",
     "Market Approach": a.details?.form?.marketApproach || "Open National",
     "Review Type": a.details?.form?.reviewType || "Post Review",
     "Current Stage": a.currentStage,
-    "Status": a.status,
+    Status: a.status,
     "Funding Source": a.details?.form?.fundingSource || "",
     "Project Code": projectCode,
   }));
@@ -623,8 +620,7 @@ export function downloadPlanExcelTemplate(projectCode: string = "PRJ-24-001") {
       "Budget Year (Required)": "2018 EFY",
       "Category (Dropdown)": "Works",
       Organization: "Oromia Regional Bureau",
-      Description:
-        "Civil works and canal construction for smallholder farmers",
+      Description: "Civil works and canal construction for smallholder farmers",
       "Period Start (Required)": "2025-07-08",
       "Period End (Required)": "2026-07-07",
       "Status (Dropdown)": "Draft",
@@ -970,11 +966,12 @@ export async function downloadProjectExcelTemplate(): Promise<void> {
     const sampleData = [
       {
         "Project Code (Required)": "MOA-AGP2",
-        "Project Name (Required)": "Second Agricultural Growth Program (AGP-II)",
+        "Project Name (Required)":
+          "Second Agricultural Growth Program (AGP-II)",
         "SAP Identification No": "SAP-100245",
-        "Country": "Ethiopia",
+        Country: "Ethiopia",
         "Executing Agency": "Ministry of Agriculture (MoA)",
-        "Organization": "Federal / FPCU",
+        Organization: "Federal / FPCU",
         "Funding Source ID (Dropdown)": "World Bank (WB)",
         "Funding Type": "Loan / Grant",
         "Sector ID (Dropdown)": "Agriculture & Crop Production",
@@ -982,11 +979,12 @@ export async function downloadProjectExcelTemplate(): Promise<void> {
       },
       {
         "Project Code (Required)": "MOA-LLRP",
-        "Project Name (Required)": "Lowlands Livelihood Resilience Project (LLRP)",
+        "Project Name (Required)":
+          "Lowlands Livelihood Resilience Project (LLRP)",
         "SAP Identification No": "SAP-100246",
-        "Country": "Ethiopia",
+        Country: "Ethiopia",
         "Executing Agency": "Ministry of Agriculture (MoA)",
-        "Organization": "Somali",
+        Organization: "Somali",
         "Funding Source ID (Dropdown)": "World Bank (WB)",
         "Funding Type": "Credit",
         "Sector ID (Dropdown)": "Livestock & Fishery",
@@ -1129,11 +1127,8 @@ export async function parseProjectsFromExcel(
     ).trim();
 
     const sectorCode = String(
-      getColumnValue(row, [
-        "Sector ID (Dropdown)",
-        "Sector ID",
-        "Sector",
-      ]) || "",
+      getColumnValue(row, ["Sector ID (Dropdown)", "Sector ID", "Sector"]) ||
+        "",
     ).trim();
 
     const status = String(
@@ -1184,5 +1179,3 @@ export async function parseProjectsFromExcel(
     fileName: file.name,
   };
 }
-
-

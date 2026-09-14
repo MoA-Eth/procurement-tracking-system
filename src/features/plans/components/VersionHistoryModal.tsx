@@ -183,14 +183,13 @@ export function VersionHistoryModal({
                       <span className="font-semibold text-slate-700">
                         {activityReference}
                       </span>
-                      {activityDescription
-                        ? ` • ${activityDescription}`
-                        : ""}
+                      {activityDescription ? ` • ${activityDescription}` : ""}
                       {planName ? ` • Plan: ${planName}` : ""}
                     </>
                   ) : (
                     <>
-                      {planName || planId} {projectCode ? `• ${projectCode}` : ""}
+                      {planName || planId}{" "}
+                      {projectCode ? `• ${projectCode}` : ""}
                     </>
                   )}
                 </p>

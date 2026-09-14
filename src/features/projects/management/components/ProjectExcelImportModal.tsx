@@ -165,7 +165,8 @@ export function ProjectExcelImportModal({
                 Import Projects from Excel
               </h2>
               <p className="text-xs text-emerald-100/80">
-                Upload a spreadsheet to import or update MoA projects in bulk as Draft.
+                Upload a spreadsheet to import or update MoA projects in bulk as
+                Draft.
               </p>
             </div>
           </div>
@@ -192,7 +193,8 @@ export function ProjectExcelImportModal({
                   Need the official Project template?
                 </h3>
                 <p className="mt-0.5 text-xs text-emerald-900/80">
-                  Includes Project Code, Project Name, Funding Source ID, Sector ID, and Status columns.
+                  Includes Project Code, Project Name, Funding Source ID, Sector
+                  ID, and Status columns.
                 </p>
               </div>
             </div>
@@ -234,7 +236,9 @@ export function ProjectExcelImportModal({
               <UploadCloud className="h-6 w-6 text-[#0A3C2F]" />
             </div>
             <p className="text-sm font-bold text-slate-800">
-              {file ? file.name : "Click to select or drag and drop your spreadsheet"}
+              {file
+                ? file.name
+                : "Click to select or drag and drop your spreadsheet"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               Supports Microsoft Excel (.xlsx, .xls) and CSV (.csv) files
@@ -269,7 +273,10 @@ export function ProjectExcelImportModal({
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-800">
-                    File: <span className="font-mono text-slate-600">{parseResult.fileName}</span>
+                    File:{" "}
+                    <span className="font-mono text-slate-600">
+                      {parseResult.fileName}
+                    </span>
                   </span>
                   <span className="text-slate-300">•</span>
                   <span className="text-xs text-slate-600">
@@ -359,7 +366,10 @@ export function ProjectExcelImportModal({
                           <td className="px-3 py-2 font-mono font-bold text-slate-800">
                             {row.code || "—"}
                           </td>
-                          <td className="px-3 py-2 text-slate-700 max-w-[200px] truncate" title={row.name}>
+                          <td
+                            className="px-3 py-2 text-slate-700 max-w-[200px] truncate"
+                            title={row.name}
+                          >
                             {row.name || "—"}
                           </td>
                           <td className="px-3 py-2 text-slate-600">

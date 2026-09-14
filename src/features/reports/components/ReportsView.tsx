@@ -78,7 +78,9 @@ export function ReportsView() {
   const [activeReport, setActiveReport] = useState<ReportType>("annual-plan");
   const [backendPlans, setBackendPlans] = useState<BackendPlan[]>([]);
   const [backendProjects, setBackendProjects] = useState<BackendProject[]>([]);
-  const [backendContracts, setBackendContracts] = useState<BackendContract[]>([]);
+  const [backendContracts, setBackendContracts] = useState<BackendContract[]>(
+    [],
+  );
   const [fundingSources, setFundingSources] = useState<LookupItem[]>([]);
   const [methods, setMethods] = useState<LookupItem[]>([]);
   const [officers, setOfficers] = useState<OfficerUserItem[]>([]);
@@ -391,7 +393,10 @@ export function ReportsView() {
     if (filters.category !== "ALL") {
       const catNorm = filters.category.toLowerCase().replace(/[\s\-_]/g, "");
       rows = rows.filter((r) =>
-        r.category.toLowerCase().replace(/[\s\-_]/g, "").includes(catNorm),
+        r.category
+          .toLowerCase()
+          .replace(/[\s\-_]/g, "")
+          .includes(catNorm),
       );
     }
     if (filters.procurementMethod !== "ALL") {
@@ -636,7 +641,8 @@ export function ReportsView() {
                   ? "In Progress"
                   : "Not Started",
             estimatedAmount: a.estimatedBudget || 0,
-            signedContractAmount: (a as any).contractAmount || a.estimatedBudget || 0,
+            signedContractAmount:
+              (a as any).contractAmount || a.estimatedBudget || 0,
           });
         }
       }
@@ -655,9 +661,14 @@ export function ReportsView() {
     }
 
     if (filters.marketApproach !== "ALL") {
-      const approachNorm = filters.marketApproach.toLowerCase().replace(/[\s-]/g, "");
+      const approachNorm = filters.marketApproach
+        .toLowerCase()
+        .replace(/[\s-]/g, "");
       rows = rows.filter((r) =>
-        r.marketApproach.toLowerCase().replace(/[\s-]/g, "").includes(approachNorm),
+        r.marketApproach
+          .toLowerCase()
+          .replace(/[\s-]/g, "")
+          .includes(approachNorm),
       );
     }
 
@@ -753,16 +764,21 @@ export function ReportsView() {
           matchingPlan?.creator?.id === filters.officer ||
           (matchingPlan as any)?.creatorId === filters.officer ||
           (selectedOfficer &&
-            r.officer.toLowerCase().includes(selectedOfficer.name.toLowerCase()))
+            r.officer
+              .toLowerCase()
+              .includes(selectedOfficer.name.toLowerCase()))
         );
       });
     }
 
     if (filters.delayRange !== "ALL") {
       rows = rows.filter((r) => {
-        if (filters.delayRange === "1-7") return r.delayDays >= 1 && r.delayDays <= 7;
-        if (filters.delayRange === "8-30") return r.delayDays >= 8 && r.delayDays <= 30;
-        if (filters.delayRange === "31-60") return r.delayDays >= 31 && r.delayDays <= 60;
+        if (filters.delayRange === "1-7")
+          return r.delayDays >= 1 && r.delayDays <= 7;
+        if (filters.delayRange === "8-30")
+          return r.delayDays >= 8 && r.delayDays <= 30;
+        if (filters.delayRange === "31-60")
+          return r.delayDays >= 31 && r.delayDays <= 60;
         if (filters.delayRange === "60+") return r.delayDays > 60;
         return true;
       });
@@ -831,7 +847,8 @@ export function ReportsView() {
           if (targetYearNum) {
             if (targetYearNum === 2026) {
               // Specific 2026 filter
-              if (gYear !== 2026 && actEfy !== 2018 && actEfy !== 2019) continue;
+              if (gYear !== 2026 && actEfy !== 2018 && actEfy !== 2019)
+                continue;
             } else {
               // Standard EFY filter (e.g. 2017 EFY or 2018 EFY)
               if (actEfy !== targetYearNum) continue;
@@ -864,8 +881,7 @@ export function ReportsView() {
             const isDirectTypeMatch = rawFundingType.toLowerCase() === ft;
             const selectedFs = fundingSources.find(
               (fs) =>
-                fs.id === filters.fundingType ||
-                fs.code?.toLowerCase() === ft,
+                fs.id === filters.fundingType || fs.code?.toLowerCase() === ft,
             );
             const isSourceMatch =
               a.fundings?.some(
@@ -923,11 +939,7 @@ export function ReportsView() {
     );
 
     // If no activities mapped yet, produce representative month rows
-    if (
-      rows.length === 0 &&
-      backendPlans.length > 0 &&
-      filters.efy === "ALL"
-    ) {
+    if (rows.length === 0 && backendPlans.length > 0 && filters.efy === "ALL") {
       const defaultMonths = [
         "Hamle (July)",
         "Nehase (August)",
@@ -999,7 +1011,9 @@ export function ReportsView() {
       rows = rows.filter((r) => {
         const c = backendContracts.find((x) => x.id === r.id);
         const matchingPlan = backendPlans.find((p) =>
-          p.activities?.some((a) => a.id === c?.activityId || a.reference === r.refNo),
+          p.activities?.some(
+            (a) => a.id === c?.activityId || a.reference === r.refNo,
+          ),
         );
         return (
           matchingPlan?.projectId === filters.project ||
@@ -1012,7 +1026,8 @@ export function ReportsView() {
     if (filters.contractStatus !== "ALL") {
       rows = rows.filter(
         (r) =>
-          r.contractStatus.toLowerCase() === filters.contractStatus.toLowerCase(),
+          r.contractStatus.toLowerCase() ===
+          filters.contractStatus.toLowerCase(),
       );
     }
 
@@ -1114,12 +1129,18 @@ export function ReportsView() {
         );
 
         // Group plans by officers
-        const officerGroup = new Map<string, { officerName: string; plans: BackendPlan[] }>();
+        const officerGroup = new Map<
+          string,
+          { officerName: string; plans: BackendPlan[] }
+        >();
 
         plans.forEach((plan) => {
           const offName =
-            plan.creator?.displayName || plan.creator?.name || "Assigned Officer";
-          const offId = plan.creator?.id || (plan as any).creatorId || "unassigned";
+            plan.creator?.displayName ||
+            plan.creator?.name ||
+            "Assigned Officer";
+          const offId =
+            plan.creator?.id || (plan as any).creatorId || "unassigned";
           const existing = officerGroup.get(offId) || {
             officerName: offName,
             plans: [],
@@ -1146,7 +1167,9 @@ export function ReportsView() {
               (sum, a) => sum + (a.estimatedBudget || 0),
               0,
             );
-            const approved = data.plans.filter((p) => p.status === "APPROVED").length;
+            const approved = data.plans.filter(
+              (p) => p.status === "APPROVED",
+            ).length;
             const delayed = allActs.filter((a) =>
               (a.stages || []).some((s: any) => s.status === "DELAYED"),
             ).length;
@@ -1176,7 +1199,9 @@ export function ReportsView() {
         (r) =>
           r.id.includes(filters.officer) ||
           (selectedOfficer &&
-            r.officerName.toLowerCase().includes(selectedOfficer.name.toLowerCase())),
+            r.officerName
+              .toLowerCase()
+              .includes(selectedOfficer.name.toLowerCase())),
       );
     }
 
@@ -1241,8 +1266,7 @@ export function ReportsView() {
           break;
 
         case "monthly-summary": {
-          const yearNum =
-            parseInt(filters.efy.replace(/\D/g, ""), 10) || 2018;
+          const yearNum = parseInt(filters.efy.replace(/\D/g, ""), 10) || 2018;
           await downloadMonthlySummaryReport({
             year: yearNum,
             fundingSourceId:
@@ -1277,7 +1301,10 @@ export function ReportsView() {
           break;
       }
     } catch (err: any) {
-      console.warn("Backend report export fallback to client XLSX generation:", err);
+      console.warn(
+        "Backend report export fallback to client XLSX generation:",
+        err,
+      );
 
       try {
         // Client-side fallback export using XLSX

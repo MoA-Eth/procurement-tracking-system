@@ -148,7 +148,11 @@ export function CreateProcurementPlanView({
       planName: initialPlan.name || "",
       remarks: initialPlan.description || "",
     });
-  }, [initialPlan, project.availableOrganizationRegions, project.organizationRegion]);
+  }, [
+    initialPlan,
+    project.availableOrganizationRegions,
+    project.organizationRegion,
+  ]);
 
   const detailHref = `/workspace/projects?project=${encodeURIComponent(
     project.code,

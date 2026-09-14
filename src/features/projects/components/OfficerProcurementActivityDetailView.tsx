@@ -71,8 +71,8 @@ export function OfficerProcurementActivityDetailView({
     Boolean((activity as any).version && (activity as any).version > 1) ||
     Boolean(
       activity.updatedByName &&
-        activity.createdByName &&
-        activity.updatedByName !== activity.createdByName,
+      activity.createdByName &&
+      activity.updatedByName !== activity.createdByName,
     );
   const trackerHref =
     "/workspace/activity-tracker?project=" +
