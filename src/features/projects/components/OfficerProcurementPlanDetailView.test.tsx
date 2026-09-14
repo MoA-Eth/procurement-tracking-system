@@ -117,4 +117,30 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).toContain("Submitted to Director for Review");
     expect(markup).not.toContain("Plan is ready for review");
   });
+
+  it("does not show Version History button for an unrevised baseline plan", () => {
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={mockPlan}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).not.toContain("Version History (v1)");
+  });
+
+  it("shows Version History button when a plan is returned for revision", () => {
+    const returnedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Returned for Revision",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={returnedPlan}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).toContain("Version History");
+  });
 });

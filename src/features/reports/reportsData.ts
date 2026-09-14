@@ -77,6 +77,7 @@ export interface MonthlySummaryRow {
   fundingType: "Treasury" | "Loan" | "Grant";
   packageCount: number;
   totalAmountETB: number;
+  currency?: string;
 }
 
 export interface ContractPaymentReportRow {

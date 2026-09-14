@@ -253,10 +253,85 @@ export function methodsForCategory(category: ProcurementActivityCategory) {
   );
 }
 
-export function roadmapForMethod(methodKey: string) {
-  const method = procurementMethodOptions.find(
-    (option) => option.key === methodKey,
+export function resolveProcurementMethodOption(
+  methodOrKeyOrLabel?: string,
+): ProcurementMethodOption | undefined {
+  if (!methodOrKeyOrLabel) return undefined;
+  const needle = methodOrKeyOrLabel.trim().toLowerCase();
+
+  // 1. Direct match by key
+  const byKey = procurementMethodOptions.find((opt) => opt.key === needle);
+  if (byKey) return byKey;
+
+  // 2. Direct match by label
+  const byLabel = procurementMethodOptions.find(
+    (opt) => opt.label.toLowerCase() === needle,
   );
+  if (byLabel) return byLabel;
+
+  // 3. Clean alphanumeric match (e.g. "rfb national" -> "rfbnational")
+  const clean = needle.replace(/[^a-z0-9]/g, "");
+  const byClean = procurementMethodOptions.find(
+    (opt) =>
+      opt.key.replace(/[^a-z0-9]/g, "") === clean ||
+      opt.label.toLowerCase().replace(/[^a-z0-9]/g, "") === clean,
+  );
+  if (byClean) return byClean;
+
+  // 4. Substring / partial matching
+  const byPartial = procurementMethodOptions.find((opt) => {
+    const optClean = opt.key.replace(/[^a-z0-9]/g, "");
+    const optLabelClean = opt.label.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return (
+      (clean.length > 2 && optClean.includes(clean)) ||
+      (optClean.length > 2 && clean.includes(optClean)) ||
+      (clean.length > 2 && optLabelClean.includes(clean)) ||
+      (optLabelClean.length > 2 && clean.includes(optLabelClean))
+    );
+  });
+  if (byPartial) return byPartial;
+
+  // 5. Common acronym / prefix mappings
+  if (needle.startsWith("rfb") || needle.includes("bids")) {
+    return needle.includes("inter")
+      ? procurementMethodOptions.find((opt) => opt.key === "rfb-international")
+      : procurementMethodOptions.find((opt) => opt.key === "rfb-national");
+  }
+  if (needle.startsWith("rfq") || needle.includes("quotation") || needle.includes("shopping")) {
+    return procurementMethodOptions.find((opt) => opt.key === "rfq-shopping");
+  }
+  if (needle.includes("direct")) {
+    return procurementMethodOptions.find((opt) => opt.key === "direct");
+  }
+  if (needle.includes("un") || needle.includes("unops")) {
+    return procurementMethodOptions.find((opt) => opt.key === "un-agency");
+  }
+  if (needle.includes("qcbs")) {
+    return procurementMethodOptions.find((opt) => opt.key === "qcbs");
+  }
+  if (needle.includes("fbs")) {
+    return procurementMethodOptions.find((opt) => opt.key === "fbs");
+  }
+  if (needle.includes("lcs")) {
+    return procurementMethodOptions.find((opt) => opt.key === "lcs");
+  }
+  if (needle.includes("cqs")) {
+    return procurementMethodOptions.find((opt) => opt.key === "cqs");
+  }
+  if (needle.includes("indv") || needle.includes("ics") || needle.includes("individual")) {
+    return procurementMethodOptions.find((opt) => opt.key === "indv");
+  }
+
+  return undefined;
+}
+
+export function resolveMethodKey(methodOrKeyOrLabel?: string): ProcurementMethodKey | "" {
+  const opt = resolveProcurementMethodOption(methodOrKeyOrLabel);
+  return opt ? opt.key : "";
+}
+
+export function roadmapForMethod(methodKeyOrLabel: string) {
+  const method = resolveProcurementMethodOption(methodKeyOrLabel);
   return method ? roadmapTemplates[method.roadmap] : [];
 }
 

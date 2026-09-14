@@ -21,6 +21,8 @@ import {
   normalizeActivityCategory,
   procurementMethodOptions,
   roadmapForMethod,
+  resolveMethodKey,
+  resolveProcurementMethodOption,
   type ProcurementActivityCategory,
 } from "../data/procurementActivityConfig";
 import {
@@ -33,6 +35,7 @@ import {
   CircleAlert,
   CircleDollarSign,
   ClipboardList,
+  Edit3,
   FileText,
   Info,
   Landmark,
@@ -44,7 +47,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 
 type WizardStep = 1 | 2 | 3 | 4;
 
@@ -83,48 +86,49 @@ export function CreateProcurementActivityView({
   const [step, setStep] = useState<WizardStep>(1);
   const [attemptedStep, setAttemptedStep] = useState<WizardStep | null>(null);
   const [saved, setSaved] = useState(false);
+
+  const initialMethodKey = resolveMethodKey(
+    initialActivity?.details?.form?.method ||
+    initialActivity?.method ||
+    (initialActivity as any)?.procurementMethod?.code ||
+    (initialActivity as any)?.procurementMethod?.label ||
+    ""
+  );
+
   const [form, setForm] = useState<ActivityFormState>(() =>
     createInitialForm(project, plan, category, initialActivity),
   );
   const [financingAllocations, setFinancingAllocations] = useState<
     Allocation[]
-  >(() => {
-    if (initialActivity?.details?.financingAllocations?.length) {
-      return initialActivity.details.financingAllocations;
-    }
-    return createAllocations(project.financingNumbers ?? []);
-  });
+  >(() => extractInitialFinancingAllocations(project, initialActivity));
   const [componentAllocations, setComponentAllocations] = useState<
     Allocation[]
-  >(() => {
-    if (initialActivity?.details?.componentAllocations?.length) {
-      return initialActivity.details.componentAllocations;
+  >(() => extractInitialComponentAllocations(project, initialActivity));
+  const [lots, setLots] = useState<LotEntry[]>(() =>
+    extractInitialLots(initialActivity),
+  );
+  const [roadmap, setRoadmap] = useState<RoadmapStage[]>(() =>
+    extractInitialRoadmap(initialActivity, initialMethodKey),
+  );
+
+  // Synchronize state whenever initialActivity arrives or updates
+  useEffect(() => {
+    if (initialActivity) {
+      const resolvedKey = resolveMethodKey(
+        initialActivity.details?.form?.method ||
+        initialActivity.method ||
+        (initialActivity as any)?.procurementMethod?.code ||
+        (initialActivity as any)?.procurementMethod?.label ||
+        ""
+      );
+      setForm(createInitialForm(project, plan, category, initialActivity));
+      setFinancingAllocations(extractInitialFinancingAllocations(project, initialActivity));
+      setComponentAllocations(extractInitialComponentAllocations(project, initialActivity));
+      setLots(extractInitialLots(initialActivity));
+      setRoadmap(extractInitialRoadmap(initialActivity, resolvedKey));
     }
-    return createAllocations(project.components ?? []);
-  });
-  const [lots, setLots] = useState<LotEntry[]>(() => {
-    if (initialActivity?.details?.lots?.length) {
-      return initialActivity.details.lots;
-    }
-    return [{ amount: "", description: "", id: 1, number: "1" }];
-  });
-  const [roadmap, setRoadmap] = useState<RoadmapStage[]>(() => {
-    if (initialActivity?.details?.roadmap?.length) {
-      return initialActivity.details.roadmap;
-    }
-    if (initialActivity?.method) {
-      return roadmapForMethod(initialActivity.method).map((stage) => ({
-        allowNotApplicable: Boolean(stage.allowNotApplicable),
-        days: "",
-        ethiopianDate: "",
-        gregorianDate: "",
-        name: stage.name,
-        notApplicable: false,
-        remarks: "",
-      }));
-    }
-    return [];
-  });
+  }, [initialActivity, project, plan, category]);
+
   const methodOptions = useMemo(() => methodsForCategory(category), [category]);
   const selectedMethod = procurementMethodOptions.find(
     (method) => method.key === form.method,
@@ -212,6 +216,7 @@ export function CreateProcurementActivityView({
         name: stage.name,
         notApplicable: false,
         remarks: "",
+        status: "Not Started",
       })),
     );
   }
@@ -222,40 +227,72 @@ export function CreateProcurementActivityView({
     window.scrollTo({ behavior: "smooth", top: 0 });
   }
 
+  function handleSave() {
+    if (stepOneInvalid) {
+      setAttemptedStep(1);
+      moveTo(1);
+      return;
+    }
+    if (stepTwoInvalid) {
+      setAttemptedStep(2);
+      moveTo(2);
+      return;
+    }
+    if (stepThreeInvalid) {
+      setAttemptedStep(3);
+      moveTo(3);
+      return;
+    }
+    if (incompleteRoadmapStages.length > 0 || roadmapOrderErrors > 0) {
+      setAttemptedStep(4);
+      moveTo(4);
+      return;
+    }
+
+    onSaveActivity?.({
+      ...(initialActivity
+        ? {
+            id: initialActivity.id,
+            activityId: (initialActivity as any).activityId,
+            createdById: initialActivity.createdById,
+            createdByName: initialActivity.createdByName,
+            createdAt: initialActivity.createdAt,
+          }
+        : {}),
+      category,
+      currentStage:
+        roadmap.find((stage) => !stage.notApplicable)?.name ?? "Not Started",
+      description: form.activityDescription.trim(),
+      details: {
+        componentAllocations: componentAllocations.map((allocation) => ({
+          ...allocation,
+        })),
+        financingAllocations: financingAllocations.map((allocation) => ({
+          ...allocation,
+        })),
+        form: { ...form },
+        lots: form.lotRequired ? lots.map((lot) => ({ ...lot })) : [],
+        roadmap: roadmap.map((stage) => ({ ...stage })),
+      },
+      estimatedAmount: Number(form.estimatedAmount),
+      method: selectedMethod?.label ?? form.method,
+      reference: activityReference,
+      status: form.inProcess
+        ? "In Progress"
+        : initialActivity?.status || "Not Started",
+    });
+    setSaved(true);
+    window.scrollTo({ behavior: "smooth", top: 0 });
+  }
+
   function continueWizard() {
     setAttemptedStep(step);
 
     if (step === 1 && !stepOneInvalid) moveTo(2);
     if (step === 2 && !stepTwoInvalid) moveTo(3);
     if (step === 3 && !stepThreeInvalid) moveTo(4);
-    if (
-      step === 4 &&
-      incompleteRoadmapStages.length === 0 &&
-      roadmapOrderErrors === 0
-    ) {
-      onSaveActivity?.({
-        category,
-        currentStage:
-          roadmap.find((stage) => !stage.notApplicable)?.name ?? "Not Started",
-        description: form.activityDescription.trim(),
-        details: {
-          componentAllocations: componentAllocations.map((allocation) => ({
-            ...allocation,
-          })),
-          financingAllocations: financingAllocations.map((allocation) => ({
-            ...allocation,
-          })),
-          form: { ...form },
-          lots: form.lotRequired ? lots.map((lot) => ({ ...lot })) : [],
-          roadmap: roadmap.map((stage) => ({ ...stage })),
-        },
-        estimatedAmount: Number(form.estimatedAmount),
-        method: selectedMethod?.label ?? form.method,
-        reference: activityReference,
-        status: form.inProcess ? "In Progress" : "Not Started",
-      });
-      setSaved(true);
-      window.scrollTo({ behavior: "smooth", top: 0 });
+    if (step === 4) {
+      handleSave();
     }
   }
 
@@ -287,6 +324,37 @@ export function CreateProcurementActivityView({
         project={project}
       />
 
+      {isEditing && (
+        <div className="mt-3 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-white p-4 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#176c55] text-white shadow-2xs">
+              <Edit3 className="h-4.5 w-4.5" />
+            </span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-bold text-slate-900">
+                  Editing Activity:
+                </p>
+                <span className="font-mono text-xs font-bold text-[#176c55] bg-white px-2 py-0.5 rounded border border-emerald-300">
+                  {activityReference}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-slate-600">
+                You can click any step below to jump directly to that part, edit it, and save.
+              </p>
+            </div>
+          </div>
+          <button
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#125442] bg-[#176c55] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#125f4c] transition cursor-pointer shrink-0"
+            onClick={handleSave}
+            type="button"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Save Changes
+          </button>
+        </div>
+      )}
+
       <header className="mt-3 rounded-lg border border-slate-300 bg-white px-5 py-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-extrabold tracking-tight text-[#16243a]">
@@ -303,7 +371,7 @@ export function CreateProcurementActivityView({
         <p className="mt-1 text-[10px] leading-4 text-slate-500">
           Step {step}: {stepDescriptions[step]}
         </p>
-        <WizardProgress currentStep={step} />
+        <WizardProgress currentStep={step} isEditing={isEditing} onStepClick={moveTo} />
       </header>
 
       {saved ? (
@@ -356,12 +424,14 @@ export function CreateProcurementActivityView({
                 />
               ) : null}
             </main>
-            <CheckEntriesPanel currentStep={step} issueCounts={issueCounts} />
+            <CheckEntriesPanel currentStep={step} isEditing={isEditing} issueCounts={issueCounts} onStepClick={moveTo} />
           </div>
 
           <WizardFooter
+            isEditing={isEditing}
             onBack={goBack}
             onContinue={continueWizard}
+            onSave={handleSave}
             planHref={planHref}
             step={step}
           />
@@ -380,54 +450,68 @@ function createInitialForm(
   if (initialActivity) {
     const d = initialActivity.details?.form;
     const anyAct = initialActivity as any;
+    const rawMethod =
+      d?.method ||
+      initialActivity.method ||
+      anyAct.procurementMethod?.code ||
+      anyAct.procurementMethod?.label ||
+      "";
+    const resolvedMethod = resolveMethodKey(rawMethod) || rawMethod;
+
     return {
       activityDescription:
-        initialActivity.description || d?.activityDescription || "",
-      classificationCode: d?.classificationCode || "",
-      comments: d?.comments || "",
+        initialActivity.description || d?.activityDescription || anyAct.description || "",
+      classificationCode: d?.classificationCode || anyAct.classificationCode || "",
+      comments: d?.comments || anyAct.comments || "",
       contractType: anyAct.contractType || d?.contractType || "Lump Sum",
-      currency: anyAct.currency || plan.currency || project.baseCurrency,
-      domesticPreference: d?.domesticPreference || "",
+      currency: anyAct.currency || plan.currency || project.baseCurrency || "ETB",
+      domesticPreference: d?.domesticPreference || anyAct.domesticPreference || "No",
       estimatedAmount: String(
-        initialActivity.estimatedAmount || d?.estimatedAmount || "",
+        initialActivity.estimatedAmount ?? d?.estimatedAmount ?? anyAct.estimatedBudget ?? "",
       ),
-      evaluationOptionCode: d?.evaluationOptionCode || "",
+      evaluationOptionCode: d?.evaluationOptionCode || anyAct.evaluationOptionCode || "",
       fundingSource:
-        anyAct.fundingSource || d?.fundingSource || project.fundingSource,
-      highRiskCode: d?.highRiskCode || "",
+        anyAct.fundingSource ||
+        d?.fundingSource ||
+        anyAct.fundings?.[0]?.fundingSource ||
+        project.fundingSource ||
+        "",
+      highRiskCode: d?.highRiskCode || anyAct.highRiskCode || "",
       inProcess:
         initialActivity.status === "In Progress" || Boolean(d?.inProcess),
-      invitationReference: d?.invitationReference || "",
-      latitude: d?.latitude || "",
+      invitationReference: d?.invitationReference || anyAct.invitationReference || "",
+      latitude: d?.latitude || anyAct.latitude || "",
       location:
         anyAct.location ||
         d?.location ||
         plan.organizationRegion ||
         project.organizationRegion ||
         "",
-      longitude: d?.longitude || "",
+      longitude: d?.longitude || anyAct.longitude || "",
       lotRequired: Boolean(
         d?.lotRequired ||
+        anyAct.lotRequired ||
         (initialActivity.details?.lots &&
-          initialActivity.details.lots.length > 0),
+          initialActivity.details.lots.length > 0) ||
+        (anyAct.lots && anyAct.lots.length > 0),
       ),
       marketApproach:
         anyAct.marketApproach || d?.marketApproach || "Open - National",
-      method: initialActivity.method || d?.method || "",
-      oversightClassification: d?.oversightClassification || "",
+      method: resolvedMethod,
+      oversightClassification: d?.oversightClassification || anyAct.oversightClassification || "",
       pricingBasis:
-        category === "Works" ? d?.pricingBasis || "" : "Not Applicable",
-      procurementDocumentType: d?.procurementDocumentType || "",
+        category === "Works" ? (d?.pricingBasis || anyAct.pricingBasis || "") : "Not Applicable",
+      procurementDocumentType: d?.procurementDocumentType || anyAct.procurementDocumentType || "",
       procurementProcess:
         anyAct.procurementProcess ||
         d?.procurementProcess ||
         "1 Envelope (Single Stage 1 Env)",
-      qualificationApproach: d?.qualificationApproach || "",
-      requiresUnAgency: Boolean(d?.requiresUnAgency),
+      qualificationApproach: d?.qualificationApproach || anyAct.qualificationApproach || "",
+      requiresUnAgency: Boolean(d?.requiresUnAgency || anyAct.requiresUnAgency || resolvedMethod === "un-agency"),
       reviewType: anyAct.reviewType || d?.reviewType || "Post Review",
-      scopeNotes: d?.scopeNotes || "",
-      specificMethod: d?.specificMethod || "",
-      subcomponent: d?.subcomponent || "",
+      scopeNotes: d?.scopeNotes || anyAct.scopeNotes || "",
+      specificMethod: d?.specificMethod || anyAct.specificMethod || "",
+      subcomponent: d?.subcomponent || anyAct.subcomponent || "",
     };
   }
 
@@ -461,6 +545,111 @@ function createInitialForm(
     specificMethod: "",
     subcomponent: "",
   };
+}
+
+function extractInitialRoadmap(
+  initialActivity: ProcurementActivitySummary | undefined,
+  methodKey: string,
+): RoadmapStage[] {
+  if (initialActivity?.details?.roadmap?.length) {
+    return initialActivity.details.roadmap.map((st: any) => ({
+      name: st.name || st.stageName || "",
+      days: String(st.days || "14"),
+      ethiopianDate: st.ethiopianDate || "",
+      gregorianDate: st.gregorianDate || st.plannedStartDate || "",
+      notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
+      allowNotApplicable: Boolean(st.allowNotApplicable),
+      remarks: st.remarks || "",
+      status: st.status || "Not Started",
+    }));
+  }
+  const anyAct = initialActivity as any;
+  if (anyAct?.roadmap?.length) {
+    return anyAct.roadmap.map((st: any) => ({
+      name: st.name || st.stageName || "",
+      days: String(st.days || "14"),
+      ethiopianDate: st.ethiopianDate || "",
+      gregorianDate: st.gregorianDate || st.plannedStartDate || "",
+      notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
+      allowNotApplicable: Boolean(st.allowNotApplicable),
+      remarks: st.remarks || "",
+      status: st.status || "Not Started",
+    }));
+  }
+  if (methodKey) {
+    return roadmapForMethod(methodKey).map((stage) => ({
+      allowNotApplicable: Boolean(stage.allowNotApplicable),
+      days: "",
+      ethiopianDate: "",
+      gregorianDate: "",
+      name: stage.name,
+      notApplicable: false,
+      remarks: "",
+      status: "Not Started",
+    }));
+  }
+  return [];
+}
+
+function extractInitialLots(
+  initialActivity: ProcurementActivitySummary | undefined,
+): LotEntry[] {
+  const rawLots =
+    initialActivity?.details?.lots || (initialActivity as any)?.lots;
+  if (rawLots && rawLots.length > 0) {
+    return rawLots.map((lot: any, index: number) => ({
+      id: lot.id ?? index + 1,
+      number: String(lot.number ?? index + 1),
+      description: lot.description || "",
+      amount: String(lot.amount || ""),
+    }));
+  }
+  return [{ amount: "", description: "", id: 1, number: "1" }];
+}
+
+function extractInitialFinancingAllocations(
+  project: OfficerProject,
+  initialActivity?: ProcurementActivitySummary,
+): Allocation[] {
+  const raw =
+    initialActivity?.details?.financingAllocations ||
+    (initialActivity as any)?.financingAllocations ||
+    (initialActivity as any)?.fundings;
+  if (raw && raw.length > 0) {
+    return raw.map((f: any) => ({
+      id: f.id || f.fundingSource || "fs-1",
+      percent: String(f.percent ?? f.allocationPct ?? "100"),
+      selected: f.selected !== undefined ? Boolean(f.selected) : true,
+    }));
+  }
+  if (project.financingNumbers?.length) {
+    return createAllocations(project.financingNumbers);
+  }
+  if (project.fundingSource) {
+    return [{ id: project.fundingSource, percent: "100", selected: true }];
+  }
+  return [{ id: "Primary Funding", percent: "100", selected: true }];
+}
+
+function extractInitialComponentAllocations(
+  project: OfficerProject,
+  initialActivity?: ProcurementActivitySummary,
+): Allocation[] {
+  const raw =
+    initialActivity?.details?.componentAllocations ||
+    (initialActivity as any)?.componentAllocations ||
+    (initialActivity as any)?.components;
+  if (raw && raw.length > 0) {
+    return raw.map((c: any) => ({
+      id: c.id || c.component || "comp-1",
+      percent: String(c.percent ?? c.allocationPct ?? "100"),
+      selected: c.selected !== undefined ? Boolean(c.selected) : true,
+    }));
+  }
+  if (project.components?.length) {
+    return createAllocations(project.components);
+  }
+  return [{ id: "Component 1", percent: "100", selected: true }];
 }
 
 function createAllocations(values: readonly string[]): Allocation[] {
@@ -537,7 +726,15 @@ function ActivityBreadcrumb({
   );
 }
 
-function WizardProgress({ currentStep }: { currentStep: WizardStep }) {
+function WizardProgress({
+  currentStep,
+  isEditing = false,
+  onStepClick,
+}: {
+  currentStep: WizardStep;
+  isEditing?: boolean;
+  onStepClick?: (step: WizardStep) => void;
+}) {
   return (
     <ol
       aria-label="Procurement activity creation progress"
@@ -546,6 +743,7 @@ function WizardProgress({ currentStep }: { currentStep: WizardStep }) {
       {steps.map((item, index) => {
         const complete = currentStep > item.number;
         const current = currentStep === item.number;
+        const canClick = isEditing || complete || current;
 
         return (
           <li
@@ -562,14 +760,22 @@ function WizardProgress({ currentStep }: { currentStep: WizardStep }) {
                 }
               />
             ) : null}
-            <span
+            <button
+              type="button"
+              data-step={item.number}
+              disabled={!canClick}
+              onClick={() => canClick && onStepClick?.(item.number)}
+              title={canClick ? `Go to Step ${item.number}: ${item.label}` : undefined}
               className={
-                "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[9px] font-extrabold " +
+                "relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[10px] font-extrabold transition-all " +
+                (canClick ? "cursor-pointer hover:scale-110 " : "cursor-default ") +
                 (complete
-                  ? "border-[#176c55] bg-[#176c55] text-white"
+                  ? "border-[#176c55] bg-[#176c55] text-white hover:bg-[#125f4c]"
                   : current
-                    ? "border-2 border-[#176c55] bg-white text-[#07523f]"
-                    : "border-slate-300 bg-[#f8fafc] text-slate-400")
+                    ? "border-2 border-[#176c55] bg-white text-[#07523f] shadow-xs"
+                    : isEditing
+                      ? "border-slate-300 bg-white text-slate-700 hover:border-[#176c55] hover:text-[#176c55]"
+                      : "border-slate-300 bg-[#f8fafc] text-slate-400")
               }
             >
               {complete ? (
@@ -577,19 +783,25 @@ function WizardProgress({ currentStep }: { currentStep: WizardStep }) {
               ) : (
                 item.number
               )}
-            </span>
-            <span
+            </button>
+            <button
+              type="button"
+              disabled={!canClick}
+              onClick={() => canClick && onStepClick?.(item.number)}
               className={
-                "mt-2 max-w-full truncate text-center text-[9px] font-semibold " +
+                "mt-2 max-w-full truncate text-center text-[10px] font-semibold transition-colors " +
+                (canClick ? "cursor-pointer hover:text-[#176c55] " : "cursor-default ") +
                 (current
-                  ? "text-[#07523f]"
+                  ? "text-[#07523f] font-bold"
                   : complete
                     ? "text-slate-700"
-                    : "text-slate-400")
+                    : isEditing
+                      ? "text-slate-600"
+                      : "text-slate-400")
               }
             >
               {item.number}. {item.label}
-            </span>
+            </button>
           </li>
         );
       })}
@@ -599,10 +811,14 @@ function WizardProgress({ currentStep }: { currentStep: WizardStep }) {
 
 function CheckEntriesPanel({
   currentStep,
+  isEditing = false,
   issueCounts,
+  onStepClick,
 }: {
   currentStep: WizardStep;
+  isEditing?: boolean;
   issueCounts: Record<WizardStep, number>;
+  onStepClick?: (step: WizardStep) => void;
 }) {
   return (
     <aside className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm lg:sticky lg:top-4">
@@ -615,62 +831,70 @@ function CheckEntriesPanel({
           const current = currentStep === item.number;
           const issueCount = issueCounts[item.number];
           const ready = issueCount === 0;
+          const canClick = isEditing || complete || current;
 
           return (
-            <li
-              className={
-                "flex items-start gap-2 rounded-md border px-2.5 py-2 " +
-                (current && !ready
-                  ? "border-red-200 bg-red-50"
-                  : "border-transparent")
-              }
-              key={item.number}
-            >
-              {complete || (current && ready) ? (
-                <CheckCircle2
-                  aria-hidden="true"
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#176c55]"
-                />
-              ) : current ? (
-                <CircleAlert
-                  aria-hidden="true"
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600"
-                />
-              ) : (
-                <Circle
-                  aria-hidden="true"
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400"
-                />
-              )}
-              <div className="min-w-0">
-                <p
-                  className={
-                    "text-[10px] font-semibold " +
-                    (current && !ready
-                      ? "text-red-700"
-                      : complete || (current && ready)
-                        ? "text-slate-700"
-                        : "text-slate-400")
-                  }
-                >
-                  {item.label}
-                </p>
-                <p
-                  className={
-                    "mt-0.5 text-[8px] " +
-                    (current && !ready ? "text-red-600" : "text-slate-400")
-                  }
-                >
-                  {complete
-                    ? "Completed"
+            <li key={item.number}>
+              <button
+                type="button"
+                disabled={!canClick}
+                onClick={() => canClick && onStepClick?.(item.number)}
+                className={
+                  "flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors " +
+                  (canClick ? "cursor-pointer hover:bg-slate-50 " : "cursor-default ") +
+                  (current && !ready
+                    ? "border-red-200 bg-red-50"
                     : current
-                      ? ready
-                        ? "Ready"
-                        : issueCount +
-                          (issueCount === 1 ? " issue found" : " issues found")
-                      : "Pending"}
-                </p>
-              </div>
+                      ? "border-emerald-200 bg-emerald-50/50"
+                      : "border-transparent")
+                }
+              >
+                {complete || (current && ready) ? (
+                  <CheckCircle2
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#176c55]"
+                  />
+                ) : current ? (
+                  <CircleAlert
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-600"
+                  />
+                ) : (
+                  <Circle
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p
+                    className={
+                      "text-[10px] font-semibold " +
+                      (current && !ready
+                        ? "text-red-700"
+                        : complete || (current && ready)
+                          ? "text-slate-700"
+                          : "text-slate-400")
+                    }
+                  >
+                    {item.label}
+                  </p>
+                  <p
+                    className={
+                      "mt-0.5 text-[8px] " +
+                      (current && !ready ? "text-red-600" : "text-slate-400")
+                    }
+                  >
+                    {complete
+                      ? "Completed"
+                      : current
+                        ? ready
+                          ? "Ready"
+                          : issueCount +
+                            (issueCount === 1 ? " issue found" : " issues found")
+                        : "Pending"}
+                  </p>
+                </div>
+              </button>
             </li>
           );
         })}
@@ -871,13 +1095,17 @@ function YesNoChoice({
 }
 
 function WizardFooter({
+  isEditing = false,
   onBack,
   onContinue,
+  onSave,
   planHref,
   step,
 }: {
+  isEditing?: boolean;
   onBack: () => void;
   onContinue: () => void;
+  onSave?: () => void;
   planHref: string;
   step: WizardStep;
 }) {
@@ -889,36 +1117,56 @@ function WizardFooter({
           href={planHref}
         >
           <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          Back to plan
+          Cancel / Back to plan
         </Link>
       ) : (
         <button
-          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#176c55]"
+          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#176c55] cursor-pointer"
           onClick={onBack}
           type="button"
         >
           <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          Back
+          Previous Step
         </button>
       )}
 
-      <button
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-5 text-xs font-bold text-white shadow-sm hover:bg-[#125f4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
-        onClick={onContinue}
-        type="button"
-      >
-        {step === 4 ? (
-          <>
+      <div className="flex items-center gap-2.5">
+        {isEditing && step < 4 && (
+          <button
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-5 text-xs font-bold text-white shadow-sm hover:bg-[#125f4c] transition cursor-pointer"
+            onClick={onSave}
+            type="button"
+          >
             <Save aria-hidden="true" className="h-4 w-4" />
-            Save Procurement Activity
-          </>
-        ) : (
-          <>
-            Continue
-            <ArrowRight aria-hidden="true" className="h-4 w-4" />
-          </>
+            Save Changes
+          </button>
         )}
-      </button>
+
+        <button
+          className={
+            "inline-flex h-10 items-center justify-center gap-2 rounded-md px-5 text-xs font-bold shadow-sm transition cursor-pointer " +
+            (step === 4
+              ? "border border-[#125442] bg-[#176c55] text-white hover:bg-[#125f4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+              : isEditing
+                ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                : "border border-[#125442] bg-[#176c55] text-white hover:bg-[#125f4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]")
+          }
+          onClick={step === 4 ? onSave : onContinue}
+          type="button"
+        >
+          {step === 4 ? (
+            <>
+              <Save aria-hidden="true" className="h-4 w-4" />
+              {isEditing ? "Save Activity Changes" : "Save Procurement Activity"}
+            </>
+          ) : (
+            <>
+              Continue to Step {step + 1}
+              <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </>
+          )}
+        </button>
+      </div>
     </footer>
   );
 }

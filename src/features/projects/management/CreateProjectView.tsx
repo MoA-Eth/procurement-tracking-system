@@ -147,7 +147,7 @@ export function CreateProjectView({
   const [selectedOfficerIds, setSelectedOfficerIds] = useState<string[]>(
     initialData?.assignedOfficers && initialData.assignedOfficers.length > 0
       ? initialData.assignedOfficers.map((o) => o.id)
-      : availableOfficers.slice(0, 2).map((o) => o.id),
+      : [],
   );
   const [officerSearch, setOfficerSearch] = useState("");
 
@@ -210,10 +210,7 @@ export function CreateProjectView({
     }
 
     if (currentStep === 4) {
-      if (selectedOfficerIds.length === 0) {
-        setErrorMsg("Please select at least one assigned Procurement Officer.");
-        return false;
-      }
+      // Officer assignment is optional - projects without assigned officers will be saved as Draft
     }
 
     return true;
@@ -293,7 +290,12 @@ export function CreateProjectView({
       endDate: step3Data.endDate,
       assignedOfficers,
       description: initialData?.description || step1Data.name.trim(),
-      status: initialData?.status || "Active",
+      status:
+        initialData?.status === "Inactive"
+          ? "Inactive"
+          : assignedOfficers.length > 0
+            ? "Active"
+            : "Draft",
       createdAt:
         initialData?.createdAt || new Date().toISOString().slice(0, 10),
     };
@@ -391,7 +393,11 @@ export function CreateProjectView({
               >
                 <Save className="h-4 w-4" />
                 <span>
-                  {isEditing ? "Save Project Changes" : "Complete Registration"}
+                  {isEditing
+                    ? "Save Project Changes"
+                    : selectedOfficerIds.length > 0
+                      ? "Complete Registration"
+                      : "Save as Draft Project"}
                 </span>
               </button>
             )}

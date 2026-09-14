@@ -9,6 +9,7 @@ import {
 } from "./projectsData";
 import { ProjectsDirectoryView } from "./ProjectsDirectoryView";
 import { CreateProjectView } from "./CreateProjectView";
+import { ProjectExcelImportModal } from "./components/ProjectExcelImportModal";
 import { ProjectPlansView } from "@/features/plans/components/ProjectPlansView";
 import { CreatePlanForm } from "@/features/plans/components/CreatePlanForm";
 import {
@@ -72,6 +73,7 @@ export function ProjectsManagementView({
   const [selectedPlanForActivities, setSelectedPlanForActivities] =
     useState<ProcurementPlan | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -605,6 +607,7 @@ export function ProjectsManagementView({
           onCreateClick={handleCreateProjectClick}
           onEditClick={handleEditProjectClick}
           onViewPlansClick={handleViewPlansClick}
+          onImportClick={readOnly ? undefined : () => setIsImportModalOpen(true)}
           readOnly={readOnly}
         />
       )}
@@ -752,6 +755,19 @@ export function ProjectsManagementView({
             }
           />
         )}
+
+      <ProjectExcelImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={async ({ created, updated }) => {
+          showToast(
+            `Successfully imported ${created + updated} project${
+              created + updated === 1 ? "" : "s"
+            } as Draft! You can now click "Edit" on each project to review details and assign officers.`,
+          );
+          await loadData();
+        }}
+      />
     </div>
   );
 }

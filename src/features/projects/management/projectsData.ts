@@ -28,7 +28,7 @@ export interface ProjectItem {
   sector: string;
   assignedOfficers: ProjectOfficer[];
   description: string;
-  status: "Active" | "Inactive";
+  status: "Active" | "Inactive" | "Draft";
   createdAt: string;
 }
 

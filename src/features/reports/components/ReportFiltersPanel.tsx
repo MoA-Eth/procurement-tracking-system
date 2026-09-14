@@ -30,6 +30,7 @@ export interface ReportFiltersPanelProps {
   activeFilterCount: number;
   projectOptions: SearchableSelectOption[];
   fundingSourceOptions: SearchableSelectOption[];
+  fundingTypeOptions?: SearchableSelectOption[];
   methodOptions: SearchableSelectOption[];
   officerOptions: SearchableSelectOption[];
   categoryOptions: SearchableSelectOption[];
@@ -49,6 +50,7 @@ export function ReportFiltersPanel({
   activeFilterCount,
   projectOptions,
   fundingSourceOptions,
+  fundingTypeOptions,
   methodOptions,
   officerOptions,
   categoryOptions,
@@ -123,6 +125,7 @@ export function ReportFiltersPanel({
                 <option value="ALL">All Years</option>
                 <option value="2017 EFY">2017 EFY</option>
                 <option value="2018 EFY">2018 EFY</option>
+                <option value="2019 EFY">2019 EFY</option>
                 <option value="2026">2026</option>
               </select>
             </div>
@@ -194,6 +197,7 @@ export function ReportFiltersPanel({
               >
                 <option value="2017 EFY">2017 EFY</option>
                 <option value="2018 EFY">2018 EFY</option>
+                <option value="2019 EFY">2019 EFY</option>
                 <option value="2026">2026</option>
                 <option value="ALL">All Years</option>
               </select>
@@ -329,10 +333,11 @@ export function ReportFiltersPanel({
                 onChange={(e) => onUpdateFilter("efy", e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
+                <option value="ALL">All Years</option>
                 <option value="2017 EFY">2017 EFY</option>
                 <option value="2018 EFY">2018 EFY</option>
+                <option value="2019 EFY">2019 EFY</option>
                 <option value="2026">2026</option>
-                <option value="ALL">All Years</option>
               </select>
             </div>
 
@@ -340,8 +345,8 @@ export function ReportFiltersPanel({
               label="Funding Type"
               value={filters.fundingType}
               onChange={(val) => onUpdateFilter("fundingType", val)}
-              options={fundingSourceOptions}
-              searchPlaceholder="Search funding..."
+              options={fundingTypeOptions || fundingSourceOptions}
+              searchPlaceholder="Search funding type or source..."
             />
 
             <div>
@@ -358,6 +363,26 @@ export function ReportFiltersPanel({
                 <option value="UA">UA (AfDB Unit of Account)</option>
               </select>
             </div>
+
+            {showMore && (
+              <>
+                <SearchableSelect
+                  label="Project"
+                  value={filters.project}
+                  onChange={(val) => onUpdateFilter("project", val)}
+                  options={projectOptions}
+                  searchPlaceholder="Search project..."
+                />
+
+                <SearchableSelect
+                  label="Category"
+                  value={filters.category}
+                  onChange={(val) => onUpdateFilter("category", val)}
+                  options={categoryOptions}
+                  searchPlaceholder="Search category..."
+                />
+              </>
+            )}
           </>
         )}
 

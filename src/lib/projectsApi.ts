@@ -4,7 +4,48 @@ import type {
 } from "@/features/projects/management/projectsData";
 import type { OfficerProject } from "@/features/projects/data/officerProjects";
 import type { AuthUser } from "./authTypes";
-import { apiClient } from "./apiClient";
+import { apiClient, directApiFetch, ApiClientError } from "./apiClient";
+import { downloadReportFile, saveReportFile } from "./reportsApi";
+
+export interface ImportProjectsResult {
+  message?: string;
+  created: number;
+  updated: number;
+}
+
+export async function importProjects(
+  file: File,
+): Promise<ImportProjectsResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    return await directApiFetch<ImportProjectsResult>("/excel/import/projects", {
+      method: "POST",
+      body: formData,
+    });
+  } catch (err) {
+    if (err instanceof ApiClientError && err.status === 404) {
+      return await directApiFetch<ImportProjectsResult>(
+        "/projects/import",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+    }
+    throw err;
+  }
+}
+
+export async function downloadProjectsTemplate(): Promise<void> {
+  const report = await downloadReportFile(
+    "/excel/templates/projects",
+    {},
+    "Projects_Import_Template.xlsx",
+  );
+  saveReportFile(report);
+}
 
 export interface BackendProject {
   id: string;
@@ -157,7 +198,12 @@ export function mapBackendProjectToProjectItem(
     sector: bp.sector?.label || "Agriculture",
     assignedOfficers,
     description: "Sector project",
-    status: bp.status === "ACTIVE" ? "Active" : "Inactive",
+    status:
+      bp.status === "ACTIVE"
+        ? assignedOfficers.length > 0
+          ? "Active"
+          : "Draft"
+        : "Inactive",
     createdAt: bp.createdAt || "2026-01-01",
   };
 }

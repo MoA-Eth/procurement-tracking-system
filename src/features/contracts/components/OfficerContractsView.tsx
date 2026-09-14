@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Download,
   Loader2,
   Plus,
   Search,
@@ -14,9 +15,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AddContractPaymentView } from "./AddContractPaymentView";
 import { RegisterContractView } from "./RegisterContractView";
+import { ContractExcelImportModal } from "./ContractExcelImportModal";
+import { exportContractsToExcel } from "../utils/contractExcelUtils";
 import {
   addSavedContract,
   OFFICER_CONTRACTS_STORAGE_KEY,
@@ -37,6 +40,7 @@ import {
   recordContractPayment,
   fetchContracts,
   mapBackendContractToOfficerContract,
+  importContracts,
 } from "@/lib/contractsApi";
 import {
   contractFiscalYear,
@@ -71,59 +75,60 @@ export function OfficerContractsView({
   );
   const [status, setStatus] = useState<"all" | ContractStatus>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importNotification, setImportNotification] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
+  const loadContractsData = useCallback(async () => {
+    const localContracts = parseSavedContracts(
+      window.localStorage.getItem(OFFICER_CONTRACTS_STORAGE_KEY),
+    );
+    const localPayments = parseSavedPayments(
+      window.localStorage.getItem(OFFICER_PAYMENTS_STORAGE_KEY),
+    );
 
     try {
-      setIsUploading(true);
-      setImportNotification(null);
-      const res = await fetch("http://localhost:5000/api/contracts/import", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setImportNotification({
-          type: "success",
-          message: `Contracts imported successfully! (${data.created || 0} created, ${data.updated || 0} updated)`,
-        });
-        setTimeout(() => {
-          window.location.reload();
-        }, 1200);
+      const backendContracts = await fetchContracts();
+      if (backendContracts && backendContracts.length > 0) {
+        const mappedBackend = backendContracts.map(
+          mapBackendContractToOfficerContract,
+        );
+        const mapByNum = new Map<string, OfficerContract>();
+        localContracts.forEach((c) =>
+          mapByNum.set(c.contractNumber.toLowerCase(), c),
+        );
+        mappedBackend.forEach((c) =>
+          mapByNum.set(c.contractNumber.toLowerCase(), c),
+        );
+        setSavedContracts(Array.from(mapByNum.values()));
       } else {
-        setImportNotification({
-          type: "error",
-          message: data.error || data.message || "Failed to import contracts.",
-        });
+        setSavedContracts(localContracts);
       }
-    } catch (err) {
-      console.error("Import error:", err);
-      setImportNotification({
-        type: "error",
-        message:
-          "Error uploading contract file. Please check server connection.",
-      });
-    } finally {
-      setIsUploading(false);
-      if (e.target) e.target.value = "";
+    } catch {
+      setSavedContracts(localContracts);
     }
+    setSavedPayments(localPayments);
+  }, []);
+
+  useEffect(() => {
+    loadContractsData();
+  }, [loadContractsData]);
+
+  const handleImportClick = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const handleImportSuccess = async (result: {
+    created: number;
+    updated: number;
+  }) => {
+    setImportNotification({
+      type: "success",
+      message: `Contracts imported successfully! (${result.created} created, ${result.updated} updated)`,
+    });
+    await loadContractsData();
   };
 
   if (selectedContractNumber !== prevSelectedContractNumber) {
@@ -132,40 +137,6 @@ export function OfficerContractsView({
       setSearchQuery(selectedContractNumber);
     }
   }
-
-  useEffect(() => {
-    async function loadContractsData() {
-      const localContracts = parseSavedContracts(
-        window.localStorage.getItem(OFFICER_CONTRACTS_STORAGE_KEY),
-      );
-      const localPayments = parseSavedPayments(
-        window.localStorage.getItem(OFFICER_PAYMENTS_STORAGE_KEY),
-      );
-
-      try {
-        const backendContracts = await fetchContracts();
-        if (backendContracts && backendContracts.length > 0) {
-          const mappedBackend = backendContracts.map(
-            mapBackendContractToOfficerContract,
-          );
-          const mapByNum = new Map<string, OfficerContract>();
-          localContracts.forEach((c) =>
-            mapByNum.set(c.contractNumber.toLowerCase(), c),
-          );
-          mappedBackend.forEach((c) =>
-            mapByNum.set(c.contractNumber.toLowerCase(), c),
-          );
-          setSavedContracts(Array.from(mapByNum.values()));
-        } else {
-          setSavedContracts(localContracts);
-        }
-      } catch {
-        setSavedContracts(localContracts);
-      }
-      setSavedPayments(localPayments);
-    }
-    loadContractsData();
-  }, []);
 
   const contracts = useMemo(() => {
     const savedByNumber = new Map(
@@ -288,6 +259,44 @@ export function OfficerContractsView({
     });
   }
 
+  function handleExportContracts(selectedOnly = false) {
+    const contractsToExport =
+      selectedOnly && selectedIds.size > 0
+        ? filteredContracts.filter((contract) => selectedIds.has(contract.id))
+        : filteredContracts;
+
+    if (contractsToExport.length === 0) {
+      setImportNotification({
+        type: "error",
+        message: "No contracts available to export.",
+      });
+      return;
+    }
+
+    try {
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename =
+        selectedOnly && selectedIds.size > 0
+          ? `Contracts_Selected_Export_${timestamp}.xlsx`
+          : `Contracts_Export_${timestamp}.xlsx`;
+
+      exportContractsToExcel(contractsToExport, savedPayments, filename);
+
+      setImportNotification({
+        type: "success",
+        message: `Successfully exported ${contractsToExport.length} contract${
+          contractsToExport.length > 1 ? "s" : ""
+        } to Excel.`,
+      });
+    } catch (err) {
+      console.error("Failed to export contracts to Excel:", err);
+      setImportNotification({
+        type: "error",
+        message: "An error occurred while exporting contracts to Excel.",
+      });
+    }
+  }
+
   const visibleCount = filteredContracts.length;
   const hasActiveFilters =
     Boolean(searchQuery.trim()) || fiscalYear !== "all" || status !== "all";
@@ -350,28 +359,23 @@ export function OfficerContractsView({
         </div>
 
         <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-          {/* Hidden File Input */}
-          <input
-            accept=".xlsx, .xls, .csv"
-            className="hidden"
-            onChange={handleFileChange}
-            ref={fileInputRef}
-            style={{ display: "none" }}
-            type="file"
-          />
-
           <button
-            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] disabled:opacity-60 cursor-pointer"
-            disabled={isUploading}
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] cursor-pointer"
+            onClick={() => handleExportContracts(selectedIds.size > 0)}
+            type="button"
+          >
+            <Download aria-hidden="true" className="h-4 w-4 text-slate-500" />
+            {selectedIds.size > 0
+              ? `Export Selected (${selectedIds.size})`
+              : "Export Contracts"}
+          </button>
+          <button
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] cursor-pointer"
             onClick={handleImportClick}
             type="button"
           >
-            {isUploading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-[#176c55]" />
-            ) : (
-              <Upload aria-hidden="true" className="h-4 w-4 text-slate-500" />
-            )}
-            {isUploading ? "Uploading..." : "Import Contracts"}
+            <Upload aria-hidden="true" className="h-4 w-4 text-slate-500" />
+            Import Contracts
           </button>
           <Link
             className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] transition"
@@ -470,6 +474,43 @@ export function OfficerContractsView({
           />
         </div>
       </section>
+
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-2.5 text-xs font-semibold text-emerald-900 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#176c55] text-white text-[10px] font-bold">
+              {selectedIds.size}
+            </span>
+            <span>
+              {selectedIds.size} {selectedIds.size === 1 ? "contract" : "contracts"} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#176c55] px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#125442] transition cursor-pointer"
+              onClick={() => handleExportContracts(true)}
+              type="button"
+            >
+              <Download aria-hidden="true" className="h-3.5 w-3.5" />
+              Export Selected ({selectedIds.size})
+            </button>
+            <button
+              className="inline-flex items-center gap-1.5 rounded-md border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-2xs hover:bg-emerald-50 transition cursor-pointer"
+              onClick={() => handleExportContracts(false)}
+              type="button"
+            >
+              Export All ({filteredContracts.length})
+            </button>
+            <button
+              className="rounded-md px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-950 transition cursor-pointer underline"
+              onClick={() => setSelectedIds(new Set())}
+              type="button"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       <section
         className="flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs"
@@ -682,6 +723,12 @@ export function OfficerContractsView({
           </div>
         </footer>
       </section>
+
+      <ContractExcelImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={handleImportSuccess}
+      />
     </div>
   );
 }
