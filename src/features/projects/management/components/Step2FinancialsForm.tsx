@@ -69,7 +69,7 @@ export function Step2FinancialsForm({
             >
               {FUNDING_SOURCE_OPTIONS.map((fs) => (
                 <option key={fs.label} value={fs.label}>
-                  {fs.category === "Custom" ? `✍️ ${fs.label}` : fs.label}
+                  {fs.label}
                 </option>
               ))}
             </select>

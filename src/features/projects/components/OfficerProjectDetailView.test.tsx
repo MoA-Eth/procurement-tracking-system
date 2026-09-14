@@ -66,4 +66,14 @@ describe("OfficerProjectDetailView", () => {
     expect(markup).not.toContain("Subcomponents");
     expect(markup).not.toContain("Not provided");
   });
+
+  it("renders Export Excel and Import Excel buttons for project plans", () => {
+    const markup = renderToStaticMarkup(
+      <OfficerProjectDetailView project={mockProject} />,
+    );
+
+    expect(markup).toContain("Export Excel");
+    expect(markup).toContain("Import Excel");
+    expect(markup).toContain("Create Plan");
+  });
 });

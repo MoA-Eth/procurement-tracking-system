@@ -29,8 +29,8 @@ export interface ReportFilterState {
 
 export const DEFAULT_FILTERS: ReportFilterState = {
   efy: "ALL",
-  fromDate: "2025-07-08",
-  toDate: "2026-07-07",
+  fromDate: "2024-07-08",
+  toDate: "2027-07-07",
   project: "ALL",
   category: "ALL",
   fundingSource: "ALL",

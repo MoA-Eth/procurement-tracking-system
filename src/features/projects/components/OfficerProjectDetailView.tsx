@@ -17,8 +17,9 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { exportProjectDetailsToExcel } from "@/features/projects/utils/projectExcelUtils";
-import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
+import { exportProjectPlansToExcel } from "@/features/projects/utils/projectExcelUtils";
+import { PlanExcelImportModal } from "@/features/projects/components/PlanExcelImportModal";
+import type { ProcurementPlanSummary } from "@/features/projects/data/officerProjects";
 
 function formatProjectPeriod(project: OfficerProject): string | undefined {
   const from = project.projectPeriod?.from?.trim();
@@ -32,10 +33,10 @@ function formatProjectPeriod(project: OfficerProject): string | undefined {
 
 export function OfficerProjectDetailView({
   project,
-  onImportActivities,
+  onImportPlans,
 }: {
   project: OfficerProject;
-  onImportActivities?: (imported: any[]) => void;
+  onImportPlans?: (imported: ProcurementPlanSummary[]) => Promise<void> | void;
 }) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
@@ -150,7 +151,7 @@ export function OfficerProjectDetailView({
           <div className="flex shrink-0 items-center gap-2.5">
             <button
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
-              onClick={() => exportProjectDetailsToExcel(project)}
+              onClick={() => exportProjectPlansToExcel(project)}
               type="button"
             >
               <Download aria-hidden="true" className="h-4 w-4" />
@@ -289,13 +290,14 @@ export function OfficerProjectDetailView({
         </div>
       </section>
 
-      <ExcelImportModal
+      <PlanExcelImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImport={(imported) => {
-          onImportActivities?.(imported);
+          void onImportPlans?.(imported);
         }}
         projectCode={project.code}
+        projectName={project.name}
       />
     </div>
   );

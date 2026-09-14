@@ -88,4 +88,41 @@ describe("CreateProcurementPlanView", () => {
     expect(markup).toContain("Save Draft");
     expect(markup).toContain("Save &amp; Add Procurement Activity");
   });
+
+  it("maintains previously entered plan data when initialPlan is provided", () => {
+    const existingPlan = {
+      activities: 0,
+      budgetYear: "2017 EFY",
+      category: "Works" as const,
+      completedActivities: 0,
+      currency: "ETB" as const,
+      delayedActivities: 0,
+      description: "Construction of regional irrigation canals",
+      estimatedValue: 12_000_000,
+      inProgressActivities: 0,
+      name: "DRIVE - Regional Irrigation Works - 2017 EFY",
+      organizationRegion: "Oromia",
+      planPeriod: {
+        from: { ethiopian: "01/11/2016", gregorian: "2024-07-08" },
+        to: { ethiopian: "30/10/2017", gregorian: "2025-07-07" },
+      },
+      reference: "PLN-OROMIA-2017-WORKS",
+      status: "Draft" as const,
+      version: 2,
+    };
+
+    const markup = renderToStaticMarkup(
+      <CreateProcurementPlanView
+        initialPlan={existingPlan}
+        onSavePlan={() => undefined}
+        project={mockProject2}
+      />,
+    );
+
+    expect(markup).toContain("Edit Procurement Plan");
+    expect(markup).toContain("v2");
+    expect(markup).toContain("DRIVE - Regional Irrigation Works - 2017 EFY");
+    expect(markup).toContain("Construction of regional irrigation canals");
+    expect(markup).toContain("2017");
+  });
 });

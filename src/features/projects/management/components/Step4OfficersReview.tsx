@@ -60,12 +60,12 @@ export function Step4OfficersReview({
             <div className="flex items-center gap-2">
               <UserCheck className="h-4.5 w-4.5 text-[#0A3C2F]" />
               <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">
-                Assign Procurement Officers *
+                Assign Procurement Officers (Optional)
               </h2>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Select one or more procurement officers responsible for managing
-              procurement plans.
+              procurement plans, or leave unassigned to save as a Draft project.
             </p>
           </div>
 
@@ -149,8 +149,16 @@ export function Step4OfficersReview({
               Project Registration Summary
             </h3>
           </div>
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-            Ready for Submit
+          <span
+            className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+              selectedOfficerIds.length > 0
+                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                : "bg-amber-500/20 text-amber-300 border-amber-500/30"
+            }`}
+          >
+            {selectedOfficerIds.length > 0
+              ? "Ready for Submit (Active)"
+              : "Save as Draft (Unassigned)"}
           </span>
         </div>
 
@@ -186,8 +194,16 @@ export function Step4OfficersReview({
             <span className="text-[10px] uppercase font-bold text-slate-400 block">
               Assigned Officers
             </span>
-            <span className="font-extrabold text-emerald-400">
-              {selectedOfficerIds.length} Selected
+            <span
+              className={`font-extrabold ${
+                selectedOfficerIds.length > 0
+                  ? "text-emerald-400"
+                  : "text-amber-400"
+              }`}
+            >
+              {selectedOfficerIds.length > 0
+                ? `${selectedOfficerIds.length} Selected`
+                : "0 Selected (Draft)"}
             </span>
           </div>
         </div>
