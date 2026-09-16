@@ -401,7 +401,7 @@ export function ReportsView() {
               a.procurementMethod?.label ||
               a.procurementMethod?.code ||
               "RFB - National",
-            estimatedAmount: a.estimatedBudget || 0,
+            estimatedAmount: Number(a.estimatedBudget || 0),
             currency: a.currency || "ETB",
             fundingSource:
               a.fundings?.[0]?.fundingSource ||
@@ -928,7 +928,7 @@ export function ReportsView() {
               completedStages.length > 0
                 ? `${completedStages[completedStages.length - 1]?.stageType?.label || "Stage"} finalized`
                 : "Activity initiated",
-            value: `ETB ${(a.estimatedBudget || 0).toLocaleString()}`,
+            value: `ETB ${Number(a.estimatedBudget || 0).toLocaleString()}`,
             delay: isDelayed ? "Delayed" : "On Track",
             nextActivity:
               inProgressStage?.stageType?.label ||
@@ -987,7 +987,7 @@ export function ReportsView() {
             totalAmountETB: 0,
           };
           current.packageCount += 1;
-          current.totalAmountETB += a.estimatedBudget || 0;
+          current.totalAmountETB += Number(a.estimatedBudget || 0);
           monthMap.set(key, current);
         }
       }
@@ -1039,7 +1039,7 @@ export function ReportsView() {
           currency: a.currency || "ETB",
         };
         curr.packageCount += 1;
-        curr.totalValue += a.estimatedBudget || 0;
+        curr.totalValue += Number(a.estimatedBudget || 0);
         groupMap.set(key, curr);
       });
     });
@@ -1074,11 +1074,12 @@ export function ReportsView() {
             a.procurementMethod?.label || a.procurementMethod?.code || "RFB",
           winnerSupplier:
             matchedContract?.supplier?.name || "Pending Selection",
-          awardedAmount:
+          awardedAmount: Number(
             matchedContract?.contractAmountWithVat ||
-            matchedContract?.totalValue ||
-            a.estimatedBudget ||
-            0,
+              matchedContract?.totalValue ||
+              a.estimatedBudget ||
+              0,
+          ),
           currency: a.currency || "ETB",
           budgetType: (matchedContract as any)?.budgetType || "Capital",
           fundingSource:
@@ -1109,15 +1110,15 @@ export function ReportsView() {
   // ─── 8. Contract Register Rows ────────────────────────────────────────────
   const contractRegisterRows = useMemo(() => {
     return backendContracts.map((c) => {
-      const orig = c.contractNetOfVat || c.totalValue || 0;
-      const amend = (c as any).amendmentAmount || 0;
+      const orig = Number(c.contractNetOfVat || c.totalValue || 0);
+      const amend = Number((c as any).amendmentAmount || 0);
       const priceAdj = Number((c as any).priceAdjustmentAmount || 0);
-      const curr = c.contractAmountWithVat || c.totalValue || orig;
+      const curr = Number(c.contractAmountWithVat || c.totalValue || orig);
       const paid =
-        c.paidAmount ||
+        Number(c.paidAmount) ||
         (c.payments || [])
           .filter((p) => p.status === "PAID")
-          .reduce((sum, p) => sum + p.amount, 0);
+          .reduce((sum, p) => sum + Number(p.amount || 0), 0);
       const matchingPlan = backendPlans.find((p) =>
         p.activities?.some(
           (a) => a.id === c.activityId || a.reference === c.activity?.reference,
@@ -1171,36 +1172,39 @@ export function ReportsView() {
   // ─── 9. Contract & Payment Rows ───────────────────────────────────────────
   const contractPaymentRows = useMemo(() => {
     return backendContracts.map((c) => {
-      const originalAmount = c.contractNetOfVat || c.totalValue || 0;
-      const finalAmount =
-        c.contractAmountWithVat || c.totalValue || originalAmount;
+      const originalAmount = Number(c.contractNetOfVat || c.totalValue || 0);
+      const finalAmount = Number(
+        c.contractAmountWithVat || c.totalValue || originalAmount,
+      );
       const payments = c.payments || [];
 
       const advance = payments
         .filter((p) => p.paymentType === "ADVANCE" && p.status === "PAID")
-        .reduce((sum, p) => sum + p.amount, 0);
+        .reduce((sum, p) => sum + Number(p.amount || 0), 0);
       const interim1 = payments
         .filter((p) => p.paymentType === "INTERIM" && p.status === "PAID")
         .slice(0, 1)
-        .reduce((sum, p) => sum + p.amount, 0);
+        .reduce((sum, p) => sum + Number(p.amount || 0), 0);
       const interim2 = payments
         .filter((p) => p.paymentType === "INTERIM" && p.status === "PAID")
         .slice(1)
-        .reduce((sum, p) => sum + p.amount, 0);
+        .reduce((sum, p) => sum + Number(p.amount || 0), 0);
       const finalPayment = payments
         .filter((p) => p.paymentType === "FINAL" && p.status === "PAID")
-        .reduce((sum, p) => sum + p.amount, 0);
+        .reduce((sum, p) => sum + Number(p.amount || 0), 0);
       const retentionPayment = payments
         .filter((p) => p.paymentType === "RETENTION" && p.status === "PAID")
-        .reduce((sum, p) => sum + p.amount, 0);
+        .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
       const totalPaid =
-        c.paidAmount ||
+        Number(c.paidAmount) ||
         payments
           .filter((p) => p.status === "PAID")
-          .reduce((sum, p) => sum + p.amount, 0);
+          .reduce((sum, p) => sum + Number(p.amount || 0), 0);
       const remaining =
-        c.remainingValue ?? Math.max(0, finalAmount - totalPaid);
+        c.remainingValue != null
+          ? Number(c.remainingValue)
+          : Math.max(0, finalAmount - totalPaid);
       const pct =
         finalAmount > 0
           ? `${Math.min(100, Math.round((totalPaid / finalAmount) * 100))}%`
@@ -1275,7 +1279,7 @@ export function ReportsView() {
         else if (a.status === "IN_PROGRESS") curr.ongoing += 1;
         if (a.stages?.some((s: any) => s.status === "DELAYED"))
           curr.delayed += 1;
-        curr.estimatedAmount += a.estimatedBudget || 0;
+        curr.estimatedAmount += Number(a.estimatedBudget || 0);
       });
 
       regionMap.set(unit, curr);
@@ -1285,8 +1289,10 @@ export function ReportsView() {
       const unit = c.region || "Federal / MoA Head Office";
       const curr = regionMap.get(unit);
       if (curr) {
-        curr.contractedAmount += c.contractAmountWithVat || c.totalValue || 0;
-        curr.paidAmount += c.paidAmount || 0;
+        curr.contractedAmount += Number(
+          c.contractAmountWithVat || c.totalValue || 0,
+        );
+        curr.paidAmount += Number(c.paidAmount || 0);
       }
     });
 
@@ -1325,7 +1331,7 @@ export function ReportsView() {
       ).length;
 
       const estimated = activities.reduce(
-        (sum, a) => sum + (a.estimatedBudget || 0),
+        (sum, a) => sum + Number(a.estimatedBudget || 0),
         0,
       );
       const matchedContracts = backendContracts.filter((c) =>
@@ -1334,11 +1340,11 @@ export function ReportsView() {
         ),
       );
       const contracted = matchedContracts.reduce(
-        (sum, c) => sum + (c.contractAmountWithVat || c.totalValue || 0),
+        (sum, c) => sum + Number(c.contractAmountWithVat || c.totalValue || 0),
         0,
       );
       const paid = matchedContracts.reduce(
-        (sum, c) => sum + (c.paidAmount || 0),
+        (sum, c) => sum + Number(c.paidAmount || 0),
         0,
       );
 
@@ -1382,7 +1388,7 @@ export function ReportsView() {
         a.stages?.some((s: any) => s.status === "DELAYED"),
       ).length;
       const estimated = activities.reduce(
-        (sum, a) => sum + (a.estimatedBudget || 0),
+        (sum, a) => sum + Number(a.estimatedBudget || 0),
         0,
       );
 
@@ -1430,7 +1436,7 @@ export function ReportsView() {
           totalPlans: plans.length,
           totalActivities: allActs.length,
           totalBudgetETB: allActs.reduce(
-            (sum, a) => sum + (a.estimatedBudget || 0),
+            (sum, a) => sum + Number(a.estimatedBudget || 0),
             0,
           ),
           approvedCount: plans.filter((p) => p.status === "APPROVED").length,
@@ -1475,6 +1481,31 @@ export function ReportsView() {
 
   // ─── 14. Supplier Performance Rows ────────────────────────────────────────
   const supplierPerformanceRows = useMemo(() => {
+    let filteredContracts = backendContracts;
+
+    if (filters.supplier && filters.supplier !== "ALL") {
+      filteredContracts = filteredContracts.filter(
+        (c) =>
+          c.supplierId === filters.supplier ||
+          c.supplier?.id === filters.supplier ||
+          c.supplier?.name === filters.supplier,
+      );
+    }
+
+    if (filters.region && filters.region !== "ALL") {
+      filteredContracts = filteredContracts.filter((c) =>
+        (c.region || "Federal")
+          .toLowerCase()
+          .includes(filters.region.toLowerCase()),
+      );
+    }
+
+    if (filters.contractStatus && filters.contractStatus !== "ALL") {
+      filteredContracts = filteredContracts.filter(
+        (c) => c.status === filters.contractStatus,
+      );
+    }
+
     const suppMap = new Map<
       string,
       {
@@ -1489,10 +1520,23 @@ export function ReportsView() {
       }
     >();
 
-    backendContracts.forEach((c) => {
-      const name = c.supplier?.name || "Supplier / Contractor";
-      const tin = (c.supplier as any)?.tinNumber || "0012345678";
-      const curr = suppMap.get(name) || {
+    filteredContracts.forEach((c) => {
+      const supplierKey =
+        c.supplierId ||
+        c.supplier?.id ||
+        c.supplier?.name ||
+        c.contractNo ||
+        c.id;
+      const name =
+        c.supplier?.name ||
+        (c as any).supplierName ||
+        (c.contractNo ? `Supplier (${c.contractNo})` : "General Supplier");
+      const tin =
+        c.supplier?.tinNumber ||
+        (c.supplier as any)?.tinNumber ||
+        `TIN-${c.id.slice(0, 8).toUpperCase()}`;
+
+      const curr = suppMap.get(supplierKey) || {
         supplierName: name,
         tinNumber: tin,
         totalContracts: 0,
@@ -1506,9 +1550,12 @@ export function ReportsView() {
       curr.totalContracts += 1;
       if (c.status === "ACTIVE") curr.activeContracts += 1;
       else if (c.status === "COMPLETED") curr.completedOnTime += 1;
-      curr.totalAwardValue += c.contractAmountWithVat || c.totalValue || 0;
-      curr.totalPaidAmount += c.paidAmount || 0;
-      suppMap.set(name, curr);
+
+      const award = Number(c.contractAmountWithVat || c.totalValue || 0);
+      const paid = Number(c.paidAmount || 0);
+      curr.totalAwardValue += isNaN(award) ? 0 : award;
+      curr.totalPaidAmount += isNaN(paid) ? 0 : paid;
+      suppMap.set(supplierKey, curr);
     });
 
     return Array.from(suppMap.entries()).map(([id, data]) => {
@@ -1521,7 +1568,7 @@ export function ReportsView() {
         status: data.activeContracts > 0 ? "Active Supplier" : "Satisfactory",
       };
     });
-  }, [backendContracts]);
+  }, [backendContracts, filters.supplier, filters.region, filters.contractStatus]);
 
   // ─── Excel Export Handling ────────────────────────────────────────────────
   const handleExportExcel = async () => {
