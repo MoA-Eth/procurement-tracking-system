@@ -337,10 +337,15 @@ export function exportReportToExcel({
 
   const worksheet = XLSX.utils.json_to_sheet(dataForSheet);
 
-  // Auto-fit column widths
-  const colWidths = Object.keys(dataForSheet[0] || {}).map((key) => ({
-    wch: Math.max(key.length + 4, 14),
-  }));
+  // Auto-fit column widths based on maximum content length and header
+  const colWidths = Object.keys(dataForSheet[0] || {}).map((key) => {
+    const maxContentLen = dataForSheet.reduce((max, row) => {
+      const val = row[key];
+      const len = val != null ? String(val).length : 0;
+      return Math.max(max, len);
+    }, key.length);
+    return { wch: Math.min(Math.max(maxContentLen + 3, key.length + 4, 16), 55) };
+  });
   worksheet["!cols"] = colWidths;
 
   const workbook = XLSX.utils.book_new();

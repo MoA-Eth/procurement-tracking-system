@@ -1792,6 +1792,15 @@ export function ReportsView() {
         }
 
         const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const colWidths = Object.keys(dataToExport[0] || {}).map((key) => {
+          const maxContentLen = dataToExport.reduce((max, row: any) => {
+            const val = row[key];
+            const len = val != null ? String(val).length : 0;
+            return Math.max(max, len);
+          }, key.length);
+          return { wch: Math.min(Math.max(maxContentLen + 3, key.length + 4, 16), 55) };
+        });
+        ws["!cols"] = colWidths;
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, sheetTitle);
         XLSX.writeFile(wb, `${activeReport}_report.xlsx`);
