@@ -144,7 +144,8 @@ export function DirectorFinancialSummaryCard({
             <span className="h-2.5 w-2.5 rounded-xs bg-[#B7892B] inline-block shrink-0" />
             <span className="text-slate-700 font-semibold">Committed</span>
             <span className="text-slate-500">
-              ({formatMValue(financialSummary.committedPendingPayETB)}M ETB · Under Contract)
+              ({formatMValue(financialSummary.committedPendingPayETB)}M ETB ·
+              Under Contract)
             </span>
           </div>
           <div
@@ -154,7 +155,8 @@ export function DirectorFinancialSummaryCard({
             <span className="h-2.5 w-2.5 rounded-xs bg-[#CBD5E1] inline-block shrink-0" />
             <span className="text-slate-700 font-semibold">Uncommitted</span>
             <span className="text-slate-500">
-              ({formatMValue(financialSummary.uncontractedETB)}M ETB · Available Budget)
+              ({formatMValue(financialSummary.uncontractedETB)}M ETB · Available
+              Budget)
             </span>
           </div>
         </div>

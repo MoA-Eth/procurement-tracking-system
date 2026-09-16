@@ -282,7 +282,7 @@ export function exportToExcelCSV(
   const csvContent = [
     headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(","),
     ...rows.map((row) =>
-      row.map((val) => `"${String(val ?? '').replace(/"/g, '""')}"`).join(","),
+      row.map((val) => `"${String(val ?? "").replace(/"/g, '""')}"`).join(","),
     ),
   ].join("\r\n");
 

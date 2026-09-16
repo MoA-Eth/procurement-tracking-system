@@ -874,7 +874,7 @@ export function ReportsView() {
 
   // ─── 5. Monthly Procurement Rows ──────────────────────────────────────────
   const monthlyProcurementRows = useMemo(() => {
-    let rows: MonthlyProcurementRow[] = [];
+    const rows: MonthlyProcurementRow[] = [];
     if (backendPlans.length > 0) {
       for (const p of backendPlans) {
         if (filters.project !== "ALL") {
@@ -1056,7 +1056,7 @@ export function ReportsView() {
 
   // ─── 7. Quarterly Detailed Rows ───────────────────────────────────────────
   const quarterlyDetailedRows = useMemo(() => {
-    let rows: QuarterlyDetailedRow[] = [];
+    const rows: QuarterlyDetailedRow[] = [];
     let rowCount = 1;
 
     backendPlans.forEach((p) => {
@@ -1411,7 +1411,7 @@ export function ReportsView() {
 
   // Legacy Project Officer Summary Rows
   const projectOfficerRows = useMemo(() => {
-    let rows: ProjectOfficerSummaryRow[] = [];
+    const rows: ProjectOfficerSummaryRow[] = [];
     backendProjects.forEach((proj) => {
       const plans = backendPlans.filter(
         (p) => p.projectId === proj.id || p.project?.id === proj.id,

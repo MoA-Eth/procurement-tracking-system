@@ -18,10 +18,7 @@ export type ReportType =
   | "supplier-performance";
 
 export type ReportCategory =
-  | "planning"
-  | "periodic"
-  | "contracts"
-  | "organization";
+  "planning" | "periodic" | "contracts" | "organization";
 
 export interface ReportItem {
   id: ReportType;
@@ -92,14 +89,16 @@ export const REPORT_LIST: ReportItem[] = [
     label: "Annual Procurement Plan",
     priority: "P0",
     category: "planning",
-    description: "Annual planning view with packages, methods, currencies and targets.",
+    description:
+      "Annual planning view with packages, methods, currencies and targets.",
   },
   {
     id: "plan-vs-actual",
     label: "Plan vs Actual Progress",
     priority: "P0",
     category: "planning",
-    description: "Compares baseline dates, revised targets, and actual stage dates.",
+    description:
+      "Compares baseline dates, revised targets, and actual stage dates.",
   },
   {
     id: "procurement-step",
@@ -120,7 +119,8 @@ export const REPORT_LIST: ReportItem[] = [
     label: "Committee / Approval Progress",
     priority: "P0",
     category: "planning",
-    description: "Director review, 5-member committee endorsement votes, and Management decision.",
+    description:
+      "Director review, 5-member committee endorsement votes, and Management decision.",
   },
 
   // P0 & P1 - Periodic Management
@@ -129,21 +129,24 @@ export const REPORT_LIST: ReportItem[] = [
     label: "Monthly Procurement Report (Monthly Summary)",
     priority: "P0",
     category: "periodic",
-    description: "Monthly progress, completed stage achievements, delays and next activities.",
+    description:
+      "Monthly progress, completed stage achievements, delays and next activities.",
   },
   {
     id: "quarterly-summary",
     label: "Quarterly Procurement Summary",
     priority: "P0",
     category: "periodic",
-    description: "Management matrix grouped by Method → Category → Funding Type.",
+    description:
+      "Management matrix grouped by Method → Category → Funding Type.",
   },
   {
     id: "quarterly-detailed",
     label: "Quarterly Detailed Procurement",
     priority: "P1",
     category: "periodic",
-    description: "Granular procurement records: winner, award value, PO/PV, delivery status.",
+    description:
+      "Granular procurement records: winner, award value, PO/PV, delivery status.",
   },
 
   // P0 & P1 - Contracts & Finance
@@ -152,21 +155,24 @@ export const REPORT_LIST: ReportItem[] = [
     label: "Contract Register",
     priority: "P0",
     category: "contracts",
-    description: "Searchable register preserving original amounts, amendments, dates, paid and balance.",
+    description:
+      "Searchable register preserving original amounts, amendments, dates, paid and balance.",
   },
   {
     id: "contract-payment",
     label: "Contract & Payment Status",
     priority: "P0",
     category: "contracts",
-    description: "Payment progress breakdown: Advance, Interims, Final, Retentions, and % Paid.",
+    description:
+      "Payment progress breakdown: Advance, Interims, Final, Retentions, and % Paid.",
   },
   {
     id: "supplier-performance",
     label: "Supplier Performance",
     priority: "P1",
     category: "contracts",
-    description: "Supplier delivery timeliness, award totals, paid amounts, and outstanding balance.",
+    description:
+      "Supplier delivery timeliness, award totals, paid amounts, and outstanding balance.",
   },
 
   // P0 - Organizational & Workload
@@ -175,20 +181,23 @@ export const REPORT_LIST: ReportItem[] = [
     label: "Regional / Sector Summary",
     priority: "P0",
     category: "organization",
-    description: "Workload, completion rates, financial values and delays across regions or sectors.",
+    description:
+      "Workload, completion rates, financial values and delays across regions or sectors.",
   },
   {
     id: "project-summary",
     label: "Project Summary",
     priority: "P0",
     category: "organization",
-    description: "Consolidated project progress and financial position for Directorate view.",
+    description:
+      "Consolidated project progress and financial position for Directorate view.",
   },
   {
     id: "officer-summary",
     label: "Officer Summary (Project & Officer Summary)",
     priority: "P0",
     category: "organization",
-    description: "Assigned activities, active stages, delayed packages, and financial values per officer.",
+    description:
+      "Assigned activities, active stages, delayed packages, and financial values per officer.",
   },
 ];

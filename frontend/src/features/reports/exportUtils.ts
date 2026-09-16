@@ -332,7 +332,9 @@ export function exportReportToExcel({
   }
 
   if (dataForSheet.length === 0) {
-    dataForSheet = [{ Notice: "No matching records for selected filter criteria" }];
+    dataForSheet = [
+      { Notice: "No matching records for selected filter criteria" },
+    ];
   }
 
   const worksheet = XLSX.utils.json_to_sheet(dataForSheet);

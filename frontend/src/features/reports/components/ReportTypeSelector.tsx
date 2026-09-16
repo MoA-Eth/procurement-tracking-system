@@ -39,9 +39,12 @@ export function ReportTypeSelector({
         {REPORT_LIST.map((item) => {
           const isActive =
             activeReport === item.id ||
-            (activeReport === "monthly-summary" && item.id === "monthly-procurement") ||
-            (activeReport === "detailed-procurement" && item.id === "quarterly-detailed") ||
-            (activeReport === "project-officer" && item.id === "officer-summary");
+            (activeReport === "monthly-summary" &&
+              item.id === "monthly-procurement") ||
+            (activeReport === "detailed-procurement" &&
+              item.id === "quarterly-detailed") ||
+            (activeReport === "project-officer" &&
+              item.id === "officer-summary");
 
           return (
             <button

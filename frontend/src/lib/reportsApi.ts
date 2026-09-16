@@ -412,7 +412,8 @@ export function downloadQuarterlyDetailedReport(
     "quarterly_detailed_procurement.xlsx",
   );
 }
-export const downloadDetailedProcurementReport = downloadQuarterlyDetailedReport;
+export const downloadDetailedProcurementReport =
+  downloadQuarterlyDetailedReport;
 
 // 8. Contract Register (P0)
 export function downloadContractRegisterReport(

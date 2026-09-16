@@ -135,15 +135,24 @@ export function DirectorSpendCompositionChart({
 
       {/* Legend below donut */}
       <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-slate-600">
-        <div className="flex items-center gap-1.5" title="Actual cash paid out to contractors">
+        <div
+          className="flex items-center gap-1.5"
+          title="Actual cash paid out to contractors"
+        >
           <span className="h-2.5 w-2.5 rounded-xs bg-[#0A3C2F] inline-block shrink-0" />
           <span>Disbursed (Paid) {disbursedM}M</span>
         </div>
-        <div className="flex items-center gap-1.5" title="Signed contracts awaiting payment">
+        <div
+          className="flex items-center gap-1.5"
+          title="Signed contracts awaiting payment"
+        >
           <span className="h-2.5 w-2.5 rounded-xs bg-[#B7892B] inline-block shrink-0" />
           <span>Committed (Under Contract) {committedM}M</span>
         </div>
-        <div className="flex items-center gap-1.5" title="Remaining uncontracted budget">
+        <div
+          className="flex items-center gap-1.5"
+          title="Remaining uncontracted budget"
+        >
           <span className="h-2.5 w-2.5 rounded-xs bg-[#CBD5E1] inline-block shrink-0" />
           <span>Uncommitted (Available) {uncontractedM}M</span>
         </div>

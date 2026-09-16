@@ -174,7 +174,9 @@ export function ReportFiltersPanel({
                   </label>
                   <select
                     value={filters.planStatus}
-                    onChange={(e) => onUpdateFilter("planStatus", e.target.value)}
+                    onChange={(e) =>
+                      onUpdateFilter("planStatus", e.target.value)
+                    }
                     className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
                   >
                     <option value="ALL">All Statuses</option>
@@ -283,12 +285,16 @@ export function ReportFiltersPanel({
               </label>
               <select
                 value={filters.marketApproach}
-                onChange={(e) => onUpdateFilter("marketApproach", e.target.value)}
+                onChange={(e) =>
+                  onUpdateFilter("marketApproach", e.target.value)
+                }
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
                 <option value="ALL">All Approaches</option>
                 <option value="Open - National">Open - National</option>
-                <option value="Open - International">Open - International</option>
+                <option value="Open - International">
+                  Open - International
+                </option>
                 <option value="Limited">Limited</option>
                 <option value="Direct">Direct</option>
               </select>
@@ -388,7 +394,8 @@ export function ReportFiltersPanel({
         )}
 
         {/* 5. MONTHLY PROCUREMENT & MONTHLY SUMMARY */}
-        {(activeReport === "monthly-procurement" || activeReport === "monthly-summary") && (
+        {(activeReport === "monthly-procurement" ||
+          activeReport === "monthly-summary") && (
           <>
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1">
@@ -543,7 +550,8 @@ export function ReportFiltersPanel({
         )}
 
         {/* 7. QUARTERLY DETAILED & DETAILED PROCUREMENT */}
-        {(activeReport === "quarterly-detailed" || activeReport === "detailed-procurement") && (
+        {(activeReport === "quarterly-detailed" ||
+          activeReport === "detailed-procurement") && (
           <>
             <SearchableSelect
               label="Project"
@@ -616,7 +624,9 @@ export function ReportFiltersPanel({
               </label>
               <select
                 value={filters.contractStatus}
-                onChange={(e) => onUpdateFilter("contractStatus", e.target.value)}
+                onChange={(e) =>
+                  onUpdateFilter("contractStatus", e.target.value)
+                }
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
                 <option value="ALL">All Statuses</option>
@@ -680,7 +690,9 @@ export function ReportFiltersPanel({
               </label>
               <select
                 value={filters.contractStatus}
-                onChange={(e) => onUpdateFilter("contractStatus", e.target.value)}
+                onChange={(e) =>
+                  onUpdateFilter("contractStatus", e.target.value)
+                }
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
                 <option value="ALL">All Statuses</option>
@@ -805,7 +817,8 @@ export function ReportFiltersPanel({
         )}
 
         {/* 12. OFFICER SUMMARY & PROJECT OFFICER */}
-        {(activeReport === "officer-summary" || activeReport === "project-officer") && (
+        {(activeReport === "officer-summary" ||
+          activeReport === "project-officer") && (
           <>
             <SearchableSelect
               label="Project"
@@ -860,7 +873,9 @@ export function ReportFiltersPanel({
               </label>
               <select
                 value={filters.committeeResult}
-                onChange={(e) => onUpdateFilter("committeeResult", e.target.value)}
+                onChange={(e) =>
+                  onUpdateFilter("committeeResult", e.target.value)
+                }
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
                 <option value="ALL">All Results</option>
@@ -877,7 +892,9 @@ export function ReportFiltersPanel({
               </label>
               <select
                 value={filters.managementDecision}
-                onChange={(e) => onUpdateFilter("managementDecision", e.target.value)}
+                onChange={(e) =>
+                  onUpdateFilter("managementDecision", e.target.value)
+                }
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
                 <option value="ALL">All Decisions</option>
@@ -931,7 +948,9 @@ export function ReportFiltersPanel({
               </label>
               <select
                 value={filters.contractStatus}
-                onChange={(e) => onUpdateFilter("contractStatus", e.target.value)}
+                onChange={(e) =>
+                  onUpdateFilter("contractStatus", e.target.value)
+                }
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
                 <option value="ALL">All Statuses</option>
