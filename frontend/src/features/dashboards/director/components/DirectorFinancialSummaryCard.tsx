@@ -127,45 +127,54 @@ export function DirectorFinancialSummaryCard({
         <span className="sr-only">Portfolio Spend Composition</span>
         {/* Legend Row */}
         <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-2.5 text-xs">
-          <div className="flex items-center gap-1.5">
+          <div
+            className="flex items-center gap-1.5"
+            title="Actual cash paid out to contractors/suppliers against verified deliverables"
+          >
             <span className="h-2.5 w-2.5 rounded-xs bg-[#0A3C2F] inline-block shrink-0" />
-            <span className="text-slate-600 font-medium">
-              Disbursed ({formatMValue(financialSummary.actualDisbursedETB)}M
-              ETB)
+            <span className="text-slate-700 font-semibold">Disbursed</span>
+            <span className="text-slate-500">
+              ({formatMValue(financialSummary.actualDisbursedETB)}M ETB · Paid)
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-xs bg-[#144233] inline-block shrink-0" />
-            <span className="text-slate-600 font-medium">
-              Committed ({formatMValue(financialSummary.committedPendingPayETB)}
-              M ETB)
+          <div
+            className="flex items-center gap-1.5"
+            title="Signed contract obligations awaiting milestone completion and payment"
+          >
+            <span className="h-2.5 w-2.5 rounded-xs bg-[#B7892B] inline-block shrink-0" />
+            <span className="text-slate-700 font-semibold">Committed</span>
+            <span className="text-slate-500">
+              ({formatMValue(financialSummary.committedPendingPayETB)}M ETB · Under Contract)
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-xs bg-[#D5E5DC] inline-block shrink-0" />
-            <span className="text-slate-600 font-medium">
-              Uncommitted ({formatMValue(financialSummary.uncontractedETB)}M
-              ETB)
+          <div
+            className="flex items-center gap-1.5"
+            title="Allocated annual budget not yet awarded or contracted"
+          >
+            <span className="h-2.5 w-2.5 rounded-xs bg-[#CBD5E1] inline-block shrink-0" />
+            <span className="text-slate-700 font-semibold">Uncommitted</span>
+            <span className="text-slate-500">
+              ({formatMValue(financialSummary.uncontractedETB)}M ETB · Available Budget)
             </span>
           </div>
         </div>
 
         {/* Multi-segment Progress Bar */}
-        <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+        <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner border border-slate-200/60">
           <div
             style={{ width: `${spendPercentages.disbursed}%` }}
-            className="bg-[#0A3C2F] h-full transition-all duration-500"
-            title={`Disbursed: ${spendPercentages.disbursed}%`}
+            className="bg-[#0A3C2F] h-full transition-all duration-500 border-r border-white/60 last:border-r-0"
+            title={`Disbursed (Paid): ${spendPercentages.disbursed}% (${formatMValue(financialSummary.actualDisbursedETB)}M ETB)`}
           />
           <div
             style={{ width: `${spendPercentages.committedPending}%` }}
-            className="bg-[#144233] h-full transition-all duration-500"
-            title={`Committed pending pay: ${spendPercentages.committedPending}%`}
+            className="bg-[#B7892B] h-full transition-all duration-500 border-r border-white/60 last:border-r-0"
+            title={`Committed (Under Contract): ${spendPercentages.committedPending}% (${formatMValue(financialSummary.committedPendingPayETB)}M ETB)`}
           />
           <div
             style={{ width: `${spendPercentages.uncontracted}%` }}
-            className="bg-[#D5E5DC] h-full transition-all duration-500"
-            title={`Uncontracted: ${spendPercentages.uncontracted}%`}
+            className="bg-[#CBD5E1] h-full transition-all duration-500"
+            title={`Uncommitted (Available): ${spendPercentages.uncontracted}% (${formatMValue(financialSummary.uncontractedETB)}M ETB)`}
           />
         </div>
       </div>
