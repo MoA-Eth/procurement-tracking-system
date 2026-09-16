@@ -68,13 +68,9 @@ registry.registerPath({
         .string()
         .optional()
         .openapi({ description: 'Search by contract number or sector' }),
-      status: z
-        .string()
-        .optional()
-        .openapi({
-          description:
-            'Filter by status (ACTIVE, COMPLETED, CANCELLED, PENDING)',
-        }),
+      status: z.string().optional().openapi({
+        description: 'Filter by status (ACTIVE, COMPLETED, CANCELLED, PENDING)',
+      }),
     }),
   },
   responses: {
@@ -170,5 +166,46 @@ registry.registerPath({
   responses: {
     200: { description: 'Payment recorded successfully' },
     400: { description: 'Validation error' },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/contracts/template',
+  summary: 'Export empty contracts spreadsheet template',
+  tags: ['Contracts'],
+  security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+  responses: {
+    200: {
+      description: 'Excel template download',
+      content: {
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+          schema: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/contracts/import',
+  summary: 'Import contracts spreadsheet and update/insert records',
+  tags: ['Contracts'],
+  security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: z.object({
+            file: z.string().openapi({ type: 'string', format: 'binary' }),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: { description: 'Success response with import counts' },
+    400: { description: 'Import parsing or validation error' },
   },
 });

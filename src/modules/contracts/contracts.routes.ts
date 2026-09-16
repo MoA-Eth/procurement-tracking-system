@@ -68,32 +68,10 @@ router.post(
   (req, res) => contractsController.recordPayment(req, res),
 );
 
-/**
- * @openapi
- * /api/contracts/template:
- *   get:
- *     summary: Export empty contracts spreadsheet template
- *     tags: [Contracts]
- *     responses:
- *       200:
- *         description: Excel template download
- */
 router.get('/template', (req, res) =>
   excelController.exportContractsTemplate(req, res),
 );
 
-/**
- * @openapi
- * /api/contracts/import:
- *   post:
- *     summary: Import contracts spreadsheet and update/insert records
- *     tags: [Contracts]
- *     responses:
- *       200:
- *         description: Success response with import counts
- *       400:
- *         description: Import parsing or validation error
- */
 router.post(
   '/import',
   authorize(
