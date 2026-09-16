@@ -722,8 +722,7 @@ export function ReportsView() {
                 : currentStage?.status === "DELAYED"
                   ? "Delayed"
                   : "In Progress",
-            delayDays:
-              currentStage?.status === "DELAYED" ? "14" : "0",
+            delayDays: currentStage?.status === "DELAYED" ? "14" : "0",
           });
         }
       }
@@ -813,8 +812,7 @@ export function ReportsView() {
                   s.stageType?.label || (s as any).name || "Overdue Stage",
                 effectiveTargetDate: target,
                 delayDays,
-                fundingSource:
-                  a.fundings?.[0]?.fundingSource || "AfDB",
+                fundingSource: a.fundings?.[0]?.fundingSource || "AfDB",
                 status: "Delayed",
                 remarks:
                   latestRev?.reason ||
@@ -913,9 +911,7 @@ export function ReportsView() {
             project: p.project?.code || p.project?.name || "MoA",
             category: a.category || (p as any).category || "Goods",
             method:
-              a.procurementMethod?.label ||
-              a.procurementMethod?.code ||
-              "RFB",
+              a.procurementMethod?.label || a.procurementMethod?.code || "RFB",
             officer:
               p.creator?.displayName || p.creator?.name || "Assigned Officer",
             status:
@@ -1062,8 +1058,7 @@ export function ReportsView() {
     backendPlans.forEach((p) => {
       p.activities?.forEach((a) => {
         const matchedContract = backendContracts.find(
-          (c) =>
-            c.activityId === a.id || c.activity?.reference === a.reference,
+          (c) => c.activityId === a.id || c.activity?.reference === a.reference,
         );
 
         rows.push({
@@ -1082,8 +1077,7 @@ export function ReportsView() {
           ),
           currency: a.currency || "ETB",
           budgetType: (matchedContract as any)?.budgetType || "Capital",
-          fundingSource:
-            a.fundings?.[0]?.fundingSource || "AfDB",
+          fundingSource: a.fundings?.[0]?.fundingSource || "AfDB",
           poPvNumber: (matchedContract as any)?.purchaseOrderNo || "PO-001",
           receiptStatus:
             matchedContract?.status === "COMPLETED"
@@ -1091,8 +1085,7 @@ export function ReportsView() {
               : matchedContract?.status === "ACTIVE"
                 ? "In Progress"
                 : "Pending",
-          completionDate:
-            matchedContract?.plannedEndDate || "2026-07-07",
+          completionDate: matchedContract?.plannedEndDate || "2026-07-07",
           project: p.project?.code || p.project?.name || "MoA",
           region: p.organization || "Federal",
           officer:
@@ -1132,7 +1125,8 @@ export function ReportsView() {
         id: c.id,
         contractNo: c.contractNo || "CON-001",
         refNo: c.activity?.reference || "—",
-        description: c.activity?.description || c.remarks || "Procurement Contract",
+        description:
+          c.activity?.description || c.remarks || "Procurement Contract",
         project: matchingPlan?.project?.code || "MoA",
         supplierName: c.supplier?.name || "Supplier / Contractor",
         region: c.region || "Federal / FPCU",
@@ -1148,10 +1142,10 @@ export function ReportsView() {
         currentAmount: curr,
         finalAmount: curr,
         awardDate: c.awardDate ? String(c.awardDate).slice(0, 10) : "—",
-        signatureDate: c.signatureDate ? String(c.signatureDate).slice(0, 10) : "—",
-        startDate: c.startDate
-          ? String(c.startDate).slice(0, 10)
+        signatureDate: c.signatureDate
+          ? String(c.signatureDate).slice(0, 10)
           : "—",
+        startDate: c.startDate ? String(c.startDate).slice(0, 10) : "—",
         plannedCompletionDate: c.plannedEndDate
           ? String(c.plannedEndDate).slice(0, 10)
           : "—",
@@ -1374,8 +1368,7 @@ export function ReportsView() {
   const officerSummaryRows = useMemo(() => {
     return officers.map((off) => {
       const plans = backendPlans.filter(
-        (p) =>
-          p.creator?.id === off.id || (p as any).creatorId === off.id,
+        (p) => p.creator?.id === off.id || (p as any).creatorId === off.id,
       );
       const activities = plans.flatMap((p) => p.activities || []);
       const completed = activities.filter(
@@ -1459,7 +1452,9 @@ export function ReportsView() {
         project: p.project?.code || p.project?.name || "MoA",
         officer:
           p.creator?.displayName || p.creator?.name || "Assigned Officer",
-        submittedDate: p.updatedAt ? String(p.updatedAt).slice(0, 10) : "2026-08-01",
+        submittedDate: p.updatedAt
+          ? String(p.updatedAt).slice(0, 10)
+          : "2026-08-01",
         directorDecision: isApproved
           ? "FORWARDED_TO_COMMITTEE"
           : p.status === "SUBMITTED"
@@ -1568,7 +1563,12 @@ export function ReportsView() {
         status: data.activeContracts > 0 ? "Active Supplier" : "Satisfactory",
       };
     });
-  }, [backendContracts, filters.supplier, filters.region, filters.contractStatus]);
+  }, [
+    backendContracts,
+    filters.supplier,
+    filters.region,
+    filters.contractStatus,
+  ]);
 
   // ─── Excel Export Handling ────────────────────────────────────────────────
   const handleExportExcel = async () => {
@@ -1644,7 +1644,9 @@ export function ReportsView() {
           await downloadQuarterlySummaryReport({
             budgetYear: filters.efy !== "ALL" ? filters.efy : undefined,
             quarter:
-              filters.quarter !== "ALL" ? parseInt(filters.quarter, 10) : undefined,
+              filters.quarter !== "ALL"
+                ? parseInt(filters.quarter, 10)
+                : undefined,
           });
           break;
 
