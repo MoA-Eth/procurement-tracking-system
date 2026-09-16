@@ -106,7 +106,13 @@ export function DualCalendarInput({
         {label} {required && <span className="text-red-600 font-bold">*</span>}
       </label>
 
-      <div className="flex items-end gap-2 border border-slate-300 bg-[#f0f3ff] p-3 rounded-xl">
+      <div
+        className={`flex items-end gap-2 border p-3 rounded-xl transition-colors ${
+          errorMessage
+            ? "border-red-400 bg-red-50/40"
+            : "border-slate-300 bg-[#f0f3ff]"
+        }`}
+      >
         {/* Gregorian Side */}
         <div className="min-w-0 flex-1">
           <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -117,7 +123,12 @@ export function DualCalendarInput({
             type="date"
             value={gregorianValue}
             onChange={(e) => handleGregorianChange(e.target.value)}
-            className="h-9 w-full rounded-lg border border-slate-400 bg-white px-2.5 text-xs text-slate-900 font-semibold outline-none focus:border-[#176c55]"
+            aria-invalid={Boolean(errorMessage)}
+            className={`h-9 w-full rounded-lg border bg-white px-2.5 text-xs text-slate-900 font-semibold outline-none transition-colors ${
+              errorMessage
+                ? "border-red-400 focus:border-red-600"
+                : "border-slate-400 focus:border-[#176c55]"
+            }`}
           />
         </div>
 

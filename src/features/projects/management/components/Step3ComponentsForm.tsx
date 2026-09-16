@@ -84,6 +84,15 @@ export function Step3ComponentsForm({
     onChange({ componentsList: updated });
   }
 
+  const isDateInvalid = Boolean(
+    data.startDate &&
+      data.endDate &&
+      new Date(data.endDate) <= new Date(data.startDate),
+  );
+  const dateErrorMessage = isDateInvalid
+    ? "Project End Date must be after the Project Start Date."
+    : undefined;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -227,6 +236,7 @@ export function Step3ComponentsForm({
               : ""
           }
           onChange={(greg) => onChange({ endDate: greg })}
+          errorMessage={dateErrorMessage}
         />
       </div>
     </div>
