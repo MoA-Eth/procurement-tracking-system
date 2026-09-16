@@ -55,15 +55,6 @@ export function ReportTypeSelector({
               }`}
             >
               <span>{item.label}</span>
-              <span
-                className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase ${
-                  item.priority === "P0"
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-blue-100 text-blue-800"
-                }`}
-              >
-                {item.priority}
-              </span>
             </button>
           );
         })}

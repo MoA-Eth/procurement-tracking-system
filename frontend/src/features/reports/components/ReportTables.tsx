@@ -140,17 +140,6 @@ export function ReportTables({
             <h4 className="text-sm font-bold text-slate-900">
               {currentReportTitle} Output
             </h4>
-            {currentReport?.priority && (
-              <span
-                className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase ${
-                  currentReport.priority === "P0"
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-blue-100 text-blue-800"
-                }`}
-              >
-                {currentReport.priority}
-              </span>
-            )}
           </div>
           <p className="text-[11px] text-slate-500 mt-0.5">
             {currentReport?.description}
