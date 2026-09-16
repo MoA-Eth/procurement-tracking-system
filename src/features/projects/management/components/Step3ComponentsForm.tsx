@@ -86,8 +86,8 @@ export function Step3ComponentsForm({
 
   const isDateInvalid = Boolean(
     data.startDate &&
-      data.endDate &&
-      new Date(data.endDate) <= new Date(data.startDate),
+    data.endDate &&
+    new Date(data.endDate) <= new Date(data.startDate),
   );
   const dateErrorMessage = isDateInvalid
     ? "Project End Date must be after the Project Start Date."
