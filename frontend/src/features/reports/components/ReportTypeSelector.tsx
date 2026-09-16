@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { FileSpreadsheet, Layers } from "lucide-react";
-import { REPORT_LIST, type ReportType, type ReportCategory } from "../types";
+import { FileSpreadsheet } from "lucide-react";
+import { REPORT_LIST, type ReportType } from "../types";
 
 export interface ReportTypeSelectorProps {
   activeReport: ReportType;
@@ -11,49 +10,18 @@ export interface ReportTypeSelectorProps {
   isExporting: boolean;
 }
 
-const CATEGORY_TABS: { id: ReportCategory | "all"; label: string }[] = [
-  { id: "all", label: "All Reports (14)" },
-  { id: "planning", label: "Planning & Roadmaps (5)" },
-  { id: "periodic", label: "Periodic (3)" },
-  { id: "contracts", label: "Contracts & Finance (3)" },
-  { id: "organization", label: "Organizational (3)" },
-];
-
 export function ReportTypeSelector({
   activeReport,
   onSelectReport,
   onExport,
   isExporting,
 }: ReportTypeSelectorProps) {
-  const [selectedCat, setSelectedCat] = useState<ReportCategory | "all">("all");
-
-  const filteredReports =
-    selectedCat === "all"
-      ? REPORT_LIST
-      : REPORT_LIST.filter((r) => r.category === selectedCat);
-
   return (
     <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2.5">
-      {/* Top Bar: Title + Category filters on left, Export button on right */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mr-2">
-            <Layers className="w-3.5 h-3.5 text-slate-400" />
-            <span>Category:</span>
-          </div>
-          {CATEGORY_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setSelectedCat(tab.id)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                selectedCat === tab.id
-                  ? "bg-[#0A3C2F] text-white shadow-2xs"
-                  : "bg-slate-100/70 text-slate-600 hover:bg-slate-200/60"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      {/* Top Bar: Title on left + Export to Excel button on right */}
+      <div className="flex items-center justify-between gap-3 px-1">
+        <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+          Select Report Type
         </div>
 
         <button
@@ -68,7 +36,7 @@ export function ReportTypeSelector({
 
       {/* Horizontally Scrollable Report Type Pills with P0/P1 Badges */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scroll-smooth">
-        {filteredReports.map((item) => {
+        {REPORT_LIST.map((item) => {
           const isActive =
             activeReport === item.id ||
             (activeReport === "monthly-summary" && item.id === "monthly-procurement") ||
