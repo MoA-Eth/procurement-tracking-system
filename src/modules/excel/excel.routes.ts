@@ -12,10 +12,10 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (ext === '.xlsx' || ext === '.xls') {
+    if (ext === '.xlsx' || ext === '.xls' || ext === '.csv') {
       return cb(null, true);
     }
-    cb(new Error('Only Excel files (.xlsx, .xls) are allowed'));
+    cb(new Error('Only Excel (.xlsx, .xls) and CSV (.csv) files are allowed'));
   },
 });
 

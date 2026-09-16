@@ -15,6 +15,69 @@ export class ExcelService {
   /**
    * Helper to style headers in template workbooks.
    */
+  /**
+   * Helper to normalize a header string for flexible comparison.
+   * Strips "(Required)", "(Dropdown)", punctuation, and spaces, lowercased.
+   */
+  normalizeHeader(str: unknown): string {
+    return String(str || '')
+      .toLowerCase()
+      .replace(/\(.*?\)/g, '')
+      .replace(/[^a-z0-9]/g, '');
+  }
+
+  /**
+   * Validates that the sheet's Row 1 contains the required template headers.
+   * Throws an error if required headers are missing.
+   */
+  validateTemplateHeaders(
+    sheet: ExcelJS.Worksheet,
+    requiredHeaders: string[],
+    entityName: string,
+  ): { valid: boolean; missing: string[]; found: string[] } {
+    const headerRow = sheet.getRow(1);
+    const foundHeaders: string[] = [];
+
+    headerRow.eachCell({ includeEmpty: false }, (cell) => {
+      const val = this.getCellString(cell);
+      if (val) foundHeaders.push(val);
+    });
+
+    if (foundHeaders.length === 0) {
+      throw new Error(
+        `Invalid ${entityName} spreadsheet: The file is empty or missing a header row.`,
+      );
+    }
+
+    const normalizedFound = foundHeaders.map((h) => this.normalizeHeader(h));
+    const missing: string[] = [];
+
+    for (const req of requiredHeaders) {
+      const normReq = this.normalizeHeader(req);
+      const exists = normalizedFound.some(
+        (found) =>
+          found === normReq ||
+          found.includes(normReq) ||
+          normReq.includes(found),
+      );
+      if (!exists) {
+        missing.push(req);
+      }
+    }
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Invalid template structure for ${entityName}. The uploaded file does not follow the template structure. Missing required columns: [${missing.join(
+          ', ',
+        )}]. Found columns: [${foundHeaders.join(
+          ', ',
+        )}]. Please download and use the official ${entityName} template.`,
+      );
+    }
+
+    return { valid: true, missing: [], found: foundHeaders };
+  }
+
   private styleHeaderRow(sheet: ExcelJS.Worksheet, headers: string[]) {
     sheet.columns = headers.map((header) => ({
       header,
@@ -286,36 +349,68 @@ export class ExcelService {
     filePath: string,
   ): Promise<{ created: number; updated: number }> {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(filePath);
+    if (filePath.toLowerCase().endsWith('.csv')) {
+      await workbook.csv.readFile(filePath);
+    } else {
+      await workbook.xlsx.readFile(filePath);
+    }
     const sheet = workbook.worksheets[0];
     if (!sheet) throw new Error('Uploaded file contains no worksheets.');
+
+    this.validateTemplateHeaders(
+      sheet,
+      [
+        'Plan ID',
+        'Reference',
+        'Description',
+        'Category',
+        'Method ID',
+        'Estimated Budget',
+      ],
+      'Procurement Activities',
+    );
 
     let created = 0;
     let updated = 0;
 
-    const rowPromises: Promise<void>[] = [];
+    const rowsToProcess: { row: ExcelJS.Row; rowNumber: number }[] = [];
 
     sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       if (rowNumber === 1) return; // skip header
+      rowsToProcess.push({ row, rowNumber });
+    });
 
+    if (rowsToProcess.length === 0) {
+      throw new Error('Uploaded activities spreadsheet contains no data rows.');
+    }
+
+    const rowPromises: Promise<void>[] = [];
+
+    for (const { row, rowNumber } of rowsToProcess) {
       const planId = row.getCell(1).value?.toString().trim();
       const reference = row.getCell(2).value?.toString().trim();
       const description = row.getCell(3).value?.toString().trim();
+      const _category = row.getCell(4).value?.toString().trim();
+      void _category;
       const methodCode = row.getCell(5).value?.toString().trim();
       const rawBudget = row.getCell(6).value;
       const currency = row.getCell(7).value?.toString().trim();
       const marketApproach = row.getCell(8).value?.toString().trim();
       const reviewType = row.getCell(9).value?.toString().trim();
 
-      if (!planId || !reference) return;
+      if (!planId) {
+        throw new Error(`Plan ID is required at row ${rowNumber}.`);
+      }
+      if (!reference) {
+        throw new Error(`Activity Reference is required at row ${rowNumber}.`);
+      }
+      if (!methodCode) {
+        throw new Error(
+          `Procurement method code is required at row ${rowNumber}.`,
+        );
+      }
 
       const p = (async () => {
-        if (!methodCode) {
-          throw new Error(
-            `Procurement method code is required at row ${rowNumber}.`,
-          );
-        }
-
         // Resolve procurement method
         const method = await prisma.lookupValue.findUnique({
           where: {
@@ -325,19 +420,26 @@ export class ExcelService {
             },
           },
         });
-        if (!method)
+        if (!method) {
           throw new Error(
             `Procurement method code '${methodCode}' not found at row ${rowNumber}.`,
           );
+        }
 
         // Check plan exists
         const plan = await prisma.plan.findUnique({
           where: { id: planId },
         });
-        if (!plan)
+        if (!plan) {
           throw new Error(`Plan ID '${planId}' not found at row ${rowNumber}.`);
+        }
 
         const estimatedBudget = Number(rawBudget) || 0;
+        if (estimatedBudget < 0) {
+          throw new Error(
+            `Estimated budget cannot be negative at row ${rowNumber}.`,
+          );
+        }
 
         const existing = await prisma.activity.findUnique({
           where: { reference },
@@ -368,7 +470,6 @@ export class ExcelService {
               currency: currency ?? null,
               marketApproach: marketApproach ?? null,
               reviewType: reviewType ?? null,
-              status: 'PLANNED',
             },
           });
           created++;
@@ -376,7 +477,7 @@ export class ExcelService {
       })();
 
       rowPromises.push(p);
-    });
+    }
 
     await Promise.all(rowPromises);
     return { created, updated };
@@ -444,11 +545,29 @@ export class ExcelService {
     filePath: string,
     officerId?: string,
     userRole?: string,
-  ): Promise<{ created: number; updated: number }> {
+  ): Promise<{ created: number; updated: number; errors?: string[] }> {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(filePath);
+    if (filePath.toLowerCase().endsWith('.csv')) {
+      await workbook.csv.readFile(filePath);
+    } else {
+      await workbook.xlsx.readFile(filePath);
+    }
     const sheet = workbook.worksheets[0];
     if (!sheet) throw new Error('Uploaded file contains no worksheets.');
+
+    this.validateTemplateHeaders(
+      sheet,
+      [
+        'Project',
+        'Activity',
+        'Supplier',
+        'Contract Number',
+        'Original Contract Amount',
+        'Final Contract Amount',
+        'Contract Status',
+      ],
+      'Contracts',
+    );
 
     let created = 0;
     let updated = 0;
@@ -460,6 +579,12 @@ export class ExcelService {
       rowsToProcess.push({ row, rowNumber });
     });
 
+    if (rowsToProcess.length === 0) {
+      throw new Error('Uploaded contracts spreadsheet contains no data rows.');
+    }
+
+    const rowErrors: string[] = [];
+
     for (const { row, rowNumber } of rowsToProcess) {
       const projectNameOrCode = this.getCellString(row.getCell(1));
       const activityRef = this.getCellString(row.getCell(2));
@@ -467,7 +592,14 @@ export class ExcelService {
       const region = this.getCellString(row.getCell(4));
       const contractNo = this.getCellString(row.getCell(5));
 
-      if (!contractNo || !supplierName) {
+      if (!contractNo) {
+        rowErrors.push(`Row ${rowNumber}: Contract Number is required.`);
+        continue;
+      }
+      if (!supplierName) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): Supplier is required.`,
+        );
         continue;
       }
 
@@ -479,6 +611,55 @@ export class ExcelService {
       const rawValue = this.getCellNumber(row.getCell(10));
       const rawFinalAmount = this.getCellNumber(row.getCell(12));
 
+      if (rawValue < 0) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): Original Contract Amount cannot be negative.`,
+        );
+        continue;
+      }
+      if (rawFinalAmount < 0) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): Final Contract Amount cannot be negative.`,
+        );
+        continue;
+      }
+
+      const awardDate = this.parseCellDate(awardDateVal);
+      const signatureDate = this.parseCellDate(signatureDateVal);
+      const startDate = this.parseCellDate(startDateVal);
+      const plannedEndDate = this.parseCellDate(plannedEndDateVal);
+
+      if (awardDateVal && !awardDate) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): Invalid Contract Award Date format.`,
+        );
+        continue;
+      }
+      if (signatureDateVal && !signatureDate) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): Invalid Contract Signature Date format.`,
+        );
+        continue;
+      }
+      if (startDateVal && !startDate) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): Invalid Start Date format.`,
+        );
+        continue;
+      }
+      if (plannedEndDateVal && !plannedEndDate) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): Invalid End Date format.`,
+        );
+        continue;
+      }
+      if (startDate && plannedEndDate && plannedEndDate < startDate) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): End Date cannot be before Start Date.`,
+        );
+        continue;
+      }
+
       const rawStatus = this.getCellString(row.getCell(15)).toUpperCase();
       const validStatuses: ContractStatus[] = [
         'DRAFT',
@@ -489,6 +670,12 @@ export class ExcelService {
         'PARTIALLY_TERMINATED',
         'CANCELLED',
       ];
+      if (rawStatus && !validStatuses.includes(rawStatus as ContractStatus)) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): Invalid Contract Status '${rawStatus}'. Allowed: ${validStatuses.join(', ')}.`,
+        );
+        continue;
+      }
       const status: ContractStatus = validStatuses.includes(
         rawStatus as ContractStatus,
       )
@@ -502,6 +689,30 @@ export class ExcelService {
       const finalVal = row.getCell(19).value;
       const retentionPaymentVal = row.getCell(20).value;
       const retentionWithholdingVal = row.getCell(21).value;
+
+      const paymentsToCheck = [
+        advanceVal,
+        interim1Val,
+        interim2Val,
+        finalVal,
+        retentionPaymentVal,
+        retentionWithholdingVal,
+      ];
+      let hasNegativePayment = false;
+      for (const pVal of paymentsToCheck) {
+        if (pVal !== null && pVal !== undefined && pVal !== '') {
+          if (this.getCellNumber({ value: pVal }) < 0) {
+            hasNegativePayment = true;
+            break;
+          }
+        }
+      }
+      if (hasNegativePayment) {
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): Payment amounts cannot be negative.`,
+        );
+        continue;
+      }
 
       try {
         // Resolve Activity (with Officer scoping support)
@@ -638,11 +849,6 @@ export class ExcelService {
 
         const contractAmountWithVat = finalValue;
 
-        const awardDate = this.parseCellDate(awardDateVal);
-        const signatureDate = this.parseCellDate(signatureDateVal);
-        const startDate = this.parseCellDate(startDateVal);
-        const plannedEndDate = this.parseCellDate(plannedEndDateVal);
-
         const data = {
           activityId: activityId ?? null,
           supplierId: supplier.id,
@@ -740,35 +946,78 @@ export class ExcelService {
           `Error importing row ${rowNumber} (Contract: ${contractNo}):`,
           rowErr,
         );
+        rowErrors.push(
+          `Row ${rowNumber} (Contract: ${contractNo}): ${rowErr instanceof Error ? rowErr.message : String(rowErr)}`,
+        );
       }
     }
 
-    return { created, updated };
+    if (created === 0 && updated === 0 && rowErrors.length > 0) {
+      throw new Error(
+        `Contract import failed data validation:\n${rowErrors.slice(0, 5).join('\n')}${rowErrors.length > 5 ? `\n...and ${rowErrors.length - 5} more errors` : ''}`,
+      );
+    }
+
+    return {
+      created,
+      updated,
+      ...(rowErrors.length > 0 ? { errors: rowErrors } : {}),
+    };
   }
 
   async importSuppliers(
     filePath: string,
   ): Promise<{ created: number; updated: number }> {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(filePath);
+    if (filePath.toLowerCase().endsWith('.csv')) {
+      await workbook.csv.readFile(filePath);
+    } else {
+      await workbook.xlsx.readFile(filePath);
+    }
     const sheet = workbook.worksheets[0];
     if (!sheet) throw new Error('Uploaded file contains no worksheets.');
+
+    this.validateTemplateHeaders(
+      sheet,
+      ['Supplier Name', 'TIN Number', 'Status'],
+      'Suppliers',
+    );
 
     let created = 0;
     let updated = 0;
 
-    const rowPromises: Promise<void>[] = [];
+    const rowsToProcess: { row: ExcelJS.Row; rowNumber: number }[] = [];
 
     sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       if (rowNumber === 1) return; // skip header
+      rowsToProcess.push({ row, rowNumber });
+    });
 
+    if (rowsToProcess.length === 0) {
+      throw new Error('Uploaded suppliers spreadsheet contains no data rows.');
+    }
+
+    const rowPromises: Promise<void>[] = [];
+
+    for (const { row, rowNumber } of rowsToProcess) {
       const name = row.getCell(1).value?.toString().trim();
       const tinNumber = row.getCell(2).value?.toString().trim();
       const email = row.getCell(3).value?.toString().trim();
       const phone = row.getCell(4).value?.toString().trim();
-      const status = row.getCell(5).value?.toString().trim();
+      const rawStatus = row.getCell(5).value?.toString().trim().toUpperCase();
 
-      if (!name || !tinNumber) return;
+      if (!name) {
+        throw new Error(`Supplier Name is required at row ${rowNumber}.`);
+      }
+      if (!tinNumber) {
+        throw new Error(`TIN Number is required at row ${rowNumber}.`);
+      }
+
+      if (rawStatus && !['ACTIVE', 'INACTIVE'].includes(rawStatus)) {
+        throw new Error(
+          `Invalid Supplier Status '${rawStatus}' at row ${rowNumber}. Must be ACTIVE or INACTIVE.`,
+        );
+      }
 
       const p = (async () => {
         const existing = await prisma.supplier.findFirst({
@@ -780,7 +1029,7 @@ export class ExcelService {
           tinNumber,
           email: email ?? null,
           phone: phone ?? null,
-          status: status || 'ACTIVE',
+          status: rawStatus || 'ACTIVE',
         };
 
         if (existing) {
@@ -798,7 +1047,7 @@ export class ExcelService {
       })();
 
       rowPromises.push(p);
-    });
+    }
 
     await Promise.all(rowPromises);
     return { created, updated };
@@ -895,28 +1144,29 @@ export class ExcelService {
 
     const fundingSources = await prisma.lookupValue.findMany({
       where: { type: 'FUNDING_SOURCE', isActive: true },
-      select: { code: true },
+      select: { code: true, label: true },
     });
-    const fsCodes = fundingSources.map((f) => f.code);
+    const fsDropdowns = fundingSources.map((f) => f.label);
 
     const sectors = await prisma.lookupValue.findMany({
       where: { type: 'SECTOR', isActive: true },
-      select: { code: true },
+      select: { code: true, label: true },
     });
-    const sectorCodes = sectors.map((s) => s.code);
+    const sectorDropdowns = sectors.map((s) => s.label);
 
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);
 
-      if (fsCodes.length > 0) {
-        this.applyListValidation(row.getCell(7), fsCodes);
+      if (fsDropdowns.length > 0) {
+        this.applyListValidation(row.getCell(7), fsDropdowns);
       }
 
-      if (sectorCodes.length > 0) {
-        this.applyListValidation(row.getCell(9), sectorCodes);
+      if (sectorDropdowns.length > 0) {
+        this.applyListValidation(row.getCell(9), sectorDropdowns);
       }
 
       this.applyListValidation(row.getCell(10), [
+        'Draft',
         'ACTIVE',
         'CLOSED',
         'SUSPENDED',
@@ -991,18 +1241,52 @@ export class ExcelService {
     filePath: string,
   ): Promise<{ created: number; updated: number }> {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(filePath);
+    if (filePath.toLowerCase().endsWith('.csv')) {
+      await workbook.csv.readFile(filePath);
+    } else {
+      await workbook.xlsx.readFile(filePath);
+    }
     const sheet = workbook.worksheets[0];
     if (!sheet) throw new Error('Uploaded file contains no worksheets.');
+
+    this.validateTemplateHeaders(
+      sheet,
+      [
+        'Project Code',
+        'Project Name',
+        'Funding Source ID',
+        'Sector ID',
+        'Status',
+      ],
+      'Projects',
+    );
 
     let created = 0;
     let updated = 0;
 
-    const rowPromises: Promise<void>[] = [];
+    const rowsToProcess: { row: ExcelJS.Row; rowNumber: number }[] = [];
 
     sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       if (rowNumber === 1) return; // skip header
+      rowsToProcess.push({ row, rowNumber });
+    });
 
+    if (rowsToProcess.length === 0) {
+      throw new Error('Uploaded projects spreadsheet contains no data rows.');
+    }
+
+    const [allFundingSources, allSectors] = await Promise.all([
+      prisma.lookupValue.findMany({
+        where: { type: 'FUNDING_SOURCE', isActive: true },
+      }),
+      prisma.lookupValue.findMany({
+        where: { type: 'SECTOR', isActive: true },
+      }),
+    ]);
+
+    const rowPromises: Promise<void>[] = [];
+
+    for (const { row, rowNumber } of rowsToProcess) {
       const code = row.getCell(1).value?.toString().trim();
       const name = row.getCell(2).value?.toString().trim();
       const sapIdentificationNo = row.getCell(3).value?.toString().trim();
@@ -1012,35 +1296,119 @@ export class ExcelService {
       const fundingSourceCode = row.getCell(7).value?.toString().trim();
       const fundingType = row.getCell(8).value?.toString().trim();
       const sectorCode = row.getCell(9).value?.toString().trim();
-      const status = row.getCell(10).value?.toString().trim();
+      const rawStatus = row.getCell(10).value?.toString().trim();
 
-      if (!code || !name) return;
+      if (!code) {
+        throw new Error(`Project Code is required at row ${rowNumber}.`);
+      }
+      if (!name) {
+        throw new Error(`Project Name is required at row ${rowNumber}.`);
+      }
+      if (!fundingSourceCode) {
+        throw new Error(`Funding source code is required at row ${rowNumber}.`);
+      }
+      if (!sectorCode) {
+        throw new Error(`Sector code is required at row ${rowNumber}.`);
+      }
+
+      let projectStatus: ProjectStatus = 'ACTIVE';
+      if (rawStatus) {
+        const upperStatus = rawStatus.toUpperCase();
+        if (
+          upperStatus === 'DRAFT' ||
+          upperStatus === 'DRAFT (UNASSIGNED)' ||
+          upperStatus === 'DRAFT PROJECT'
+        ) {
+          projectStatus = 'ACTIVE';
+        } else if (['ACTIVE', 'CLOSED', 'SUSPENDED'].includes(upperStatus)) {
+          projectStatus = upperStatus as ProjectStatus;
+        } else {
+          throw new Error(
+            `Invalid Project Status '${rawStatus}' at row ${rowNumber}. Allowed: Draft, ACTIVE, CLOSED, SUSPENDED.`,
+          );
+        }
+      }
+
+      const normFs = fundingSourceCode.toLowerCase();
+      const fsParenMatch = fundingSourceCode.match(/\(([^)]+)\)/);
+      const fsParen =
+        fsParenMatch && fsParenMatch[1]
+          ? fsParenMatch[1].trim().toLowerCase()
+          : null;
+
+      const fsLookup = allFundingSources.find((fs) => {
+        const c = fs.code.toLowerCase();
+        const baseCode = c.replace(/^fs_/i, '');
+        const lbl = fs.label.toLowerCase();
+        const baseInput = normFs.replace(/^fs_/i, '');
+
+        if (c === normFs || baseCode === baseInput) return true;
+        if (lbl === normFs) return true;
+        if (fsParen && (c === fsParen || baseCode === fsParen)) return true;
+        if (
+          lbl.includes(normFs) ||
+          normFs.includes(lbl.replace(/\s*\([^)]+\)/g, '').trim())
+        )
+          return true;
+        return false;
+      });
+
+      if (!fsLookup) {
+        const available = allFundingSources
+          .map((f) => `${f.label} [${f.code}]`)
+          .join(', ');
+        throw new Error(
+          `Funding source '${fundingSourceCode}' not found at row ${rowNumber}. Available: ${available}`,
+        );
+      }
+
+      const normSec = sectorCode.toLowerCase();
+      const secParenMatch = sectorCode.match(/\(([^)]+)\)/);
+      const secParen =
+        secParenMatch && secParenMatch[1]
+          ? secParenMatch[1].trim().toLowerCase()
+          : null;
+
+      const sectorLookup = allSectors.find((s) => {
+        const c = s.code.toLowerCase();
+        const baseCode = c.replace(/^sec_/i, '');
+        const lbl = s.label.toLowerCase();
+        const baseInput = normSec.replace(/^sec_/i, '');
+
+        if (c === normSec || baseCode === baseInput) return true;
+        if (lbl === normSec) return true;
+        if (secParen && (c === secParen || baseCode === secParen)) return true;
+        if (
+          (baseInput.length >= 3 &&
+            baseCode.startsWith(baseInput.slice(0, 3))) ||
+          (baseCode.length >= 3 && baseInput.startsWith(baseCode.slice(0, 3)))
+        ) {
+          return true;
+        }
+        if (
+          lbl.includes(normSec) ||
+          normSec.includes(lbl.replace(/\s*\([^)]+\)/g, '').trim()) ||
+          (normSec.startsWith('agri') && lbl.startsWith('agri')) ||
+          (normSec.startsWith('irr') && lbl.startsWith('irr')) ||
+          (normSec.startsWith('liv') && lbl.startsWith('liv')) ||
+          (normSec.startsWith('hort') && lbl.startsWith('hort')) ||
+          (normSec.includes('natural') && lbl.includes('natural'))
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+      if (!sectorLookup) {
+        const available = allSectors
+          .map((s) => `${s.label} [${s.code}]`)
+          .join(', ');
+        throw new Error(
+          `Sector '${sectorCode}' not found at row ${rowNumber}. Available: ${available}`,
+        );
+      }
 
       const p = (async () => {
-        if (!fundingSourceCode)
-          throw new Error(
-            `Funding source code is required at row ${rowNumber}.`,
-          );
-        const fsLookup = await prisma.lookupValue.findUnique({
-          where: {
-            type_code: { type: 'FUNDING_SOURCE', code: fundingSourceCode },
-          },
-        });
-        if (!fsLookup)
-          throw new Error(
-            `Funding source code '${fundingSourceCode}' not found at row ${rowNumber}.`,
-          );
-
-        if (!sectorCode)
-          throw new Error(`Sector code is required at row ${rowNumber}.`);
-        const sectorLookup = await prisma.lookupValue.findUnique({
-          where: { type_code: { type: 'SECTOR', code: sectorCode } },
-        });
-        if (!sectorLookup)
-          throw new Error(
-            `Sector code '${sectorCode}' not found at row ${rowNumber}.`,
-          );
-
         const data = {
           name,
           sapIdentificationNo: sapIdentificationNo ?? null,
@@ -1050,7 +1418,7 @@ export class ExcelService {
           fundingSourceId: fsLookup.id,
           fundingType: fundingType ?? null,
           sectorId: sectorLookup.id,
-          status: (status as ProjectStatus) || 'ACTIVE',
+          status: projectStatus,
         };
 
         const existing = await prisma.project.findUnique({
@@ -1075,7 +1443,7 @@ export class ExcelService {
       })();
 
       rowPromises.push(p);
-    });
+    }
 
     await Promise.all(rowPromises);
     return { created, updated };
@@ -1086,52 +1454,133 @@ export class ExcelService {
     creatorId: string,
   ): Promise<{ created: number; updated: number }> {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(filePath);
+    if (filePath.toLowerCase().endsWith('.csv')) {
+      await workbook.csv.readFile(filePath);
+    } else {
+      await workbook.xlsx.readFile(filePath);
+    }
     const sheet = workbook.worksheets[0];
     if (!sheet) throw new Error('Uploaded file contains no worksheets.');
+
+    this.validateTemplateHeaders(
+      sheet,
+      [
+        'Project Code',
+        'Plan Title',
+        'Budget Year',
+        'Category',
+        'Period Start',
+        'Period End',
+      ],
+      'Procurement Plans',
+    );
 
     let created = 0;
     let updated = 0;
 
-    const rowPromises: Promise<void>[] = [];
+    const rowsToProcess: { row: ExcelJS.Row; rowNumber: number }[] = [];
 
     sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       if (rowNumber === 1) return; // skip header
+      rowsToProcess.push({ row, rowNumber });
+    });
 
+    if (rowsToProcess.length === 0) {
+      throw new Error('Uploaded plans spreadsheet contains no data rows.');
+    }
+
+    const rowPromises: Promise<void>[] = [];
+
+    for (const { row, rowNumber } of rowsToProcess) {
       const projectCode = row.getCell(1).value?.toString().trim();
       const title = row.getCell(2).value?.toString().trim();
       const budgetYear = row.getCell(3).value?.toString().trim();
-      const category = row.getCell(4).value?.toString().trim();
+      const rawCategory = row.getCell(4).value?.toString().trim().toUpperCase();
       const organization = row.getCell(5).value?.toString().trim();
       const description = row.getCell(6).value?.toString().trim();
       const periodStartVal = row.getCell(7).value;
       const periodEndVal = row.getCell(8).value;
-      const status = row.getCell(9).value?.toString().trim();
+      const rawStatus = row.getCell(9).value?.toString().trim().toUpperCase();
 
-      if (!projectCode || !title) return;
+      if (!projectCode) {
+        throw new Error(`Project Code is required at row ${rowNumber}.`);
+      }
+      if (!title) {
+        throw new Error(`Plan Title is required at row ${rowNumber}.`);
+      }
+      if (!budgetYear) {
+        throw new Error(`Budget Year is required at row ${rowNumber}.`);
+      }
+
+      const parseDate = (val: unknown): Date | null => {
+        if (!val) return null;
+        if (val instanceof Date) return val;
+        if (typeof val === 'number') {
+          const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+          return isNaN(date.getTime()) ? null : date;
+        }
+        const d = new Date(val.toString());
+        return isNaN(d.getTime()) ? null : d;
+      };
+
+      const periodStart = parseDate(periodStartVal);
+      const periodEnd = parseDate(periodEndVal);
+
+      if (!periodStart || !periodEnd) {
+        throw new Error(
+          `Period Start and Period End are required and must be valid dates at row ${rowNumber}.`,
+        );
+      }
+      if (periodEnd < periodStart) {
+        throw new Error(
+          `Period End cannot be before Period Start at row ${rowNumber}.`,
+        );
+      }
+
+      let category: string = 'GOODS';
+      if (rawCategory) {
+        if (rawCategory.includes('WORK')) category = 'WORKS';
+        else if (
+          rawCategory.includes('NON_CONSULT') ||
+          rawCategory.includes('NON-CONSULT')
+        )
+          category = 'NON_CONSULTING';
+        else if (rawCategory.includes('CONSULT')) category = 'CONSULTANCY';
+        else if (rawCategory.includes('GOOD')) category = 'GOODS';
+      }
+
+      const validPlanStatuses: PlanStatus[] = [
+        'DRAFT',
+        'SUBMITTED',
+        'WITH_COMMITTEE',
+        'COMMITTEE_ENDORSED',
+        'COMMITTEE_REJECTED',
+        'AWAITING_MANAGEMENT_APPROVAL',
+        'MANAGEMENT_APPROVED',
+        'MANAGEMENT_REJECTED',
+        'RETURNED_FOR_REVISION',
+        'APPROVED',
+        'REJECTED',
+      ];
+      let status: PlanStatus = 'DRAFT';
+      if (rawStatus) {
+        const sNorm = rawStatus.toUpperCase().trim();
+        if (sNorm === 'SUBMITTED' || sNorm === 'OFFICER_SUBMITTED') {
+          status = 'SUBMITTED';
+        } else if (sNorm === 'WITH_COMMITTEE' || sNorm === 'COMMITTEE_REVIEW') {
+          status = 'WITH_COMMITTEE';
+        } else if (validPlanStatuses.includes(sNorm as PlanStatus)) {
+          status = sNorm as PlanStatus;
+        }
+      }
 
       const p = (async () => {
         const project = await prisma.project.findUnique({
           where: { code: projectCode },
         });
-        if (!project)
+        if (!project) {
           throw new Error(
             `Project Code '${projectCode}' not found at row ${rowNumber}.`,
-          );
-
-        const parseDate = (val: unknown): Date | null => {
-          if (!val) return null;
-          if (val instanceof Date) return val;
-          const d = new Date(val.toString());
-          return isNaN(d.getTime()) ? null : d;
-        };
-
-        const periodStart = parseDate(periodStartVal);
-        const periodEnd = parseDate(periodEndVal);
-
-        if (!periodStart || !periodEnd) {
-          throw new Error(
-            `Period Start and Period End are required and must be valid dates at row ${rowNumber}.`,
           );
         }
 
@@ -1139,22 +1588,17 @@ export class ExcelService {
           projectId: project.id,
           title,
           budgetYear: budgetYear ?? null,
-          procurementCategory: category ?? null,
+          category,
           organization: organization ?? null,
           description: description ?? null,
           periodStart,
           periodEnd,
-          status: (status as PlanStatus) || 'DRAFT',
+          status,
           createdBy: creatorId,
         };
 
         const existing = await prisma.plan.findFirst({
-          where: {
-            projectId: project.id,
-            title,
-            budgetYear: budgetYear ?? null,
-            isActive: true,
-          },
+          where: { projectId: project.id, title },
         });
 
         if (existing) {
@@ -1172,7 +1616,7 @@ export class ExcelService {
       })();
 
       rowPromises.push(p);
-    });
+    }
 
     await Promise.all(rowPromises);
     return { created, updated };

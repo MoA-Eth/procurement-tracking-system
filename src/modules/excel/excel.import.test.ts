@@ -49,4 +49,97 @@ describe('ExcelService Import Helpers', () => {
     expect(excelService.parseCellDate(excelSerial)).toBeInstanceOf(Date);
     expect(excelService.parseCellDate(null)).toBeNull();
   });
+  it('correctly normalizes headers by removing qualifiers, spaces, and case', () => {
+    expect(excelService.normalizeHeader('Project Code (Required)')).toBe(
+      'projectcode',
+    );
+    expect(excelService.normalizeHeader('Category (Dropdown)')).toBe(
+      'category',
+    );
+    expect(excelService.normalizeHeader('Contract Number')).toBe(
+      'contractnumber',
+    );
+  });
+
+  it('validates template headers successfully when required columns match', () => {
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet('Test');
+    sheet.getRow(1).values = [
+      'Project',
+      'Activity',
+      'Supplier',
+      'Region',
+      'Contract Number',
+      'Contract Award Date',
+      'Contract Signature Date',
+      'Start Date',
+      'End Date',
+      'Original Contract Amount',
+      'Amendment',
+      'Final Contract Amount',
+      'Total Paid',
+      'Remaining Balance',
+      'Contract Status',
+    ];
+
+    const result = excelService.validateTemplateHeaders(
+      sheet,
+      ['Project', 'Activity', 'Supplier', 'Contract Number', 'Contract Status'],
+      'Contracts',
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects spreadsheet when required template headers are missing', () => {
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet('WrongTemplate');
+    sheet.getRow(1).values = ['Random Col 1', 'Random Col 2'];
+
+    expect(() => {
+      excelService.validateTemplateHeaders(
+        sheet,
+        ['Project Code', 'Plan Title', 'Budget Year'],
+        'Procurement Plans',
+      );
+    }).toThrow(/Invalid template structure for Procurement Plans/);
+  });
+
+  it('rejects spreadsheet when sheet has no headers', () => {
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet('Empty');
+
+    expect(() => {
+      excelService.validateTemplateHeaders(sheet, ['Plan Title'], 'Plans');
+    }).toThrow(/The file is empty or missing a header row/);
+  });
+
+  it('validates project template headers successfully when canonical columns match', () => {
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet('Projects Upload');
+    sheet.getRow(1).values = [
+      'Project Code (Required)',
+      'Project Name (Required)',
+      'SAP Identification No',
+      'Country',
+      'Executing Agency',
+      'Organization',
+      'Funding Source ID (Dropdown)',
+      'Funding Type',
+      'Sector ID (Dropdown)',
+      'Status (Dropdown)',
+    ];
+
+    const result = excelService.validateTemplateHeaders(
+      sheet,
+      [
+        'Project Code',
+        'Project Name',
+        'Funding Source ID',
+        'Sector ID',
+        'Status',
+      ],
+      'Projects',
+    );
+    expect(result.valid).toBe(true);
+  });
 });
