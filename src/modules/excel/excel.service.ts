@@ -1070,29 +1070,204 @@ export class ExcelService {
     });
 
     function addSheet(name: string, headers: string[]): ExcelJS.Worksheet {
-      const sheet = workbook.addWorksheet(name);
-      sheet.columns = headers.map((header) => ({
-        header,
-        key: header,
-        width: Math.max(header.length + 4, 16),
-      }));
+      const actualSheet = workbook.addWorksheet(name, {
+        views: [{ state: 'frozen', ySplit: 1, showGridLines: true }],
+      });
 
-      const headerRow = sheet.getRow(1);
-      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: EXCEL_THEME_COLOR },
-      };
-      headerRow.alignment = {
-        vertical: 'middle',
-        horizontal: 'center',
-        wrapText: true,
-      };
-      headerRow.height = 22;
-      headerRow.commit();
+      const bufferedRows: unknown[][] = [];
 
-      return sheet;
+      const customSheet = {
+        addRow(values: unknown[]) {
+          bufferedRows.push(Array.isArray(values) ? values : [values]);
+          return {
+            commit() {
+              // noop, rows are formatted and committed in sheet.commit()
+            },
+          };
+        },
+        async commit() {
+          // 1. Calculate dynamic column widths based on the MAXIMUM length of data in each column
+          const colWidths = headers.map((header, colIdx) => {
+            let maxLen = header.length;
+            for (const r of bufferedRows) {
+              const val = r[colIdx];
+              if (val !== null && val !== undefined) {
+                const str = String(val);
+                if (str.length > maxLen) {
+                  maxLen = str.length;
+                }
+              }
+            }
+
+            const hLower = header.toLowerCase();
+
+            // Project and Plan names can be long: expand width so the full title is readable
+            if (hLower.includes('project') || hLower.includes('plan')) {
+              return Math.max(36, Math.min(maxLen + 5, 80));
+            }
+            // Description/Remarks: give 55-65 characters
+            if (
+              hLower.includes('description') ||
+              hLower.includes('remarks') ||
+              hLower.includes('comment') ||
+              hLower.includes('specification')
+            ) {
+              return Math.max(45, Math.min(maxLen + 5, 65));
+            }
+            // References / numbers:
+            if (
+              hLower.includes('reference') ||
+              hLower.includes('contract no') ||
+              hLower.includes('tin')
+            ) {
+              return Math.max(26, Math.min(maxLen + 4, 38));
+            }
+            // General columns: content length + 4, bounded reasonably
+            return Math.max(header.length + 4, Math.min(maxLen + 4, 50), 16);
+          });
+
+          actualSheet.columns = headers.map((h, i) => ({
+            header: h,
+            key: h,
+            width: colWidths[i] ?? 20,
+          }));
+
+          const headerRow = actualSheet.getRow(1);
+          headerRow.font = {
+            name: 'Segoe UI',
+            size: 11,
+            bold: true,
+            color: { argb: 'FFFFFFFF' },
+          };
+          headerRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: EXCEL_THEME_COLOR },
+          };
+          headerRow.alignment = {
+            vertical: 'middle',
+            horizontal: 'center',
+            wrapText: true,
+          };
+          headerRow.height = 30;
+          headerRow.commit();
+
+          // Write data rows with adaptive row heights and proper styling
+          for (const rowValues of bufferedRows) {
+            const sanitized = rowValues.map((val) => {
+              if (typeof val === 'string') {
+                const trimmed = val.trim();
+                if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+                  const num = Number(trimmed);
+                  if (!isNaN(num)) return num;
+                }
+              }
+              return val;
+            });
+
+            // Calculate appropriate row height so multi-line wrapped text is never clipped
+            let maxLines = 1;
+            rowValues.forEach((val, colIdx) => {
+              const header = headers[colIdx] || '';
+              const hLower = header.toLowerCase();
+              if (
+                hLower.includes('description') ||
+                hLower.includes('remarks') ||
+                hLower.includes('comment')
+              ) {
+                const str = String(val || '');
+                const colW = colWidths[colIdx] || 50;
+                const lines = Math.ceil(str.length / (colW - 5));
+                if (lines > maxLines) maxLines = lines;
+              }
+            });
+
+            const exRow = actualSheet.addRow(sanitized);
+            // 24pt for single-line, 20pt per additional line + 8pt padding
+            exRow.height = maxLines > 1 ? maxLines * 20 + 8 : 24;
+
+            exRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+              const header = headers[colNumber - 1] || '';
+              const hLower = header.toLowerCase();
+
+              cell.font = { name: 'Segoe UI', size: 10 };
+              cell.border = {
+                top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              };
+
+              if (typeof cell.value === 'number') {
+                if (
+                  hLower.includes('amount') ||
+                  hLower.includes('budget') ||
+                  hLower.includes('value') ||
+                  hLower.includes('paid') ||
+                  hLower.includes('balance') ||
+                  hLower.includes('advance') ||
+                  hLower.includes('interim') ||
+                  hLower.includes('final') ||
+                  hLower.includes('retention') ||
+                  hLower.includes('adjustment') ||
+                  hLower.includes('total')
+                ) {
+                  cell.numFmt = '#,##0.00';
+                  cell.alignment = { vertical: 'middle', horizontal: 'right' };
+                } else if (
+                  hLower.includes('count') ||
+                  hLower.includes('days') ||
+                  hLower.includes('number') ||
+                  hLower.includes('packages') ||
+                  hLower.includes('row') ||
+                  hLower.includes('contracts')
+                ) {
+                  cell.numFmt = '#,##0';
+                  cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                } else if (
+                  hLower.includes('%') ||
+                  hLower.includes('pct') ||
+                  hLower.includes('compliance') ||
+                  hLower.includes('progress')
+                ) {
+                  cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                } else {
+                  cell.numFmt = '#,##0.00';
+                  cell.alignment = { vertical: 'middle', horizontal: 'right' };
+                }
+              } else if (hLower.includes('date') || hLower.includes('period')) {
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+              } else if (
+                hLower.includes('status') ||
+                hLower.includes('currency') ||
+                hLower.includes('category') ||
+                hLower.includes('tin') ||
+                hLower.includes('method') ||
+                hLower.includes('decision') ||
+                hLower.includes('result')
+              ) {
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+              } else {
+                const shouldWrap =
+                  hLower.includes('description') ||
+                  hLower.includes('remarks') ||
+                  hLower.includes('comment');
+                cell.alignment = {
+                  vertical: 'middle',
+                  horizontal: 'left',
+                  wrapText: shouldWrap,
+                };
+              }
+            });
+
+            exRow.commit();
+          }
+
+          await actualSheet.commit();
+        },
+      };
+
+      return customSheet as unknown as ExcelJS.Worksheet;
     }
 
     async function finalize(): Promise<void> {
@@ -1102,9 +1277,10 @@ export class ExcelService {
     return { workbook, addSheet, finalize };
   }
 
-  fmtDecimal(value: unknown): string {
-    if (value === null || value === undefined) return '';
-    return Number(value).toFixed(2);
+  fmtDecimal(value: unknown): number | string {
+    if (value === null || value === undefined || value === '') return '';
+    const num = Number(value);
+    return isNaN(num) ? '' : num;
   }
 
   fmtDate(value: Date | null | undefined): string {
