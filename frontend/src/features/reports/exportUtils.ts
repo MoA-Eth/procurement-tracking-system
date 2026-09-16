@@ -339,12 +339,24 @@ export function exportReportToExcel({
 
   // Auto-fit column widths based on maximum content length and header
   const colWidths = Object.keys(dataForSheet[0] || {}).map((key) => {
+    const kLower = key.toLowerCase();
     const maxContentLen = dataForSheet.reduce((max, row) => {
       const val = row[key];
       const len = val != null ? String(val).length : 0;
       return Math.max(max, len);
     }, key.length);
-    return { wch: Math.min(Math.max(maxContentLen + 3, key.length + 4, 16), 55) };
+
+    if (kLower.includes("project") || kLower.includes("plan")) {
+      return { wch: Math.max(36, Math.min(maxContentLen + 4, 80)) };
+    }
+    if (
+      kLower.includes("description") ||
+      kLower.includes("remarks") ||
+      kLower.includes("comment")
+    ) {
+      return { wch: Math.max(45, Math.min(maxContentLen + 4, 65)) };
+    }
+    return { wch: Math.max(16, Math.min(maxContentLen + 4, 50)) };
   });
   worksheet["!cols"] = colWidths;
 
