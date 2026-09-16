@@ -145,13 +145,6 @@ export const REPORT_LIST: ReportItem[] = [
     category: "periodic",
     description: "Granular procurement records: winner, award value, PO/PV, delivery status.",
   },
-  {
-    id: "detailed-procurement",
-    label: "Detailed Procurement",
-    priority: "P1",
-    category: "periodic",
-    description: "Detailed activity packages, awarded values and completion milestones.",
-  },
 
   // P0 & P1 - Contracts & Finance
   {
