@@ -28,6 +28,7 @@ import {
   isSmtpConfigured,
   sendEmail,
 } from '../../services/email.service.js';
+import './auth.validation.js';
 
 const INVALID_LOGIN_MESSAGE = 'Unable to sign in with those credentials.';
 const GENERIC_RESET_MESSAGE =
@@ -439,29 +440,6 @@ function requireRole(role: UserRole): RequestHandler {
 
 export const authRouter = Router();
 
-/**
- * @swagger
- * /api/auth/login:
- *   post:
- *     summary: Login to the system
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [identifier, password]
- *             properties:
- *               identifier: { type: string }
- *               password: { type: string }
- *               rememberMe: { type: boolean }
- *     responses:
- *       200:
- *         description: Login successful
- *       401:
- *         description: Unauthorized
- */
 authRouter.post('/login', async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -551,18 +529,6 @@ authRouter.post('/login', async (req, res) => {
   });
 });
 
-/**
- * @swagger
- * /api/auth/session:
- *   get:
- *     summary: Get current session details
- *     tags: [Auth]
- *     responses:
- *       200:
- *         description: Session active
- *       401:
- *         description: Unauthorized
- */
 authRouter.get('/session', loadSession, (req, res) => {
   const auth = req.auth!;
   res.json({
@@ -575,29 +541,6 @@ authRouter.get('/session', loadSession, (req, res) => {
   });
 });
 
-/**
- * @swagger
- * /api/auth/change-password:
- *   post:
- *     summary: Change user password
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [currentPassword, newPassword, confirmPassword]
- *             properties:
- *               currentPassword: { type: string }
- *               newPassword: { type: string }
- *               confirmPassword: { type: string }
- *     responses:
- *       200:
- *         description: Password changed
- *       400:
- *         description: Bad request
- */
 authRouter.post('/change-password', loadSession, async (req, res) => {
   const parsed = changePasswordSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -669,16 +612,6 @@ authRouter.post('/change-password', loadSession, async (req, res) => {
   res.json({ status: 'AUTHENTICATED', user: publicUser(auth.user), expiresAt });
 });
 
-/**
- * @swagger
- * /api/auth/logout:
- *   post:
- *     summary: Logout of the system
- *     tags: [Auth]
- *     responses:
- *       204:
- *         description: Logged out successfully
- */
 authRouter.post('/logout', async (req, res) => {
   const raw = cookieValue(req.headers.cookie, env.SESSION_COOKIE_NAME);
   if (raw) {
@@ -697,25 +630,6 @@ authRouter.post('/logout', async (req, res) => {
   res.status(204).send();
 });
 
-/**
- * @swagger
- * /api/auth/forgot-password:
- *   post:
- *     summary: Request a password reset email
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [email]
- *             properties:
- *               email: { type: string }
- *     responses:
- *       200:
- *         description: Reset link sent
- */
 authRouter.post('/forgot-password', async (req, res) => {
   const parsed = forgotPasswordSchema.safeParse(req.body);
   const email = parsed.success ? parsed.data.email.toLowerCase() : '';
@@ -802,29 +716,6 @@ authRouter.post('/forgot-password', async (req, res) => {
   res.json({ message: GENERIC_RESET_MESSAGE });
 });
 
-/**
- * @swagger
- * /api/auth/create-password:
- *   post:
- *     summary: Create password from an invitation token
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [token, newPassword, confirmPassword]
- *             properties:
- *               token: { type: string }
- *               newPassword: { type: string }
- *               confirmPassword: { type: string }
- *     responses:
- *       200:
- *         description: Password created
- *       400:
- *         description: Invalid token
- */
 authRouter.post('/create-password', async (req, res) => {
   const parsed = createPasswordSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -918,29 +809,6 @@ authRouter.post('/create-password', async (req, res) => {
   res.json({ message: 'Password created. You can now sign in.' });
 });
 
-/**
- * @swagger
- * /api/auth/reset-password:
- *   post:
- *     summary: Reset password using a reset token
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [token, newPassword, confirmPassword]
- *             properties:
- *               token: { type: string }
- *               newPassword: { type: string }
- *               confirmPassword: { type: string }
- *     responses:
- *       200:
- *         description: Password reset
- *       400:
- *         description: Invalid token
- */
 authRouter.post('/reset-password', async (req, res) => {
   const parsed = resetPasswordSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -1006,32 +874,7 @@ authRouter.post('/reset-password', async (req, res) => {
 
 export const adminRouter = Router();
 adminRouter.use(loadSession, requireAuthenticated, requireRole(UserRole.ADMIN));
-/**
- * @swagger
- * /api/admin/users:
- *   post:
- *     summary: Create a new user with a temporary password
- *     tags: [Admin]
- *     security: [{ bearerAuth: [] }]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [email, displayName, role]
- *             properties:
- *               email: { type: string }
- *               displayName: { type: string }
- *               role:
- *                 type: string
- *                 enum: [OFFICER, DIRECTOR, ENDORSING_COMMITTEE, MANAGEMENT_TEAM, ADMIN]
- *     responses:
- *       201:
- *         description: User created successfully
- *       400:
- *         description: Bad request
- */
+
 adminRouter.post('/users', async (req, res) => {
   const parsed = createUserSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -1130,6 +973,7 @@ adminRouter.post('/users', async (req, res) => {
 
 export const protectedRouter = Router();
 protectedRouter.use(loadSession, requireAuthenticated);
+
 protectedRouter.get('/me', (req, res) => {
   res.json({ user: publicUser(req.auth!.user) });
 });
