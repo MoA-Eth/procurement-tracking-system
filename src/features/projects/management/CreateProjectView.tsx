@@ -209,6 +209,17 @@ export function CreateProjectView({
       }
     }
 
+    if (currentStep === 3) {
+      if (
+        step3Data.startDate &&
+        step3Data.endDate &&
+        new Date(step3Data.endDate) <= new Date(step3Data.startDate)
+      ) {
+        setErrorMsg("Project End Date must be after the Project Start Date.");
+        return false;
+      }
+    }
+
     if (currentStep === 4) {
       // Officer assignment is optional - projects without assigned officers will be saved as Draft
     }
@@ -234,6 +245,16 @@ export function CreateProjectView({
 
   function handleSubmit() {
     if (!validateCurrentStep()) return;
+
+    if (
+      step3Data.startDate &&
+      step3Data.endDate &&
+      new Date(step3Data.endDate) <= new Date(step3Data.startDate)
+    ) {
+      setErrorMsg("Project End Date must be after the Project Start Date.");
+      setCurrentStep(3);
+      return;
+    }
 
     const finalCountryOrg =
       step1Data.countryOrg === "Other (Specify Custom Organisation)"
