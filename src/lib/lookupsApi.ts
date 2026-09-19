@@ -390,15 +390,24 @@ export async function fetchSuppliers(): Promise<SupplierItem[]> {
 
 export async function fetchOfficers(): Promise<OfficerUserItem[]> {
   try {
-    const payload = await apiClient.get<any>("/users", {
+    let payload = await apiClient.get<any>("/users", {
       params: { role: "ProcurementOfficer", isActive: true, pageSize: 100 },
     });
-    const list = Array.isArray(payload) ? payload : payload?.data || [];
+    let list = Array.isArray(payload) ? payload : payload?.data || [];
+    if (!list || list.length === 0) {
+      payload = await apiClient.get<any>("/users", {
+        params: { role: "OFFICER", isActive: true, pageSize: 100 },
+      });
+      list = Array.isArray(payload) ? payload : payload?.data || [];
+    }
     if (list.length > 0) {
-      return list
+      const filtered = list
         .filter((u: any) => {
           const activeFlag = u.isActive !== false;
-          const activeStatus = !u.status || u.status === "ACTIVE";
+          const activeStatus =
+            !u.status ||
+            u.status === "ACTIVE" ||
+            u.status === "PENDING_INVITATION";
           const isOfficerRole =
             !u.role ||
             u.role === "ProcurementOfficer" ||
@@ -415,6 +424,9 @@ export async function fetchOfficers(): Promise<OfficerUserItem[]> {
           isActive: true,
           status: u.status || "ACTIVE",
         }));
+      if (filtered.length > 0) {
+        return filtered;
+      }
     }
   } catch {
     // Graceful fallback

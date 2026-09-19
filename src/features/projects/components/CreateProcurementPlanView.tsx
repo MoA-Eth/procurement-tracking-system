@@ -32,7 +32,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 
 type SaveAction = "activity" | "draft" | null;
 
@@ -125,6 +125,34 @@ export function CreateProcurementPlanView({
     planName: initialPlan?.name || "",
     remarks: initialPlan?.description || "",
   }));
+
+  useEffect(() => {
+    if (!initialPlan) return;
+    setSelectedCategory(initialPlan.category ?? null);
+    setPlanNameEdited(true);
+    setForm({
+      budgetYear: initialPlan.budgetYear?.replace(/ EFY/i, "").trim() || "2017",
+      generalProcurementNoticeDate:
+        initialPlan.generalProcurementNoticeDate?.gregorian || "",
+      generalProcurementNoticeDateEthiopian:
+        initialPlan.generalProcurementNoticeDate?.ethiopian || "",
+      organizationRegion:
+        initialPlan.organizationRegion ||
+        project.availableOrganizationRegions?.[0] ||
+        project.organizationRegion ||
+        "",
+      periodFrom: initialPlan.planPeriod?.from?.gregorian || "",
+      periodFromEthiopian: initialPlan.planPeriod?.from?.ethiopian || "",
+      periodTo: initialPlan.planPeriod?.to?.gregorian || "",
+      periodToEthiopian: initialPlan.planPeriod?.to?.ethiopian || "",
+      planName: initialPlan.name || "",
+      remarks: initialPlan.description || "",
+    });
+  }, [
+    initialPlan,
+    project.availableOrganizationRegions,
+    project.organizationRegion,
+  ]);
 
   const detailHref = `/workspace/projects?project=${encodeURIComponent(
     project.code,

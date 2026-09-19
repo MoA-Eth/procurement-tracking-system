@@ -10,6 +10,7 @@ import {
   Eye,
   Edit,
   UserCheck,
+  Upload,
   UserPlus,
 } from "lucide-react";
 import type { ProjectItem, ProjectOfficer } from "./projectsData";
@@ -20,6 +21,7 @@ interface ProjectsDirectoryViewProps {
   onCreateClick: () => void;
   onEditClick: (project: ProjectItem) => void;
   onViewPlansClick: (project: ProjectItem) => void;
+  onImportClick?: () => void;
   onUpdateProjectOfficers?: (
     projectId: string,
     updatedOfficers: ProjectOfficer[],
@@ -32,6 +34,7 @@ export function ProjectsDirectoryView({
   onCreateClick,
   onEditClick,
   onViewPlansClick,
+  onImportClick,
   onUpdateProjectOfficers,
   readOnly = false,
 }: ProjectsDirectoryViewProps) {
@@ -103,13 +106,26 @@ export function ProjectsDirectoryView({
         </div>
 
         {!readOnly && (
-          <button
-            onClick={onCreateClick}
-            className="bg-[#0A3C2F] hover:bg-[#072b22] text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 shrink-0 cursor-pointer self-start sm:self-auto active:scale-98"
-          >
-            <Plus className="h-4 w-4 stroke-[2.5]" />
-            <span>Create New Project</span>
-          </button>
+          <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+            {onImportClick && (
+              <button
+                onClick={onImportClick}
+                className="border border-slate-300 bg-white hover:border-[#0A3C2F] hover:bg-[#edf5f1] hover:text-[#0A3C2F] text-slate-700 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+                type="button"
+              >
+                <Upload className="h-4 w-4 text-slate-500" />
+                <span>Import Projects</span>
+              </button>
+            )}
+            <button
+              onClick={onCreateClick}
+              className="bg-[#0A3C2F] hover:bg-[#072b22] text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+              type="button"
+            >
+              <Plus className="h-4 w-4 stroke-[2.5]" />
+              <span>Create New Project</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -137,6 +153,7 @@ export function ProjectsDirectoryView({
           >
             <option value="All Statuses">All Statuses</option>
             <option value="Active">Active</option>
+            <option value="Draft">Draft (Unassigned)</option>
             <option value="Inactive">Inactive</option>
           </select>
 
@@ -299,13 +316,15 @@ export function ProjectsDirectoryView({
                     {/* Status Badge */}
                     <td className="py-4 px-4 text-center whitespace-nowrap min-w-[100px]">
                       <span
-                        className={`inline-block px-2.5 py-0.5  text-[10px] font-extrabold ${
+                        className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold border ${
                           project.status === "Active"
-                            ? "text-emerald-800"
-                            : "text-slate-600"
+                            ? "bg-emerald-50 text-emerald-850 border-emerald-200"
+                            : project.status === "Draft"
+                              ? "bg-amber-50 text-amber-850 border-amber-200"
+                              : "bg-slate-100 text-slate-600 border-slate-200"
                         }`}
                       >
-                        {project.status}
+                        {project.status === "Draft" ? "Draft" : project.status}
                       </span>
                     </td>
 

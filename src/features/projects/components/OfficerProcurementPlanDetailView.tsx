@@ -33,6 +33,7 @@ import Link from "next/link";
 import { useMemo, useRef, useState, useEffect } from "react";
 import {
   getCurrentPlanVersionNumber,
+  getPlanVersionHistory,
   recordPlanVersionEvent,
 } from "@/features/plans/data/planRevisions";
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
@@ -51,6 +52,7 @@ export function OfficerProcurementPlanDetailView({
   onSubmitToDirector,
   onUpdatePlan,
   onUpdateActivity,
+  onBulkImportActivities,
   plan,
   project,
   savedActivities = [],
@@ -58,6 +60,9 @@ export function OfficerProcurementPlanDetailView({
   onSubmitToDirector?: (planReference: string, revisionReason?: string) => void;
   onUpdatePlan?: (plan: ProcurementPlanSummary) => void;
   onUpdateActivity?: (activity: ProcurementActivitySummary) => void;
+  onBulkImportActivities?: (
+    activities: ProcurementActivitySummary[],
+  ) => Promise<void> | void;
   plan: ProcurementPlanSummary;
   project: OfficerProject;
   savedActivities?: readonly ProcurementActivitySummary[];
@@ -137,6 +142,21 @@ export function OfficerProcurementPlanDetailView({
   const versionNumber = getCurrentPlanVersionNumber(
     currentPlan.reference || currentPlan.id || "",
   );
+
+  const planHistory = getPlanVersionHistory(
+    currentPlan.reference || currentPlan.id || "",
+  );
+  const hasPlanRevisions =
+    versionNumber > 1 ||
+    isReturned ||
+    Boolean(currentPlan.version && currentPlan.version > 1) ||
+    planHistory.some(
+      (r) =>
+        r.action === "PLAN_REVISED" ||
+        r.action === "ACTIVITY_REVISED" ||
+        r.action === "RETURNED" ||
+        r.action === "RESUBMITTED",
+    );
 
   const activities = useMemo(() => {
     const list = [...savedActivities];
@@ -260,9 +280,13 @@ export function OfficerProcurementPlanDetailView({
   }
 
   function handleBulkImport(imported: ProcurementActivitySummary[]) {
-    imported.forEach((act) => {
-      onUpdateActivity?.(act);
-    });
+    if (onBulkImportActivities) {
+      void onBulkImportActivities(imported);
+    } else {
+      imported.forEach((act) => {
+        onUpdateActivity?.(act);
+      });
+    }
 
     if (currentPlan.planActivities) {
       const nextPlan = {
@@ -372,18 +396,20 @@ export function OfficerProcurementPlanDetailView({
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {/* Version History Button */}
-            <button
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition cursor-pointer"
-              onClick={() => setIsVersionHistoryOpen(true)}
-              type="button"
-            >
-              <History className="h-3.5 w-3.5 text-[#176c55]" />
-              Version History (v{versionNumber})
-            </button>
+            {/* Version History Button (visible when plan has revisions) */}
+            {hasPlanRevisions && (
+              <button
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition cursor-pointer"
+                onClick={() => setIsVersionHistoryOpen(true)}
+                type="button"
+              >
+                <History className="h-3.5 w-3.5 text-[#176c55]" />
+                Version History (v{versionNumber})
+              </button>
+            )}
 
-            {/* Edit Plan Details Button (ONLY visible when Returned) */}
-            {isReturned && (
+            {/* Edit Plan Details Button (visible when Draft or Returned) */}
+            {(activePlanStatus === "Draft" || isReturned) && (
               <Link
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition cursor-pointer"
                 href={
@@ -590,14 +616,16 @@ export function OfficerProcurementPlanDetailView({
               </p>
             </div>
           </div>
-          <button
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
-            onClick={() => setIsVersionHistoryOpen(true)}
-            type="button"
-          >
-            <History className="h-3.5 w-3.5 text-[#176c55]" />
-            Audit Trail
-          </button>
+          {hasPlanRevisions && (
+            <button
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
+              onClick={() => setIsVersionHistoryOpen(true)}
+              type="button"
+            >
+              <History className="h-3.5 w-3.5 text-[#176c55]" />
+              Audit Trail
+            </button>
+          )}
         </section>
       )}
 
@@ -708,31 +736,31 @@ export function OfficerProcurementPlanDetailView({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-184 table-fixed border-collapse text-left">
+          <table className="w-full table-fixed border-collapse text-left">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
-                <th className="w-[14%] px-3 py-3.5" scope="col">
+              <tr className="bg-[#0A3C2F] text-white text-[10px] font-extrabold uppercase tracking-wider">
+                <th className="w-[11%] px-2 py-3" scope="col">
                   Ref
                 </th>
-                <th className="w-[26%] px-3 py-3.5" scope="col">
+                <th className="w-[23%] px-2 py-3" scope="col">
                   Description
                 </th>
-                <th className="w-[10%] px-3 py-3.5" scope="col">
+                <th className="w-[9%] px-2 py-3" scope="col">
                   Category
                 </th>
-                <th className="w-[10%] px-3 py-3.5" scope="col">
+                <th className="w-[9%] px-2 py-3" scope="col">
                   Method
                 </th>
-                <th className="w-[14%] px-3 py-3.5 text-right" scope="col">
+                <th className="w-[13%] px-2 py-3 text-right" scope="col">
                   Est. Amount ({currentPlan.currency})
                 </th>
-                <th className="w-[12%] px-3 py-3.5" scope="col">
+                <th className="w-[11%] px-2 py-3" scope="col">
                   Current Stage
                 </th>
-                <th className="w-[9%] px-3 py-3.5" scope="col">
+                <th className="w-[11%] px-2 py-3" scope="col">
                   Status
                 </th>
-                <th className="w-[9%] px-3 py-3.5 text-right" scope="col">
+                <th className="w-[13%] px-2 py-3 text-right" scope="col">
                   Actions
                 </th>
               </tr>
@@ -868,14 +896,14 @@ function ActivityRow({
 
   return (
     <tr className="even:bg-[#fbfcff] hover:bg-[#f7fbf9] transition-colors">
-      <td className="px-3 py-2.5 align-top font-mono text-[10px] font-semibold text-[#1261a8] max-w-28 truncate">
+      <td className="px-2 py-2.5 align-top font-mono text-[10px] font-semibold text-[#1261a8] truncate">
         {activity.reference}
       </td>
-      <td className="px-3 py-2.5 align-top text-[10px] font-medium leading-4 text-slate-700 wrap-break-word">
+      <td className="px-2 py-2.5 align-top text-[10px] font-medium leading-4 text-slate-700 wrap-break-word">
         <p className="wrap-break-word line-clamp-2">{activity.description}</p>
         {isMultiOfficer &&
           (activity.createdByName || activity.updatedByName) && (
-            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-slate-400">
+            <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[9px] text-slate-400">
               {activity.createdByName && (
                 <span>
                   Created by{" "}
@@ -899,16 +927,16 @@ function ActivityRow({
             </div>
           )}
       </td>
-      <td className="px-3 py-2.5 align-top text-[10px] text-slate-500">
+      <td className="px-2 py-2.5 align-top text-[10px] text-slate-500">
         {activity.category}
       </td>
-      <td className="px-3 py-2.5 align-top text-[10px] font-medium text-slate-500">
+      <td className="px-2 py-2.5 align-top text-[10px] font-medium text-slate-500">
         {activity.method}
       </td>
-      <td className="px-3 py-2.5 text-right align-top font-mono text-[10px] font-medium tabular-nums text-slate-800">
+      <td className="px-2 py-2.5 text-right align-top font-mono text-[10px] font-medium tabular-nums text-slate-800">
         {formatAmount(activity.estimatedAmount)}
       </td>
-      <td className="px-3 py-2.5 align-top text-[10px] text-slate-500">
+      <td className="px-2 py-2.5 align-top text-[10px] text-slate-500">
         {activity.currentStage}
       </td>
       <td className="px-2 py-2.5 align-top">
@@ -927,22 +955,22 @@ function ActivityRow({
           )}
         </div>
       </td>
-      <td className="px-3 py-2.5 text-right align-top whitespace-nowrap">
-        <div className="flex items-center justify-end gap-2">
+      <td className="px-2 py-2.5 text-right align-top whitespace-nowrap">
+        <div className="flex items-center justify-end gap-1.5 shrink-0">
           {canEdit && (
             <Link
               aria-label={`Edit activity ${activity.reference}`}
-              className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-[#176c55] hover:text-white transition cursor-pointer"
+              className="inline-flex shrink-0 items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-700 hover:bg-[#176c55] hover:text-white transition cursor-pointer"
               href={editHref}
               title="Edit / Revise Activity"
             >
-              <Edit3 className="h-3 w-3" />
+              <Edit3 className="h-2.5 w-2.5" />
               Edit
             </Link>
           )}
           <Link
             aria-label={`Open activity ${activity.reference}`}
-            className="text-[10px] font-semibold text-[#1261a8] hover:text-[#07523f] hover:underline"
+            className="shrink-0 text-[10px] font-semibold text-[#1261a8] hover:text-[#07523f] hover:underline"
             href={href}
           >
             Open

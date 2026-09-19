@@ -215,4 +215,39 @@ describe("OfficerProcurementActivityDetailView", () => {
     expect(markup).toContain("Last edited by:");
     expect(markup).toContain("Abebe Kebede");
   });
+
+  it("does not show Version History button for an unrevised baseline activity", () => {
+    const unrevisedActivity: ProcurementActivitySummary = {
+      ...detailedActivity,
+      createdByName: "Yeabsira Fikre",
+      updatedByName: undefined,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={unrevisedActivity}
+        plan={plan}
+        project={project}
+      />,
+    );
+
+    expect(markup).not.toContain("Version History");
+    expect(markup).not.toContain("Audit Trail");
+  });
+
+  it("shows Version History button when an activity has been revised", () => {
+    const revisedActivity: ProcurementActivitySummary = {
+      ...detailedActivity,
+      createdByName: "Yeabsira Fikre",
+      updatedByName: "Abebe Kebede",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={revisedActivity}
+        plan={plan}
+        project={project}
+      />,
+    );
+
+    expect(markup).toContain("Version History");
+  });
 });

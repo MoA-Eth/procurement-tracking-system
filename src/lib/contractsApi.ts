@@ -66,7 +66,48 @@ export interface RecordPaymentInput {
   idempotencyKey: string;
 }
 
-import { apiClient } from "./apiClient";
+import { apiClient, directApiFetch, ApiClientError } from "./apiClient";
+import { downloadReportFile, saveReportFile } from "./reportsApi";
+
+export interface ImportContractsResult {
+  message?: string;
+  created: number;
+  updated: number;
+}
+
+export async function importContracts(
+  file: File,
+): Promise<ImportContractsResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    return await directApiFetch<ImportContractsResult>("/contracts/import", {
+      method: "POST",
+      body: formData,
+    });
+  } catch (err) {
+    if (err instanceof ApiClientError && err.status === 404) {
+      return await directApiFetch<ImportContractsResult>(
+        "/excel/import/contracts",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+    }
+    throw err;
+  }
+}
+
+export async function downloadContractsTemplate(): Promise<void> {
+  const report = await downloadReportFile(
+    "/excel/templates/contracts",
+    {},
+    "Contracts_Import_Template.xlsx",
+  );
+  saveReportFile(report);
+}
 
 export async function fetchContracts(params?: {
   search?: string;
@@ -183,9 +224,11 @@ export function mapBackendContractToOfficerContract(bc: BackendContract): any {
     remainingBalance: remainingValue,
     signingDate: {
       ethiopian: "01 Meskerem 2017",
-      gregorian: bc.createdAt
-        ? new Date(bc.createdAt).toLocaleDateString("en-GB")
-        : "Recent",
+      gregorian: bc.signatureDate
+        ? new Date(bc.signatureDate).toLocaleDateString("en-GB")
+        : bc.createdAt
+          ? new Date(bc.createdAt).toLocaleDateString("en-GB")
+          : "Recent",
     },
     completionDate: {
       ethiopian: "30 Sene 2017",

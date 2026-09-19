@@ -61,16 +61,12 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Download,
   FolderLock,
   Search,
   ShieldAlert,
-  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { exportOfficerProjectsToExcel } from "@/features/projects/utils/projectExcelUtils";
-import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -102,9 +98,11 @@ export function OfficerProjectsView({
   const [backendActivities, setBackendActivities] = useState<
     SavedOfficerActivityRecord[]
   >([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const loadData = useCallback(async () => {
     try {
+      setIsLoadingData(true);
       const [projData, planData, actData] = await Promise.allSettled([
         fetchProjects(),
         fetchPlans(),
@@ -197,6 +195,8 @@ export function OfficerProjectsView({
       }
     } catch (err) {
       console.warn("loadData officer view note:", err);
+    } finally {
+      setIsLoadingData(false);
     }
   }, [effectiveUser]);
 
@@ -379,12 +379,73 @@ export function OfficerProjectsView({
     backendPlans,
     effectiveSavedActivityRecords,
   ]);
-  const selectedActivity =
-    selectedProject && selectedPlan && selectedActivityReference
-      ? selectedPlanActivities.find(
-          (activity) => activity.reference === selectedActivityReference,
-        )
-      : undefined;
+
+  const selectedActivity = useMemo(() => {
+    if (!selectedProject || !selectedPlan || !selectedActivityReference)
+      return undefined;
+
+    const ref = selectedActivityReference.trim();
+    let decoded = ref;
+    try {
+      decoded = decodeURIComponent(ref).trim().toLowerCase();
+    } catch {
+      decoded = ref.toLowerCase();
+    }
+    const rawLower = ref.toLowerCase();
+
+    // 1. Check in selectedPlanActivities
+    const inPlan = selectedPlanActivities.find((a) => {
+      const aRef = a.reference.toLowerCase();
+      const aId = (a as any).id ? String((a as any).id).toLowerCase() : "";
+      return (
+        aRef === decoded ||
+        aRef === rawLower ||
+        (aId && (aId === decoded || aId === rawLower))
+      );
+    });
+    if (inPlan) return inPlan;
+
+    // 2. Check in effectiveSavedActivityRecords
+    const inSaved = effectiveSavedActivityRecords.find((rec) => {
+      const aRef = rec.activity.reference.toLowerCase();
+      const aId = (rec.activity as any).id
+        ? String((rec.activity as any).id).toLowerCase()
+        : "";
+      const matchesRef =
+        aRef === decoded ||
+        aRef === rawLower ||
+        (aId && (aId === decoded || aId === rawLower));
+      const matchesParent =
+        rec.projectCode?.toLowerCase() === selectedProject.code.toLowerCase() ||
+        rec.planReference?.toLowerCase() ===
+          selectedPlan.reference.toLowerCase() ||
+        rec.planReference?.toLowerCase() === selectedPlan.name.toLowerCase();
+      return matchesRef && matchesParent;
+    });
+    if (inSaved) return inSaved.activity;
+
+    // 3. Fallback check in selectedPlan.planActivities
+    if (selectedPlan.planActivities && selectedPlan.planActivities.length > 0) {
+      const inPlanActs = selectedPlan.planActivities.find((a) => {
+        const aRef = a.reference.toLowerCase();
+        const aId = (a as any).id ? String((a as any).id).toLowerCase() : "";
+        return (
+          aRef === decoded ||
+          aRef === rawLower ||
+          (aId && (aId === decoded || aId === rawLower))
+        );
+      });
+      if (inPlanActs) return inPlanActs;
+    }
+
+    return undefined;
+  }, [
+    selectedProject,
+    selectedPlan,
+    selectedActivityReference,
+    selectedPlanActivities,
+    effectiveSavedActivityRecords,
+  ]);
 
   async function savePlan(
     input: ProcurementPlanDraftInput,
@@ -661,6 +722,8 @@ export function OfficerProjectsView({
           actionLabel: `Activity ${activity.reference} Revised (v${selectedPlan.version || 1})`,
           changedBy: "Procurement Officer",
           changedByRole: "Procurement Officer",
+          activityReference: activity.reference,
+          activityDescription: activity.description,
           changes: diffs,
           reason: "Updated activity parameters per revision",
         });
@@ -1114,9 +1177,234 @@ export function OfficerProjectsView({
     saveActivity(updatedActivity);
   }
 
+  async function handleBulkImportPlans(
+    importedPlans: ProcurementPlanSummary[],
+  ) {
+    if (!selectedProject || importedPlans.length === 0) return;
+
+    const targetProjectId =
+      selectedProject.id && selectedProject.id.length > 20
+        ? selectedProject.id
+        : backendProjects.find(
+            (bp) =>
+              bp.code === selectedProject.code ||
+              bp.id === selectedProject.id ||
+              bp.name === selectedProject.name,
+          )?.id ||
+          selectedProject.id ||
+          selectedProject.code;
+
+    let updatedSavedRecords = savedPlanRecords;
+
+    for (const plan of importedPlans) {
+      let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" =
+        "GOODS";
+      if (plan.category === "Works") catEnum = "WORKS";
+      else if (plan.category === "Consultancy Services")
+        catEnum = "CONSULTANCY";
+      else if (plan.category === "Non-Consulting Services")
+        catEnum = "NON_CONSULTING";
+
+      const periodStart = plan.planPeriod?.from?.gregorian || "2025-07-08";
+      const periodEnd = plan.planPeriod?.to?.gregorian || "2026-07-07";
+
+      try {
+        const created = await createPlan({
+          projectId: targetProjectId,
+          title: plan.name.trim(),
+          budgetYear: plan.budgetYear,
+          procurementCategory: catEnum,
+          organization:
+            plan.organizationRegion ||
+            selectedProject.organizationRegion ||
+            "Federal / FPCU",
+          description: plan.description || undefined,
+          periodStart: new Date(periodStart).toISOString(),
+          periodEnd: new Date(periodEnd).toISOString(),
+        });
+        if (created && created.id) {
+          plan.reference = created.id;
+          plan.id = created.id;
+          plan.createdById = created.createdBy;
+          plan.createdByName =
+            created.creator?.displayName ||
+            created.creator?.name ||
+            effectiveUser?.displayName ||
+            "Assigned Officer";
+          plan.createdAt = created.createdAt;
+        }
+      } catch (err) {
+        console.warn("Backend createPlan in handleBulkImportPlans note:", err);
+      }
+
+      updatedSavedRecords = addSavedPlanRecord(updatedSavedRecords, {
+        plan,
+        projectCode: selectedProject.code,
+      });
+    }
+
+    setSavedPlanRecords(updatedSavedRecords);
+    window.localStorage.setItem(
+      OFFICER_PLAN_DRAFTS_STORAGE_KEY,
+      JSON.stringify(updatedSavedRecords),
+    );
+
+    await loadData();
+  }
+
+  async function handleBulkImportActivities(
+    importedActivities: ProcurementActivitySummary[],
+  ) {
+    if (!selectedProject || !selectedPlan || importedActivities.length === 0)
+      return;
+
+    const planRef = selectedPlan.reference;
+    let updatedActivityRecords = savedActivityRecords;
+
+    // Resolve or create backend plan
+    const matchingBackendPlan = backendPlans.find(
+      (bp) =>
+        bp.id === selectedPlan.id ||
+        bp.id === selectedPlan.reference ||
+        bp.title.toLowerCase().trim() ===
+          selectedPlan.name.toLowerCase().trim() ||
+        bp.title.toLowerCase().trim() ===
+          selectedPlan.reference.toLowerCase().trim(),
+    );
+
+    let targetBackendPlanId =
+      matchingBackendPlan?.id ||
+      (selectedPlan.id &&
+      selectedPlan.id.includes("-") &&
+      selectedPlan.id.length > 20
+        ? selectedPlan.id
+        : undefined);
+
+    if (!targetBackendPlanId) {
+      const targetProjectId =
+        selectedProject.id && selectedProject.id.length > 20
+          ? selectedProject.id
+          : backendProjects.find(
+              (bp) =>
+                bp.code === selectedProject.code ||
+                bp.id === selectedProject.id ||
+                bp.name === selectedProject.name,
+            )?.id ||
+            selectedProject.id ||
+            selectedProject.code;
+
+      try {
+        let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" =
+          "GOODS";
+        if (selectedPlan.category === "Works") catEnum = "WORKS";
+        else if (selectedPlan.category === "Consultancy Services")
+          catEnum = "CONSULTANCY";
+        else if (selectedPlan.category === "Non-Consulting Services")
+          catEnum = "NON_CONSULTING";
+
+        const created = await createPlan({
+          projectId: targetProjectId,
+          title: selectedPlan.name.trim(),
+          budgetYear: selectedPlan.budgetYear,
+          procurementCategory: catEnum,
+          organization: selectedPlan.organizationRegion || "Federal / FPCU",
+          description: selectedPlan.description || undefined,
+          periodStart: selectedPlan.planPeriod?.from?.gregorian || "2025-07-08",
+          periodEnd: selectedPlan.planPeriod?.to?.gregorian || "2026-07-07",
+        });
+        if (created && created.id) {
+          targetBackendPlanId = created.id;
+        }
+      } catch (err) {
+        console.warn(
+          "Backend createPlan in handleBulkImportActivities note:",
+          err,
+        );
+      }
+    }
+
+    for (const activity of importedActivities) {
+      updatedActivityRecords = addSavedActivityRecord(updatedActivityRecords, {
+        activity,
+        planReference: planRef,
+        projectCode: selectedProject.code,
+      });
+
+      if (targetBackendPlanId) {
+        try {
+          const methodLabel = activity.method || "RFB - National";
+          const resolvedMethodId =
+            await resolveProcurementMethodId(methodLabel);
+
+          await createActivity({
+            planId: targetBackendPlanId,
+            procurementMethodId: resolvedMethodId,
+            description: activity.description || "Activity description",
+            estimatedBudget: Number(activity.estimatedAmount) || 500000,
+            currency: selectedPlan.currency || "ETB",
+            fundings: [
+              {
+                fundingSource:
+                  selectedProject.fundingSource ||
+                  "African Development Bank (AfDB)",
+                allocationPct: 100,
+              },
+            ],
+          });
+        } catch (err) {
+          console.warn(
+            "Backend createActivity in handleBulkImportActivities note:",
+            err,
+          );
+        }
+      }
+    }
+
+    setSavedActivityRecords(updatedActivityRecords);
+    window.localStorage.setItem(
+      OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+      JSON.stringify(updatedActivityRecords),
+    );
+
+    // Also update savedPlanRecords with updated activity count and activities
+    const currentPlanActivities = selectedPlanActivities.filter(
+      (a) =>
+        !importedActivities.some(
+          (ia) => ia.reference.toLowerCase() === a.reference.toLowerCase(),
+        ),
+    );
+    const combinedActivities = [
+      ...currentPlanActivities,
+      ...importedActivities,
+    ];
+
+    const updatedPlan: ProcurementPlanSummary = {
+      ...selectedPlan,
+      activities: combinedActivities.length,
+      planActivities: combinedActivities,
+    };
+
+    const nextPlanRecords = upsertSavedPlanRecord(savedPlanRecords, {
+      plan: updatedPlan,
+      projectCode: selectedProject.code,
+    });
+    setSavedPlanRecords(nextPlanRecords);
+    window.localStorage.setItem(
+      OFFICER_PLAN_DRAFTS_STORAGE_KEY,
+      JSON.stringify(nextPlanRecords),
+    );
+
+    await loadData();
+  }
+
   if (selectedProject && (mode === "create-plan" || mode === "edit-plan")) {
     return (
       <CreateProcurementPlanView
+        key={
+          mode === "edit-plan"
+            ? selectedPlan?.reference || "edit-plan"
+            : "create-plan"
+        }
         initialPlan={mode === "edit-plan" ? selectedPlan : undefined}
         onSavePlan={savePlan}
         project={selectedProject}
@@ -1129,8 +1417,34 @@ export function OfficerProjectsView({
     selectedPlan &&
     (mode === "create-activity" || mode === "edit-activity")
   ) {
+    if (
+      mode === "edit-activity" &&
+      selectedActivityReference &&
+      !selectedActivity &&
+      isLoadingData
+    ) {
+      return (
+        <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-2xs">
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#176c55] border-t-transparent" />
+          <p className="text-xs font-semibold text-slate-700">
+            Loading activity details...
+          </p>
+          <p className="text-[11px] text-slate-400">
+            Retrieving saved configuration and roadmap entries
+          </p>
+        </div>
+      );
+    }
+
     return (
       <CreateProcurementActivityView
+        key={
+          mode === "edit-activity"
+            ? selectedActivity?.reference ||
+              selectedActivityReference ||
+              "edit-activity"
+            : "create-activity"
+        }
         existingActivityCount={
           selectedPlan.activities + selectedPlanActivities.length
         }
@@ -1160,6 +1474,7 @@ export function OfficerProjectsView({
   if (selectedProject && selectedPlan) {
     return (
       <OfficerProcurementPlanDetailView
+        onBulkImportActivities={handleBulkImportActivities}
         onSubmitToDirector={submitPlanToDirector}
         onUpdateActivity={handleActivityUpdated}
         onUpdatePlan={handlePlanUpdated}
@@ -1171,7 +1486,12 @@ export function OfficerProjectsView({
   }
 
   if (selectedProject) {
-    return <OfficerProjectDetailView project={selectedProject} />;
+    return (
+      <OfficerProjectDetailView
+        onImportPlans={handleBulkImportPlans}
+        project={selectedProject}
+      />
+    );
   }
 
   if (selectedProjectCode && !selectedProject) {
@@ -1282,8 +1602,6 @@ function OfficerProjectsList({
       ? "Showing 0 entries"
       : `Showing 1 to ${resultCount} of ${resultCount} entries`;
 
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-
   return (
     <div className="space-y-5 pb-6">
       <header>
@@ -1315,24 +1633,6 @@ function OfficerProjectsList({
               Overview of projects specifically assigned to your account for
               procurement planning and tracking.
             </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2.5">
-            <button
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
-              onClick={() => exportOfficerProjectsToExcel([...projects])}
-              type="button"
-            >
-              <Download aria-hidden="true" className="h-3.5 w-3.5" />
-              Export Excel
-            </button>
-            <button
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-[#176c55] shadow-2xs hover:bg-[#edf5f1] transition cursor-pointer"
-              onClick={() => setIsImportModalOpen(true)}
-              type="button"
-            >
-              <Upload aria-hidden="true" className="h-3.5 w-3.5" />
-              Import Excel
-            </button>
           </div>
         </div>
       </header>
@@ -1606,36 +1906,6 @@ function OfficerProjectsList({
           </section>
         </>
       )}
-
-      <ExcelImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onImport={(imported) => {
-          if (typeof window !== "undefined") {
-            const raw = window.localStorage.getItem(
-              OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
-            );
-            let existingRecords = parseSavedActivityRecords(raw);
-
-            imported.forEach((act) => {
-              const defaultProj = projects[0]?.code || "PRJ-24-001";
-              const defaultPlan =
-                projects[0]?.plans?.[0]?.reference || "PP-DRIVE-2016-01";
-              existingRecords = addSavedActivityRecord(existingRecords, {
-                activity: act,
-                planReference: defaultPlan,
-                projectCode: defaultProj,
-              });
-            });
-
-            window.localStorage.setItem(
-              OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
-              JSON.stringify(existingRecords),
-            );
-            window.location.reload();
-          }
-        }}
-      />
     </div>
   );
 }

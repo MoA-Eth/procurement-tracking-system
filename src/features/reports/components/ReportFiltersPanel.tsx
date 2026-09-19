@@ -30,28 +30,27 @@ export interface ReportFiltersPanelProps {
   activeFilterCount: number;
   projectOptions: SearchableSelectOption[];
   fundingSourceOptions: SearchableSelectOption[];
+  fundingTypeOptions?: SearchableSelectOption[];
   methodOptions: SearchableSelectOption[];
   officerOptions: SearchableSelectOption[];
   categoryOptions: SearchableSelectOption[];
+  supplierOptions?: SearchableSelectOption[];
 }
 
 export function ReportFiltersPanel({
   activeReport,
   filters,
   onUpdateFilter,
-  onApply: _onApply,
   onReset,
-  onExport: _onExport,
-  isExporting: _isExporting,
   exportError,
-  isApplying: _isApplying,
-  appliedFeedback: _appliedFeedback,
   activeFilterCount,
   projectOptions,
   fundingSourceOptions,
+  fundingTypeOptions,
   methodOptions,
   officerOptions,
   categoryOptions,
+  supplierOptions = [],
 }: ReportFiltersPanelProps) {
   const [showMore, setShowMore] = useState(false);
 
@@ -113,7 +112,7 @@ export function ReportFiltersPanel({
           <>
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                EFY
+                Fiscal Year (EFY)
               </label>
               <select
                 value={filters.efy}
@@ -121,9 +120,10 @@ export function ReportFiltersPanel({
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
                 <option value="ALL">All Years</option>
+                <option value="2016 EFY">2016 EFY</option>
                 <option value="2017 EFY">2017 EFY</option>
                 <option value="2018 EFY">2018 EFY</option>
-                <option value="2026">2026</option>
+                <option value="2019 EFY">2019 EFY</option>
               </select>
             </div>
 
@@ -132,7 +132,7 @@ export function ReportFiltersPanel({
               value={filters.project}
               onChange={(val) => onUpdateFilter("project", val)}
               options={projectOptions}
-              searchPlaceholder="Search project code or name..."
+              searchPlaceholder="Search project..."
             />
 
             <SearchableSelect
@@ -160,22 +160,33 @@ export function ReportFiltersPanel({
             />
 
             {showMore && (
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                  Plan Status
-                </label>
-                <select
-                  value={filters.planStatus}
-                  onChange={(e) => onUpdateFilter("planStatus", e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
-                >
-                  <option value="ALL">All Statuses</option>
-                  <option value="DRAFT">Draft</option>
-                  <option value="SUBMITTED">Submitted</option>
-                  <option value="WITH_COMMITTEE">Committee Review</option>
-                  <option value="APPROVED">Approved</option>
-                </select>
-              </div>
+              <>
+                <SearchableSelect
+                  label="Assigned Officer"
+                  value={filters.officer}
+                  onChange={(val) => onUpdateFilter("officer", val)}
+                  options={officerOptions}
+                  searchPlaceholder="Search officer..."
+                />
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    Plan Status
+                  </label>
+                  <select
+                    value={filters.planStatus}
+                    onChange={(e) =>
+                      onUpdateFilter("planStatus", e.target.value)
+                    }
+                    className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="DRAFT">Draft</option>
+                    <option value="SUBMITTED">Submitted</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                  </select>
+                </div>
+              </>
             )}
           </>
         )}
@@ -185,17 +196,18 @@ export function ReportFiltersPanel({
           <>
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-                EFY
+                Fiscal Year (EFY)
               </label>
               <select
                 value={filters.efy}
                 onChange={(e) => onUpdateFilter("efy", e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
+                <option value="ALL">All Years</option>
+                <option value="2016 EFY">2016 EFY</option>
                 <option value="2017 EFY">2017 EFY</option>
                 <option value="2018 EFY">2018 EFY</option>
-                <option value="2026">2026</option>
-                <option value="ALL">All Years</option>
+                <option value="2019 EFY">2019 EFY</option>
               </select>
             </div>
 
@@ -207,7 +219,7 @@ export function ReportFiltersPanel({
               searchPlaceholder="Search project..."
             />
 
-            <div className="sm:col-span-2 md:col-span-1">
+            <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1">
                 Date Range
               </label>
@@ -216,17 +228,43 @@ export function ReportFiltersPanel({
                   type="date"
                   value={filters.fromDate}
                   onChange={(e) => onUpdateFilter("fromDate", e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-2 py-1 font-semibold text-slate-800 bg-white outline-none text-xs"
+                  className="w-full rounded-xl border border-slate-300 px-2 py-1.5 text-slate-700 bg-white outline-none text-xs"
                 />
-                <span className="text-slate-400 font-bold">-</span>
+                <span className="text-slate-400 text-xs">to</span>
                 <input
                   type="date"
                   value={filters.toDate}
                   onChange={(e) => onUpdateFilter("toDate", e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-2 py-1 font-semibold text-slate-800 bg-white outline-none text-xs"
+                  className="w-full rounded-xl border border-slate-300 px-2 py-1.5 text-slate-700 bg-white outline-none text-xs"
                 />
               </div>
             </div>
+
+            {showMore && (
+              <>
+                <SearchableSelect
+                  label="Category"
+                  value={filters.category}
+                  onChange={(val) => onUpdateFilter("category", val)}
+                  options={categoryOptions}
+                  searchPlaceholder="Search category..."
+                />
+                <SearchableSelect
+                  label="Procurement Method"
+                  value={filters.procurementMethod}
+                  onChange={(val) => onUpdateFilter("procurementMethod", val)}
+                  options={methodOptions}
+                  searchPlaceholder="Search method..."
+                />
+                <SearchableSelect
+                  label="Assigned Officer"
+                  value={filters.officer}
+                  onChange={(val) => onUpdateFilter("officer", val)}
+                  options={officerOptions}
+                  searchPlaceholder="Search officer..."
+                />
+              </>
+            )}
           </>
         )}
 
@@ -271,11 +309,30 @@ export function ReportFiltersPanel({
                 onChange={(e) => onUpdateFilter("reviewType", e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
-                <option value="ALL">All Review Types</option>
-                <option value="Prior">Prior Review</option>
-                <option value="Post">Post Review</option>
+                <option value="ALL">All Reviews</option>
+                <option value="Prior Review">Prior Review</option>
+                <option value="Post Review">Post Review</option>
               </select>
             </div>
+
+            {showMore && (
+              <>
+                <SearchableSelect
+                  label="Category"
+                  value={filters.category}
+                  onChange={(val) => onUpdateFilter("category", val)}
+                  options={categoryOptions}
+                  searchPlaceholder="Search category..."
+                />
+                <SearchableSelect
+                  label="Procurement Method"
+                  value={filters.procurementMethod}
+                  onChange={(val) => onUpdateFilter("procurementMethod", val)}
+                  options={methodOptions}
+                  searchPlaceholder="Search method..."
+                />
+              </>
+            )}
           </>
         )}
 
@@ -299,7 +356,7 @@ export function ReportFiltersPanel({
                 onChange={(e) => onUpdateFilter("delayRange", e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
-                <option value="ALL">All Overdue Items</option>
+                <option value="ALL">All Overdue</option>
                 <option value="1-7">1 - 7 Days Overdue</option>
                 <option value="8-30">8 - 30 Days Overdue</option>
                 <option value="31-60">31 - 60 Days Overdue</option>
@@ -314,11 +371,31 @@ export function ReportFiltersPanel({
               options={officerOptions}
               searchPlaceholder="Search officer..."
             />
+
+            {showMore && (
+              <>
+                <SearchableSelect
+                  label="Category"
+                  value={filters.category}
+                  onChange={(val) => onUpdateFilter("category", val)}
+                  options={categoryOptions}
+                  searchPlaceholder="Search category..."
+                />
+                <SearchableSelect
+                  label="Procurement Method"
+                  value={filters.procurementMethod}
+                  onChange={(val) => onUpdateFilter("procurementMethod", val)}
+                  options={methodOptions}
+                  searchPlaceholder="Search method..."
+                />
+              </>
+            )}
           </>
         )}
 
-        {/* 5. MONTHLY SUMMARY */}
-        {activeReport === "monthly-summary" && (
+        {/* 5. MONTHLY PROCUREMENT & MONTHLY SUMMARY */}
+        {(activeReport === "monthly-procurement" ||
+          activeReport === "monthly-summary") && (
           <>
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1">
@@ -329,10 +406,12 @@ export function ReportFiltersPanel({
                 onChange={(e) => onUpdateFilter("efy", e.target.value)}
                 className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
               >
+                <option value="ALL">All Years</option>
+                <option value="2016 EFY">2016 EFY</option>
                 <option value="2017 EFY">2017 EFY</option>
                 <option value="2018 EFY">2018 EFY</option>
+                <option value="2019 EFY">2019 EFY</option>
                 <option value="2026">2026</option>
-                <option value="ALL">All Years</option>
               </select>
             </div>
 
@@ -340,8 +419,8 @@ export function ReportFiltersPanel({
               label="Funding Type"
               value={filters.fundingType}
               onChange={(val) => onUpdateFilter("fundingType", val)}
-              options={fundingSourceOptions}
-              searchPlaceholder="Search funding..."
+              options={fundingTypeOptions || fundingSourceOptions}
+              searchPlaceholder="Search funding type or source..."
             />
 
             <div>
@@ -358,10 +437,243 @@ export function ReportFiltersPanel({
                 <option value="UA">UA (AfDB Unit of Account)</option>
               </select>
             </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Reporting Month
+              </label>
+              <select
+                value={filters.month}
+                onChange={(e) => onUpdateFilter("month", e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">Current Month</option>
+                <option value="1">Meskerem (Sept)</option>
+                <option value="2">Tikimt (Oct)</option>
+                <option value="3">Hidar (Nov)</option>
+                <option value="4">Tahsas (Dec)</option>
+                <option value="5">Tir (Jan)</option>
+                <option value="6">Yakatit (Feb)</option>
+                <option value="7">Megabit (Mar)</option>
+                <option value="8">Miyazya (Apr)</option>
+                <option value="9">Ginbot (May)</option>
+                <option value="10">Sene (Jun)</option>
+                <option value="11">Hamle (Jul)</option>
+                <option value="12">Nehase (Aug)</option>
+              </select>
+            </div>
+
+            {showMore && (
+              <>
+                <SearchableSelect
+                  label="Project"
+                  value={filters.project}
+                  onChange={(val) => onUpdateFilter("project", val)}
+                  options={projectOptions}
+                  searchPlaceholder="Search project..."
+                />
+                <SearchableSelect
+                  label="Category"
+                  value={filters.category}
+                  onChange={(val) => onUpdateFilter("category", val)}
+                  options={categoryOptions}
+                  searchPlaceholder="Search category..."
+                />
+              </>
+            )}
           </>
         )}
 
-        {/* 6. CONTRACT & PAYMENT */}
+        {/* 6. QUARTERLY PROCUREMENT SUMMARY */}
+        {activeReport === "quarterly-summary" && (
+          <>
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Fiscal Year (EFY)
+              </label>
+              <select
+                value={filters.efy}
+                onChange={(e) => onUpdateFilter("efy", e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">All Years</option>
+                <option value="2016 EFY">2016 EFY</option>
+                <option value="2017 EFY">2017 EFY</option>
+                <option value="2018 EFY">2018 EFY</option>
+                <option value="2019 EFY">2019 EFY</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Quarter / Period
+              </label>
+              <select
+                value={filters.quarter}
+                onChange={(e) => onUpdateFilter("quarter", e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">Full Year</option>
+                <option value="1">Quarter 1 (Hamle - Tikimt)</option>
+                <option value="2">Quarter 2 (Hidar - Tir)</option>
+                <option value="3">Quarter 3 (Yakatit - Miyazya)</option>
+                <option value="4">Quarter 4 (Ginbot - Sene)</option>
+              </select>
+            </div>
+
+            <SearchableSelect
+              label="Funding Type"
+              value={filters.fundingType}
+              onChange={(val) => onUpdateFilter("fundingType", val)}
+              options={fundingTypeOptions || fundingSourceOptions}
+              searchPlaceholder="Search funding type..."
+            />
+
+            <SearchableSelect
+              label="Category"
+              value={filters.category}
+              onChange={(val) => onUpdateFilter("category", val)}
+              options={categoryOptions}
+              searchPlaceholder="Search category..."
+            />
+
+            {showMore && (
+              <SearchableSelect
+                label="Procurement Method"
+                value={filters.procurementMethod}
+                onChange={(val) => onUpdateFilter("procurementMethod", val)}
+                options={methodOptions}
+                searchPlaceholder="Search method..."
+              />
+            )}
+          </>
+        )}
+
+        {/* 7. QUARTERLY DETAILED & DETAILED PROCUREMENT */}
+        {(activeReport === "quarterly-detailed" ||
+          activeReport === "detailed-procurement") && (
+          <>
+            <SearchableSelect
+              label="Project"
+              value={filters.project}
+              onChange={(val) => onUpdateFilter("project", val)}
+              options={projectOptions}
+              searchPlaceholder="Search project..."
+            />
+
+            <SearchableSelect
+              label="Category"
+              value={filters.category}
+              onChange={(val) => onUpdateFilter("category", val)}
+              options={categoryOptions}
+              searchPlaceholder="Search category..."
+            />
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Quarter / Period
+              </label>
+              <select
+                value={filters.quarter}
+                onChange={(e) => onUpdateFilter("quarter", e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">Full Year</option>
+                <option value="1">Quarter 1</option>
+                <option value="2">Quarter 2</option>
+                <option value="3">Quarter 3</option>
+                <option value="4">Quarter 4</option>
+              </select>
+            </div>
+
+            {showMore && (
+              <>
+                <SearchableSelect
+                  label="Procurement Method"
+                  value={filters.procurementMethod}
+                  onChange={(val) => onUpdateFilter("procurementMethod", val)}
+                  options={methodOptions}
+                  searchPlaceholder="Search method..."
+                />
+                <SearchableSelect
+                  label="Supplier / Contractor"
+                  value={filters.supplier}
+                  onChange={(val) => onUpdateFilter("supplier", val)}
+                  options={supplierOptions}
+                  searchPlaceholder="Search supplier..."
+                />
+              </>
+            )}
+          </>
+        )}
+
+        {/* 8. CONTRACT REGISTER */}
+        {activeReport === "contract-register" && (
+          <>
+            <SearchableSelect
+              label="Project"
+              value={filters.project}
+              onChange={(val) => onUpdateFilter("project", val)}
+              options={projectOptions}
+              searchPlaceholder="Search project..."
+            />
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Contract Status
+              </label>
+              <select
+                value={filters.contractStatus}
+                onChange={(e) =>
+                  onUpdateFilter("contractStatus", e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="TERMINATED">Terminated</option>
+              </select>
+            </div>
+
+            <SearchableSelect
+              label="Supplier / Contractor"
+              value={filters.supplier}
+              onChange={(val) => onUpdateFilter("supplier", val)}
+              options={supplierOptions}
+              searchPlaceholder="Search supplier..."
+            />
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Region
+              </label>
+              <select
+                value={filters.region}
+                onChange={(e) => onUpdateFilter("region", e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">All Regions</option>
+                <option value="Federal">Federal / FPCU</option>
+                <option value="Oromia">Oromia</option>
+                <option value="Amhara">Amhara</option>
+                <option value="Somali">Somali</option>
+              </select>
+            </div>
+
+            {showMore && (
+              <SearchableSelect
+                label="Procurement Method"
+                value={filters.procurementMethod}
+                onChange={(val) => onUpdateFilter("procurementMethod", val)}
+                options={methodOptions}
+                searchPlaceholder="Search method..."
+              />
+            )}
+          </>
+        )}
+
+        {/* 9. CONTRACT & PAYMENT */}
         {activeReport === "contract-payment" && (
           <>
             <SearchableSelect
@@ -402,14 +714,72 @@ export function ReportFiltersPanel({
                 <option value="ALL">All Regions</option>
                 <option value="Federal">Federal / FPCU</option>
                 <option value="Oromia">Oromia</option>
+                <option value="Amhara">Amhara</option>
                 <option value="Somali">Somali</option>
               </select>
             </div>
+
+            {showMore && (
+              <SearchableSelect
+                label="Supplier / Contractor"
+                value={filters.supplier}
+                onChange={(val) => onUpdateFilter("supplier", val)}
+                options={supplierOptions}
+                searchPlaceholder="Search supplier..."
+              />
+            )}
           </>
         )}
 
-        {/* 7. DETAILED PROCUREMENT */}
-        {activeReport === "detailed-procurement" && (
+        {/* 10. REGIONAL / SECTOR SUMMARY */}
+        {activeReport === "regional-sector-summary" && (
+          <>
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Group Summary By
+              </label>
+              <select
+                value={filters.orgGrouping}
+                onChange={(e) =>
+                  onUpdateFilter("orgGrouping", e.target.value as any)
+                }
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="REGION">Regional Scope</option>
+                <option value="SECTOR">Sector Scope</option>
+                <option value="ORGANIZATION">Organization Unit</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Fiscal Year (EFY)
+              </label>
+              <select
+                value={filters.efy}
+                onChange={(e) => onUpdateFilter("efy", e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">All Years</option>
+                <option value="2016 EFY">2016 EFY</option>
+                <option value="2017 EFY">2017 EFY</option>
+                <option value="2018 EFY">2018 EFY</option>
+                <option value="2019 EFY">2019 EFY</option>
+              </select>
+            </div>
+
+            <SearchableSelect
+              label="Project"
+              value={filters.project}
+              onChange={(val) => onUpdateFilter("project", val)}
+              options={projectOptions}
+              searchPlaceholder="Search project..."
+            />
+          </>
+        )}
+
+        {/* 11. PROJECT SUMMARY */}
+        {activeReport === "project-summary" && (
           <>
             <SearchableSelect
               label="Project"
@@ -418,6 +788,23 @@ export function ReportFiltersPanel({
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Fiscal Year (EFY)
+              </label>
+              <select
+                value={filters.efy}
+                onChange={(e) => onUpdateFilter("efy", e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">All Years</option>
+                <option value="2016 EFY">2016 EFY</option>
+                <option value="2017 EFY">2017 EFY</option>
+                <option value="2018 EFY">2018 EFY</option>
+                <option value="2019 EFY">2019 EFY</option>
+              </select>
+            </div>
 
             <SearchableSelect
               label="Category"
@@ -429,8 +816,9 @@ export function ReportFiltersPanel({
           </>
         )}
 
-        {/* 8. PROJECT & OFFICER SUMMARY */}
-        {activeReport === "project-officer" && (
+        {/* 12. OFFICER SUMMARY & PROJECT OFFICER */}
+        {(activeReport === "officer-summary" ||
+          activeReport === "project-officer") && (
           <>
             <SearchableSelect
               label="Project"
@@ -447,6 +835,130 @@ export function ReportFiltersPanel({
               options={officerOptions}
               searchPlaceholder="Search officer..."
             />
+
+            {showMore && (
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                  Fiscal Year (EFY)
+                </label>
+                <select
+                  value={filters.efy}
+                  onChange={(e) => onUpdateFilter("efy", e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+                >
+                  <option value="ALL">All Years</option>
+                  <option value="2016 EFY">2016 EFY</option>
+                  <option value="2017 EFY">2017 EFY</option>
+                  <option value="2018 EFY">2018 EFY</option>
+                </select>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 13. COMMITTEE / APPROVAL PROGRESS */}
+        {activeReport === "committee-approval" && (
+          <>
+            <SearchableSelect
+              label="Project"
+              value={filters.project}
+              onChange={(val) => onUpdateFilter("project", val)}
+              options={projectOptions}
+              searchPlaceholder="Search project..."
+            />
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Committee Result
+              </label>
+              <select
+                value={filters.committeeResult}
+                onChange={(e) =>
+                  onUpdateFilter("committeeResult", e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">All Results</option>
+                <option value="ENDORSED">Endorsed (3+ votes)</option>
+                <option value="REJECTED">Rejected (3+ votes)</option>
+                <option value="IN_VOTING">Voting in Progress</option>
+                <option value="PENDING">Pending Review</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Management Decision
+              </label>
+              <select
+                value={filters.managementDecision}
+                onChange={(e) =>
+                  onUpdateFilter("managementDecision", e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">All Decisions</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="PENDING">Pending Decision</option>
+              </select>
+            </div>
+
+            <SearchableSelect
+              label="Assigned Officer"
+              value={filters.officer}
+              onChange={(val) => onUpdateFilter("officer", val)}
+              options={officerOptions}
+              searchPlaceholder="Search officer..."
+            />
+          </>
+        )}
+
+        {/* 14. SUPPLIER PERFORMANCE */}
+        {activeReport === "supplier-performance" && (
+          <>
+            <SearchableSelect
+              label="Supplier / Contractor"
+              value={filters.supplier}
+              onChange={(val) => onUpdateFilter("supplier", val)}
+              options={supplierOptions}
+              searchPlaceholder="Search supplier..."
+            />
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Region
+              </label>
+              <select
+                value={filters.region}
+                onChange={(e) => onUpdateFilter("region", e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">All Regions</option>
+                <option value="Federal">Federal / FPCU</option>
+                <option value="Oromia">Oromia</option>
+                <option value="Amhara">Amhara</option>
+                <option value="Somali">Somali</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                Contract Status
+              </label>
+              <select
+                value={filters.contractStatus}
+                onChange={(e) =>
+                  onUpdateFilter("contractStatus", e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none text-xs"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="ACTIVE">Active</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="TERMINATED">Terminated</option>
+              </select>
+            </div>
           </>
         )}
       </div>

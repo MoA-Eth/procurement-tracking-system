@@ -1,19 +1,8 @@
 /**
  * Reports API Client
  *
- * Every /api/reports/* endpoint streams back an .xlsx file (not JSON), secured
- * by cookie session (loadSession/requireAuthenticated) rather than plain JSON
- * GETs. Because of that this client can't reuse `apiClient` as-is (it always
- * does response.text() -> JSON.parse), so `downloadReportFile` below is a
- * sibling to `directApiFetch` that:
- *   - builds the URL + query string the same way apiClient does
- *   - attaches the in-memory Bearer token (if present) AND credentials:
- *     "include" for the cookie session, matching what the backend expects
- *   - reads the response as a Blob instead of text/JSON
- *   - pulls the filename out of the Content-Disposition header
- *   - triggers a browser download
- *
- * Each report function below just supplies the path + typed query params.
+ * Every /api/reports/* endpoint streams back an .xlsx file, secured
+ * by cookie session (loadSession/requireAuthenticated) with Bearer fallback.
  */
 
 import { authTokenManager } from "./authTokenManager";
@@ -21,7 +10,6 @@ import { ApiClientError, BACKEND_API_URL } from "./apiClient";
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
-/** Every report endpoint supports pagination on its Excel export. */
 export interface ReportPagination {
   page?: number;
   limit?: number;
@@ -32,24 +20,23 @@ export interface DownloadedReport {
   filename: string;
 }
 
-// ─── Per-report query param types (from reports.routes.ts) ────────────────────
+// ─── Query Interfaces ────────────────────────────────────────────────────────
 
-/** Report #1 — Annual Procurement Plan */
 export interface AnnualPlanQuery extends ReportPagination {
-  budgetYear: string; // required
+  budgetYear?: string;
+  fiscalYear?: string;
   projectId?: string;
   planId?: string;
   category?: string;
   methodId?: string;
   fundingSourceId?: string;
   region?: string;
+  sector?: string;
   officerId?: string;
   status?: string;
-  minAmount?: number;
-  maxAmount?: number;
+  currency?: string;
 }
 
-/** Report #2 — Plan vs Actual */
 export interface PlanVsActualQuery extends ReportPagination {
   projectId?: string;
   planId?: string;
@@ -58,6 +45,7 @@ export interface PlanVsActualQuery extends ReportPagination {
   methodId?: string;
   officerId?: string;
   region?: string;
+  sector?: string;
   fundingSourceId?: string;
   stageTypeId?: string;
   stageStatus?: string;
@@ -66,7 +54,6 @@ export interface PlanVsActualQuery extends ReportPagination {
   dateTo?: string;
 }
 
-/** Report #3 — Procurement STEP Report */
 export interface ProcurementStepsQuery extends ReportPagination {
   projectId?: string;
   planId?: string;
@@ -79,18 +66,21 @@ export interface ProcurementStepsQuery extends ReportPagination {
   activityStatus?: string;
   stageTypeId?: string;
   stageStatus?: string;
+  currency?: string;
   dateFrom?: string;
   dateTo?: string;
 }
 
-/** Report #4 — Delayed Procurement */
 export interface DelayedProcurementQuery extends ReportPagination {
+  budgetYear?: string;
+  fiscalYear?: string;
   projectId?: string;
   planId?: string;
   category?: string;
   methodId?: string;
   officerId?: string;
   region?: string;
+  sector?: string;
   fundingSourceId?: string;
   activityStatus?: string;
   stageTypeId?: string;
@@ -100,85 +90,144 @@ export interface DelayedProcurementQuery extends ReportPagination {
   dateTo?: string;
 }
 
-/** Report #5 — Monthly Summary (Director only) */
-export interface MonthlySummaryQuery extends ReportPagination {
-  year: number; // required
-  quarter?: 1 | 2 | 3 | 4;
+export interface MonthlyProcurementQuery extends ReportPagination {
+  year?: number;
+  month?: number;
+  budgetYear?: string;
+  fiscalYear?: string;
   projectId?: string;
+  sector?: string;
+  region?: string;
   category?: string;
   methodId?: string;
   fundingSourceId?: string;
-  region?: string;
   officerId?: string;
+  status?: string;
 }
 
-/** Report #6 — Contract & Payment (Director only) */
+export interface QuarterlySummaryQuery extends ReportPagination {
+  quarter?: number;
+  periodType?: "QUARTER" | "SIX_MONTH" | "SEVEN_MONTH" | "ANNUAL";
+  year?: number;
+  fiscalYear?: string;
+  budgetYear?: string;
+  projectId?: string;
+  sector?: string;
+  region?: string;
+  fundingSourceId?: string;
+  fundingType?: string;
+  category?: string;
+  methodId?: string;
+}
+
+export interface QuarterlyDetailedQuery extends ReportPagination {
+  quarter?: number;
+  year?: number;
+  fiscalYear?: string;
+  projectId?: string;
+  planId?: string;
+  region?: string;
+  category?: string;
+  methodId?: string;
+  fundingSourceId?: string;
+  officerId?: string;
+  supplierId?: string;
+  contractStatus?: string;
+  activityStatus?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface ContractRegisterQuery extends ReportPagination {
+  projectId?: string;
+  sector?: string;
+  region?: string;
+  supplierId?: string;
+  officerId?: string;
+  currency?: string;
+  contractStatus?: string;
+  methodId?: string;
+  fundingSourceId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 export interface ContractPaymentQuery extends ReportPagination {
   projectId?: string;
   planId?: string;
   activityId?: string;
   supplierId?: string;
   region?: string;
+  sector?: string;
   officerId?: string;
   contractStatus?: string;
   paymentStatus?: string;
   fundingSourceId?: string;
-  minAmount?: number;
-  maxAmount?: number;
+  currency?: string;
   dateFrom?: string;
   dateTo?: string;
 }
 
-/** Report #7 — Detailed Procurement */
-export interface DetailedProcurementQuery extends ReportPagination {
-  projectId?: string;
-  planId?: string;
-  activityId?: string;
-  category?: string;
-  methodId?: string;
-  marketApproach?: string;
-  reviewType?: string;
-  fundingSourceId?: string;
-  region?: string;
-  officerId?: string;
-  supplierId?: string;
-  contractStatus?: string;
-  activityStatus?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}
-
-/** Report #8 — Project & Officer Summary (Director only) */
-export interface ProjectOfficerSummaryQuery extends ReportPagination {
-  projectId?: string;
-  officerId?: string;
-  region?: string;
+export interface RegionalSectorSummaryQuery extends ReportPagination {
+  fiscalYear?: string;
   budgetYear?: string;
-  category?: string;
-  methodId?: string;
+  groupBy?: "REGION" | "SECTOR" | "ORGANIZATION";
+  projectId?: string;
   fundingSourceId?: string;
   status?: string;
-}
-
-/** Report #9 — Activity Milestone Report */
-export interface ActivityMilestoneQuery extends ReportPagination {
-  projectId?: string;
-  planId?: string;
-  budgetYear?: string;
   category?: string;
   methodId?: string;
-  marketApproach?: string;
-  reviewType?: string;
+  currency?: string;
+}
+
+export interface ProjectSummaryQuery extends ReportPagination {
+  fiscalYear?: string;
+  budgetYear?: string;
+  projectId?: string;
+  region?: string;
+  sector?: string;
   fundingSourceId?: string;
+  category?: string;
+  methodId?: string;
+  status?: string;
+  currency?: string;
+}
+
+export interface OfficerSummaryQuery extends ReportPagination {
+  fiscalYear?: string;
+  budgetYear?: string;
   officerId?: string;
-  activityStatus?: string;
-  contractStatus?: string;
+  projectId?: string;
+  sector?: string;
+  region?: string;
+  status?: string;
+  category?: string;
+  methodId?: string;
+  currency?: string;
+}
+
+export interface CommitteeApprovalQuery extends ReportPagination {
+  fiscalYear?: string;
+  budgetYear?: string;
+  projectId?: string;
+  officerId?: string;
+  planStatus?: string;
+  directorDecision?: string;
+  committeeResult?: string;
+  managementDecision?: string;
+}
+
+export interface SupplierPerformanceQuery extends ReportPagination {
   supplierId?: string;
+  region?: string;
+  sector?: string;
+  contractStatus?: string;
+  currency?: string;
   dateFrom?: string;
   dateTo?: string;
 }
 
-// ─── Core download helper ──────────────────────────────────────────────────
+// ─── Query builder & download helper ─────────────────────────────────────────
 
 type QueryValue = string | number | boolean | undefined | null;
 
@@ -198,24 +247,18 @@ function buildQueryString(params: object): string {
 function extractFilename(response: Response, fallback: string): string {
   const disposition = response.headers.get("Content-Disposition");
   if (!disposition) return fallback;
-  // Handles both filename="x.xlsx" and filename*=UTF-8''x.xlsx
   const starMatch = /filename\*=(?:UTF-8'')?([^;]+)/i.exec(disposition);
   if (starMatch?.[1]) {
     try {
       return decodeURIComponent(starMatch[1].replace(/["']/g, "").trim());
     } catch {
-      // fall through to plain match
+      // fallback
     }
   }
   const plainMatch = /filename="?([^";]+)"?/i.exec(disposition);
   return plainMatch?.[1]?.trim() || fallback;
 }
 
-/**
- * Downloads a report file as a Blob. Mirrors apiClient's URL-building, auth
- * (Bearer + cookie), and error handling, but reads the body as a Blob instead
- * of JSON, since every /reports/* route streams an .xlsx file.
- */
 export async function downloadReportFile(
   path: string,
   query: object,
@@ -242,7 +285,6 @@ export async function downloadReportFile(
   });
 
   if (!response.ok) {
-    // Errors (403 director-only, 400 validation, etc.) come back as JSON.
     let message =
       response.statusText || `Request failed with status ${response.status}`;
     let data: unknown;
@@ -260,7 +302,7 @@ export async function downloadReportFile(
         }
       }
     } catch {
-      // response body wasn't JSON; keep default message
+      // ignore
     }
     throw new ApiClientError(message, response.status, data);
   }
@@ -270,7 +312,6 @@ export async function downloadReportFile(
   return { blob, filename };
 }
 
-/** Triggers a browser "Save As" for an already-downloaded report blob. */
 export function saveReportFile(report: DownloadedReport): void {
   const objectUrl = URL.createObjectURL(report.blob);
   const link = document.createElement("a");
@@ -282,7 +323,6 @@ export function saveReportFile(report: DownloadedReport): void {
   URL.revokeObjectURL(objectUrl);
 }
 
-/** Convenience: download + immediately trigger the browser save prompt. */
 async function downloadAndSave(
   path: string,
   query: object,
@@ -293,20 +333,20 @@ async function downloadAndSave(
   return report;
 }
 
-// ─── Per-report exports ─────────────────────────────────────────────────────
+// ─── Individual Download Methods for all 14 Reports ──────────────────────────
 
-/** Report #1 — Annual Procurement Plan */
+// 1. Annual Procurement Plan (P0)
 export function downloadAnnualProcurementPlanReport(
   query: AnnualPlanQuery,
 ): Promise<DownloadedReport> {
   return downloadAndSave(
     "/reports/annual-procurement-plan",
     query,
-    `annual_procurement_plan_${query.budgetYear}.xlsx`,
+    `annual_procurement_plan_${query.budgetYear || "all"}.xlsx`,
   );
 }
 
-/** Report #2 — Plan vs Actual */
+// 2. Plan vs Actual Progress (P0)
 export function downloadPlanVsActualReport(
   query: PlanVsActualQuery,
 ): Promise<DownloadedReport> {
@@ -317,7 +357,7 @@ export function downloadPlanVsActualReport(
   );
 }
 
-/** Report #3 — Procurement STEP Report */
+// 3. Procurement Step Report (P0)
 export function downloadProcurementStepsReport(
   query: ProcurementStepsQuery,
 ): Promise<DownloadedReport> {
@@ -328,7 +368,7 @@ export function downloadProcurementStepsReport(
   );
 }
 
-/** Report #4 — Delayed Procurement */
+// 4. Delayed Procurement Report (P0)
 export function downloadDelayedProcurementReport(
   query: DelayedProcurementQuery,
 ): Promise<DownloadedReport> {
@@ -339,57 +379,116 @@ export function downloadDelayedProcurementReport(
   );
 }
 
-/** Report #5 — Monthly Summary (Director only) */
-export function downloadMonthlySummaryReport(
-  query: MonthlySummaryQuery,
+// 5. Monthly Procurement Report (P0)
+export function downloadMonthlyProcurementReport(
+  query: MonthlyProcurementQuery,
 ): Promise<DownloadedReport> {
   return downloadAndSave(
-    "/reports/monthly-summary",
+    "/reports/monthly-procurement",
     query,
-    `monthly_summary_${query.year}.xlsx`,
+    `monthly_procurement_report_${query.year || new Date().getFullYear()}.xlsx`,
+  );
+}
+export const downloadMonthlySummaryReport = downloadMonthlyProcurementReport;
+
+// 6. Quarterly Procurement Summary (P0)
+export function downloadQuarterlySummaryReport(
+  query: QuarterlySummaryQuery,
+): Promise<DownloadedReport> {
+  return downloadAndSave(
+    "/reports/quarterly-summary",
+    query,
+    `quarterly_procurement_summary_${query.year || new Date().getFullYear()}.xlsx`,
   );
 }
 
-/** Report #6 — Contract & Payment (Director only) */
+// 7. Quarterly Detailed Procurement Report (P1)
+export function downloadQuarterlyDetailedReport(
+  query: QuarterlyDetailedQuery,
+): Promise<DownloadedReport> {
+  return downloadAndSave(
+    "/reports/quarterly-detailed",
+    query,
+    "quarterly_detailed_procurement.xlsx",
+  );
+}
+export const downloadDetailedProcurementReport =
+  downloadQuarterlyDetailedReport;
+
+// 8. Contract Register (P0)
+export function downloadContractRegisterReport(
+  query: ContractRegisterQuery,
+): Promise<DownloadedReport> {
+  return downloadAndSave(
+    "/reports/contract-register",
+    query,
+    "contract_register.xlsx",
+  );
+}
+
+// 9. Contract & Payment Status Report (P0)
 export function downloadContractPaymentReport(
   query: ContractPaymentQuery,
 ): Promise<DownloadedReport> {
   return downloadAndSave(
     "/reports/contract-payment",
     query,
-    "contract_payment.xlsx",
+    "contract_payment_status.xlsx",
   );
 }
 
-/** Report #7 — Detailed Procurement */
-export function downloadDetailedProcurementReport(
-  query: DetailedProcurementQuery,
+// 10. Regional / Sector Summary (P0)
+export function downloadRegionalSectorSummaryReport(
+  query: RegionalSectorSummaryQuery,
 ): Promise<DownloadedReport> {
   return downloadAndSave(
-    "/reports/detailed-procurement",
+    "/reports/regional-sector-summary",
     query,
-    "detailed_procurement.xlsx",
+    `regional_sector_summary_${query.groupBy?.toLowerCase() || "region"}.xlsx`,
   );
 }
 
-/** Report #8 — Project & Officer Summary (Director only) */
-export function downloadProjectOfficerSummaryReport(
-  query: ProjectOfficerSummaryQuery,
+// 11. Project Summary (P0)
+export function downloadProjectSummaryReport(
+  query: ProjectSummaryQuery,
 ): Promise<DownloadedReport> {
   return downloadAndSave(
-    "/reports/project-officer-summary",
+    "/reports/project-summary",
     query,
-    "project_officer_summary.xlsx",
+    "project_summary.xlsx",
   );
 }
 
-/** Report #9 — Activity Milestone Report */
-export function downloadActivityMilestoneReport(
-  query: ActivityMilestoneQuery,
+// 12. Officer Summary (P0)
+export function downloadOfficerSummaryReport(
+  query: OfficerSummaryQuery,
 ): Promise<DownloadedReport> {
   return downloadAndSave(
-    "/reports/activity-milestone",
+    "/reports/officer-summary",
     query,
-    "activity_milestone.xlsx",
+    "officer_summary.xlsx",
+  );
+}
+export const downloadProjectOfficerSummaryReport = downloadOfficerSummaryReport;
+
+// 13. Committee / Approval Progress Report (P0)
+export function downloadCommitteeApprovalReport(
+  query: CommitteeApprovalQuery,
+): Promise<DownloadedReport> {
+  return downloadAndSave(
+    "/reports/committee-approval",
+    query,
+    "committee_approval_progress.xlsx",
+  );
+}
+
+// 14. Supplier Performance (P1)
+export function downloadSupplierPerformanceReport(
+  query: SupplierPerformanceQuery,
+): Promise<DownloadedReport> {
+  return downloadAndSave(
+    "/reports/supplier-performance",
+    query,
+    "supplier_performance.xlsx",
   );
 }

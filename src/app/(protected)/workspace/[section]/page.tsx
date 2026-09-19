@@ -157,9 +157,18 @@ export default async function WorkspaceSectionPage({
       query.mode === "register" || query.mode === "add-payment"
         ? query.mode
         : undefined;
+    const initialActivityReference =
+      typeof query.activity === "string" ? query.activity : undefined;
+    const initialProjectCode =
+      typeof query.project === "string" ? query.project : undefined;
+    const initialPlanReference =
+      typeof query.plan === "string" ? query.plan : undefined;
     return (
       <OfficerContractsView
         fromTracker={fromTracker}
+        initialActivityReference={initialActivityReference}
+        initialPlanReference={initialPlanReference}
+        initialProjectCode={initialProjectCode}
         mode={mode}
         selectedContractNumber={selectedContractNumber}
       />

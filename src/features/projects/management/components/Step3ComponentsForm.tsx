@@ -84,6 +84,15 @@ export function Step3ComponentsForm({
     onChange({ componentsList: updated });
   }
 
+  const isDateInvalid = Boolean(
+    data.startDate &&
+    data.endDate &&
+    new Date(data.endDate) <= new Date(data.startDate),
+  );
+  const dateErrorMessage = isDateInvalid
+    ? "Project End Date must be after the Project Start Date."
+    : undefined;
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -207,7 +216,7 @@ export function Step3ComponentsForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
         <DualCalendarInput
           id="project-start-date"
-          label="Project Start Date (Optional)"
+          label="Project Start Date *"
           gregorianValue={data.startDate}
           ethiopianValue={
             data.startDate && gregorianToEthiopian(data.startDate)
@@ -219,7 +228,7 @@ export function Step3ComponentsForm({
 
         <DualCalendarInput
           id="project-end-date"
-          label="Project End Date (Optional)"
+          label="Project End Date *"
           gregorianValue={data.endDate}
           ethiopianValue={
             data.endDate && gregorianToEthiopian(data.endDate)
@@ -227,6 +236,7 @@ export function Step3ComponentsForm({
               : ""
           }
           onChange={(greg) => onChange({ endDate: greg })}
+          errorMessage={dateErrorMessage}
         />
       </div>
     </div>

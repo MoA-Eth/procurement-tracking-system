@@ -509,7 +509,9 @@ export function UserManagementView({
                     </strong>{" "}
                     for the role of{" "}
                     <strong className="font-bold text-[#04382c]">
-                      {invitedInfo.role}
+                      {ROLE_LABELS[
+                        invitedInfo.role as keyof typeof ROLE_LABELS
+                      ] || invitedInfo.role}
                     </strong>
                     . The recipient can click the link in their inbox to setup
                     their password.

@@ -27,6 +27,8 @@ interface VersionHistoryModalProps {
   planName?: string;
   projectCode?: string;
   currentStatus?: string;
+  activityReference?: string;
+  activityDescription?: string;
 }
 
 export function VersionHistoryModal({
@@ -36,6 +38,8 @@ export function VersionHistoryModal({
   planName,
   projectCode,
   currentStatus,
+  activityReference,
+  activityDescription,
 }: VersionHistoryModalProps) {
   const [filterVersion, setFilterVersion] = useState<number | "ALL">("ALL");
   const [expandedRecordIds, setExpandedRecordIds] = useState<Set<string>>(
@@ -53,7 +57,14 @@ export function VersionHistoryModal({
 
   if (!isOpen) return null;
 
-  const history = getPlanVersionHistory(planId);
+  const allHistory = getPlanVersionHistory(planId);
+  const history = activityReference
+    ? allHistory.filter(
+        (h) =>
+          h.activityReference === activityReference ||
+          (h.actionLabel && h.actionLabel.includes(activityReference)),
+      )
+    : allHistory;
 
   // Group by version
   const versionNumbers = Array.from(
@@ -156,7 +167,9 @@ export function VersionHistoryModal({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-bold text-[#16253d] truncate">
-                    Version History
+                    {activityReference
+                      ? "Activity Version History"
+                      : "Version History"}
                   </h2>
                   <span className="shrink-0 rounded-full bg-[#176c55]/15 px-2 py-0.5 text-[10px] font-bold text-[#176c55]">
                     {versionNumbers.length > 0
@@ -165,7 +178,20 @@ export function VersionHistoryModal({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 truncate">
-                  {planName || planId} {projectCode ? `• ${projectCode}` : ""}
+                  {activityReference ? (
+                    <>
+                      <span className="font-semibold text-slate-700">
+                        {activityReference}
+                      </span>
+                      {activityDescription ? ` • ${activityDescription}` : ""}
+                      {planName ? ` • Plan: ${planName}` : ""}
+                    </>
+                  ) : (
+                    <>
+                      {planName || planId}{" "}
+                      {projectCode ? `• ${projectCode}` : ""}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -231,11 +257,14 @@ export function VersionHistoryModal({
                   <History className="h-4 w-4" />
                 </div>
                 <h3 className="mt-2.5 text-xs font-bold text-slate-800">
-                  Baseline Version (v1)
+                  {activityReference
+                    ? "Initial Baseline (v1)"
+                    : "Baseline Version (v1)"}
                 </h3>
                 <p className="mt-1 max-w-xs text-[11px] text-slate-500 leading-normal">
-                  No revisions recorded yet. When updates or returns occur,
-                  audit entries and field changes will appear here.
+                  {activityReference
+                    ? "No revisions recorded yet for this activity. When updates or returns occur, audit entries and field changes will appear here."
+                    : "No revisions recorded yet. When updates or returns occur, audit entries and field changes will appear here."}
                 </p>
               </div>
             ) : (

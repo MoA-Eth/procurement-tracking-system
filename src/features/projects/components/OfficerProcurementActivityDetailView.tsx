@@ -22,7 +22,6 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { EditActivityModal } from "@/features/activities/components/EditActivityModal";
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
-import { getPlanVersionHistory } from "@/features/plans/data/planRevisions";
 import { PhaseDelayBreakdownModal } from "./PhaseDelayBreakdownModal";
 
 interface DetailValue {
@@ -56,6 +55,27 @@ export function OfficerProcurementActivityDetailView({
     (project.assignedOfficerIds?.length ?? 0) > 1;
 
   const activity = currentActivity;
+
+  const planHistory = getPlanVersionHistory(plan.id || plan.reference);
+  const isActivityRevised =
+    planHistory.some(
+      (r) =>
+        (r.activityReference === activity.reference ||
+          (r.actionLabel && r.actionLabel.includes(activity.reference))) &&
+        (r.action === "ACTIVITY_REVISED" ||
+          (r.changes && r.changes.length > 0)),
+    ) ||
+    Boolean(
+      activity.details?.roadmap?.some(
+        (stage) => stage.revisions && stage.revisions.length > 0,
+      ),
+    ) ||
+    Boolean((activity as any).version && (activity as any).version > 1) ||
+    Boolean(
+      activity.updatedByName &&
+      activity.createdByName &&
+      activity.updatedByName !== activity.createdByName,
+    );
   const trackerHref =
     "/workspace/activity-tracker?project=" +
     encodeURIComponent(project.code) +
@@ -225,14 +245,17 @@ export function OfficerProcurementActivityDetailView({
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <button
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition cursor-pointer"
-              onClick={() => setIsHistoryModalOpen(true)}
-              type="button"
-            >
-              <History className="h-3.5 w-3.5 text-[#176c55]" />
-              Audit Trail
-            </button>
+            {isActivityRevised && (
+              <button
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition cursor-pointer"
+                onClick={() => setIsHistoryModalOpen(true)}
+                title="View Activity Version History"
+                type="button"
+              >
+                <History className="h-3.5 w-3.5 text-[#176c55]" />
+                Version History
+              </button>
+            )}
 
             {/* View Delay by Phase button */}
             <button
@@ -413,6 +436,8 @@ export function OfficerProcurementActivityDetailView({
       </DetailCard>
 
       <VersionHistoryModal
+        activityDescription={activity.description}
+        activityReference={activity.reference}
         currentStatus={activity.status}
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}

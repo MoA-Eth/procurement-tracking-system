@@ -2,7 +2,9 @@ import * as XLSX from "xlsx";
 import type {
   OfficerProject,
   ProcurementPlanSummary,
+  ProcurementCategory,
 } from "../data/officerProjects";
+import { gregorianToEthiopian, formatEthiopianDate } from "./ethiopianCalendar";
 import type {
   ProcurementActivityStatus,
   ProcurementActivitySummary,
@@ -80,67 +82,61 @@ function getColumnValue(row: Record<string, any>, aliases: string[]): any {
 /**
  * Downloads a pre-formatted Excel template for importing Procurement Activities.
  */
-export function downloadActivityExcelTemplate() {
+export function downloadActivityExcelTemplate(
+  planRef: string = "PLAN-2018-01",
+) {
   const templateData = [
     {
-      "Activity Reference": "ET-MoA-001-GO-RFQ",
+      "Plan ID (Required)": planRef,
+      "Reference (Required)": "ET-MoA-001-GO-RFQ",
       Description: "Procurement of Agricultural Laboratory Equipment",
-      Category: "Goods",
-      Method: "RFQ / Shopping",
-      "Estimated Amount": 1500000,
-      Currency: "ETB",
-      "Current Stage": "Draft Request for Quotations",
-      Status: "Not Started",
-      "Funding Source": "World Bank",
-      "Market Approach": "Open National",
-      "Review Type": "Post Review",
+      "Category (Dropdown)": "Goods",
+      "Method ID (Dropdown)": "RFQ",
+      "Estimated Budget": 1500000,
+      "Currency (Dropdown)": "ETB",
+      "Market Approach (Dropdown)": "Open National",
+      "Review Type (Dropdown)": "Post Review",
     },
     {
-      "Activity Reference": "ET-MoA-002-CW-RFB",
+      "Plan ID (Required)": planRef,
+      "Reference (Required)": "ET-MoA-002-CW-RFB",
       Description: "Construction of Regional Seed Testing Center",
-      Category: "Works",
-      Method: "RFB National",
-      "Estimated Amount": 12000000,
-      Currency: "ETB",
-      "Current Stage": "Preparation of Bidding Documents",
-      Status: "Not Started",
-      "Funding Source": "Government",
-      "Market Approach": "Open National",
-      "Review Type": "Prior Review",
+      "Category (Dropdown)": "Works",
+      "Method ID (Dropdown)": "RFB National",
+      "Estimated Budget": 12000000,
+      "Currency (Dropdown)": "ETB",
+      "Market Approach (Dropdown)": "Open National",
+      "Review Type (Dropdown)": "Prior Review",
     },
     {
-      "Activity Reference": "ET-MoA-003-CS-QCBS",
+      "Plan ID (Required)": planRef,
+      "Reference (Required)": "ET-MoA-003-CS-QCBS",
       Description: "Consultancy Services for Environmental Impact Assessment",
-      Category: "Consultancy Services",
-      Method: "QCBS",
-      "Estimated Amount": 3500000,
-      Currency: "ETB",
-      "Current Stage": "Draft Terms of Reference",
-      Status: "In Progress",
-      "Funding Source": "World Bank",
-      "Market Approach": "Open International",
-      "Review Type": "Prior Review",
+      "Category (Dropdown)": "Consultancy Services",
+      "Method ID (Dropdown)": "QCBS",
+      "Estimated Budget": 3500000,
+      "Currency (Dropdown)": "ETB",
+      "Market Approach (Dropdown)": "Open International",
+      "Review Type (Dropdown)": "Prior Review",
     },
   ];
 
   const worksheet = XLSX.utils.json_to_sheet(templateData);
   const colWidths = [
-    { wch: 22 }, // Reference
+    { wch: 22 }, // Plan ID
+    { wch: 25 }, // Reference
     { wch: 45 }, // Description
     { wch: 22 }, // Category
-    { wch: 20 }, // Method
-    { wch: 18 }, // Amount
-    { wch: 10 }, // Currency
-    { wch: 32 }, // Stage
-    { wch: 15 }, // Status
-    { wch: 18 }, // Funding Source
-    { wch: 20 }, // Market Approach
-    { wch: 15 }, // Review Type
+    { wch: 22 }, // Method ID
+    { wch: 18 }, // Estimated Budget
+    { wch: 14 }, // Currency
+    { wch: 22 }, // Market Approach
+    { wch: 18 }, // Review Type
   ];
   worksheet["!cols"] = colWidths;
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Activity Template");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Activities Upload");
   XLSX.writeFile(workbook, "Procurement_Activity_Import_Template.xlsx");
 }
 
@@ -149,6 +145,7 @@ export function downloadActivityExcelTemplate() {
  */
 export async function parseActivitiesFromExcel(
   file: File,
+  defaultPlanId?: string,
 ): Promise<ParsedActivitiesResult> {
   const arrayBuffer = await file.arrayBuffer();
   const workbook = XLSX.read(arrayBuffer, { type: "array" });
@@ -167,13 +164,48 @@ export async function parseActivitiesFromExcel(
     throw new Error("No data rows found in the selected Excel sheet.");
   }
 
+  // Validate template header structure
+  const headerKeys = Object.keys(rawRows[0] || {});
+  const normalizedHeaders = headerKeys.map((h) => normalizeHeader(h));
+  const hasRef = normalizedHeaders.some(
+    (h) => h.includes("reference") || h === "ref" || h.includes("activityref"),
+  );
+  const hasDesc = normalizedHeaders.some(
+    (h) =>
+      h.includes("description") ||
+      h.includes("activitydesc") ||
+      h === "activity",
+  );
+
+  if (!hasRef || !hasDesc) {
+    const missingCols: string[] = [];
+    if (!hasRef) missingCols.push("Reference (Required)");
+    if (!hasDesc) missingCols.push("Description");
+    throw new Error(
+      `Invalid template structure: The uploaded file does not follow the Procurement Activities template structure. Missing required columns: [${missingCols.join(
+        ", ",
+      )}]. Found columns: [${headerKeys.join(
+        ", ",
+      )}]. Please download and use the official template.`,
+    );
+  }
+
   const parsedRows: ParsedActivityRow[] = [];
   const validActivities: ProcurementActivitySummary[] = [];
 
   rawRows.forEach((row, idx) => {
+    const rawPlanId =
+      getColumnValue(row, [
+        "Plan ID (Required)",
+        "Plan ID",
+        "Plan Reference",
+        "Plan",
+      ]) || defaultPlanId;
+
     const rawRef = getColumnValue(row, [
-      "Activity Reference",
+      "Reference (Required)",
       "Reference",
+      "Activity Reference",
       "Ref",
       "Ref No",
       "Activity Ref",
@@ -188,23 +220,40 @@ export async function parseActivitiesFromExcel(
       "Activity Name",
     ]);
     const rawCategory = getColumnValue(row, [
+      "Category (Dropdown)",
       "Category",
       "Procurement Category",
       "Type",
     ]);
     const rawMethod = getColumnValue(row, [
+      "Method ID (Dropdown)",
+      "Method ID",
       "Method",
       "Procurement Method",
       "Specific Method",
     ]);
     const rawAmount = getColumnValue(row, [
+      "Estimated Budget",
       "Estimated Amount",
       "Amount",
       "Budget",
-      "Estimated Budget",
       "Cost",
     ]);
-    const rawCurrency = getColumnValue(row, ["Currency", "Base Currency"]);
+    const rawCurrency = getColumnValue(row, [
+      "Currency (Dropdown)",
+      "Currency",
+      "Base Currency",
+    ]);
+    const rawMarket = getColumnValue(row, [
+      "Market Approach (Dropdown)",
+      "Market Approach",
+      "Approach",
+    ]);
+    const rawReview = getColumnValue(row, [
+      "Review Type (Dropdown)",
+      "Review Type",
+      "Review",
+    ]);
     const rawStage = getColumnValue(row, [
       "Current Stage",
       "Stage",
@@ -212,18 +261,17 @@ export async function parseActivitiesFromExcel(
       "Active Stage",
     ]);
     const rawStatus = getColumnValue(row, [
+      "Status (Dropdown)",
       "Status",
       "Activity Status",
       "State",
     ]);
     const rawFunding = getColumnValue(row, ["Funding Source", "Funding"]);
-    const rawMarket = getColumnValue(row, ["Market Approach", "Approach"]);
-    const rawReview = getColumnValue(row, ["Review Type", "Review"]);
 
     const description = String(rawDesc || "").trim();
-    const reference = String(
-      rawRef || `IMP-${Date.now().toString(36).toUpperCase()}-${idx + 1}`,
-    ).trim();
+    const rawRefStr = String(rawRef || "").trim();
+    const reference =
+      rawRefStr || `IMP-${Date.now().toString(36).toUpperCase()}-${idx + 1}`;
 
     let isValid = true;
     let validationError = "";
@@ -231,6 +279,9 @@ export async function parseActivitiesFromExcel(
     if (!description) {
       isValid = false;
       validationError = "Missing activity description";
+    } else if (!rawRefStr) {
+      isValid = false;
+      validationError = "Missing activity reference";
     }
 
     // Normalize category
@@ -252,6 +303,11 @@ export async function parseActivitiesFromExcel(
     } else if (rawAmount) {
       const cleaned = String(rawAmount).replace(/[^0-9.-]+/g, "");
       estimatedAmount = parseFloat(cleaned) || 0;
+    }
+
+    if (estimatedAmount < 0) {
+      isValid = false;
+      validationError = "Estimated budget cannot be negative";
     }
 
     // Normalize status
@@ -349,7 +405,7 @@ export async function parseActivitiesFromExcel(
 }
 
 /**
- * Exports plan activities to a formatted Excel file.
+ * Exports plan activities to a formatted Excel file matching canonical standards.
  */
 export function exportPlanActivitiesToExcel(
   plan: ProcurementPlanSummary,
@@ -358,36 +414,36 @@ export function exportPlanActivitiesToExcel(
 ) {
   const sheetName = (plan.name || "Activities").slice(0, 31);
   const rows = activities.map((a) => ({
-    "Project Code": projectCode,
-    "Plan Reference": plan.reference,
-    "Activity Reference": a.reference,
+    "Plan ID": plan.reference,
+    Reference: a.reference,
     Description: a.description,
     Category: a.category,
-    Method: a.method,
-    "Estimated Amount": a.estimatedAmount,
+    "Method ID": a.method,
+    "Estimated Budget": a.estimatedAmount,
     Currency: a.details?.form?.currency || plan.currency || "ETB",
+    "Market Approach": a.details?.form?.marketApproach || "Open National",
+    "Review Type": a.details?.form?.reviewType || "Post Review",
     "Current Stage": a.currentStage,
     Status: a.status,
     "Funding Source": a.details?.form?.fundingSource || "",
-    "Market Approach": a.details?.form?.marketApproach || "",
-    "Review Type": a.details?.form?.reviewType || "",
+    "Project Code": projectCode,
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
   const colWidths = [
-    { wch: 16 }, // Project Code
-    { wch: 22 }, // Plan Reference
-    { wch: 24 }, // Activity Reference
+    { wch: 22 }, // Plan ID
+    { wch: 24 }, // Reference
     { wch: 45 }, // Description
-    { wch: 22 }, // Category
-    { wch: 20 }, // Method
-    { wch: 18 }, // Estimated Amount
+    { wch: 20 }, // Category
+    { wch: 20 }, // Method ID
+    { wch: 18 }, // Estimated Budget
     { wch: 10 }, // Currency
+    { wch: 18 }, // Market Approach
+    { wch: 14 }, // Review Type
     { wch: 30 }, // Current Stage
     { wch: 16 }, // Status
     { wch: 18 }, // Funding Source
-    { wch: 18 }, // Market Approach
-    { wch: 14 }, // Review Type
+    { wch: 16 }, // Project Code
   ];
   worksheet["!cols"] = colWidths;
 
@@ -539,4 +595,587 @@ export function exportOfficerProjectsToExcel(projects: OfficerProject[]) {
   const timestamp = new Date().toISOString().slice(0, 10);
   const filename = `Officer_Assigned_Projects_${timestamp}.xlsx`;
   XLSX.writeFile(workbook, filename);
+}
+
+/**
+ * Downloads a pre-formatted Excel template for importing Procurement Plans.
+ */
+export function downloadPlanExcelTemplate(projectCode: string = "PRJ-24-001") {
+  const templateData = [
+    {
+      "Project Code (Required)": projectCode,
+      "Plan Title (Required)": "Annual Agricultural Inputs Procurement Plan",
+      "Budget Year (Required)": "2018 EFY",
+      "Category (Dropdown)": "Goods",
+      Organization: "Federal / MoA",
+      Description: "Procurement plan for agricultural supplies and machinery",
+      "Period Start (Required)": "2025-07-08",
+      "Period End (Required)": "2026-07-07",
+      "Status (Dropdown)": "Draft",
+    },
+    {
+      "Project Code (Required)": projectCode,
+      "Plan Title (Required)":
+        "Regional Irrigation Infrastructure Development Plan",
+      "Budget Year (Required)": "2018 EFY",
+      "Category (Dropdown)": "Works",
+      Organization: "Oromia Regional Bureau",
+      Description: "Civil works and canal construction for smallholder farmers",
+      "Period Start (Required)": "2025-07-08",
+      "Period End (Required)": "2026-07-07",
+      "Status (Dropdown)": "Draft",
+    },
+    {
+      "Project Code (Required)": projectCode,
+      "Plan Title (Required)": "Advisory and Technical Capacity Building Plan",
+      "Budget Year (Required)": "2018 EFY",
+      "Category (Dropdown)": "Consultancy Services",
+      Organization: "Federal / FPCU",
+      Description: "Technical consultancy for project baseline evaluation",
+      "Period Start (Required)": "2025-07-08",
+      "Period End (Required)": "2026-07-07",
+      "Status (Dropdown)": "Draft",
+    },
+  ];
+
+  const worksheet = XLSX.utils.json_to_sheet(templateData);
+  const colWidths = [
+    { wch: 22 }, // Project Code
+    { wch: 45 }, // Plan Title
+    { wch: 18 }, // Budget Year
+    { wch: 22 }, // Category
+    { wch: 25 }, // Organization
+    { wch: 50 }, // Description
+    { wch: 18 }, // Period Start
+    { wch: 18 }, // Period End
+    { wch: 16 }, // Status
+  ];
+  worksheet["!cols"] = colWidths;
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Plan Template");
+  XLSX.writeFile(workbook, "Procurement_Plan_Import_Template.xlsx");
+}
+
+/**
+ * Parses an Excel (.xlsx, .xls) or CSV file containing Procurement Plans.
+ */
+export async function parsePlansFromExcel(
+  file: File,
+  defaultProjectCode?: string,
+): Promise<ParsedPlansResult> {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const firstSheetName = workbook.SheetNames[0];
+
+  if (!firstSheetName) {
+    throw new Error("Excel file contains no worksheets.");
+  }
+
+  const worksheet = workbook.Sheets[firstSheetName];
+  const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(worksheet, {
+    defval: "",
+  });
+
+  if (rawRows.length === 0) {
+    throw new Error("No data rows found in the selected Excel sheet.");
+  }
+
+  // Validate template header structure
+  const headerKeys = Object.keys(rawRows[0] || {});
+  const normalizedHeaders = headerKeys.map((h) => normalizeHeader(h));
+  const hasPlanTitle = normalizedHeaders.some(
+    (h) => h.includes("plantitle") || h === "title" || h.includes("planname"),
+  );
+  const hasBudgetYear = normalizedHeaders.some(
+    (h) => h.includes("budgetyear") || h.includes("fiscalyear") || h === "year",
+  );
+
+  if (!hasPlanTitle || !hasBudgetYear) {
+    const missingCols: string[] = [];
+    if (!hasPlanTitle) missingCols.push("Plan Title");
+    if (!hasBudgetYear) missingCols.push("Budget Year");
+    throw new Error(
+      `Invalid template structure: The uploaded file does not follow the Procurement Plan template structure. Missing required columns: [${missingCols.join(
+        ", ",
+      )}]. Found columns: [${headerKeys.join(
+        ", ",
+      )}]. Please download and use the official template.`,
+    );
+  }
+
+  const parsedRows: ParsedPlanRow[] = [];
+  const validPlans: ProcurementPlanSummary[] = [];
+
+  rawRows.forEach((row, idx) => {
+    const rawProjectCode = getColumnValue(row, [
+      "Project Code (Required)",
+      "Project Code",
+      "Project",
+      "Code",
+    ]);
+    const rawTitle = getColumnValue(row, [
+      "Plan Title (Required)",
+      "Plan Title",
+      "Title",
+      "Plan Name",
+      "Name",
+    ]);
+    const rawBudgetYear = getColumnValue(row, [
+      "Budget Year (Required)",
+      "Budget Year",
+      "Fiscal Year",
+      "Year",
+    ]);
+    const rawCategory = getColumnValue(row, [
+      "Category (Dropdown)",
+      "Category",
+      "Procurement Category",
+      "Type",
+    ]);
+    const rawOrg = getColumnValue(row, [
+      "Organization",
+      "Organization / Region",
+      "Region",
+      "Executing Unit",
+    ]);
+    const rawDesc = getColumnValue(row, [
+      "Description",
+      "Plan Description",
+      "Scope",
+      "Remarks",
+    ]);
+    const rawPeriodStart = getColumnValue(row, [
+      "Period Start (Required)",
+      "Period Start",
+      "Start Date",
+      "From",
+    ]);
+    const rawPeriodEnd = getColumnValue(row, [
+      "Period End (Required)",
+      "Period End",
+      "End Date",
+      "To",
+    ]);
+    const rawStatus = getColumnValue(row, [
+      "Status (Dropdown)",
+      "Status",
+      "Plan Status",
+      "State",
+    ]);
+
+    const name = String(rawTitle || "").trim();
+    let budgetYear = String(rawBudgetYear || "").trim();
+    if (
+      budgetYear &&
+      !budgetYear.toUpperCase().includes("EFY") &&
+      !budgetYear.toUpperCase().includes("FY")
+    ) {
+      budgetYear = `${budgetYear} EFY`;
+    }
+
+    let isValid = true;
+    let validationError = "";
+
+    if (!name) {
+      isValid = false;
+      validationError = "Missing plan title";
+    } else if (!budgetYear) {
+      isValid = false;
+      validationError = "Missing budget year";
+    }
+
+    // Normalize category
+    let category: ProcurementCategory = "Goods";
+    const catStr = String(rawCategory || "").toLowerCase();
+    if (catStr.includes("work")) category = "Works";
+    else if (catStr.includes("non-consult") || catStr.includes("non consult"))
+      category = "Non-Consulting Services";
+    else if (catStr.includes("consult")) category = "Consultancy Services";
+    else if (catStr.includes("good")) category = "Goods";
+
+    // Normalize status
+    let status: any = "Draft";
+    const statusStr = String(rawStatus || "").toLowerCase();
+    if (statusStr.includes("approve")) status = "Finally Approved";
+    else if (statusStr.includes("committee")) status = "Committee Review";
+    else if (statusStr.includes("submit") || statusStr.includes("director"))
+      status = "Submitted to Director";
+    else if (statusStr.includes("reject") || statusStr.includes("return"))
+      status = "Returned";
+    else if (statusStr.includes("draft")) status = "Draft";
+
+    const organizationRegion = String(rawOrg || "Federal / FPCU").trim();
+    const description = rawDesc ? String(rawDesc).trim() : undefined;
+    const reference = `PLAN-${Date.now().toString(36).toUpperCase()}-${idx + 1}`;
+
+    const periodStart = rawPeriodStart
+      ? String(rawPeriodStart).trim()
+      : "2025-07-08";
+    const periodEnd = rawPeriodEnd ? String(rawPeriodEnd).trim() : "2026-07-07";
+
+    if (periodStart && periodEnd && periodEnd < periodStart) {
+      isValid = false;
+      validationError = "Period End cannot be before Period Start";
+    }
+
+    const parsedRow: ParsedPlanRow = {
+      name,
+      reference,
+      budgetYear: budgetYear || "2018 EFY",
+      category,
+      organizationRegion,
+      description,
+      isValid,
+      validationError: validationError || undefined,
+    };
+
+    parsedRows.push(parsedRow);
+
+    const ethStart = gregorianToEthiopian(periodStart);
+    const ethEnd = gregorianToEthiopian(periodEnd);
+    const fromEth = ethStart ? formatEthiopianDate(ethStart) : "";
+    const toEth = ethEnd ? formatEthiopianDate(ethEnd) : "";
+
+    if (isValid) {
+      validPlans.push({
+        reference,
+        name,
+        budgetYear: budgetYear || "2018 EFY",
+        category,
+        activities: 0,
+        completedActivities: 0,
+        inProgressActivities: 0,
+        delayedActivities: 0,
+        status,
+        estimatedValue: 0,
+        currency: "ETB",
+        organizationRegion,
+        description,
+        planPeriod: {
+          from: { gregorian: periodStart, ethiopian: fromEth },
+          to: { gregorian: periodEnd, ethiopian: toEth },
+        },
+        planActivities: [],
+      });
+    }
+  });
+
+  return {
+    plans: validPlans,
+    rows: parsedRows,
+    totalRows: parsedRows.length,
+    validCount: validPlans.length,
+    invalidCount: parsedRows.length - validPlans.length,
+    fileName: file.name,
+  };
+}
+
+/**
+ * Exports procurement plans for a single project.
+ */
+export function exportProjectPlansToExcel(project: OfficerProject) {
+  const rows = project.plans.map((p) => ({
+    "Project Code": project.code,
+    "Plan Title": p.name,
+    "Budget Year": p.budgetYear,
+    Category: p.category,
+    Organization:
+      p.organizationRegion || project.organizationRegion || "Federal / FPCU",
+    Description: p.description || "",
+    "Period Start": p.planPeriod?.from?.gregorian || "2025-07-08",
+    "Period End": p.planPeriod?.to?.gregorian || "2026-07-07",
+    Status: p.status,
+    "Plan Reference": p.reference,
+    "Total Activities": p.activities,
+    "Estimated Value": p.estimatedValue || 0,
+    Currency: p.currency || project.baseCurrency || "ETB",
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  worksheet["!cols"] = [
+    { wch: 18 }, // Project Code
+    { wch: 40 }, // Plan Title
+    { wch: 16 }, // Budget Year
+    { wch: 22 }, // Category
+    { wch: 25 }, // Organization
+    { wch: 45 }, // Description
+    { wch: 16 }, // Period Start
+    { wch: 16 }, // Period End
+    { wch: 16 }, // Status
+    { wch: 22 }, // Plan Reference
+    { wch: 16 }, // Total Activities
+    { wch: 18 }, // Estimated Value
+    { wch: 10 }, // Currency
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Procurement Plans");
+
+  const timestamp = new Date().toISOString().slice(0, 10);
+  const filename = `Project_${project.code}_Plans_${timestamp}.xlsx`;
+  XLSX.writeFile(workbook, filename);
+}
+
+export interface ParsedProjectRow {
+  rowNumber: number;
+  code: string;
+  name: string;
+  sapNumber?: string;
+  country?: string;
+  executingAgency?: string;
+  organization?: string;
+  fundingSourceCode: string;
+  fundingType?: string;
+  sectorCode: string;
+  status: string;
+  isValid: boolean;
+  validationError?: string;
+}
+
+export interface ParsedProjectsResult {
+  rows: ParsedProjectRow[];
+  totalRows: number;
+  validCount: number;
+  invalidCount: number;
+  fileName: string;
+}
+
+export const CANONICAL_PROJECT_HEADERS = [
+  "Project Code",
+  "Project Name",
+  "SAP Identification No",
+  "Country",
+  "Executing Agency",
+  "Organization",
+  "Funding Source ID",
+  "Funding Type",
+  "Sector ID",
+  "Status",
+] as const;
+
+/**
+ * Downloads a pre-formatted Excel template for importing Projects.
+ */
+export async function downloadProjectExcelTemplate(): Promise<void> {
+  try {
+    const { downloadProjectsTemplate } = await import("@/lib/projectsApi");
+    await downloadProjectsTemplate();
+  } catch {
+    // Client-side fallback generation
+    const sampleData = [
+      {
+        "Project Code (Required)": "MOA-AGP2",
+        "Project Name (Required)":
+          "Second Agricultural Growth Program (AGP-II)",
+        "SAP Identification No": "SAP-100245",
+        Country: "Ethiopia",
+        "Executing Agency": "Ministry of Agriculture (MoA)",
+        Organization: "Federal / FPCU",
+        "Funding Source ID (Dropdown)": "World Bank (WB)",
+        "Funding Type": "Loan / Grant",
+        "Sector ID (Dropdown)": "Agriculture & Crop Production",
+        "Status (Dropdown)": "Draft",
+      },
+      {
+        "Project Code (Required)": "MOA-LLRP",
+        "Project Name (Required)":
+          "Lowlands Livelihood Resilience Project (LLRP)",
+        "SAP Identification No": "SAP-100246",
+        Country: "Ethiopia",
+        "Executing Agency": "Ministry of Agriculture (MoA)",
+        Organization: "Somali",
+        "Funding Source ID (Dropdown)": "World Bank (WB)",
+        "Funding Type": "Credit",
+        "Sector ID (Dropdown)": "Livestock & Fishery",
+        "Status (Dropdown)": "Draft",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    worksheet["!cols"] = [
+      { wch: 24 }, // Project Code
+      { wch: 45 }, // Project Name
+      { wch: 22 }, // SAP ID
+      { wch: 16 }, // Country
+      { wch: 30 }, // Executing Agency
+      { wch: 20 }, // Organization
+      { wch: 26 }, // Funding Source ID
+      { wch: 18 }, // Funding Type
+      { wch: 22 }, // Sector ID
+      { wch: 18 }, // Status
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Projects Upload");
+    XLSX.writeFile(workbook, "Projects_Import_Template.xlsx");
+  }
+}
+
+/**
+ * Parses and validates an Excel or CSV file containing Projects against official template structure and data rules.
+ */
+export async function parseProjectsFromExcel(
+  file: File,
+): Promise<ParsedProjectsResult> {
+  const arrayBuffer = await file.arrayBuffer();
+  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const firstSheetName = workbook.SheetNames[0];
+
+  if (!firstSheetName) {
+    throw new Error("Excel file contains no worksheets.");
+  }
+
+  const worksheet = workbook.Sheets[firstSheetName];
+  const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(worksheet, {
+    defval: "",
+  });
+
+  if (rawRows.length === 0) {
+    throw new Error("No data rows found in the selected Excel sheet.");
+  }
+
+  // Validate template header structure
+  const headerKeys = Object.keys(rawRows[0] || {});
+  const normalizedHeaders = headerKeys.map((h) => normalizeHeader(h));
+
+  const hasCode = normalizedHeaders.some(
+    (h) => h.includes("projectcode") || h === "code",
+  );
+  const hasName = normalizedHeaders.some(
+    (h) => h.includes("projectname") || h === "name",
+  );
+  const hasFundingSource = normalizedHeaders.some(
+    (h) =>
+      h.includes("fundingsource") ||
+      h.includes("fundingsourceid") ||
+      h.includes("donor"),
+  );
+  const hasSector = normalizedHeaders.some(
+    (h) => h.includes("sector") || h.includes("sectorid"),
+  );
+
+  if (!hasCode || !hasName || !hasFundingSource || !hasSector) {
+    const missingCols: string[] = [];
+    if (!hasCode) missingCols.push("Project Code (Required)");
+    if (!hasName) missingCols.push("Project Name (Required)");
+    if (!hasFundingSource) missingCols.push("Funding Source ID (Dropdown)");
+    if (!hasSector) missingCols.push("Sector ID (Dropdown)");
+    throw new Error(
+      `Invalid template structure: The uploaded file does not follow the Project template structure. Missing required columns: [${missingCols.join(
+        ", ",
+      )}]. Found columns: [${headerKeys.join(
+        ", ",
+      )}]. Please download and use the official template.`,
+    );
+  }
+
+  const parsedRows: ParsedProjectRow[] = [];
+
+  rawRows.forEach((row, idx) => {
+    const rowNumber = idx + 2;
+    const code = String(
+      getColumnValue(row, [
+        "Project Code (Required)",
+        "Project Code",
+        "ProjectCode",
+        "Code",
+      ]) || "",
+    ).trim();
+
+    const name = String(
+      getColumnValue(row, [
+        "Project Name (Required)",
+        "Project Name",
+        "ProjectName",
+        "Name",
+      ]) || "",
+    ).trim();
+
+    const sapNumber = String(
+      getColumnValue(row, [
+        "SAP Identification No",
+        "SAP Identification No.",
+        "SAP ID",
+        "SAP",
+      ]) || "",
+    ).trim();
+
+    const country = String(
+      getColumnValue(row, ["Country", "Country / Org", "CountryOrg"]) || "",
+    ).trim();
+
+    const executingAgency = String(
+      getColumnValue(row, ["Executing Agency", "Agency"]) || "",
+    ).trim();
+
+    const organization = String(
+      getColumnValue(row, ["Organization", "Region", "Org"]) || "",
+    ).trim();
+
+    const fundingSourceCode = String(
+      getColumnValue(row, [
+        "Funding Source ID (Dropdown)",
+        "Funding Source ID",
+        "Funding Source",
+        "Donor",
+      ]) || "",
+    ).trim();
+
+    const fundingType = String(
+      getColumnValue(row, ["Funding Type", "Type"]) || "",
+    ).trim();
+
+    const sectorCode = String(
+      getColumnValue(row, ["Sector ID (Dropdown)", "Sector ID", "Sector"]) ||
+        "",
+    ).trim();
+
+    const status = String(
+      getColumnValue(row, ["Status (Dropdown)", "Status"]) || "ACTIVE",
+    ).trim();
+
+    let isValid = true;
+    let validationError: string | undefined;
+
+    if (!code) {
+      isValid = false;
+      validationError = "Missing Project Code";
+    } else if (!name) {
+      isValid = false;
+      validationError = "Missing Project Name";
+    } else if (!fundingSourceCode) {
+      isValid = false;
+      validationError = "Missing Funding Source ID";
+    } else if (!sectorCode) {
+      isValid = false;
+      validationError = "Missing Sector ID";
+    }
+
+    parsedRows.push({
+      rowNumber,
+      code,
+      name,
+      sapNumber: sapNumber || undefined,
+      country: country || undefined,
+      executingAgency: executingAgency || undefined,
+      organization: organization || undefined,
+      fundingSourceCode,
+      fundingType: fundingType || undefined,
+      sectorCode,
+      status: status || "ACTIVE",
+      isValid,
+      validationError,
+    });
+  });
+
+  const validCount = parsedRows.filter((r) => r.isValid).length;
+
+  return {
+    rows: parsedRows,
+    totalRows: parsedRows.length,
+    validCount,
+    invalidCount: parsedRows.length - validCount,
+    fileName: file.name,
+  };
 }

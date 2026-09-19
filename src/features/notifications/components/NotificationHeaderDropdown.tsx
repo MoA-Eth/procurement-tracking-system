@@ -178,10 +178,10 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
 
       {/* Floating Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border border-slate-200 shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 w-auto sm:w-96 max-h-[calc(100dvh-5rem)] rounded-2xl bg-white border border-slate-200 shadow-2xl sm:shadow-xl z-50 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-150">
           {/* Header */}
-          <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
               <span className="text-xs font-extrabold text-slate-900">
                 Notifications
               </span>
@@ -214,7 +214,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
           </div>
 
           {/* List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+          <div className="flex-1 overflow-y-auto max-h-[60vh] sm:max-h-80 divide-y divide-slate-100">
             {roleNotifications.length === 0 ? (
               <div className="p-6 text-center text-xs text-slate-400 font-medium">
                 No notifications for your role right now.
@@ -275,7 +275,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
           </div>
 
           {/* Footer Link */}
-          <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
+          <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-center shrink-0">
             <Link
               href="/workspace/notifications"
               onClick={() => setIsOpen(false)}
