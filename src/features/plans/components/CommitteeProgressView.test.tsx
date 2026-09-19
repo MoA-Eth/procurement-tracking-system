@@ -164,5 +164,147 @@ describe("CommitteeProgressView", () => {
     expect(markup).toContain("Open Full Plan Review");
     expect(markup).toContain("Flagged");
     expect(markup).not.toContain("Plan Endorsed &amp; Approved");
+    expect(markup).toContain("Plan Rejected by Committee Majority");
+  });
+
+  it("shows immediate visibility to Director when 1 committee member rejects, while requiring 3 rejections to fully reject", () => {
+    const mockObjectionPlan: any = {
+      id: "plan-objection-1",
+      planNumber: "MoA/BREFONS/2018/PLAN-003",
+      planTitle: "BREFONS Pending Deliberation Plan",
+      projectCode: "BREFONS",
+      projectName: "Building Resilience Food Security",
+      budgetYear: "2018 EFY",
+      currency: "ETB",
+      totalBudget: 45000000,
+      description: "Procurement plan in committee deliberation",
+      rawStatus: "WITH_COMMITTEE",
+      overallStatus: "Pending Approval",
+      committeeStatus: "Pending Approval",
+      managementStatus: "Not Reached",
+      approvedCount: 1,
+      rejectedCount: 1,
+      memberVotes: [
+        {
+          id: "mem-1",
+          name: "Committee Reviewer Sarah",
+          email: "sarah.reviewer@moa.gov.et",
+          roleTitle: "Endorsement Committee",
+          voteStatus: "Rejected",
+          feedback:
+            "[Flagged Activities: BREFONS-G-01] The specifications are obsolete and need revision.",
+        },
+        {
+          id: "mem-2",
+          name: "Committee Reviewer Dawit",
+          email: "dawit.reviewer@moa.gov.et",
+          roleTitle: "Endorsement Committee",
+          voteStatus: "Approved",
+          feedback: "Approved technical aspects.",
+        },
+      ],
+      hasAdvancedToManagement: false,
+      activities: [
+        {
+          id: "act-1",
+          reference: "BREFONS-G-01",
+          description: "Procurement of Agricultural Tractors",
+          procurementMethod: { label: "RFB - National", code: "RFB" },
+          estimatedBudget: 25000000,
+        },
+      ],
+      rejectionReason:
+        "[Flagged Activities: BREFONS-G-01] The specifications are obsolete and need revision.",
+      rejectionScope: "SPECIFIC",
+      rejectedActivityRefs: ["BREFONS-G-01"],
+    };
+
+    const markup = renderToStaticMarkup(
+      <CommitteeProgressView
+        currentUser={{ role: "DIRECTOR", name: "Director Abebe" }}
+        initialSelectedPlan={mockObjectionPlan}
+      />,
+    );
+
+    // 1. Deliberation status is visible and requires 3 rejections to fully reject
+    expect(markup).toContain(
+      "Committee Objection In Progress (1 of 3 Rejections Required to Fully Reject Plan)",
+    );
+    expect(markup).toContain(
+      "Requires at least 3 approvals to endorse, or at least 3 rejections to completely reject.",
+    );
+
+    // 2. The committee member's rejection feedback & comment is immediately visible to the Director
+    expect(markup).toContain("Committee Reviewer Sarah");
+    expect(markup).toContain(
+      "The specifications are obsolete and need revision.",
+    );
+
+    // 3. The flagged activity reference and button is visible to the Director
+    expect(markup).toContain("Flagged Activities (Click to Open)");
+    expect(markup).toContain("BREFONS-G-01");
+    expect(markup).toContain("Flagged");
+  });
+
+  it("distinguishes Committee Endorsed (awaiting management) from Finally Approved by Executive Management", () => {
+    // Case 1: 3 Committee Approvals -> Awaiting Management Approval (not Finally Approved)
+    const mockEndorsedPlan: any = {
+      id: "plan-endorsed-1",
+      planNumber: "MoA/BREFONS/2018/PLAN-004",
+      planTitle: "BREFONS Endorsed Procurement Plan",
+      projectCode: "BREFONS",
+      projectName: "Building Resilience Food Security",
+      budgetYear: "2018 EFY",
+      currency: "ETB",
+      totalBudget: 45000000,
+      description: "Committee endorsed plan awaiting management",
+      rawStatus: "AWAITING_MANAGEMENT_APPROVAL",
+      overallStatus: "Pending Approval",
+      committeeStatus: "Approved",
+      managementStatus: "Awaiting Review",
+      approvedCount: 3,
+      rejectedCount: 0,
+      memberVotes: [],
+      hasAdvancedToManagement: true,
+      activities: [],
+      rejectedActivityRefs: [],
+    };
+
+    const endorsedMarkup = renderToStaticMarkup(
+      <CommitteeProgressView
+        currentUser={{ role: "DIRECTOR", name: "Director Abebe" }}
+        initialSelectedPlan={mockEndorsedPlan}
+      />,
+    );
+
+    expect(endorsedMarkup).toContain(
+      "Endorsed by Committee - Awaiting Executive Management Decision",
+    );
+    expect(endorsedMarkup).toContain(
+      "The plan has achieved committee quorum (&gt;=3 approvals) and is pending Management review and comments.",
+    );
+    expect(endorsedMarkup).not.toContain("Authorized by Executive Management");
+
+    // Case 2: Management Approved -> Finally Approved
+    const mockManagementApprovedPlan: any = {
+      ...mockEndorsedPlan,
+      id: "plan-mgmt-approved-1",
+      rawStatus: "APPROVED",
+      overallStatus: "Approved",
+      managementStatus: "Approved",
+      managementDecision: "APPROVE",
+    };
+
+    const approvedMarkup = renderToStaticMarkup(
+      <CommitteeProgressView
+        currentUser={{ role: "DIRECTOR", name: "Director Abebe" }}
+        initialSelectedPlan={mockManagementApprovedPlan}
+      />,
+    );
+
+    expect(approvedMarkup).toContain("Authorized by Executive Management");
+    expect(approvedMarkup).toContain(
+      "This procurement plan and its activities have received final executive authorization.",
+    );
   });
 });

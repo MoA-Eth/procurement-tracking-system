@@ -28,6 +28,8 @@ export type VersionActionType =
   | "APPROVED_DIRECTOR"
   | "SENT_TO_COMMITTEE"
   | "COMMITTEE_VOTE"
+  | "COMMITTEE_ENDORSED"
+  | "MANAGEMENT_DECISION"
   | "FINALLY_APPROVED";
 
 export interface PlanVersionRecord {

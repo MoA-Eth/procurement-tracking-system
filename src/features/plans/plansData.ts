@@ -57,6 +57,23 @@ export interface ProcurementPlan {
   rejectedActivityIds?: string[];
   rejectedActivityRefs?: string[];
   activities?: any[];
+  // Additional Plan fields
+  parentPlanId?: string;
+  parentPlanReference?: string;
+  parentPlanName?: string;
+  planType?: "ANNUAL" | "ADDITIONAL";
+  additionalPlanReason?: string;
+  parentActivities?: any[];
+}
+
+export function isAdditionalPlan(plan?: ProcurementPlan | null): boolean {
+  if (!plan) return false;
+  return (
+    plan.planType === "ADDITIONAL" ||
+    Boolean(plan.parentPlanId) ||
+    Boolean(plan.parentPlanReference) ||
+    Boolean(plan.additionalPlanReason)
+  );
 }
 
 export interface ParsedRejectionDetails {

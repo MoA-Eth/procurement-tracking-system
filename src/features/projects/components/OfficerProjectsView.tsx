@@ -67,8 +67,59 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+function upsertSummaryActivity(
+  list: ProcurementActivitySummary[],
+  act: ProcurementActivitySummary,
+) {
+  const norm = (s?: string) => (s || "").trim().toLowerCase();
+  const actDesc = norm(act.description);
+  const actRef = norm(act.reference);
+  const actId = norm((act as any).id || (act as any).activityId);
+
+  const existingIdx = list.findIndex((ex) => {
+    const exDesc = norm(ex.description);
+    const exRef = norm(ex.reference);
+    const exId = norm((ex as any).id || (ex as any).activityId);
+
+    if (actId && exId && actId === exId) return true;
+    if (actRef && exRef && actRef === exRef) return true;
+
+    if (actDesc && exDesc && actDesc === exDesc) {
+      const actAmt = Number(act.estimatedAmount) || 0;
+      const exAmt = Number(ex.estimatedAmount) || 0;
+      if (actAmt === exAmt || Math.abs(actAmt - exAmt) < 1) return true;
+      if (norm(act.method) && norm(act.method) === norm(ex.method)) return true;
+    }
+
+    return false;
+  });
+
+  if (existingIdx === -1) {
+    list.push(act);
+  } else {
+    const existing = list[existingIdx];
+    const isIncomingBackend = Boolean(
+      (act as any).id &&
+      String((act as any).id).includes("-") &&
+      String((act as any).id).length > 20,
+    );
+    const isExistingBackend = Boolean(
+      (existing as any).id &&
+      String((existing as any).id).includes("-") &&
+      String((existing as any).id).length > 20,
+    );
+
+    if (isIncomingBackend && !isExistingBackend) {
+      list[existingIdx] = act;
+    } else if (!isIncomingBackend && isExistingBackend) {
+      // Keep backend
+    } else {
+      list[existingIdx] = { ...existing, ...act };
+    }
+  }
+}
 
 export function OfficerProjectsView({
   currentUser,
@@ -226,18 +277,60 @@ export function OfficerProjectsView({
   }, []);
 
   const effectiveSavedActivityRecords = useMemo(() => {
-    const map = new Map<string, SavedOfficerActivityRecord>();
-    savedActivityRecords.forEach((rec) => {
-      const key =
-        `${rec.projectCode}-${rec.planReference}-${rec.activity.reference}`.toLowerCase();
-      map.set(key, rec);
-    });
+    const list: SavedOfficerActivityRecord[] = [];
+    const norm = (s?: string) => (s || "").trim().toLowerCase();
+
+    const findIndex = (rec: SavedOfficerActivityRecord) => {
+      const rPlan = norm(rec.planReference);
+      const rDesc = norm(rec.activity.description);
+      const rRef = norm(rec.activity.reference);
+      const rId = norm(
+        (rec.activity as any).id || (rec.activity as any).activityId,
+      );
+      const rAmt = Number(rec.activity.estimatedAmount) || 0;
+
+      return list.findIndex((ex) => {
+        const ePlan = norm(ex.planReference);
+        if (rPlan && ePlan && rPlan !== ePlan) return false;
+
+        const eId = norm(
+          (ex.activity as any).id || (ex.activity as any).activityId,
+        );
+        const eRef = norm(ex.activity.reference);
+        const eDesc = norm(ex.activity.description);
+        const eAmt = Number(ex.activity.estimatedAmount) || 0;
+
+        if (rId && eId && rId === eId) return true;
+        if (rRef && eRef && rRef === eRef) return true;
+        if (rDesc && eDesc && rDesc === eDesc) {
+          if (rAmt === eAmt || Math.abs(rAmt - eAmt) < 1) return true;
+          if (
+            norm(rec.activity.method) &&
+            norm(rec.activity.method) === norm(ex.activity.method)
+          )
+            return true;
+        }
+        return false;
+      });
+    };
+
     backendActivities.forEach((rec) => {
-      const key =
-        `${rec.projectCode}-${rec.planReference}-${rec.activity.reference}`.toLowerCase();
-      map.set(key, rec);
+      const idx = findIndex(rec);
+      if (idx === -1) {
+        list.push(rec);
+      } else {
+        list[idx] = rec;
+      }
     });
-    return Array.from(map.values());
+
+    savedActivityRecords.forEach((rec) => {
+      const idx = findIndex(rec);
+      if (idx === -1) {
+        list.push(rec);
+      }
+    });
+
+    return list;
   }, [backendActivities, savedActivityRecords]);
 
   const allProjects = useMemo(() => {
@@ -345,21 +438,17 @@ export function OfficerProjectsView({
       )
       .map((record) => record.activity);
 
-    const combinedMap = new Map<string, ProcurementActivitySummary>();
-    directBackendActivities.forEach((a) =>
-      combinedMap.set(a.reference.toLowerCase(), a),
-    );
-    matchingSaved.forEach((a) => combinedMap.set(a.reference.toLowerCase(), a));
+    const combined: ProcurementActivitySummary[] = [];
+    directBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
+    matchingSaved.forEach((a) => upsertSummaryActivity(combined, a));
 
     if (selectedPlan.planActivities && selectedPlan.planActivities.length > 0) {
-      selectedPlan.planActivities.forEach((a) => {
-        if (!combinedMap.has(a.reference.toLowerCase())) {
-          combinedMap.set(a.reference.toLowerCase(), a);
-        }
-      });
+      selectedPlan.planActivities.forEach((a) =>
+        upsertSummaryActivity(combined, a),
+      );
     }
 
-    const activitiesList = Array.from(combinedMap.values()).map((act) => {
+    const activitiesList = combined.map((act) => {
       if (
         (selectedPlan.status === "Returned" ||
           selectedPlan.status === "Returned for Revision") &&
@@ -892,9 +981,11 @@ export function OfficerProjectsView({
             console.warn("Backend updateActivity note:", updateErr);
           }
         } else {
+          let createdBackendAct: any = null;
           try {
-            await createActivity({
+            createdBackendAct = await createActivity({
               planId: targetBackendPlanId,
+              reference: activity.reference,
               procurementMethodId: resolvedMethodId,
               description: activity.description || "Activity description",
               estimatedBudget: Number(activity.estimatedAmount) || 500000,
@@ -916,23 +1007,102 @@ export function OfficerProjectsView({
               "First createActivity attempt failed, attempting fallback without custom stages:",
               firstErr,
             );
-            await createActivity({
-              planId: targetBackendPlanId,
-              procurementMethodId: resolvedMethodId,
-              description: activity.description || "Activity description",
-              estimatedBudget: Number(activity.estimatedAmount) || 500000,
-              currency: selectedPlan.currency || "ETB",
-              fundings: [
-                {
-                  fundingSource:
-                    selectedProject.fundingSource ||
-                    "African Development Bank (AfDB)",
-                  loanGrantNumber:
-                    selectedProject.financingNumbers?.[0] || undefined,
-                  allocationPct: 100,
-                },
-              ],
+            try {
+              createdBackendAct = await createActivity({
+                planId: targetBackendPlanId,
+                reference: activity.reference,
+                procurementMethodId: resolvedMethodId,
+                description: activity.description || "Activity description",
+                estimatedBudget: Number(activity.estimatedAmount) || 500000,
+                currency: selectedPlan.currency || "ETB",
+                fundings: [
+                  {
+                    fundingSource:
+                      selectedProject.fundingSource ||
+                      "African Development Bank (AfDB)",
+                    loanGrantNumber:
+                      selectedProject.financingNumbers?.[0] || undefined,
+                    allocationPct: 100,
+                  },
+                ],
+              });
+            } catch (secondErr) {
+              console.warn("Second createActivity attempt failed:", secondErr);
+            }
+          }
+
+          if (createdBackendAct && createdBackendAct.id) {
+            const backendId = createdBackendAct.id;
+            const backendRef =
+              createdBackendAct.reference || activity.reference;
+
+            // Sync savedActivityRecords
+            const updatedSavedActs = savedActivityRecords.map((r) => {
+              if (
+                r.activity.reference?.toLowerCase() ===
+                  activity.reference?.toLowerCase() ||
+                r.activity.description?.trim().toLowerCase() ===
+                  activity.description?.trim().toLowerCase()
+              ) {
+                return {
+                  ...r,
+                  activity: {
+                    ...r.activity,
+                    id: backendId,
+                    activityId: backendId,
+                    reference: backendRef,
+                  },
+                };
+              }
+              return r;
             });
+            setSavedActivityRecords(updatedSavedActs);
+            window.localStorage.setItem(
+              OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+              JSON.stringify(updatedSavedActs),
+            );
+
+            // Sync savedPlanRecords
+            const updatedSavedPlans = savedPlanRecords.map((item) => {
+              if (
+                item.plan.reference?.toLowerCase() ===
+                  selectedPlan.reference?.toLowerCase() ||
+                item.plan.name?.toLowerCase() ===
+                  selectedPlan.name?.toLowerCase()
+              ) {
+                const updatedPlanActs = (item.plan.planActivities || []).map(
+                  (a) => {
+                    if (
+                      a.reference?.toLowerCase() ===
+                        activity.reference?.toLowerCase() ||
+                      a.description?.trim().toLowerCase() ===
+                        activity.description?.trim().toLowerCase()
+                    ) {
+                      return {
+                        ...a,
+                        id: backendId,
+                        activityId: backendId,
+                        reference: backendRef,
+                      };
+                    }
+                    return a;
+                  },
+                );
+                return {
+                  ...item,
+                  plan: {
+                    ...item.plan,
+                    planActivities: updatedPlanActs,
+                  },
+                };
+              }
+              return item;
+            });
+            setSavedPlanRecords(updatedSavedPlans);
+            window.localStorage.setItem(
+              OFFICER_PLAN_DRAFTS_STORAGE_KEY,
+              JSON.stringify(updatedSavedPlans),
+            );
           }
         }
       } catch (err) {

@@ -361,8 +361,8 @@ export function CommitteeProgressView({
             rejectedCount >= 3 ||
             bp.status === "COMMITTEE_REJECTED" ||
             bp.status === "REJECTED" ||
-            matchingDraft?.status === "Returned" ||
-            matchingDraft?.status === "Rejected"
+            (matchingDraft?.status === "Returned" && rejectedCount >= 3) ||
+            (matchingDraft?.status === "Rejected" && rejectedCount >= 3)
           ) {
             committeeStatus = "Rejected";
           } else if (
@@ -370,7 +370,8 @@ export function CommitteeProgressView({
             bp.status === "COMMITTEE_ENDORSED" ||
             bp.status === "AWAITING_MANAGEMENT_APPROVAL" ||
             bp.status === "MANAGEMENT_APPROVED" ||
-            bp.status === "MANAGEMENT_REJECTED"
+            bp.status === "MANAGEMENT_REJECTED" ||
+            (matchingDraft?.status === "Finally Approved" && approvedCount >= 3)
           ) {
             committeeStatus = "Approved";
           }
@@ -403,7 +404,7 @@ export function CommitteeProgressView({
             }
           }
 
-          // Overall Status
+          // Overall Status (Requires at least 3 rejections to be completely rejected)
           let overallStatus:
             | "Approved"
             | "Rejected"
@@ -411,19 +412,20 @@ export function CommitteeProgressView({
             | "Returned for Revision" = "Pending Approval";
           if (
             bp.status === "RETURNED_FOR_REVISION" ||
-            matchingDraft?.status === "Returned"
+            (matchingDraft?.status === "Returned" && rejectedCount >= 3)
           ) {
             overallStatus = "Returned for Revision";
           } else if (
             managementStatus === "Approved" ||
-            bp.status === "APPROVED"
+            bp.managementDecision === "APPROVE" ||
+            (bp.status === "APPROVED" && bp.managementDecision !== "REJECT")
           ) {
             overallStatus = "Approved";
           } else if (
             managementStatus === "Rejected" ||
             committeeStatus === "Rejected" ||
             bp.status === "REJECTED" ||
-            rejectedCount > 0
+            rejectedCount >= 3
           ) {
             overallStatus = "Rejected";
           } else {
@@ -620,6 +622,25 @@ export function CommitteeProgressView({
           fetchActivities().catch(() => []),
         ]);
 
+        const isDuplicateAct = (a: any, b: any) => {
+          const norm = (s?: string) => (s || "").trim().toLowerCase();
+          const aId = norm(a.id);
+          const bId = norm(b.id);
+          const aRef = norm(a.reference || a.activityRefNo);
+          const bRef = norm(b.reference || b.activityRefNo);
+          if (aId && bId && aId === bId) return true;
+          if (aRef && bRef && aRef === bRef) return true;
+
+          const aDesc = norm(a.description);
+          const bDesc = norm(b.description);
+          if (aDesc && bDesc && aDesc === bDesc) {
+            const aAmt = Number(a.estimatedBudget || a.estimatedAmount) || 0;
+            const bAmt = Number(b.estimatedBudget || b.estimatedAmount) || 0;
+            if (aAmt === bAmt || Math.abs(aAmt - bAmt) < 1) return true;
+          }
+          return false;
+        };
+
         const combined = [...(selectedPlan?.activities || [])];
         for (const ba of [...planBackendActs, ...allBackendActs]) {
           const baPlanId = (ba.planId || ba.plan?.id || "")
@@ -643,13 +664,13 @@ export function CommitteeProgressView({
               selectedPlan?.planNumber &&
               selectedPlan.planNumber.toLowerCase().includes(baPlanTitle));
           if (matches) {
-            const baRef = ba.reference || (ba as any).activityRefNo || ba.id;
-            if (
-              !combined.some(
-                (x: any) => (x.reference || x.activityRefNo || x.id) === baRef,
-              )
-            ) {
+            const existingIdx = combined.findIndex((x: any) =>
+              isDuplicateAct(x, ba),
+            );
+            if (existingIdx === -1) {
               combined.push(ba);
+            } else {
+              combined[existingIdx] = { ...combined[existingIdx], ...ba };
             }
           }
         }
@@ -675,39 +696,39 @@ export function CommitteeProgressView({
                   .trim();
                 const planId = (selectedPlan.id || "").toLowerCase().trim();
                 if (
-                  draftPlanRef === planRef ||
-                  draftPlanRef === planId ||
-                  (d.projectCode &&
-                    selectedPlan.projectCode &&
-                    d.projectCode.toLowerCase() ===
-                      selectedPlan.projectCode.toLowerCase())
+                  draftPlanRef &&
+                  (draftPlanRef === planRef ||
+                    draftPlanRef === planId ||
+                    (selectedPlan.planTitle &&
+                      draftPlanRef ===
+                        selectedPlan.planTitle.toLowerCase().trim()) ||
+                    (selectedPlan.planNumber &&
+                      draftPlanRef ===
+                        selectedPlan.planNumber.toLowerCase().trim()))
                 ) {
                   const act = d.activity;
                   if (act) {
-                    const actRef =
-                      act.reference || (act as any).activityRefNo || act.id;
-                    if (
-                      !combined.some(
-                        (x: any) =>
-                          (x.reference || x.activityRefNo || x.id) === actRef,
-                      )
-                    ) {
-                      combined.push({
-                        id: act.id || `draft-${Date.now()}`,
-                        reference: act.reference || (act as any).activityRefNo,
-                        activityRefNo:
-                          (act as any).activityRefNo || act.reference,
-                        description: act.description,
-                        estimatedBudget: act.estimatedAmount || 0,
-                        estimatedAmount: act.estimatedAmount || 0,
-                        procurementMethod: {
-                          label: act.method || "National Competitive Bidding",
-                          code: (act as any).methodCode || "NCB",
-                        },
-                        method: act.method || "RFB - National",
-                        reviewType: act.details?.form?.reviewType || "Post",
-                        stages: act.details?.roadmap || [],
-                      });
+                    const newAct = {
+                      id: act.id || `draft-${Date.now()}`,
+                      reference: act.reference || (act as any).activityRefNo,
+                      activityRefNo:
+                        (act as any).activityRefNo || act.reference,
+                      description: act.description,
+                      estimatedBudget: act.estimatedAmount || 0,
+                      estimatedAmount: act.estimatedAmount || 0,
+                      procurementMethod: {
+                        label: act.method || "National Competitive Bidding",
+                        code: (act as any).methodCode || "NCB",
+                      },
+                      method: act.method || "RFB - National",
+                      reviewType: act.details?.form?.reviewType || "Post",
+                      stages: act.details?.roadmap || [],
+                    };
+                    const existingIdx = combined.findIndex((x: any) =>
+                      isDuplicateAct(x, newAct),
+                    );
+                    if (existingIdx === -1) {
+                      combined.push(newAct);
                     }
                   }
                 }
@@ -843,7 +864,15 @@ export function CommitteeProgressView({
       setTimeout(() => setToastMessage(null), 5000);
     } catch (err: any) {
       console.error("Error returning plan for revision:", err);
-      alert(err.message || "Failed to return plan for revision.");
+      const rawMsg = err?.message || "Failed to return plan for revision.";
+      const cleanMsg =
+        typeof rawMsg === "string" && rawMsg.includes("<")
+          ? rawMsg
+              .replace(/<[^>]*>/g, " ")
+              .replace(/\s+/g, " ")
+              .trim()
+          : rawMsg;
+      alert(cleanMsg);
     } finally {
       setIsSubmittingRevision(false);
     }
@@ -1070,7 +1099,7 @@ export function CommitteeProgressView({
                   <span className="px-2.5 py-0.5 rounded-md font-mono text-xs font-bold bg-slate-100 text-slate-700">
                     {selectedPlan.planNumber}
                   </span>
-                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-950 tracking-tight">
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-950 tracking-tight break-words break-all [overflow-wrap:anywhere]">
                     {selectedPlan.planTitle}
                   </h1>
                 </div>
@@ -1145,7 +1174,7 @@ export function CommitteeProgressView({
             </div>
 
             {selectedPlan.description && (
-              <p className="text-xs text-slate-600 italic leading-relaxed">
+              <p className="text-xs text-slate-600 italic leading-relaxed break-words break-all [overflow-wrap:anywhere]">
                 &quot;{selectedPlan.description}&quot;
               </p>
             )}
@@ -1157,7 +1186,7 @@ export function CommitteeProgressView({
                   <RotateCcw className="h-4 w-4 text-amber-700" />
                   <span>Director Revision Instructions:</span>
                 </div>
-                <p className="italic pl-6 leading-relaxed">
+                <p className="italic pl-6 leading-relaxed break-words break-all [overflow-wrap:anywhere]">
                   &quot;{selectedPlan.directorRevisionComment}&quot;
                 </p>
               </div>
@@ -1178,31 +1207,123 @@ export function CommitteeProgressView({
                       Section A: Endorsement Committee Votes
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                      Requires at least 3 of 5 approvals to endorse to
-                      Management.
+                      Requires at least 3 approvals to endorse, or at least 3
+                      rejections to completely reject.
                     </p>
                   </div>
                 </div>
 
-                <span
-                  className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
-                    selectedPlan.committeeStatus === "Approved"
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                      : selectedPlan.committeeStatus === "Rejected"
-                        ? "bg-rose-50 text-rose-800 border-rose-200"
-                        : "bg-blue-50 text-blue-800 border-blue-200"
-                  }`}
-                >
-                  {selectedPlan.approvedCount}/5 Approved
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
+                      selectedPlan.committeeStatus === "Approved"
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        : "bg-emerald-50/60 text-emerald-700 border-emerald-200"
+                    }`}
+                  >
+                    {selectedPlan.approvedCount}/5 Approved
+                  </span>
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
+                      selectedPlan.committeeStatus === "Rejected"
+                        ? "bg-rose-100 text-rose-800 border-rose-300 font-extrabold"
+                        : selectedPlan.rejectedCount > 0
+                          ? "bg-amber-50 text-amber-800 border-amber-300 font-extrabold"
+                          : "bg-slate-50 text-slate-500 border-slate-200"
+                    }`}
+                  >
+                    {selectedPlan.rejectedCount}/5 Rejected
+                  </span>
+                </div>
               </div>
+
+              {/* Informative Objection / Rejection Alert Banner for Director */}
+              {selectedPlan.rejectedCount > 0 &&
+                selectedPlan.rejectedCount < 3 && (
+                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs animate-in fade-in">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-extrabold text-amber-900">
+                        Committee Objection In Progress (
+                        {selectedPlan.rejectedCount} of 3 Rejections Required to
+                        Fully Reject Plan)
+                      </p>
+                      <p className="text-[11px] text-amber-800/90 leading-relaxed">
+                        {selectedPlan.rejectedCount} committee member
+                        {selectedPlan.rejectedCount > 1
+                          ? "s have"
+                          : " has"}{" "}
+                        registered rejection objections. Per regulation, at
+                        least 3 committee rejection votes are required for the
+                        plan to be formally rejected and returned, but
+                        deliberation comments and flagged activities are
+                        immediately visible below for directorate oversight.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {selectedPlan.rejectedCount >= 3 && (
+                <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-950 text-xs animate-in fade-in">
+                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-extrabold text-rose-900">
+                      Plan Rejected by Committee Majority (
+                      {selectedPlan.rejectedCount} of 5 Committee Members
+                      Rejected)
+                    </p>
+                    <p className="text-[11px] text-rose-800/90 leading-relaxed">
+                      The plan has reached the 3-rejection threshold and is
+                      officially returned to the Director. Review the aggregated
+                      feedback below to return the plan to the Procurement
+                      Officer for revision.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {selectedPlan.approvedCount >= 3 &&
+                selectedPlan.overallStatus !== "Approved" && (
+                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-sky-50 border border-sky-300 text-sky-950 text-xs animate-in fade-in">
+                    <CheckCircle2 className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-extrabold text-sky-900">
+                        Committee Endorsed ({selectedPlan.approvedCount} of 5
+                        Approval Votes) — Awaiting Executive Management Approval
+                      </p>
+                      <p className="text-[11px] text-sky-800/90 leading-relaxed">
+                        The Endorsement Committee has endorsed this procurement
+                        plan. Per governance policy, the plan requires final
+                        authorization from Executive Management before it
+                        becomes Finally Approved.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {selectedPlan.overallStatus === "Approved" && (
+                <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs animate-in fade-in">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-extrabold text-emerald-900">
+                      Finally Approved by Executive Management
+                    </p>
+                    <p className="text-[11px] text-emerald-800/90 leading-relaxed">
+                      This procurement plan has received committee endorsement
+                      and final authorization from Executive Management. It is
+                      now active for contract registration and procurement
+                      execution.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Committee Members Voting Cards */}
               <div className="space-y-3">
                 {selectedPlan.memberVotes.map((member) => (
                   <div
                     key={member.id}
-                    className={`p-3.5 rounded-xl border transition-all ${
+                    className={`p-3.5 rounded-xl border transition-all overflow-hidden ${
                       member.voteStatus === "Approved"
                         ? "border-emerald-200 bg-emerald-50/20"
                         : member.voteStatus === "Rejected"
@@ -1265,7 +1386,7 @@ export function CommitteeProgressView({
 
                         return (
                           <div
-                            className={`mt-2.5 p-3.5 rounded-xl border text-xs ${
+                            className={`mt-2.5 p-3.5 rounded-xl border text-xs overflow-hidden break-words break-all [overflow-wrap:anywhere] ${
                               member.voteStatus === "Rejected"
                                 ? "bg-rose-50 border-rose-200 text-rose-950"
                                 : "bg-emerald-50 border-emerald-200 text-emerald-950"
@@ -1342,13 +1463,13 @@ export function CommitteeProgressView({
                               </div>
                             )}
 
-                            <div className="pl-1 pt-1">
+                            <div className="pl-1 pt-1 break-words break-all [overflow-wrap:anywhere] min-w-0">
                               {flaggedRefsToDisplay.length > 0 && (
                                 <span className="text-[11px] font-bold text-slate-700">
                                   Member Notes:{" "}
                                 </span>
                               )}
-                              <span className="font-medium italic leading-relaxed text-slate-800">
+                              <span className="font-medium italic leading-relaxed text-slate-800 break-words break-all [overflow-wrap:anywhere] block">
                                 &quot;{parsed.cleanRemarks || member.feedback}
                                 &quot;
                               </span>
@@ -1762,12 +1883,16 @@ export function CommitteeProgressView({
                   </div>
                   <div>
                     <h3 className="text-sm font-extrabold text-amber-950">
-                      Return Plan to Officer for Revision
+                      {selectedPlan.rejectedCount >= 3 ||
+                      selectedPlan.committeeStatus === "Rejected"
+                        ? "Return Plan to Officer for Revision (Majority Rejected)"
+                        : "Return Plan to Officer for Revision (Early Action on Objection)"}
                     </h3>
                     <p className="text-xs text-amber-800/80">
-                      Synthesize committee and executive management rejection
-                      feedback into clear revision directives for the
-                      procurement officer.
+                      {selectedPlan.rejectedCount >= 3 ||
+                      selectedPlan.committeeStatus === "Rejected"
+                        ? "Synthesize committee rejection feedback into clear revision directives for the procurement officer."
+                        : "Committee deliberation is ongoing (awaiting 3 rejection votes to fully reject), but you may intervene early and return this plan to the procurement officer with instructions based on the objections above."}
                     </p>
                   </div>
                 </div>

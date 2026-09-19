@@ -1168,10 +1168,16 @@ function ActivityTrackerList({
                 >
                   Reference No.
                 </th>
-                <th className="min-w-[220px] px-4 py-3.5" scope="col">
+                <th
+                  className="min-w-[220px] max-w-[320px] px-4 py-3.5"
+                  scope="col"
+                >
                   Activity
                 </th>
-                <th className="min-w-[160px] px-4 py-3.5" scope="col">
+                <th
+                  className="min-w-[160px] max-w-[200px] px-4 py-3.5"
+                  scope="col"
+                >
                   Project
                 </th>
                 <th
@@ -1316,10 +1322,10 @@ function TrackerRow({
           {item.activity.reference}
         </Link>
       </td>
-      <td className="px-4 py-3.5">
+      <td className="px-4 py-3.5 max-w-[320px]">
         <Link
           title={item.activity.description}
-          className="font-bold leading-5 text-[#10243f] hover:text-[#07523f] hover:underline line-clamp-2 break-words [overflow-wrap:anywhere] block"
+          className="font-bold leading-5 text-[#10243f] hover:text-[#07523f] hover:underline line-clamp-2 break-words break-all [overflow-wrap:anywhere] block"
           href={href}
         >
           {item.activity.description}
@@ -1330,10 +1336,10 @@ function TrackerRow({
           </p>
         ) : null}
       </td>
-      <td className="px-4 py-3.5">
+      <td className="px-4 py-3.5 max-w-[200px]">
         <p
           title={item.project.shortName}
-          className="font-bold text-slate-700 leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]"
+          className="font-bold text-slate-700 leading-snug line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
         >
           {item.project.shortName}
         </p>
@@ -1345,15 +1351,15 @@ function TrackerRow({
         {item.activity.category}
       </td>
       <td
-        className="px-4 py-3.5 font-semibold text-slate-700 leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]"
+        className="px-4 py-3.5 max-w-[160px] font-semibold text-slate-700 leading-snug line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
         title={item.activity.method}
       >
         {item.activity.method}
       </td>
-      <td className="px-4 py-3.5">
+      <td className="px-4 py-3.5 max-w-[200px]">
         <p
           title={stage.name}
-          className="font-semibold leading-5 text-slate-700 line-clamp-2 break-words [overflow-wrap:anywhere]"
+          className="font-semibold leading-5 text-slate-700 line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
         >
           {stage.name}
         </p>
