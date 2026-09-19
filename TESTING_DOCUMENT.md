@@ -163,16 +163,32 @@ This test document outlines test scenarios, test cases, preconditions, step-by-s
 
 ---
 
-### Test Case 10: Admin Role Management (Req 10)
-- **Objective:** Verify Administrator can update user roles with demotion safeguards.
+### Test Case 10: Admin User Profile Modal & Protected Role Change with Project Handover (Req 10)
+- **Objective:** Verify Administrator can inspect full user details by clicking any table row, toggle Edit mode, and that changing the role of a user with active projects enforces mandatory handover to a replacement officer.
 - **Preconditions:**
   1. Logged in as `ADMIN`.
 - **Step-by-Step Procedure:**
-  1. Navigate to `/dashboard/admin` -> User Management table.
-  2. Click "Change Role" on any user.
-  3. In the role modal, select a new role (e.g. `OFFICER`, `DIRECTOR`, `MANAGEMENT`, `ENDORSING_COMMITTEE`).
-  4. Click "Update Role".
-  5. *Expected:* User role updates in the database and UI table immediately. Self-demotion of the current admin account is prevented.
+  1. Navigate to `/admin/users` (or User Access & Accounts on Admin dashboard).
+  2. *Expected:* Table rows do NOT show an inline "Role" button in the actions column. Actions column only contains Resend Invitation or Activate/Deactivate.
+  3. Click anywhere on a user row (e.g. `Abebe Bikila`).
+  4. *Expected:* `UserProfileModal` opens displaying:
+     - Full display name, email address, username, and system ID.
+     - Current role badge and account status (Active / Inactive).
+     - Account metadata (Last login timestamp, verification status).
+     - "Assigned Procurement Projects" section listing all projects assigned to this user with status badges.
+  5. At the top of the modal, click the **"Edit"** button.
+  6. *Expected:* Modal transitions into Edit mode displaying the 5 selectable roles (`Officer`, `Director`, `Endorsement Committee`, `Management`, `Administrator`) with descriptions, and account status toggle.
+  7. Select a new role (e.g. `DIRECTOR` or `ADMIN`).
+  8. If the user has active project(s) assigned:
+     - *Expected:* Warning banner appears: *"Active Projects Detected: [User] is currently assigned to X active project(s). To change their role away from Officer, you must select a replacement procurement officer to hand over these projects to."*
+     - Active projects list is displayed for verification.
+     - Dropdown appears listing available active officers (excluding the current user).
+     - Action button updates to "Transfer Projects & Apply Role" (disabled until replacement officer is chosen).
+     - Select a replacement officer from the dropdown and click "Transfer Projects & Apply Role".
+     - *Expected:* Active projects are reassigned to the replacement officer, the user's role is updated in the database, success banner is displayed, and the table refreshes.
+  9. If the user has 0 active projects:
+     - *Expected:* No handover warning is shown. Click "Apply Changes" directly to update the user role and status.
+  10. Verify clicking the "Deactivate" / "Activate" buttons on the table row does not trigger row click modal (propagation is stopped).
 
 ---
 

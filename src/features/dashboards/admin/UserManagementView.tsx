@@ -14,10 +14,10 @@ import {
   RefreshCw,
   CheckCircle2,
   X,
-  UserCog,
   Shield,
 } from "lucide-react";
 import { createInvitedUser, getCurrentUser } from "@/lib/authApi";
+import { UserProfileModal } from "./components/UserProfileModal";
 import {
   fetchUsers,
   updateUser,
@@ -218,11 +218,8 @@ export function UserManagementView({
   // Action state (toggling status or resending invitation)
   const [actionUserId, setActionUserId] = useState<string | null>(null);
 
-  // Role Management Modal State
-  const [editingRoleUser, setEditingRoleUser] = useState<ApiUser | null>(null);
-  const [selectedNewRole, setSelectedNewRole] =
-    useState<ProvisionableRole>("OFFICER");
-  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  // User Profile / Details Modal State
+  const [selectedDetailUser, setSelectedDetailUser] = useState<ApiUser | null>(null);
   const [roleSuccessMessage, setRoleSuccessMessage] = useState<string | null>(
     null,
   );
@@ -427,42 +424,7 @@ export function UserManagementView({
     }
   };
 
-  // ─── Edit User Role Handlers ─────────────────────────────────────────────
-  const handleOpenEditRole = (user: ApiUser) => {
-    const norm = normalizeUserRole(user.authRole || user.role);
-    setEditingRoleUser(user);
-    setSelectedNewRole(norm as ProvisionableRole);
-    setErrorMessage(null);
-  };
 
-  const handleSaveRole = async () => {
-    if (!editingRoleUser) return;
-    if (
-      isCurrentUser(editingRoleUser, activeUser) &&
-      selectedNewRole !== "ADMIN"
-    ) {
-      setErrorMessage(
-        "You cannot remove Administrator privileges from your own active account.",
-      );
-      return;
-    }
-    setIsUpdatingRole(true);
-    setErrorMessage(null);
-    try {
-      await updateUser(editingRoleUser.id, { role: selectedNewRole });
-      setRoleSuccessMessage(
-        `Role for ${editingRoleUser.displayName || editingRoleUser.name} successfully updated to ${ROLE_LABELS[selectedNewRole] || selectedNewRole}.`,
-      );
-      setEditingRoleUser(null);
-      await loadUsers();
-    } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Failed to update user role.",
-      );
-    } finally {
-      setIsUpdatingRole(false);
-    }
-  };
 
   // Auto-dismiss role success notification after 10 seconds
   useEffect(() => {
@@ -824,9 +786,11 @@ export function UserManagementView({
                           return (
                             <tr
                               key={user.id}
-                              className={`border-b border-slate-100 transition-colors duration-150 hover:bg-[#f1f5f9] ${
+                              onClick={() => setSelectedDetailUser(user)}
+                              className={`border-b border-slate-100 transition-colors duration-150 hover:bg-emerald-50/50 cursor-pointer ${
                                 isOddRow ? "bg-[#f8fafc]/60" : "bg-white"
                               }`}
+                              title={`Click to view profile & details for ${user.displayName || user.name}`}
                             >
                               <td className="py-4 px-4 align-middle max-w-xs wrap-break-word">
                                 <div className="font-bold text-[#0f172a] text-xs wrap-break-word line-clamp-2 flex items-center gap-1.5">
@@ -870,25 +834,17 @@ export function UserManagementView({
                                 {renderLastLogin(user.lastLoginAt, user.status)}
                               </td>
 
-                              {/* Actions Column: Change Role + Resend Invitation / Activate / Deactivate */}
+                              {/* Actions Column: Resend Invitation / Activate / Deactivate */}
                               <td className="py-4 px-4 text-center align-middle whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-2">
-                                  {/* Change Role Button */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEditRole(user)}
-                                    className="px-3 py-1 text-xs font-bold rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#04382c] hover:border-[#04382c]/40 transition-all cursor-pointer shadow-2xs hover:shadow-xs inline-flex items-center gap-1.5"
-                                    title={`Change role for ${user.displayName || user.name}`}
-                                  >
-                                    <UserCog className="w-3.5 h-3.5 text-slate-500" />
-                                    <span>Role</span>
-                                  </button>
-
                                   {isPending ? (
                                     <button
                                       type="button"
                                       disabled={actionUserId === user.id}
-                                      onClick={() => handleResendInvitation(user)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleResendInvitation(user);
+                                      }}
                                       className="px-3.5 py-1 text-xs font-bold rounded-full border border-[#047857] bg-[#ecfdf5] text-[#044e3a] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
                                     >
                                       {actionUserId === user.id ? (
@@ -906,6 +862,7 @@ export function UserManagementView({
                                     <button
                                       type="button"
                                       disabled={true}
+                                      onClick={(e) => e.stopPropagation()}
                                       title="You cannot deactivate your own administrator account."
                                       className="px-3.5 py-1 text-xs font-bold rounded-full border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 shadow-none inline-flex items-center gap-1"
                                     >
@@ -915,7 +872,10 @@ export function UserManagementView({
                                     <button
                                       type="button"
                                       disabled={actionUserId === user.id}
-                                      onClick={() => handleToggleStatus(user)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleStatus(user);
+                                      }}
                                       className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
                                         isActive
                                           ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
@@ -1007,134 +967,16 @@ export function UserManagementView({
         </div>
       )}
 
-      {/* ─── Change Role Modal ─────────────────────────────────────── */}
-      {editingRoleUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-[#04382c] text-white">
-              <div className="flex items-center gap-2.5">
-                <Shield className="w-5 h-5 text-emerald-300 shrink-0" />
-                <h3 className="text-base font-extrabold tracking-tight">
-                  Change User Role
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingRoleUser(null)}
-                className="p-1 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
-                  Target Account
-                </p>
-                <p className="text-sm font-extrabold text-[#0f172a] mt-0.5">
-                  {editingRoleUser.displayName || editingRoleUser.name}
-                </p>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">
-                  {editingRoleUser.email}
-                </p>
-                <div className="mt-2 flex items-center gap-2 text-xs">
-                  <span className="text-slate-500">Current Role:</span>
-                  <span className="font-bold text-[#04382c] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    {displayRole(editingRoleUser)}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-[#0f172a] mb-2 block">
-                  Select New PTS Role
-                </label>
-                <div className="space-y-2">
-                  {[
-                    {
-                      role: "OFFICER" as ProvisionableRole,
-                      label: "Officer",
-                      desc: "Procurement operations, activity drafting and roadmaps",
-                    },
-                    {
-                      role: "DIRECTOR" as ProvisionableRole,
-                      label: "Director",
-                      desc: "Directorate oversight, review & approval of plans",
-                    },
-                    {
-                      role: "ENDORSING_COMMITTEE" as ProvisionableRole,
-                      label: "Endorsement Committee",
-                      desc: "Committee evaluations, meetings & endorsement votes",
-                    },
-                    {
-                      role: "MANAGEMENT" as ProvisionableRole,
-                      label: "Management",
-                      desc: "Executive strategic review & organization-wide approvals",
-                    },
-                    {
-                      role: "ADMIN" as ProvisionableRole,
-                      label: "Administrator",
-                      desc: "System governance, user role management & audit logs",
-                    },
-                  ].map((r) => (
-                    <label
-                      key={r.role}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                        selectedNewRole === r.role
-                          ? "border-[#04382c] bg-emerald-50/40 ring-1 ring-[#04382c]"
-                          : "border-slate-200 hover:bg-slate-50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="newRole"
-                        value={r.role}
-                        checked={selectedNewRole === r.role}
-                        onChange={() => setSelectedNewRole(r.role)}
-                        className="mt-0.5 text-[#04382c] focus:ring-[#04382c]"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-[#0f172a]">
-                          {r.label}
-                        </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          {r.desc}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingRoleUser(null)}
-                  disabled={isUpdatingRole}
-                  className="px-4 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveRole}
-                  disabled={isUpdatingRole}
-                  className="px-5 py-2 rounded-full bg-[#04382c] hover:bg-[#032e25] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-                >
-                  {isUpdatingRole ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving…</span>
-                    </>
-                  ) : (
-                    <span>Save Role</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* ─── User Profile & Protected Role Change Modal ─────────────── */}
+      {selectedDetailUser && (
+        <UserProfileModal
+          user={selectedDetailUser}
+          isOpen={Boolean(selectedDetailUser)}
+          onClose={() => setSelectedDetailUser(null)}
+          onUserUpdated={async () => {
+            await loadUsers();
+          }}
+        />
       )}
     </div>
   );
