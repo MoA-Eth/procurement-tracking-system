@@ -176,6 +176,15 @@ export interface BackendPlan {
     role?: string;
     authRole?: string;
   }[];
+  parentPlanId?: string | null;
+  parentPlan?: {
+    id: string;
+    title?: string;
+    reference?: string;
+    activities?: BackendPlanActivity[];
+  } | null;
+  planType?: "ANNUAL" | "ADDITIONAL" | string | null;
+  additionalPlanReason?: string | null;
 }
 
 export interface CreatePlanInput {
@@ -279,13 +288,17 @@ export async function submitVote(
   comment?: string,
   voterUserId?: string,
   voterEmail?: string,
-): Promise<void> {
-  await apiClient.post(`/plans/${encodeURIComponent(planId)}/vote`, {
-    decision,
-    comment,
-    voterUserId,
-    voterEmail,
-  });
+): Promise<BackendPlan> {
+  const res = await apiClient.post<any>(
+    `/plans/${encodeURIComponent(planId)}/vote`,
+    {
+      decision,
+      comment,
+      voterUserId,
+      voterEmail,
+    },
+  );
+  return res.data || res;
 }
 
 /** Management records approval or rejection */
@@ -308,11 +321,19 @@ export async function returnPlanForRevision(
   comment: string,
   userId?: string,
 ): Promise<BackendPlan> {
-  const res = await apiClient.post<any>(
-    `/plans/${encodeURIComponent(planId)}/return-to-officer`,
-    { comment, userId },
-  );
-  return res.data || res;
+  try {
+    const res = await apiClient.post<any>(
+      `/plans/${encodeURIComponent(planId)}/return-to-officer`,
+      { comment, reason: comment, userId },
+    );
+    return res.data || res;
+  } catch (err: any) {
+    const res = await apiClient.post<any>(
+      `/plans/${encodeURIComponent(planId)}/reject`,
+      { comment, reason: comment, userId },
+    );
+    return res.data || res;
+  }
 }
 
 /** Fetch comments for a plan and its activities */
@@ -362,13 +383,15 @@ export function mapBackendPlanToFrontend(
     status = "Awaiting Management Approval";
   else if (backendPlan.status === "COMMITTEE_REJECTED")
     status = "Committee Rejected";
-  else if (backendPlan.status === "MANAGEMENT_APPROVED")
-    status = "Management Approved";
+  else if (
+    backendPlan.status === "MANAGEMENT_APPROVED" ||
+    backendPlan.status === "APPROVED"
+  )
+    status = "Finally Approved";
   else if (backendPlan.status === "MANAGEMENT_REJECTED")
     status = "Management Rejected";
   else if (backendPlan.status === "RETURNED_FOR_REVISION")
     status = "Returned for Revision";
-  else if (backendPlan.status === "APPROVED") status = "Finally Approved";
   else if (backendPlan.status === "REJECTED") status = "Returned";
   else if (backendPlan.status === "SUBMITTED") status = "Submitted to Director";
   else if (backendPlan.status === "DRAFT") status = "Draft";
@@ -521,11 +544,25 @@ export function mapBackendPlanToFrontend(
       backendPlan.managementByUser?.name ||
       undefined,
     managementAt: backendPlan.managementAt || undefined,
-    directorRevisionComment: backendPlan.directorRevisionComment || undefined,
+    directorRevisionComment:
+      backendPlan.directorRevisionComment || rejectionReason || undefined,
     comments: backendPlan.comments || [],
     rejectionScope: effectiveRejectionScope,
     rejectedActivityRefs: allRejectedActivityRefs,
     activities: backendPlan.activities || [],
+    parentPlanId: backendPlan.parentPlanId || undefined,
+    parentPlanReference:
+      backendPlan.parentPlan?.reference ||
+      backendPlan.parentPlan?.title ||
+      backendPlan.parentPlanId ||
+      undefined,
+    parentPlanName: backendPlan.parentPlan?.title || undefined,
+    parentActivities: backendPlan.parentPlan?.activities || [],
+    planType:
+      backendPlan.planType === "ADDITIONAL" || Boolean(backendPlan.parentPlanId)
+        ? "ADDITIONAL"
+        : "ANNUAL",
+    additionalPlanReason: backendPlan.additionalPlanReason || undefined,
   };
 }
 

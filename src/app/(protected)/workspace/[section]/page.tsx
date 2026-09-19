@@ -154,7 +154,9 @@ export default async function WorkspaceSectionPage({
     const fromTracker =
       query.from === "tracker" || query.from === "activity-tracker";
     const mode =
-      query.mode === "register" || query.mode === "add-payment"
+      query.mode === "register" ||
+      query.mode === "add-payment" ||
+      query.mode === "add-amendment"
         ? query.mode
         : undefined;
     const initialActivityReference =

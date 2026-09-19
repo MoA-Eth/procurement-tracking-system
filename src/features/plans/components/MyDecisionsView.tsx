@@ -202,6 +202,25 @@ export function MyDecisionsView({
           fetchActivities().catch(() => []),
         ]);
 
+        const isDuplicateAct = (a: any, b: any) => {
+          const norm = (s?: string) => (s || "").trim().toLowerCase();
+          const aId = norm(a.id);
+          const bId = norm(b.id);
+          const aRef = norm(a.reference || a.activityRefNo);
+          const bRef = norm(b.reference || b.activityRefNo);
+          if (aId && bId && aId === bId) return true;
+          if (aRef && bRef && aRef === bRef) return true;
+
+          const aDesc = norm(a.description);
+          const bDesc = norm(b.description);
+          if (aDesc && bDesc && aDesc === bDesc) {
+            const aAmt = Number(a.estimatedBudget || a.estimatedAmount) || 0;
+            const bAmt = Number(b.estimatedBudget || b.estimatedAmount) || 0;
+            if (aAmt === bAmt || Math.abs(aAmt - bAmt) < 1) return true;
+          }
+          return false;
+        };
+
         const combined = [...planBackendActs];
         for (const ba of allBackendActs) {
           const baPlanId = (ba.planId || ba.plan?.id || "")
@@ -222,8 +241,13 @@ export function MyDecisionsView({
               selectedPlan?.planName &&
               selectedPlan.planName.toLowerCase().includes(baPlanTitle))
           ) {
-            if (!combined.some((x) => x.id === ba.id)) {
+            const existingIdx = combined.findIndex((x) =>
+              isDuplicateAct(x, ba),
+            );
+            if (existingIdx === -1) {
               combined.push(ba);
+            } else {
+              combined[existingIdx] = { ...combined[existingIdx], ...ba };
             }
           }
         }
@@ -249,21 +273,19 @@ export function MyDecisionsView({
                   .trim();
                 const planId = (selectedPlan.id || "").toLowerCase().trim();
                 if (
-                  draftPlanRef === planRef ||
-                  draftPlanRef === planId ||
-                  (d.projectCode &&
-                    selectedPlan.projectCode &&
-                    d.projectCode.toLowerCase() ===
-                      selectedPlan.projectCode.toLowerCase())
+                  draftPlanRef &&
+                  (draftPlanRef === planRef ||
+                    draftPlanRef === planId ||
+                    (selectedPlan.planName &&
+                      draftPlanRef ===
+                        selectedPlan.planName.toLowerCase().trim()) ||
+                    (selectedPlan.reference &&
+                      draftPlanRef ===
+                        selectedPlan.reference.toLowerCase().trim()))
                 ) {
                   const act = d.activity;
-                  if (
-                    act &&
-                    !combined.some(
-                      (x) => x.id === act.id || x.reference === act.reference,
-                    )
-                  ) {
-                    combined.push({
+                  if (act) {
+                    const newAct = {
                       id: act.id || `draft-${Date.now()}`,
                       reference: act.reference,
                       description: act.description,
@@ -278,7 +300,14 @@ export function MyDecisionsView({
                       },
                       reviewType: act.details?.form?.reviewType || "Post",
                       stages: act.details?.roadmap || [],
-                    } as any);
+                    } as any;
+
+                    const existingIdx = combined.findIndex((x) =>
+                      isDuplicateAct(x, newAct),
+                    );
+                    if (existingIdx === -1) {
+                      combined.push(newAct);
+                    }
                   }
                 }
               }
@@ -794,7 +823,7 @@ export function MyDecisionsView({
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
                       Deliberation Feedback &amp; Directives:
                     </span>
-                    <div className="bg-rose-50/60 border border-rose-200 rounded-xl p-4 text-xs text-slate-800 font-medium leading-relaxed italic">
+                    <div className="bg-rose-50/60 border border-rose-200 rounded-xl p-4 text-xs text-slate-800 font-medium leading-relaxed italic break-words break-all [overflow-wrap:anywhere]">
                       &ldquo;
                       {parsedRejection.cleanRemarks ||
                         selectedPlan.rejectionReason ||
@@ -818,7 +847,7 @@ export function MyDecisionsView({
                       <span className="text-[10px] font-bold text-emerald-800 uppercase block mb-0.5">
                         Approval Remarks:
                       </span>
-                      <p className="italic text-slate-700">
+                      <p className="italic text-slate-700 break-words break-all [overflow-wrap:anywhere]">
                         &ldquo;{selectedPlan.rejectionReason}&rdquo;
                       </p>
                     </div>

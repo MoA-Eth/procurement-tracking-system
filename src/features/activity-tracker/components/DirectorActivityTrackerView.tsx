@@ -1187,10 +1187,12 @@ function DirectorActivityTrackerList({
                 <th className="py-3.5 px-4 min-w-[130px] whitespace-nowrap">
                   Reference No
                 </th>
-                <th className="py-3.5 px-4 min-w-[220px]">
+                <th className="py-3.5 px-4 min-w-[220px] max-w-[320px]">
                   Activity Name &amp; Milestone
                 </th>
-                <th className="py-3.5 px-4 min-w-[160px]">Project / FY</th>
+                <th className="py-3.5 px-4 min-w-[160px] max-w-[200px]">
+                  Project / FY
+                </th>
                 <th className="py-3.5 px-4 min-w-[140px]">
                   Category &amp; Method
                 </th>
@@ -1232,14 +1234,14 @@ function DirectorActivityTrackerList({
                           {item.activity.reference}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 max-w-[320px]">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             onViewActivity(item);
                           }}
-                          className="font-bold text-slate-900 hover:text-[#0A3C2F] text-left transition-colors cursor-pointer line-clamp-2 leading-snug break-words [overflow-wrap:anywhere]"
+                          className="font-bold text-slate-900 hover:text-[#0A3C2F] text-left transition-colors cursor-pointer line-clamp-2 leading-snug break-words break-all [overflow-wrap:anywhere]"
                           title={item.activity.description}
                         >
                           {item.activity.description}
@@ -1249,10 +1251,10 @@ function DirectorActivityTrackerList({
                           completed ({progress.percent}%)
                         </p>
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 max-w-[200px]">
                         <p
                           title={item.project.shortName}
-                          className="font-bold text-slate-800 leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]"
+                          className="font-bold text-slate-800 leading-snug line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
                         >
                           {item.project.shortName}
                         </p>
@@ -1260,20 +1262,20 @@ function DirectorActivityTrackerList({
                           {item.plan.budgetYear}
                         </p>
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 max-w-[160px]">
                         <p className="font-semibold text-slate-700 leading-snug break-words">
                           {item.activity.category}
                         </p>
                         <p
-                          className="text-[11px] text-slate-500 font-medium leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]"
+                          className="text-[11px] text-slate-500 font-medium leading-snug line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
                           title={item.activity.method}
                         >
                           {item.activity.method}
                         </p>
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 max-w-[200px]">
                         <p
-                          className="font-bold text-slate-900 leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]"
+                          className="font-bold text-slate-900 leading-snug line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
                           title={stage.name}
                         >
                           {stage.name}

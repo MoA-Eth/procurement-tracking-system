@@ -203,6 +203,27 @@ export function addSavedPlanRecord(
   return upsertSavedPlanRecord(records, record);
 }
 
+export function serializeSavedPlanRecords(
+  records: readonly SavedOfficerPlanRecord[],
+): string {
+  return JSON.stringify(records);
+}
+
+export function saveOfficerPlanDraft(
+  projectCode: string,
+  plan: ProcurementPlanSummary,
+): void {
+  if (typeof window === "undefined") return;
+  const existing = parseSavedPlanRecords(
+    window.localStorage.getItem(OFFICER_PLAN_DRAFTS_STORAGE_KEY),
+  );
+  const updated = upsertSavedPlanRecord(existing, { projectCode, plan });
+  window.localStorage.setItem(
+    OFFICER_PLAN_DRAFTS_STORAGE_KEY,
+    serializeSavedPlanRecords(updated),
+  );
+}
+
 function nextPlanReference(project: OfficerProject, budgetYear: string) {
   const prefix = `PP-${project.shortName}-${budgetYear}-`;
   const highestSequence = project.plans.reduce((highest, plan) => {

@@ -38,6 +38,8 @@ import {
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
 import { exportPlanActivitiesToExcel } from "@/features/projects/utils/projectExcelUtils";
 import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
+import { CreateAdditionalPlanModal } from "@/features/plans/components/CreateAdditionalPlanModal";
+import { saveOfficerPlanDraft } from "@/features/projects/data/officerPlanDrafts";
 
 type ActivityStatus = ProcurementActivityStatus;
 
@@ -91,6 +93,8 @@ export function OfficerProcurementPlanDetailView({
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
   const [isImportExcelOpen, setIsImportExcelOpen] = useState(false);
+  const [isCreateAdditionalPlanOpen, setIsCreateAdditionalPlanOpen] =
+    useState(false);
   const [editingActivity, setEditingActivity] =
     useState<ProcurementActivitySummary | null>(null);
 
@@ -241,6 +245,64 @@ export function OfficerProcurementPlanDetailView({
     });
 
     onSubmitToDirector?.(currentPlan.reference, reason);
+  };
+
+  const handleCreateAdditionalPlan = async (additionalPlanData: {
+    planName: string;
+    parentPlanId?: string;
+    parentPlanReference: string;
+    parentPlanName: string;
+    additionalPlanReason: string;
+    newActivity: Partial<ProcurementActivitySummary>;
+  }) => {
+    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    const additionalPlanRef = `${currentPlan.reference}-ADD-${randomSuffix}`;
+    const additionalPlan: ProcurementPlanSummary = {
+      ...currentPlan,
+      id: `add-plan-${Date.now()}`,
+      reference: additionalPlanRef,
+      name: additionalPlanData.planName,
+      parentPlanId: currentPlan.id || currentPlan.reference,
+      parentPlanReference: currentPlan.reference,
+      parentPlanName: currentPlan.name,
+      planType: "ADDITIONAL",
+      additionalPlanReason: additionalPlanData.additionalPlanReason,
+      status: "Submitted to Director",
+      activities: 1,
+      completedActivities: 0,
+      inProgressActivities: 0,
+      delayedActivities: 0,
+      estimatedValue: Number(
+        additionalPlanData.newActivity.estimatedAmount || 0,
+      ),
+      planActivities: [
+        {
+          ...(additionalPlanData.newActivity as ProcurementActivitySummary),
+          status: "Submitted to Director",
+        },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveOfficerPlanDraft(project.code, additionalPlan);
+
+    recordPlanVersionEvent({
+      planId: additionalPlan.id || additionalPlan.reference,
+      planReference: additionalPlan.reference,
+      projectCode: project.code,
+      versionNumber: 1,
+      action: "SUBMITTED",
+      actionLabel: "Additional Plan Submitted with Justification",
+      changedBy: currentPlan.createdByName || "Procurement Officer",
+      changedByRole: "Procurement Officer",
+      reason: `Additional Plan submitted: ${additionalPlanData.additionalPlanReason}`,
+    });
+
+    onUpdatePlan?.(additionalPlan);
+    alert(
+      `Additional plan "${additionalPlan.name}" submitted to Director with justification.`,
+    );
   };
 
   function exportActivities() {
@@ -426,6 +488,25 @@ export function OfficerProcurementPlanDetailView({
                 <Plus aria-hidden="true" className="h-3.5 w-3.5" />
                 New Activity
               </Link>
+            )}
+
+            {/* Create Additional Plan Button (Enabled when Plan is Finally Approved or Approved) */}
+            {(activePlanStatus === "Finally Approved" ||
+              activePlanStatus === "Approved" ||
+              currentPlan.status === "Finally Approved" ||
+              currentPlan.status === "Approved") && (
+              <button
+                type="button"
+                onClick={() => setIsCreateAdditionalPlanOpen(true)}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-xs font-bold text-white hover:bg-[#125f4c] shadow-xs transition cursor-pointer"
+                title="Create an additional/supplementary plan to add new activities with required justification"
+              >
+                <Plus
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 text-emerald-200"
+                />
+                <span>+ Create Additional Plan</span>
+              </button>
             )}
           </div>
         </div>
@@ -829,6 +910,16 @@ export function OfficerProcurementPlanDetailView({
         onImport={handleBulkImport}
         planName={currentPlan.name}
         projectCode={project.code}
+      />
+
+      <CreateAdditionalPlanModal
+        isOpen={isCreateAdditionalPlanOpen}
+        onClose={() => setIsCreateAdditionalPlanOpen(false)}
+        parentPlan={currentPlan}
+        projectCode={project.code}
+        projectName={project.name}
+        assignedOfficerName={currentPlan.createdByName}
+        onSubmit={handleCreateAdditionalPlan}
       />
     </div>
   );

@@ -46,8 +46,37 @@ export interface BackendContract {
   plannedEndDate?: string | null;
   actualEndDate?: string | null;
   payments?: BackendPayment[];
+  amendments?: BackendContractAmendment[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface BackendContractAmendment {
+  id: string;
+  contractId: string;
+  amendmentNo: number;
+  previousValue: number;
+  newValue: number;
+  variationAmount: number;
+  reason: string;
+  effectiveDate?: string | null;
+  amendedById: string;
+  amendedBy?: {
+    id: string;
+    fullName?: string | null;
+    email?: string | null;
+  } | null;
+  approvalRef?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateContractAmendmentInput {
+  variationAmount: number;
+  reason: string;
+  effectiveDate?: string;
+  approvalRef?: string;
+  notes?: string;
 }
 
 export interface CreateContractInput {
@@ -179,6 +208,31 @@ export async function recordContractPayment(
   return res.data || res;
 }
 
+export async function fetchContractAmendments(
+  contractId: string,
+): Promise<BackendContractAmendment[]> {
+  try {
+    const res = await apiClient.get<any>(
+      `/contracts/${encodeURIComponent(contractId)}/amendments`,
+    );
+    return Array.isArray(res) ? res : res.data || [];
+  } catch (err) {
+    console.error("fetchContractAmendments error:", err);
+    return [];
+  }
+}
+
+export async function createContractAmendment(
+  contractId: string,
+  data: CreateContractAmendmentInput,
+): Promise<BackendContractAmendment> {
+  const res = await apiClient.post<any>(
+    `/contracts/${encodeURIComponent(contractId)}/amendments`,
+    data,
+  );
+  return res.data || res;
+}
+
 export function mapBackendContractToOfficerContract(bc: BackendContract): any {
   const totalValue = Number(bc.totalValue) || 0;
   const paidAmount = Number(bc.paidAmount) || 0;
@@ -205,13 +259,18 @@ export function mapBackendContractToOfficerContract(bc: BackendContract): any {
   else if (bc.contractNo.includes("SSIDP")) projectName = "SSIDP";
   else if (bc.contractNo.includes("HORT")) projectName = "HORT";
 
+  const originalAmount =
+    bc.amendments && bc.amendments.length > 0
+      ? Number(bc.amendments[0].previousValue)
+      : totalValue;
+
   return {
     id: bc.id,
     contractNumber: bc.contractNo,
     procurementActivity: activityDesc || "Procurement Activity",
     project: projectName,
     supplier: supplierName || "Contractor",
-    originalAmount: totalValue,
+    originalAmount: originalAmount,
     currentAmount: totalValue,
     currency: bc.currency || "ETB",
     status:
@@ -235,6 +294,17 @@ export function mapBackendContractToOfficerContract(bc: BackendContract): any {
       gregorian: bc.plannedEndDate
         ? new Date(bc.plannedEndDate).toLocaleDateString("en-GB")
         : "Pending",
+    },
+    details: {
+      activityReference: bc.activity?.reference || "",
+      planReference: "",
+      projectCode: projectName,
+      amountWithVat: bc.contractAmountWithVat || totalValue,
+      netOfVat: bc.contractNetOfVat || totalValue,
+      amendments: (bc.amendments || []).map((a) => ({
+        id: a.amendmentNo,
+        amount: a.variationAmount,
+      })),
     },
   };
 }

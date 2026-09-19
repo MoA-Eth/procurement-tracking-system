@@ -48,7 +48,14 @@ export function ActivitiesListView({
 }: ActivitiesListViewProps) {
   const [activities, setActivities] = useState<ProcurementActivity[]>(() =>
     INITIAL_ACTIVITIES.filter(
-      (a) => a.planId === plan.id || a.projectCode === project.code,
+      (a) =>
+        a.planId === plan.id ||
+        (Boolean(plan.id) &&
+          a.planId?.toLowerCase() === plan.id.toLowerCase()) ||
+        (Boolean((plan as any).reference) &&
+          a.planId?.toLowerCase() === (plan as any).reference.toLowerCase()) ||
+        (Boolean(plan.planName) &&
+          a.planName?.toLowerCase() === plan.planName.toLowerCase()),
     ),
   );
 

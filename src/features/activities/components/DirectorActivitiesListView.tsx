@@ -22,6 +22,7 @@ import {
   XCircle,
   AlertTriangle,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -295,6 +296,58 @@ function mapBackendActivityToProcurementActivity(
   };
 }
 
+export function upsertActivityIntoList(
+  list: ProcurementActivity[],
+  mapped: ProcurementActivity,
+) {
+  const norm = (s?: string) => (s || "").trim().toLowerCase();
+  const actDesc = norm(mapped.description);
+  const actRef = norm(mapped.activityRefNo);
+  const actId = norm(mapped.id);
+
+  const existingIdx = list.findIndex((existing) => {
+    const exDesc = norm(existing.description);
+    const exRef = norm(existing.activityRefNo);
+    const exId = norm(existing.id);
+
+    // 1. Direct ID or Ref match
+    if (actId && exId && actId === exId) return true;
+    if (actRef && exRef && actRef === exRef) return true;
+
+    // 2. Content match (same description and matching budget/method)
+    if (actDesc && exDesc && actDesc === exDesc) {
+      const actAmt = Number(mapped.estimatedAmount) || 0;
+      const exAmt = Number(existing.estimatedAmount) || 0;
+      if (actAmt === exAmt || Math.abs(actAmt - exAmt) < 1) return true;
+      if (norm(mapped.method) && norm(mapped.method) === norm(existing.method))
+        return true;
+    }
+
+    return false;
+  });
+
+  if (existingIdx === -1) {
+    list.push(mapped);
+  } else {
+    const existing = list[existingIdx];
+    const isIncomingBackend = Boolean(
+      mapped.id && mapped.id.includes("-") && mapped.id.length > 20,
+    );
+    const isExistingBackend = Boolean(
+      existing.id && existing.id.includes("-") && existing.id.length > 20,
+    );
+
+    // Prefer official backend record over temporary local draft
+    if (isIncomingBackend && !isExistingBackend) {
+      list[existingIdx] = mapped;
+    } else if (!isIncomingBackend && isExistingBackend) {
+      // Keep existing backend record
+    } else {
+      list[existingIdx] = { ...existing, ...mapped };
+    }
+  }
+}
+
 export function DirectorActivitiesListView({
   plan,
   project,
@@ -356,17 +409,42 @@ export function DirectorActivitiesListView({
   );
 
   const [activities, setActivities] = useState<ProcurementActivity[]>(() => {
+    const initial: ProcurementActivity[] = [];
     if (plan.activities && plan.activities.length > 0) {
-      return plan.activities.map((a) =>
-        mapBackendActivityToProcurementActivity(a, plan),
-      );
+      for (const a of plan.activities) {
+        upsertActivityIntoList(
+          initial,
+          mapBackendActivityToProcurementActivity(a, plan),
+        );
+      }
+    } else {
+      const pId = (plan.id || "").toLowerCase().trim();
+      const pRef = ((plan as any).reference || "").toLowerCase().trim();
+      const pName = (plan.planName || (plan as any).title || "")
+        .toLowerCase()
+        .trim();
+
+      const matchedInitial = INITIAL_ACTIVITIES.filter((a) => {
+        const aPlanId = (a.planId || "").toLowerCase().trim();
+        const aPlanName = (a.planName || "").toLowerCase().trim();
+        return (
+          (pId && aPlanId === pId) ||
+          (pRef && aPlanId === pRef) ||
+          (pName && (aPlanName === pName || aPlanId === pName))
+        );
+      });
+      for (const a of matchedInitial) {
+        upsertActivityIntoList(initial, a);
+      }
     }
-    return INITIAL_ACTIVITIES.filter(
-      (a) =>
-        a.planId === plan.id ||
-        a.planName === plan.planName ||
-        a.projectCode === plan.projectCode,
-    );
+    if (plan.parentActivities && plan.parentActivities.length > 0) {
+      for (const pa of plan.parentActivities) {
+        const mapped = mapBackendActivityToProcurementActivity(pa, plan);
+        (mapped as any).isParentApproved = true;
+        upsertActivityIntoList(initial, mapped);
+      }
+    }
+    return initial;
   });
 
   const [loading, setLoading] = useState(false);
@@ -374,7 +452,7 @@ export function DirectorActivitiesListView({
   const loadActivitiesData = useCallback(async () => {
     setLoading(true);
     try {
-      let loadedActs: ProcurementActivity[] = [];
+      const loadedActs: ProcurementActivity[] = [];
 
       // Collect target identifiers for matching
       const targetPlanIds = new Set<string>();
@@ -382,6 +460,10 @@ export function DirectorActivitiesListView({
       if ((plan as any).reference)
         targetPlanIds.add((plan as any).reference.toLowerCase().trim());
       if (plan.planName) targetPlanIds.add(plan.planName.toLowerCase().trim());
+      if (plan.parentPlanId)
+        targetPlanIds.add(plan.parentPlanId.toLowerCase().trim());
+      if (plan.parentPlanReference)
+        targetPlanIds.add(plan.parentPlanReference.toLowerCase().trim());
 
       const targetProjectCodes = new Set<string>();
       if (plan.projectCode)
@@ -398,16 +480,16 @@ export function DirectorActivitiesListView({
       if (plan.activities && plan.activities.length > 0) {
         for (const act of plan.activities) {
           const mapped = mapBackendActivityToProcurementActivity(act, plan);
-          if (
-            !loadedActs.some(
-              (x) =>
-                x.id === mapped.id ||
-                x.activityRefNo?.toLowerCase() ===
-                  mapped.activityRefNo?.toLowerCase(),
-            )
-          ) {
-            loadedActs.push(mapped);
-          }
+          upsertActivityIntoList(loadedActs, mapped);
+        }
+      }
+
+      // Also include parent activities if this is an additional plan
+      if (plan.parentActivities && plan.parentActivities.length > 0) {
+        for (const act of plan.parentActivities) {
+          const mapped = mapBackendActivityToProcurementActivity(act, plan);
+          (mapped as any).isParentApproved = true;
+          upsertActivityIntoList(loadedActs, mapped);
         }
       }
 
@@ -426,9 +508,6 @@ export function DirectorActivitiesListView({
                 const pRef = (p.reference || "").toLowerCase().trim();
                 const pName = (p.name || "").toLowerCase().trim();
                 const pId = (p.id || "").toLowerCase().trim();
-                const pProj = (item.projectCode || p.projectCode || "")
-                  .toLowerCase()
-                  .trim();
 
                 const isPlanMatch =
                   (pRef &&
@@ -445,17 +524,9 @@ export function DirectorActivitiesListView({
                       (t) => t === pId || t.includes(pId) || pId.includes(t),
                     ));
 
-                const isProjMatch =
-                  targetProjectCodes.size === 0 ||
-                  Array.from(targetProjectCodes).some(
-                    (tc) =>
-                      tc === pProj || tc.includes(pProj) || pProj.includes(tc),
-                  );
-
-                if (isPlanMatch || isProjMatch) {
+                if (isPlanMatch) {
                   if (pRef) targetPlanIds.add(pRef);
                   if (pName) targetPlanIds.add(pName);
-                  if (pProj) targetProjectCodes.add(pProj);
 
                   if (
                     p.planActivities &&
@@ -467,16 +538,7 @@ export function DirectorActivitiesListView({
                         act,
                         plan,
                       );
-                      if (
-                        !loadedActs.some(
-                          (x) =>
-                            x.id === mapped.id ||
-                            x.activityRefNo?.toLowerCase() ===
-                              mapped.activityRefNo?.toLowerCase(),
-                        )
-                      ) {
-                        loadedActs.push(mapped);
-                      }
+                      upsertActivityIntoList(loadedActs, mapped);
                     }
                   }
                 }
@@ -500,41 +562,22 @@ export function DirectorActivitiesListView({
               const draftPlanRef = (draft.planReference || "")
                 .toLowerCase()
                 .trim();
-              const draftProjCode = (draft.projectCode || "")
-                .toLowerCase()
-                .trim();
 
               const matches =
-                (draftPlanRef &&
-                  Array.from(targetPlanIds).some(
-                    (t) =>
-                      t === draftPlanRef ||
-                      t.includes(draftPlanRef) ||
-                      draftPlanRef.includes(t),
-                  )) ||
-                (draftProjCode &&
-                  Array.from(targetProjectCodes).some(
-                    (tc) =>
-                      tc === draftProjCode ||
-                      tc.includes(draftProjCode) ||
-                      draftProjCode.includes(tc),
-                  ));
+                draftPlanRef &&
+                Array.from(targetPlanIds).some(
+                  (t) =>
+                    t === draftPlanRef ||
+                    t.includes(draftPlanRef) ||
+                    draftPlanRef.includes(t),
+                );
 
               if (matches) {
                 const mapped = mapBackendActivityToProcurementActivity(
                   draft.activity,
                   plan,
                 );
-                if (
-                  !loadedActs.some(
-                    (x) =>
-                      x.id === mapped.id ||
-                      x.activityRefNo?.toLowerCase() ===
-                        mapped.activityRefNo?.toLowerCase(),
-                  )
-                ) {
-                  loadedActs.push(mapped);
-                }
+                upsertActivityIntoList(loadedActs, mapped);
               }
             }
           }
@@ -566,9 +609,6 @@ export function DirectorActivitiesListView({
           )
             .toLowerCase()
             .trim();
-          const baProjCode = (ba.plan?.project?.code || "")
-            .toLowerCase()
-            .trim();
 
           const matchesPlan =
             (baPlanId &&
@@ -584,13 +624,6 @@ export function DirectorActivitiesListView({
                   t === baPlanTitle ||
                   t.includes(baPlanTitle) ||
                   baPlanTitle.includes(t),
-              )) ||
-            (baProjCode &&
-              Array.from(targetProjectCodes).some(
-                (tc) =>
-                  tc === baProjCode ||
-                  tc.includes(baProjCode) ||
-                  baProjCode.includes(tc),
               ));
 
           if (matchesPlan && !combinedBackend.some((x) => x.id === ba.id)) {
@@ -601,37 +634,25 @@ export function DirectorActivitiesListView({
         if (combinedBackend.length > 0) {
           for (const ba of combinedBackend) {
             const mapped = mapBackendActivityToProcurementActivity(ba, plan);
-            if (
-              !loadedActs.some(
-                (x) =>
-                  x.id === mapped.id ||
-                  x.activityRefNo?.toLowerCase() ===
-                    mapped.activityRefNo?.toLowerCase(),
-              )
-            ) {
-              loadedActs.push(mapped);
-            }
+            upsertActivityIntoList(loadedActs, mapped);
           }
         }
       } catch (backendErr) {
         console.warn("Backend fetchActivities note:", backendErr);
       }
 
-      // 4. Fallback to INITIAL_ACTIVITIES if still empty
+      // 4. Fallback to INITIAL_ACTIVITIES if still empty (strictly matching targetPlanIds)
       if (loadedActs.length === 0) {
-        const fallback = INITIAL_ACTIVITIES.filter(
-          (a) =>
-            Array.from(targetPlanIds).some(
-              (t) =>
-                t === a.planId?.toLowerCase() ||
-                t === a.planName?.toLowerCase(),
-            ) ||
-            Array.from(targetProjectCodes).some(
-              (tc) => tc === a.projectCode?.toLowerCase(),
-            ),
+        const fallback = INITIAL_ACTIVITIES.filter((a) =>
+          Array.from(targetPlanIds).some(
+            (t) =>
+              t === a.planId?.toLowerCase() || t === a.planName?.toLowerCase(),
+          ),
         );
         if (fallback.length > 0) {
-          loadedActs = fallback;
+          for (const a of fallback) {
+            upsertActivityIntoList(loadedActs, a);
+          }
         }
       }
 
@@ -922,6 +943,18 @@ export function DirectorActivitiesListView({
     },
     [parsedRejection, plan.rejectedActivityIds, plan.rejectedActivityRefs],
   );
+
+  const rejectVotesCount = useMemo(() => {
+    const votes = (plan as any).committeeVotes;
+    return Array.isArray(votes)
+      ? votes.filter((v: any) => v.decision === "REJECT").length
+      : 0;
+  }, [plan]);
+
+  const isMajorityRejected =
+    rejectVotesCount >= 3 ||
+    plan.status === "Returned" ||
+    plan.status === "Committee Rejected";
 
   // Active Detail Tab state (1: Key Details, 2: Related Info, 3: Additional Details, 4: Roadmap)
   const [activeDetailTab, setActiveDetailTab] = useState<1 | 2 | 3 | 4>(1);
@@ -1953,9 +1986,61 @@ export function DirectorActivitiesListView({
             </div>
           </section>
 
+          {/* Additional Plan Justification Callout Banner */}
+          {(plan.planType === "ADDITIONAL" || Boolean(plan.parentPlanId)) && (
+            <section className="rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-amber-50/90 p-4 sm:p-5 shadow-2xs space-y-3 animate-in fade-in">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-amber-100 border border-amber-200 text-amber-800 shrink-0 mt-0.5 shadow-2xs">
+                    <Sparkles className="h-5 w-5 text-amber-700" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-amber-200/80 text-amber-900 border border-amber-300">
+                        Additional Plan Package
+                      </span>
+                      {plan.parentPlanReference && (
+                        <span className="text-xs font-bold text-slate-700">
+                          Supplement to Approved Plan:{" "}
+                          <span className="font-mono text-emerald-800 font-extrabold underline decoration-emerald-500/40">
+                            {plan.parentPlanReference}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 mt-1">
+                      Officer Justification for Late Addition
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      Submitted by the Procurement Officer detailing why this
+                      activity was not incorporated into the original annual
+                      plan.
+                    </p>
+                  </div>
+                </div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-amber-100/90 text-amber-950 border border-amber-300/70">
+                  <MessageSquare className="h-3.5 w-3.5 text-amber-700" />
+                  Required Justification
+                </span>
+              </div>
+
+              <div className="rounded-xl bg-white/90 border border-amber-200/80 p-3.5 text-xs text-slate-800 shadow-2xs leading-relaxed space-y-1">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900 block">
+                  Officer&apos;s Statement of Reason:
+                </span>
+                <p className="italic text-slate-700 font-medium pl-2 border-l-2 border-amber-400">
+                  &ldquo;
+                  {plan.additionalPlanReason ||
+                    "No specific reason provided by officer."}
+                  &rdquo;
+                </p>
+              </div>
+            </section>
+          )}
+
           {/* Rejection Alert Banner (Director & Viewer Insight) */}
           {userRole !== "ENDORSING_COMMITTEE" &&
-            (parsedRejection.scope === "SPECIFIC" ? (
+            parsedRejection.scope === "SPECIFIC" && (
               <section className="rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50/40 p-4 shadow-2xs space-y-2.5 animate-in fade-in">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="flex items-start gap-2.5">
@@ -1969,16 +2054,22 @@ export function DirectorActivitiesListView({
                         {activities.length} Activities)
                       </h3>
                       <p className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
-                        The Endorsement Committee returned this plan due to
-                        objections on specific activities (highlighted in red in
-                        the directory below). Per directorate regulations, the
-                        entire plan package is on hold until these specific
-                        activities are revised by the Procurement Officer.
+                        {isMajorityRejected
+                          ? "The Endorsement Committee rejected this plan by majority vote due to objections on specific activities (highlighted in red in the directory below). The plan is now returned for revision by the Procurement Officer."
+                          : "A committee member has registered objections on specific activities (highlighted in red below). Note: At least 3 rejection votes are required to completely reject the plan, but comments and flagged activities are immediately visible for directorate oversight."}
                       </p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-200/70 text-amber-900 border border-amber-300 shrink-0">
-                    Targeted Revision Required
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 ${
+                      isMajorityRejected
+                        ? "bg-rose-100 text-rose-800 border-rose-300"
+                        : "bg-amber-200/70 text-amber-900 border-amber-300"
+                    }`}
+                  >
+                    {isMajorityRejected
+                      ? "Majority Rejected (3+ Votes)"
+                      : "Objection in Progress"}
                   </span>
                 </div>
 
@@ -1987,21 +2078,25 @@ export function DirectorActivitiesListView({
                   <span className="font-bold text-amber-950 text-[11px]">
                     Flagged Activities:
                   </span>
-                  {parsedRejection.rejectedActivityRefs.map((ref: string) => (
-                    <button
-                      key={ref}
-                      type="button"
-                      onClick={() => scrollToActivity(ref, false)}
-                      className="inline-flex items-center gap-1.5 font-mono font-bold text-rose-900 bg-rose-100 hover:bg-rose-200 border border-rose-300 hover:border-rose-400 px-2.5 py-1 rounded-md text-[11px] transition-all cursor-pointer shadow-2xs group"
-                      title={`Click to jump to activity ${ref}`}
-                    >
-                      <AlertCircle className="h-3 w-3 text-rose-600" />
-                      <span>{ref}</span>
-                      <span className="font-sans text-[10px] text-rose-700 group-hover:underline">
-                        ↓ Jump to Activity
-                      </span>
-                    </button>
-                  ))}
+                  {parsedRejection.rejectedActivityRefs.map(
+                    (activityCode: string) => (
+                      <button
+                        key={activityCode}
+                        type="button"
+                        onClick={() =>
+                          scrollToActivity(activityCode, false)
+                        }
+                        className="inline-flex items-center gap-1.5 font-mono font-bold text-rose-900 bg-rose-100 hover:bg-rose-200 border border-rose-300 hover:border-rose-400 px-2.5 py-1 rounded-md text-[11px] transition-all cursor-pointer shadow-2xs group"
+                        title={`Click to jump to activity ${activityCode}`}
+                      >
+                        <AlertCircle className="h-3 w-3 text-rose-600" />
+                        <span>{activityCode}</span>
+                        <span className="font-sans text-[10px] text-rose-700 group-hover:underline">
+                          ↓ Jump to Activity
+                        </span>
+                      </button>
+                    ),
+                  )}
                 </div>
 
                 {parsedRejection.cleanRemarks && (
@@ -2015,8 +2110,12 @@ export function DirectorActivitiesListView({
                   </div>
                 )}
               </section>
-            ) : (plan.status === "Returned" || plan.rejectionReason) &&
-              parsedRejection.cleanRemarks ? (
+            )}
+
+          {userRole !== "ENDORSING_COMMITTEE" &&
+            parsedRejection.scope !== "SPECIFIC" &&
+            (plan.status === "Returned" || plan.rejectionReason) &&
+            parsedRejection.cleanRemarks && (
               <section className="rounded-xl border border-rose-200 bg-rose-50/70 p-4 shadow-2xs space-y-2 animate-in fade-in">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -2025,17 +2124,21 @@ export function DirectorActivitiesListView({
                     </div>
                     <div>
                       <h3 className="text-xs font-extrabold text-rose-950 uppercase tracking-wider">
-                        Plan Returned: Common / Entire Plan Package Rejection
+                        {isMajorityRejected
+                          ? "Plan Rejected: Common / Entire Plan Package Rejection"
+                          : "Committee Objection: Entire Plan Package (Deliberation in Progress)"}
                       </h3>
                       <p className="text-xs text-rose-900/90 mt-0.5">
-                        The Endorsement Committee returned the entire
-                        procurement plan package for general revisions across
-                        all activities.
+                        {isMajorityRejected
+                          ? "The Endorsement Committee returned the entire procurement plan package for general revisions across all activities."
+                          : "A committee member has registered objections on the plan package. At least 3 rejection votes are required to completely reject the plan, but remarks are immediately visible below."}
                       </p>
                     </div>
                   </div>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
-                    General Rejection (All Activities)
+                    {isMajorityRejected
+                      ? "Majority Rejected (3+ Votes)"
+                      : "Objection in Progress"}
                   </span>
                 </div>
 
@@ -2050,7 +2153,7 @@ export function DirectorActivitiesListView({
                   </div>
                 )}
               </section>
-            ) : null)}
+            )}
 
           {/* Search & Filter Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
@@ -2211,13 +2314,23 @@ export function DirectorActivitiesListView({
                           </td>
 
                           <td className="py-2 px-3 font-mono font-bold text-slate-900 text-xs">
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span>{act.activityRefNo}</span>
                               {isTargeted && (
                                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-600 text-white animate-pulse">
                                   Targeted
                                 </span>
                               )}
+                              {(act as any).isParentApproved ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  ✓ Already Approved
+                                </span>
+                              ) : plan.planType === "ADDITIONAL" ||
+                                Boolean(plan.parentPlanId) ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                  ★ New Activity
+                                </span>
+                              ) : null}
                             </div>
                             {isFlagged ? (
                               <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">

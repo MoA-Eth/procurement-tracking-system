@@ -90,6 +90,7 @@ export interface BackendActivity {
 
 export interface CreateActivityInput {
   planId: string;
+  reference?: string;
   procurementMethodId: string;
   description: string;
   estimatedBudget: number;
