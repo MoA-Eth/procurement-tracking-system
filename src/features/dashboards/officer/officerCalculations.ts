@@ -171,9 +171,7 @@ export function formatDelayedActivityAlert(
     "Pending milestone completion / supplier responsiveness";
 
   const statusLine =
-    delayDays > 0
-      ? `${delayDays} Day(s) Overdue`
-      : `Delayed Activity`;
+    delayDays > 0 ? `${delayDays} Day(s) Overdue` : `Delayed Activity`;
 
   const reference = (
     act.reference ||
