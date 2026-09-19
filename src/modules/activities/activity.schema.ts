@@ -5,6 +5,7 @@ import { registry } from '../../config/openapi.js';
 
 export const createActivityStep1Schema = z.object({
   planId: z.string().uuid('Plan ID must be a valid UUID'),
+  reference: z.string().trim().max(255).optional(),
   procurementMethodId: z.string().uuid('Procurement Method is required'),
   specificMethod: z.string().trim().max(255).optional(),
   marketApproach: z

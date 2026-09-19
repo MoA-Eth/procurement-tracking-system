@@ -56,6 +56,12 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
           },
         },
         creator: true,
+        parentPlan: {
+          include: {
+            activities: true,
+          },
+        },
+        childPlans: true,
         activities: {
           include: {
             procurementMethod: true,
@@ -152,6 +158,12 @@ export const getPlanByIdService = async (id: string) => {
           },
         },
         creator: true,
+        parentPlan: {
+          include: {
+            activities: true,
+          },
+        },
+        childPlans: true,
         activities: {
           include: {
             procurementMethod: true,
@@ -361,6 +373,12 @@ export const submitPlanService = async (id: string, userId: string) => {
         }));
       if (!oldPlan) {
         throw new Error(`Plan not found with id: ${id}`);
+      }
+
+      if (oldPlan.status !== PlanStatus.WITH_COMMITTEE) {
+        throw new Error(
+          `Voting is closed for this round because the plan is currently ${oldPlan.status}.`,
+        );
       }
 
       const user = await tx.user.findUnique({ where: { id: userId } });
@@ -717,7 +735,7 @@ export const submitCommitteeVoteService = async (
         plan = await tx.plan.update({
           where: { id: oldPlan.id },
           data: {
-            status: PlanStatus.APPROVED,
+            status: PlanStatus.AWAITING_MANAGEMENT_APPROVAL,
             approvedById: validUserId,
             approvedAt: new Date(),
           },
@@ -1096,6 +1114,105 @@ export const approvePlanUpdateService = async (id: string, userId: string) => {
     severity: 'INFO',
     link: '/workspace/plan-management',
   }).catch(() => {});
+
+  return plan;
+};
+
+export const submitManagementDecisionService = async (
+  id: string,
+  decision: 'APPROVE' | 'REJECT',
+  comment?: string,
+  userId?: string,
+) => {
+  const plan = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const oldPlan =
+        (await tx.plan.findUnique({
+          where: { id },
+          include: { activities: true, committeeVotes: true, creator: true },
+        })) ||
+        (await tx.plan.findFirst({
+          where: { title: id },
+          include: { activities: true, committeeVotes: true, creator: true },
+        }));
+      if (!oldPlan) {
+        throw new Error(`Plan not found with id: ${id}`);
+      }
+
+      const isApproved = decision === 'APPROVE';
+      const updatedPlan = await tx.plan.update({
+        where: { id: oldPlan.id },
+        data: {
+          status: isApproved
+            ? PlanStatus.APPROVED
+            : PlanStatus.MANAGEMENT_REJECTED,
+          managementDecision: decision,
+          managementComment: comment || null,
+          managementById: userId || null,
+          managementAt: new Date(),
+          ...(isApproved
+            ? { approvedById: userId || null, approvedAt: new Date() }
+            : { rejectedById: userId || null, rejectedAt: new Date() }),
+        },
+        include: {
+          project: true,
+          creator: true,
+          activities: true,
+          committeeVotes: true,
+        },
+      });
+
+      try {
+        if (userId) {
+          await logRevision(
+            tx,
+            RevisionEntityType.PLAN,
+            isApproved ? RevisionChangeType.APPROVE : RevisionChangeType.REJECT,
+            oldPlan.id,
+            userId,
+            oldPlan,
+            updatedPlan,
+          );
+        }
+      } catch (auditErr) {
+        console.warn('logRevision managementDecision warning:', auditErr);
+      }
+
+      return updatedPlan;
+    },
+  );
+
+  createNotification({
+    targetRole: 'DIRECTOR',
+    title:
+      decision === 'APPROVE'
+        ? `Plan Authorized: ${plan.title}`
+        : `Plan Rejected by Management: ${plan.title}`,
+    message:
+      decision === 'APPROVE'
+        ? `Executive Management has authorized and finally approved plan "${plan.title}".`
+        : `Executive Management has rejected plan "${plan.title}".`,
+    type: 'DECISION',
+    severity: decision === 'APPROVE' ? 'INFO' : 'HIGH',
+    link: '/workspace/plan-for-review',
+  }).catch(() => {});
+
+  if (plan.creator?.id) {
+    createNotification({
+      userId: plan.creator.id,
+      title:
+        decision === 'APPROVE'
+          ? `Plan Finally Approved: ${plan.title}`
+          : `Plan Rejected by Management: ${plan.title}`,
+      message:
+        decision === 'APPROVE'
+          ? `Your procurement plan "${plan.title}" has been authorized by Executive Management and is now Finally Approved.`
+          : `Executive Management has returned plan "${plan.title}".`,
+      type: 'DECISION',
+      severity: decision === 'APPROVE' ? 'INFO' : 'HIGH',
+      link: '/workspace/plan-management',
+    }).catch(() => {});
+  }
 
   return plan;
 };

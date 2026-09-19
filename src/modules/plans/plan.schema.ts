@@ -31,6 +31,9 @@ export const createPlanSchema = registry.register(
     periodStart: z.coerce.date(),
     periodEnd: z.coerce.date(),
     gpnDate: z.coerce.date().optional(),
+    parentPlanId: z.string().trim().optional(),
+    planType: z.string().trim().optional(),
+    additionalPlanReason: z.string().trim().optional(),
   }),
 );
 
@@ -46,18 +49,42 @@ export const updatePlanSchema = registry.register(
     periodEnd: z.coerce.date().optional(),
     gpnDate: z.coerce.date().optional(),
     status: z.nativeEnum(PlanStatus).optional(),
+    parentPlanId: z.string().trim().optional(),
+    planType: z.string().trim().optional(),
+    additionalPlanReason: z.string().trim().optional(),
   }),
 );
 
 export const rejectPlanSchema = registry.register(
   'RejectPlan',
+  z
+    .object({
+      reason: z
+        .string()
+        .trim()
+        .min(1, 'Rejection reason is required')
+        .max(1000)
+        .optional(),
+      comment: z.string().trim().min(1).max(1000).optional(),
+    })
+    .refine(
+      (data) =>
+        Boolean(
+          (data.reason && data.reason.trim()) ||
+          (data.comment && data.comment.trim()),
+        ),
+      {
+        message: 'Rejection reason is required',
+      },
+    ),
+);
+
+export const returnToOfficerSchema = registry.register(
+  'ReturnToOfficer',
   z.object({
-    reason: z
-      .string()
-      .trim()
-      .min(1, 'Rejection reason is required')
-      .max(1000)
-      .openapi({ example: 'Budget allocation mismatch on item #3.' }),
+    comment: z.string().trim().optional(),
+    reason: z.string().trim().optional(),
+    userId: z.string().trim().optional(),
   }),
 );
 
@@ -72,6 +99,18 @@ export const committeeVoteSchema = registry.register(
       .trim()
       .optional()
       .openapi({ example: 'All specifications meet ministry criteria.' }),
+  }),
+);
+
+export const managementDecisionSchema = registry.register(
+  'ManagementDecision',
+  z.object({
+    decision: z.enum(['APPROVE', 'REJECT']).openapi({ example: 'APPROVE' }),
+    comment: z
+      .string()
+      .trim()
+      .optional()
+      .openapi({ example: 'Authorized by Executive Management' }),
   }),
 );
 
@@ -200,6 +239,23 @@ registry.registerPath({
   },
   responses: {
     200: { description: 'Plan sent to committee, emails dispatched' },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/plans/{id}/return-to-officer',
+  summary: 'Return a plan to the procurement officer for revision',
+  tags: ['Plans'],
+  security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+  request: {
+    params: z.object({ id: z.string().openapi({ description: 'Plan UUID' }) }),
+    body: {
+      content: { 'application/json': { schema: returnToOfficerSchema } },
+    },
+  },
+  responses: {
+    200: { description: 'Plan returned for revision' },
   },
 });
 

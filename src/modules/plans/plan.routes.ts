@@ -6,6 +6,7 @@ import {
   updatePlanSchema,
   rejectPlanSchema,
   committeeVoteSchema,
+  managementDecisionSchema,
 } from './plan.schema.js';
 import {
   getPlans,
@@ -17,7 +18,9 @@ import {
   submitPlan,
   sendToCommittee,
   rejectPlan,
+  returnToOfficer,
   submitCommitteeVote,
+  submitManagementDecision,
 } from './plan.controller.js';
 
 const router = Router();
@@ -88,6 +91,12 @@ router.post(
 );
 
 router.post(
+  '/:id/return-to-officer',
+  authorize('ProcurementDirector', 'DIRECTOR', 'Administrator', 'ADMIN'),
+  returnToOfficer,
+);
+
+router.post(
   '/:id/vote',
   authorize(
     'ENDORSING_COMMITTEE',
@@ -98,6 +107,13 @@ router.post(
   ),
   validate(committeeVoteSchema),
   submitCommitteeVote,
+);
+
+router.post(
+  '/:id/management-decision',
+  authorize('ManagementTeam', 'MANAGEMENT', 'Administrator', 'ADMIN'),
+  validate(managementDecisionSchema),
+  submitManagementDecision,
 );
 
 export default router;
