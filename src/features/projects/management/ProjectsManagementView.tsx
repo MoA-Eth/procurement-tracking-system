@@ -620,6 +620,7 @@ export function ProjectsManagementView({
           availableOfficers={
             availableOfficers.length > 0 ? availableOfficers : undefined
           }
+          allProjects={projects}
           onBackClick={() => {
             setEditingProject(null);
             setViewMode("list");

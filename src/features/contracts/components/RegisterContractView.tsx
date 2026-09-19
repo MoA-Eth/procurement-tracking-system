@@ -19,6 +19,12 @@ import {
   type ProcurementPlanSummary,
 } from "../../projects/data/officerProjects";
 import {
+  fetchProjects,
+  mapBackendProjectToOfficerProject,
+} from "@/lib/projectsApi";
+import { fetchPlans, mapBackendPlanToOfficerPlanSummary } from "@/lib/plansApi";
+import { fetchActivities } from "@/lib/activitiesApi";
+import {
   ArrowLeft,
   Building2,
   CheckCircle2,
@@ -93,12 +99,20 @@ const statusOptions: readonly ContractStatus[] = [
 export function RegisterContractView({
   existingContracts,
   fromTracker,
+  initialActivityReference,
+  initialPlanReference,
+  initialProjectCode,
   onSave,
 }: {
   existingContracts: readonly OfficerContract[];
   fromTracker?: boolean;
+  initialActivityReference?: string;
+  initialPlanReference?: string;
+  initialProjectCode?: string;
   onSave: (contract: OfficerContract) => void;
 }) {
+  const [backendProjects, setBackendProjects] = useState<OfficerProject[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [savedPlans, setSavedPlans] = useState<SavedOfficerPlanRecord[]>([]);
   const [savedActivities, setSavedActivities] = useState<
     SavedOfficerActivityRecord[]
@@ -124,6 +138,49 @@ export function RegisterContractView({
   }));
 
   useEffect(() => {
+    let isMounted = true;
+    async function loadBackendData() {
+      setIsLoadingActivities(true);
+      try {
+        const [rawProjects, rawPlans, rawActivities] = await Promise.all([
+          fetchProjects().catch(() => []),
+          fetchPlans().catch(() => []),
+          fetchActivities().catch(() => []),
+        ]);
+
+        if (!isMounted) return;
+
+        if (rawProjects && rawProjects.length > 0) {
+          const mappedProjects = rawProjects.map((p) => {
+            const officerProj = mapBackendProjectToOfficerProject(p);
+            const projPlans = (rawPlans || [])
+              .filter(
+                (pl) => pl.projectId === p.id || pl.project?.code === p.code,
+              )
+              .map(mapBackendPlanToOfficerPlanSummary);
+            return {
+              ...officerProj,
+              plans: projPlans.length > 0 ? projPlans : officerProj.plans,
+            };
+          });
+          setBackendProjects(mappedProjects);
+        }
+      } catch (err) {
+        console.warn("RegisterContractView backend load note:", err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingActivities(false);
+        }
+      }
+    }
+
+    loadBackendData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const loadSavedRecords = window.setTimeout(() => {
       setSavedPlans(
         parseSavedPlanRecords(
@@ -140,14 +197,37 @@ export function RegisterContractView({
     return () => window.clearTimeout(loadSavedRecords);
   }, []);
 
-  const projects = useMemo(
-    () => mergeSavedPlans(officerProjects, savedPlans),
-    [savedPlans],
-  );
+  const projects = useMemo(() => {
+    const baseProjects =
+      backendProjects.length > 0 ? backendProjects : officerProjects;
+    return mergeSavedPlans(baseProjects, savedPlans);
+  }, [backendProjects, savedPlans]);
+
+  const targetActivityRef =
+    initialActivityReference ||
+    (typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("activity") || undefined
+      : undefined);
+
   const eligibleActivities = useMemo(
-    () => buildEligibleActivities(projects, savedActivities),
-    [projects, savedActivities],
+    () => buildEligibleActivities(projects, savedActivities, targetActivityRef),
+    [projects, savedActivities, targetActivityRef],
   );
+
+  useEffect(() => {
+    if (form.activityKey) return;
+    if (targetActivityRef && eligibleActivities.length > 0) {
+      const match = eligibleActivities.find(
+        (ctx) =>
+          ctx.activity.reference.toLowerCase() ===
+          targetActivityRef.toLowerCase(),
+      );
+      if (match) {
+        selectActivity(activityKey(match));
+      }
+    }
+  }, [eligibleActivities, form.activityKey, targetActivityRef]);
+
   const selectedContext = eligibleActivities.find(
     (context) => activityKey(context) === form.activityKey,
   );
@@ -333,13 +413,19 @@ export function RegisterContractView({
                     onChange={selectActivity}
                     value={form.activityKey}
                   >
-                    <option value="">Select an eligible activity</option>
+                    <option value="">
+                      {isLoadingActivities
+                        ? "Loading eligible activities..."
+                        : eligibleActivities.length === 0
+                          ? "No eligible activities found (requires approved plan)"
+                          : "Select an eligible activity"}
+                    </option>
                     {eligibleActivities.map((context) => (
                       <option
                         key={activityKey(context)}
                         value={activityKey(context)}
                       >
-                        {context.project.shortName} ·{" "}
+                        {context.project.shortName || context.project.code} ·{" "}
                         {context.activity.reference}
                         {" · "}
                         {context.activity.description}
@@ -1027,32 +1113,76 @@ function CalculatedValue({
 
 export function buildEligibleActivities(
   projects: readonly OfficerProject[],
-  savedActivities: readonly SavedOfficerActivityRecord[],
+  savedActivities: readonly SavedOfficerActivityRecord[] = [],
+  requestedActivityReference?: string,
 ) {
-  return projects.flatMap((project) =>
-    project.plans
-      .filter((plan) => plan.status === "Approved")
-      .flatMap((plan) => {
-        const savedForPlan = savedActivities
-          .filter(
-            (record) =>
-              record.projectCode === project.code &&
-              record.planReference === plan.reference,
-          )
-          .map((record) => record.activity);
-
-        return savedForPlan
-          .filter(isContractReadyActivity)
-          .map((activity) => ({ activity, plan, project }));
-      }),
+  const hasApprovedOrReviewPlans = projects.some((p) =>
+    p.plans.some((pl) => {
+      const s = String(pl.status || "").toLowerCase();
+      return (
+        s === "approved" ||
+        s === "finally approved" ||
+        s === "committee review" ||
+        s === "active"
+      );
+    }),
   );
+
+  return projects.flatMap((project) => {
+    const plansToUse = project.plans.filter((plan) => {
+      const s = String(plan.status || "").toLowerCase();
+      if (hasApprovedOrReviewPlans) {
+        return (
+          s === "approved" ||
+          s === "finally approved" ||
+          s === "committee review" ||
+          s === "active" ||
+          s === "submitted to director"
+        );
+      }
+      return true;
+    });
+
+    return plansToUse.flatMap((plan) => {
+      const savedForPlan = savedActivities
+        .filter(
+          (record) =>
+            record.projectCode === project.code &&
+            record.planReference === plan.reference,
+        )
+        .map((record) => record.activity);
+
+      const planActivities = (plan.planActivities || []).filter(
+        (pa) => !savedForPlan.some((sa) => sa.reference === pa.reference),
+      );
+
+      const allForPlan = [...savedForPlan, ...planActivities];
+
+      const ready = allForPlan.filter(
+        (act) =>
+          isContractReadyActivity(act) ||
+          (requestedActivityReference &&
+            act.reference.toLowerCase() ===
+              requestedActivityReference.toLowerCase()),
+      );
+
+      const finalActivities = ready.length > 0 ? ready : allForPlan;
+
+      return finalActivities.map((activity) => ({ activity, plan, project }));
+    });
+  });
 }
 
 function isContractReadyActivity(activity: ProcurementActivitySummary) {
-  const stage = activity.currentStage.toLowerCase();
+  const stage = (activity.currentStage || "").toLowerCase();
+  const status = (activity.status || "").toLowerCase();
   return (
-    activity.status === "Completed" ||
+    status === "completed" ||
+    status === "contracted" ||
     stage.includes("contract") ||
+    stage.includes("award") ||
+    stage.includes("signing") ||
+    stage.includes("signed") ||
     stage.includes("site handover") ||
     stage.includes("final report")
   );
