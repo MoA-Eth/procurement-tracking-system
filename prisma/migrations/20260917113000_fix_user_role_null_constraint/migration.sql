@@ -1,6 +1,14 @@
--- Fix NOT NULL constraint on legacy User.role column
-ALTER TABLE "User" ALTER COLUMN "role" DROP NOT NULL;
-ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'ProcurementOfficer'::"Role";
+-- Fix NOT NULL constraint on legacy User.role column if it still exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'User' AND column_name = 'role'
+  ) THEN
+    ALTER TABLE "User" ALTER COLUMN "role" DROP NOT NULL;
+    ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'ProcurementOfficer'::"Role";
+  END IF;
+END $$;
 
 -- Auto-sync function from authRole to legacy role column
 CREATE OR REPLACE FUNCTION sync_user_role_from_auth_role()
@@ -19,8 +27,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_sync_user_role ON "User";
-CREATE TRIGGER trg_sync_user_role
-BEFORE INSERT OR UPDATE ON "User"
-FOR EACH ROW
-EXECUTE FUNCTION sync_user_role_from_auth_role();
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'User' AND column_name = 'role'
+  ) THEN
+    DROP TRIGGER IF EXISTS trg_sync_user_role ON "User";
+    CREATE TRIGGER trg_sync_user_role
+    BEFORE INSERT OR UPDATE ON "User"
+    FOR EACH ROW
+    EXECUTE FUNCTION sync_user_role_from_auth_role();
+  END IF;
+END $$;
+
