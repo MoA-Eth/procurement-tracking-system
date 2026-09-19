@@ -147,10 +147,11 @@ async function main() {
 
   // 4. Create 4 Projects
   const project1 = await prisma.project.upsert({
-    where: { code: 'AGP-II' },
+    where: { pNumber: 'P148891' },
     update: {},
     create: {
       code: 'AGP-II',
+      pNumber: 'P148891',
       name: 'Second Agricultural Growth Program',
       country: 'Ethiopia',
       executingAgency: 'Ministry of Agriculture',
@@ -172,10 +173,11 @@ async function main() {
   });
 
   const project2 = await prisma.project.upsert({
-    where: { code: 'DRSLP-II' },
+    where: { pNumber: 'P160100' },
     update: {},
     create: {
       code: 'DRSLP-II',
+      pNumber: 'P160100',
       name: 'Drought Resilience and Sustainable Livelihoods Programme',
       country: 'Ethiopia',
       executingAgency: 'Ministry of Agriculture',
@@ -193,10 +195,11 @@ async function main() {
   });
 
   const project3 = await prisma.project.upsert({
-    where: { code: 'LFSDP-ET' },
+    where: { pNumber: 'P159382' },
     update: {},
     create: {
       code: 'LFSDP-ET',
+      pNumber: 'P159382',
       name: 'Livestock and Fisheries Sector Development Project',
       country: 'Ethiopia',
       executingAgency: 'Ministry of Agriculture',
@@ -214,10 +217,11 @@ async function main() {
   });
 
   const project4 = await prisma.project.upsert({
-    where: { code: 'CALM-01' },
+    where: { pNumber: 'P170384' },
     update: {},
     create: {
       code: 'CALM-01',
+      pNumber: 'P170384',
       name: 'Climate Action Through Landscape Management',
       country: 'Ethiopia',
       executingAgency: 'Ministry of Agriculture',

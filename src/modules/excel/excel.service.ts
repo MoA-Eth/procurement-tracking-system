@@ -1597,13 +1597,13 @@ export class ExcelService {
           status: projectStatus,
         };
 
-        const existing = await prisma.project.findUnique({
+        const existing = await prisma.project.findFirst({
           where: { code },
         });
 
         if (existing) {
           await prisma.project.update({
-            where: { code },
+            where: { id: existing.id },
             data,
           });
           updated++;
@@ -1751,7 +1751,7 @@ export class ExcelService {
       }
 
       const p = (async () => {
-        const project = await prisma.project.findUnique({
+        const project = await prisma.project.findFirst({
           where: { code: projectCode },
         });
         if (!project) {

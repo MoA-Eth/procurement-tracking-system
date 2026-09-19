@@ -11,13 +11,20 @@ export const createProjectSchema = registry.register(
         .trim()
         .min(1, 'Code is required')
         .max(50)
-        .openapi({ example: 'PRJ-2026-001' }),
+        .openapi({ example: 'BREFONS' }),
+      pNumber: z
+        .string()
+        .trim()
+        .optional()
+        .openapi({ example: 'P176524' }),
       name: z
         .string()
         .trim()
         .min(1, 'Name is required')
         .max(255)
         .openapi({ example: 'National Agriculture Irrigation Program' }),
+      description: z.string().trim().optional(),
+      totalBudget: z.number().positive().optional(),
       fundingSourceId: z
         .string()
         .trim()
@@ -47,6 +54,8 @@ export const createProjectSchema = registry.register(
       baseCurrency: z.string().trim().optional().openapi({ example: 'USD' }),
       projectStartDate: z.coerce.date().optional(),
       projectEndDate: z.coerce.date().optional(),
+      effectivenessDate: z.coerce.date().optional(),
+      closingDate: z.coerce.date().optional(),
     })
     .refine(
       (data) => {
@@ -68,7 +77,11 @@ export const updateProjectSchema = registry.register(
   'UpdateProject',
   z
     .object({
+      code: z.string().trim().min(1).max(50).optional(),
+      pNumber: z.string().trim().optional(),
       name: z.string().trim().min(1).max(255).optional(),
+      description: z.string().trim().optional(),
+      totalBudget: z.number().positive().optional(),
       status: z.nativeEnum(ProjectStatus).optional(),
       sapIdentificationNo: z.string().trim().optional(),
       country: z.string().trim().optional(),
@@ -81,6 +94,8 @@ export const updateProjectSchema = registry.register(
       baseCurrency: z.string().trim().optional(),
       projectStartDate: z.coerce.date().optional(),
       projectEndDate: z.coerce.date().optional(),
+      effectivenessDate: z.coerce.date().optional(),
+      closingDate: z.coerce.date().optional(),
     })
     .refine(
       (data) => {
