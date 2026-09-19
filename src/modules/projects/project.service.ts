@@ -3,9 +3,11 @@ import {
   ProjectStatus,
   RevisionEntityType,
   RevisionChangeType,
+  UserRole,
 } from '../../generated/prisma/index.js';
 import { prisma } from '../../config/database.js';
 import { logRevision } from '../../shared/audit/revision.service.js';
+import { notifyOfficersOnEntityChange } from '../alerts/officer-notification.helper.js';
 
 export interface GetProjectsQueryOptions {
   page?: number | undefined;
@@ -171,8 +173,23 @@ export const updateProjectService = async (
       console.warn('logRevision warning:', auditErr);
     }
 
-    return project;
+    return { project, userExists };
   });
+
+  if (userExists?.authRole === UserRole.DIRECTOR) {
+    const directorName = userExists.displayName || userExists.name || 'Director';
+    notifyOfficersOnEntityChange({
+      projectId: project.id,
+      actorUserId: userExists.id,
+      title: `Project Modified by Director: ${project.name}`,
+      message: `Director ${directorName} made changes to project "${project.name}" (${project.code}).`,
+      type: 'SYSTEM',
+      severity: 'INFO',
+      link: '/workspace/projects',
+    }).catch(() => {});
+  }
+
+  return project;
 };
 
 export const assignOfficerService = async (

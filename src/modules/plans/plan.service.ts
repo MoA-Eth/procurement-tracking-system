@@ -12,6 +12,7 @@ import { sendEmail } from '../../services/email.service.js';
 import { env } from '../../config/env.js';
 import { logger } from '../../config/logger.js';
 import { createNotification } from '../alerts/alerts.service.js';
+import { notifyOfficersOnEntityChange } from '../alerts/officer-notification.helper.js';
 
 export interface GetPlansQueryOptions {
   page?: number | undefined;
@@ -276,7 +277,8 @@ export const updatePlanService = async (
   data: Prisma.PlanUpdateInput,
   userId: string,
 ) => {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const { plan, user } = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
     const oldPlan =
       (await tx.plan.findUnique({
         where: { id },
@@ -323,8 +325,25 @@ export const updatePlanService = async (
       console.warn('logRevision update plan warning:', auditErr);
     }
 
-    return plan;
+    return { plan, user };
   });
+
+  if (user?.authRole === UserRole.DIRECTOR) {
+    const directorName = user.displayName || user.name || 'Director';
+    notifyOfficersOnEntityChange({
+      planId: plan.id,
+      projectId: plan.projectId,
+      creatorId: plan.createdBy,
+      actorUserId: user.id,
+      title: `Plan Modified by Director: ${plan.title}`,
+      message: `Director ${directorName} made changes to procurement plan "${plan.title}".`,
+      type: 'PLAN_REVIEW',
+      severity: 'INFO',
+      link: '/workspace/plan-management',
+    }).catch(() => {});
+  }
+
+  return plan;
 };
 
 export const submitPlanService = async (id: string, userId: string) => {
@@ -556,7 +575,7 @@ export const rejectPlanService = async (
   reason: string,
   userId: string,
 ) => {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const plan = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const oldPlan =
       (await tx.plan.findUnique({
         where: { id },
@@ -610,6 +629,20 @@ export const rejectPlanService = async (
 
     return plan;
   });
+
+  notifyOfficersOnEntityChange({
+    planId: plan.id,
+    projectId: plan.projectId,
+    creatorId: plan.createdBy,
+    actorUserId: userId,
+    title: `Plan Rejected: ${plan.title}`,
+    message: `Director rejected plan "${plan.title}". Reason: ${reason}`,
+    type: 'DECISION',
+    severity: 'HIGH',
+    link: '/workspace/plan-management',
+  }).catch(() => {});
+
+  return plan;
 };
 
 export const submitCommitteeVoteService = async (
@@ -860,20 +893,21 @@ export const submitCommitteeVoteService = async (
       );
     }
 
-    if (plan.creator?.id) {
-      createNotification({
-        userId: plan.creator.id,
-        title: isApproved
-          ? `Plan Approved: ${plan.title}`
-          : `Plan Rejected: ${plan.title}`,
-        message: isApproved
-          ? `Procurement plan "${plan.title}" has been approved by the Endorsement Committee.`
-          : `Procurement plan "${plan.title}" was rejected by the Endorsement Committee.`,
-        type: 'DECISION',
-        severity: isApproved ? 'INFO' : 'HIGH',
-        link: '/workspace/plan-management',
-      }).catch(() => {});
-    }
+    notifyOfficersOnEntityChange({
+      planId: plan.id,
+      projectId: plan.projectId,
+      creatorId: plan.creator?.id || plan.createdBy,
+      actorUserId: userId,
+      title: isApproved
+        ? `Plan Approved: ${plan.title}`
+        : `Plan Rejected: ${plan.title}`,
+      message: isApproved
+        ? `Procurement plan "${plan.title}" has been approved by the Endorsement Committee.`
+        : `Procurement plan "${plan.title}" was rejected by the Endorsement Committee.`,
+      type: 'DECISION',
+      severity: isApproved ? 'INFO' : 'HIGH',
+      link: '/workspace/plan-management',
+    }).catch(() => {});
 
     createNotification({
       targetRole: 'DIRECTOR',
@@ -977,22 +1011,26 @@ export const requestPlanUpdateService = async (id: string, userId: string) => {
     },
   );
 
-  if (plan.creator?.id) {
-    createNotification({
-      userId: plan.creator.id,
-      title: `Revision Requested: ${plan.title}`,
-      message: `Director has requested updates on procurement plan "${plan.title}".`,
-      type: 'DECISION',
-      severity: 'HIGH',
-      link: '/workspace/plan-management',
-    }).catch(() => {});
-  }
+  const commentMsg = plan.directorRevisionComment
+    ? ` Comment: ${plan.directorRevisionComment}`
+    : '';
+  notifyOfficersOnEntityChange({
+    planId: plan.id,
+    projectId: plan.projectId,
+    creatorId: plan.creator?.id || plan.createdBy,
+    actorUserId: userId,
+    title: `Revision Requested: ${plan.title}`,
+    message: `Director has requested updates on procurement plan "${plan.title}".${commentMsg}`,
+    type: 'DECISION',
+    severity: 'HIGH',
+    link: '/workspace/plan-management',
+  }).catch(() => {});
 
   return plan;
 };
 
 export const approvePlanUpdateService = async (id: string, userId: string) => {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const plan = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const oldPlan =
       (await tx.plan.findUnique({
         where: { id },
@@ -1041,4 +1079,18 @@ export const approvePlanUpdateService = async (id: string, userId: string) => {
 
     return plan;
   });
+
+  notifyOfficersOnEntityChange({
+    planId: plan.id,
+    projectId: plan.projectId,
+    creatorId: plan.createdBy,
+    actorUserId: userId,
+    title: `Plan Revision Approved: ${plan.title}`,
+    message: `Director approved reopening plan "${plan.title}" for updates.`,
+    type: 'PLAN_REVIEW',
+    severity: 'INFO',
+    link: '/workspace/plan-management',
+  }).catch(() => {});
+
+  return plan;
 };
