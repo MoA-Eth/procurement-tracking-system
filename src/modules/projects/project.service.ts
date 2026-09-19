@@ -137,7 +137,8 @@ export const updateProjectService = async (
   data: Prisma.ProjectUpdateInput,
   userId: string,
 ) => {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const { project, userExists } = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
     const userExists = await tx.user.findUnique({ where: { id: userId } });
     if (!userExists) {
       throw new Error(`Authenticated user not found with id: ${userId}`);
