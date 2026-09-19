@@ -29,6 +29,28 @@ export const getContractPaymentsQuerySchema = z.object({
   'filter[status]': z.enum(['PAID', 'PENDING', 'FAILED']).optional(),
 });
 
+export const createAmendmentSchema = registry.register(
+  'CreateAmendment',
+  z.object({
+    amount: z
+      .number()
+      .refine((val) => val !== 0, 'Amendment amount cannot be zero')
+      .openapi({
+        example: 50000,
+        description: 'Positive for addition, negative for reduction',
+      }),
+    reason: z
+      .string()
+      .trim()
+      .min(1, 'Reason for amendment is required')
+      .openapi({ example: 'Scope addition approved by project manager' }),
+    referenceNo: z.string().trim().optional().openapi({ example: 'VAR-001' }),
+    effectiveDate: z.coerce.date().optional(),
+  }),
+);
+
+export type CreateAmendmentDto = z.infer<typeof createAmendmentSchema>;
+
 export const createPaymentSchema = registry.register(
   'CreatePayment',
   z.object({
@@ -129,6 +151,42 @@ registry.registerPath({
   responses: {
     200: { description: 'Contract updated successfully' },
     404: { description: 'Contract not found' },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/contracts/{id}/amendments',
+  summary: 'Retrieve amendment history for a contract',
+  tags: ['Contracts'],
+  security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+  request: {
+    params: z.object({
+      id: z.string().openapi({ description: 'Contract UUID' }),
+    }),
+  },
+  responses: {
+    200: { description: 'List of contract amendments' },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/contracts/{id}/amendments',
+  summary: 'Record an amendment (price addition or reduction) for a contract',
+  tags: ['Contracts'],
+  security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+  request: {
+    params: z.object({
+      id: z.string().openapi({ description: 'Contract UUID' }),
+    }),
+    body: {
+      content: { 'application/json': { schema: createAmendmentSchema } },
+    },
+  },
+  responses: {
+    201: { description: 'Amendment recorded successfully' },
+    400: { description: 'Validation error' },
   },
 });
 

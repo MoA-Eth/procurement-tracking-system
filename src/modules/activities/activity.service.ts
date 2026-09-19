@@ -135,7 +135,16 @@ export const createActivityService = async (
       resolvedMethodId = method.id;
     }
 
-    const reference = await generateActivityReference(resolvedMethodId);
+    let reference = (data as { reference?: string }).reference;
+    if (!reference || typeof reference !== 'string' || !reference.trim()) {
+      reference = await generateActivityReference(resolvedMethodId);
+    } else {
+      reference = reference.trim();
+      const existing = await tx.activity.findUnique({ where: { reference } });
+      if (existing) {
+        reference = await generateActivityReference(resolvedMethodId);
+      }
+    }
 
     const inputWithExtra = data as CreateActivityInput & {
       stages?: unknown;
