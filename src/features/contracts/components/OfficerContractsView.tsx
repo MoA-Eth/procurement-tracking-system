@@ -61,10 +61,16 @@ const amountFormatter = new Intl.NumberFormat("en-US", {
 
 export function OfficerContractsView({
   fromTracker,
+  initialActivityReference,
+  initialPlanReference,
+  initialProjectCode,
   mode,
   selectedContractNumber,
 }: {
   fromTracker?: boolean;
+  initialActivityReference?: string;
+  initialPlanReference?: string;
+  initialProjectCode?: string;
   mode?: "add-payment" | "register";
   selectedContractNumber?: string;
 }) {
@@ -325,6 +331,9 @@ export function OfficerContractsView({
       <RegisterContractView
         existingContracts={contracts}
         fromTracker={fromTracker}
+        initialActivityReference={initialActivityReference}
+        initialPlanReference={initialPlanReference}
+        initialProjectCode={initialProjectCode}
         onSave={saveContract}
       />
     );

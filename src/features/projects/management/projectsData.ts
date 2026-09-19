@@ -1,3 +1,17 @@
+export interface OfficerProjectSummary {
+  id: string;
+  code: string;
+  name: string;
+}
+
+export interface OfficerWorkload {
+  officerId: string;
+  totalProjects: number;
+  projects: OfficerProjectSummary[];
+  isAssignedToCurrentProject: boolean;
+  loadLevel: "light" | "moderate" | "heavy";
+}
+
 export interface ProjectOfficer {
   id: string;
   name: string;
@@ -5,6 +19,7 @@ export interface ProjectOfficer {
   roleTag: string;
   isActive?: boolean;
   status?: string;
+  workload?: OfficerWorkload;
 }
 
 export interface ProjectItem {
