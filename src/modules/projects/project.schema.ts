@@ -4,68 +4,98 @@ import { registry } from '../../config/openapi.js';
 
 export const createProjectSchema = registry.register(
   'CreateProject',
-  z.object({
-    code: z
-      .string()
-      .trim()
-      .min(1, 'Code is required')
-      .max(50)
-      .openapi({ example: 'PRJ-2026-001' }),
-    name: z
-      .string()
-      .trim()
-      .min(1, 'Name is required')
-      .max(255)
-      .openapi({ example: 'National Agriculture Irrigation Program' }),
-    fundingSourceId: z
-      .string()
-      .trim()
-      .min(1, 'Funding source ID is required')
-      .openapi({ example: 'fs-uuid-1' }),
-    sectorId: z
-      .string()
-      .trim()
-      .min(1, 'Sector ID is required')
-      .openapi({ example: 'sec-uuid-1' }),
-    sapIdentificationNo: z
-      .string()
-      .trim()
-      .optional()
-      .openapi({ example: 'SAP-998877' }),
-    country: z.string().trim().optional().openapi({ example: 'Ethiopia' }),
-    executingAgency: z
-      .string()
-      .trim()
-      .optional()
-      .openapi({ example: 'Ministry of Agriculture' }),
-    organization: z.string().trim().optional(),
-    fundingType: z.string().trim().optional(),
-    loanGrantNumbers: z.array(z.string()).optional(),
-    components: z.array(z.string()).optional(),
-    subcomponents: z.array(z.string()).optional(),
-    baseCurrency: z.string().trim().optional().openapi({ example: 'USD' }),
-    projectStartDate: z.coerce.date().optional(),
-    projectEndDate: z.coerce.date().optional(),
-  }),
+  z
+    .object({
+      code: z
+        .string()
+        .trim()
+        .min(1, 'Code is required')
+        .max(50)
+        .openapi({ example: 'PRJ-2026-001' }),
+      name: z
+        .string()
+        .trim()
+        .min(1, 'Name is required')
+        .max(255)
+        .openapi({ example: 'National Agriculture Irrigation Program' }),
+      fundingSourceId: z
+        .string()
+        .trim()
+        .min(1, 'Funding source ID is required')
+        .openapi({ example: 'fs-uuid-1' }),
+      sectorId: z
+        .string()
+        .trim()
+        .min(1, 'Sector ID is required')
+        .openapi({ example: 'sec-uuid-1' }),
+      sapIdentificationNo: z
+        .string()
+        .trim()
+        .optional()
+        .openapi({ example: 'SAP-998877' }),
+      country: z.string().trim().optional().openapi({ example: 'Ethiopia' }),
+      executingAgency: z
+        .string()
+        .trim()
+        .optional()
+        .openapi({ example: 'Ministry of Agriculture' }),
+      organization: z.string().trim().optional(),
+      fundingType: z.string().trim().optional(),
+      loanGrantNumbers: z.array(z.string()).optional(),
+      components: z.array(z.string()).optional(),
+      subcomponents: z.array(z.string()).optional(),
+      baseCurrency: z.string().trim().optional().openapi({ example: 'USD' }),
+      projectStartDate: z.coerce.date().optional(),
+      projectEndDate: z.coerce.date().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.projectStartDate && data.projectEndDate) {
+          return (
+            new Date(data.projectEndDate) > new Date(data.projectStartDate)
+          );
+        }
+        return true;
+      },
+      {
+        message: 'Project End Date must be after the Project Start Date.',
+        path: ['projectEndDate'],
+      },
+    ),
 );
 
 export const updateProjectSchema = registry.register(
   'UpdateProject',
-  z.object({
-    name: z.string().trim().min(1).max(255).optional(),
-    status: z.nativeEnum(ProjectStatus).optional(),
-    sapIdentificationNo: z.string().trim().optional(),
-    country: z.string().trim().optional(),
-    executingAgency: z.string().trim().optional(),
-    organization: z.string().trim().optional(),
-    fundingType: z.string().trim().optional(),
-    loanGrantNumbers: z.array(z.string()).optional(),
-    components: z.array(z.string()).optional(),
-    subcomponents: z.array(z.string()).optional(),
-    baseCurrency: z.string().trim().optional(),
-    projectStartDate: z.coerce.date().optional(),
-    projectEndDate: z.coerce.date().optional(),
-  }),
+  z
+    .object({
+      name: z.string().trim().min(1).max(255).optional(),
+      status: z.nativeEnum(ProjectStatus).optional(),
+      sapIdentificationNo: z.string().trim().optional(),
+      country: z.string().trim().optional(),
+      executingAgency: z.string().trim().optional(),
+      organization: z.string().trim().optional(),
+      fundingType: z.string().trim().optional(),
+      loanGrantNumbers: z.array(z.string()).optional(),
+      components: z.array(z.string()).optional(),
+      subcomponents: z.array(z.string()).optional(),
+      baseCurrency: z.string().trim().optional(),
+      projectStartDate: z.coerce.date().optional(),
+      projectEndDate: z.coerce.date().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.projectStartDate && data.projectEndDate) {
+          return (
+            new Date(data.projectEndDate) > new Date(data.projectStartDate)
+          );
+        }
+        return true;
+      },
+      {
+        message: 'Project End Date must be after the Project Start Date.',
+        path: ['projectEndDate'],
+      },
+    ),
 );
 
 export const assignOfficerSchema = registry.register(

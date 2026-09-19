@@ -71,6 +71,14 @@ export class ContractsService {
         where,
         include: {
           supplier: true,
+          amendments: {
+            orderBy: { amendmentNo: 'asc' },
+            include: {
+              amendedBy: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+          },
           payments: {
             where: { deletedAt: null },
             orderBy: { createdAt: 'asc' },
