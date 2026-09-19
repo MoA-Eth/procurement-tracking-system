@@ -2083,9 +2083,7 @@ export function DirectorActivitiesListView({
                       <button
                         key={activityCode}
                         type="button"
-                        onClick={() =>
-                          scrollToActivity(activityCode, false)
-                        }
+                        onClick={() => scrollToActivity(activityCode, false)}
                         className="inline-flex items-center gap-1.5 font-mono font-bold text-rose-900 bg-rose-100 hover:bg-rose-200 border border-rose-300 hover:border-rose-400 px-2.5 py-1 rounded-md text-[11px] transition-all cursor-pointer shadow-2xs group"
                         title={`Click to jump to activity ${activityCode}`}
                       >
