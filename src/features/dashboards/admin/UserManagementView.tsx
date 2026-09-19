@@ -219,7 +219,9 @@ export function UserManagementView({
   const [actionUserId, setActionUserId] = useState<string | null>(null);
 
   // User Profile / Details Modal State
-  const [selectedDetailUser, setSelectedDetailUser] = useState<ApiUser | null>(null);
+  const [selectedDetailUser, setSelectedDetailUser] = useState<ApiUser | null>(
+    null,
+  );
   const [roleSuccessMessage, setRoleSuccessMessage] = useState<string | null>(
     null,
   );
@@ -423,8 +425,6 @@ export function UserManagementView({
       setIsInviting(false);
     }
   };
-
-
 
   // Auto-dismiss role success notification after 10 seconds
   useEffect(() => {

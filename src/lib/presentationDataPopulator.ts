@@ -7,17 +7,14 @@ import {
   assignOfficerToProject,
   type BackendProject,
 } from "./projectsApi";
-import {
-  fetchPlans,
-  deletePlan,
-  type BackendPlan,
-} from "./plansApi";
+import { fetchPlans, deletePlan, type BackendPlan } from "./plansApi";
 import { deleteActivity, fetchActivities } from "./activitiesApi";
-import {
-  fetchContracts,
-} from "./contractsApi";
+import { fetchContracts } from "./contractsApi";
 
-async function fetchUserToken(email: string, password: string): Promise<string | null> {
+async function fetchUserToken(
+  email: string,
+  password: string,
+): Promise<string | null> {
   try {
     const res = await directApiFetch<any>("/auth/login", {
       method: "POST",
@@ -81,7 +78,8 @@ const isRealDbId = (id?: string | null): boolean => {
 };
 
 export async function populatePresentationData(
-  onProgressOrOptions?: ((progress: PopulateProgress) => void) | PopulateOptions,
+  onProgressOrOptions?:
+    ((progress: PopulateProgress) => void) | PopulateOptions,
   maybeOnProgress?: (progress: PopulateProgress) => void,
 ): Promise<{ success: boolean; summary: string }> {
   const options: PopulateOptions =
@@ -100,7 +98,8 @@ export async function populatePresentationData(
   };
 
   const directorEmail = options.directorEmail || PRESENTATION_DIRECTOR.email;
-  const directorPassword = options.directorPassword || PRESENTATION_DIRECTOR.password;
+  const directorPassword =
+    options.directorPassword || PRESENTATION_DIRECTOR.password;
   const targetOfficerEmail = options.officerEmail || PRESENTATION_OFFICER.email;
   const cleanPrevious = options.cleanPreviousProjects !== false;
 
@@ -120,7 +119,10 @@ export async function populatePresentationData(
         break;
       } catch (err: any) {
         lastPingError = err;
-        update(`Waking up Render backend (attempt ${attempt}/3)...`, 5 + attempt * 2);
+        update(
+          `Waking up Render backend (attempt ${attempt}/3)...`,
+          5 + attempt * 2,
+        );
         await new Promise((r) => setTimeout(r, 2000));
       }
     }
@@ -129,7 +131,7 @@ export async function populatePresentationData(
       const errMsg = lastPingError?.message || "Failed to fetch";
       throw new Error(
         `Unable to reach backend at ${BACKEND_API_URL} (${errMsg}). ` +
-        `The Render service may still be spinning up. Please wait 30 seconds and try again.`
+          `The Render service may still be spinning up. Please wait 30 seconds and try again.`,
       );
     }
 
@@ -149,7 +151,10 @@ export async function populatePresentationData(
     // Step 0.8: Clean up previous unowned / stale projects if requested
     // ──────────────────────────────────────────────────────────────────────────
     if (cleanPrevious) {
-      update("Deleting previous unowned projects and resetting workspace...", 15);
+      update(
+        "Deleting previous unowned projects and resetting workspace...",
+        15,
+      );
       try {
         const staleProjects = await fetchProjects();
         const stalePlans = await fetchPlans();
@@ -158,7 +163,7 @@ export async function populatePresentationData(
           if (!isRealDbId(sp.id)) continue;
           // Clean up plans and activities first to preserve foreign key constraints
           const relatedPlans = stalePlans.filter(
-            (pl) => pl.projectId === sp.id || (pl as any).project?.id === sp.id
+            (pl) => pl.projectId === sp.id || (pl as any).project?.id === sp.id,
           );
           for (const rp of relatedPlans) {
             try {
@@ -177,7 +182,10 @@ export async function populatePresentationData(
             await deleteProject(sp.id);
             console.log(`Deleted previous project: ${sp.code || sp.id}`);
           } catch (delErr) {
-            console.warn(`Notice deleting project ${sp.code || sp.id}:`, delErr);
+            console.warn(
+              `Notice deleting project ${sp.code || sp.id}:`,
+              delErr,
+            );
           }
         }
       } catch (cleanErr) {
@@ -193,7 +201,9 @@ export async function populatePresentationData(
     let rawDbLookups: any[] = [];
     try {
       const lookupsRes = await apiClient.get<any>("/lookups");
-      rawDbLookups = Array.isArray(lookupsRes) ? lookupsRes : lookupsRes?.data || [];
+      rawDbLookups = Array.isArray(lookupsRes)
+        ? lookupsRes
+        : lookupsRes?.data || [];
     } catch (lErr) {
       console.warn("Could not fetch existing lookups:", lErr);
     }
@@ -231,22 +241,61 @@ export async function populatePresentationData(
           return realId;
         }
       } catch (postErr: any) {
-        console.warn(`Notice creating lookup ${type}:${code}:`, postErr?.data || postErr?.message);
+        console.warn(
+          `Notice creating lookup ${type}:${code}:`,
+          postErr?.data || postErr?.message,
+        );
       }
       return null;
     };
 
-    const secAgriId = await ensureRealLookup("SECTOR", "SEC_AGRI", "Agriculture & Livestock");
-    const secHortId = await ensureRealLookup("SECTOR", "SEC_HORT", "Horticulture & Seed Development");
-    const secNatId = await ensureRealLookup("SECTOR", "SEC_NAT", "Natural Resources & Irrigation");
+    const secAgriId = await ensureRealLookup(
+      "SECTOR",
+      "SEC_AGRI",
+      "Agriculture & Livestock",
+    );
+    const secHortId = await ensureRealLookup(
+      "SECTOR",
+      "SEC_HORT",
+      "Horticulture & Seed Development",
+    );
+    const secNatId = await ensureRealLookup(
+      "SECTOR",
+      "SEC_NAT",
+      "Natural Resources & Irrigation",
+    );
 
-    const fsWbId = await ensureRealLookup("FUNDING_SOURCE", "FS_WB", "World Bank (IDA)");
-    const fsAfdbId = await ensureRealLookup("FUNDING_SOURCE", "FS_AFDB", "African Development Bank (AfDB)");
-    const fsGovId = await ensureRealLookup("FUNDING_SOURCE", "FS_GOV", "Government of Ethiopia (Treasury)");
+    const fsWbId = await ensureRealLookup(
+      "FUNDING_SOURCE",
+      "FS_WB",
+      "World Bank (IDA)",
+    );
+    const fsAfdbId = await ensureRealLookup(
+      "FUNDING_SOURCE",
+      "FS_AFDB",
+      "African Development Bank (AfDB)",
+    );
+    const fsGovId = await ensureRealLookup(
+      "FUNDING_SOURCE",
+      "FS_GOV",
+      "Government of Ethiopia (Treasury)",
+    );
 
-    const pmNcbId = await ensureRealLookup("PROCUREMENT_METHOD", "PM_NCB", "National Competitive Bidding (NCB)");
-    const pmRfqId = await ensureRealLookup("PROCUREMENT_METHOD", "PM_RFQ", "Request for Quotations (RFQ)");
-    const pmQcbsId = await ensureRealLookup("PROCUREMENT_METHOD", "PM_QCBS", "Quality and Cost-Based Selection (QCBS)");
+    const pmNcbId = await ensureRealLookup(
+      "PROCUREMENT_METHOD",
+      "PM_NCB",
+      "National Competitive Bidding (NCB)",
+    );
+    const pmRfqId = await ensureRealLookup(
+      "PROCUREMENT_METHOD",
+      "PM_RFQ",
+      "Request for Quotations (RFQ)",
+    );
+    const pmQcbsId = await ensureRealLookup(
+      "PROCUREMENT_METHOD",
+      "PM_QCBS",
+      "Quality and Cost-Based Selection (QCBS)",
+    );
 
     const anyRealSectorId =
       secAgriId ||
@@ -258,25 +307,31 @@ export async function populatePresentationData(
       fsWbId ||
       fsAfdbId ||
       fsGovId ||
-      rawDbLookups.find((l) => l.type === "FUNDING_SOURCE" && isRealDbId(l.id))?.id;
+      rawDbLookups.find((l) => l.type === "FUNDING_SOURCE" && isRealDbId(l.id))
+        ?.id;
 
     const anyRealMethodId =
       pmNcbId ||
       pmRfqId ||
       pmQcbsId ||
-      rawDbLookups.find((l) => l.type === "PROCUREMENT_METHOD" && isRealDbId(l.id))?.id;
+      rawDbLookups.find(
+        (l) => l.type === "PROCUREMENT_METHOD" && isRealDbId(l.id),
+      )?.id;
 
     if (!anyRealSectorId || !anyRealFsId) {
       throw new Error(
         "Could not obtain valid database Sector or Funding Source IDs. " +
-        "Please check your backend permissions to create lookups or ensure the database has lookups configured."
+          "Please check your backend permissions to create lookups or ensure the database has lookups configured.",
       );
     }
 
     // ──────────────────────────────────────────────────────────────────────────
     // Step 2: Target Real Database Users (including betiytes@gmail.com & current user)
     // ──────────────────────────────────────────────────────────────────────────
-    update("Identifying active officer (betiytes@gmail.com) and database users...", 20);
+    update(
+      "Identifying active officer (betiytes@gmail.com) and database users...",
+      20,
+    );
 
     let existingUsers: any[] = [];
     try {
@@ -343,7 +398,9 @@ export async function populatePresentationData(
     let supplierId = "";
     try {
       const suppliers = await apiClient.get<any[]>("/suppliers");
-      const list = Array.isArray(suppliers) ? suppliers : (suppliers as any)?.data || [];
+      const list = Array.isArray(suppliers)
+        ? suppliers
+        : (suppliers as any)?.data || [];
       const realSup = list.find((s: any) => isRealDbId(s.id));
       if (realSup) {
         supplierId = realSup.id;
@@ -371,7 +428,10 @@ export async function populatePresentationData(
     // ──────────────────────────────────────────────────────────────────────────
     // Step 4: Create Presentation Projects & Assign Officers
     // ──────────────────────────────────────────────────────────────────────────
-    update("Creating strategic Ministry of Agriculture projects & assigning officers...", 45);
+    update(
+      "Creating strategic Ministry of Agriculture projects & assigning officers...",
+      45,
+    );
 
     const existingProjects = await fetchProjects();
     const projectMap: Record<string, BackendProject> = {};
@@ -495,7 +555,10 @@ export async function populatePresentationData(
               projectMap[pData.code] = minimalCreated;
             }
           } catch (minErr) {
-            console.warn(`Minimal project creation attempt failed for ${pData.code}:`, minErr);
+            console.warn(
+              `Minimal project creation attempt failed for ${pData.code}:`,
+              minErr,
+            );
           }
         }
       }
@@ -507,37 +570,50 @@ export async function populatePresentationData(
         lastProjectError?.data?.message ||
         lastProjectError?.message ||
         "Foreign key or database constraint error";
-      throw new Error(`Unable to create projects on the backend. Server response: "${errDetails}".`);
+      throw new Error(
+        `Unable to create projects on the backend. Server response: "${errDetails}".`,
+      );
     }
 
     // Assign Officer to projects safely so they appear in Officer Dashboard
     if (officerIdsToAssign.size > 0) {
       for (const proj of allProjects) {
         const existingMemberIds = new Set(
-          (proj.members || []).map((m: any) => m.userId || m.user?.id)
+          (proj.members || []).map((m: any) => m.userId || m.user?.id),
         );
         for (const offId of officerIdsToAssign) {
           if (!existingMemberIds.has(offId)) {
             try {
               await assignOfficerToProject(proj.id, offId);
             } catch (aErr) {
-              console.warn(`Notice assigning officer to ${proj.code || proj.id}:`, aErr);
+              console.warn(
+                `Notice assigning officer to ${proj.code || proj.id}:`,
+                aErr,
+              );
             }
           }
         }
       }
     }
 
-    const driveProject = allProjects.find((p) => p.code === "DRIVE") || allProjects[0];
+    const driveProject =
+      allProjects.find((p) => p.code === "DRIVE") || allProjects[0];
     const brefonsProject =
-      allProjects.find((p) => p.code === "BREFONS") || allProjects[1] || driveProject;
+      allProjects.find((p) => p.code === "BREFONS") ||
+      allProjects[1] ||
+      driveProject;
     const calmProject =
-      allProjects.find((p) => p.code === "CALM") || allProjects[2] || driveProject;
+      allProjects.find((p) => p.code === "CALM") ||
+      allProjects[2] ||
+      driveProject;
 
     // ──────────────────────────────────────────────────────────────────────────
     // Step 5: Create Multi-Year Annual Procurement Plans & Advance Workflows
     // ──────────────────────────────────────────────────────────────────────────
-    update("Configuring plans across Officer, Director, Committee & Management stages...", 60);
+    update(
+      "Configuring plans across Officer, Director, Committee & Management stages...",
+      60,
+    );
 
     const existingPlans = await fetchPlans();
     const planTitleSet = new Set(
@@ -581,7 +657,8 @@ export async function populatePresentationData(
       plansToCreate.push(
         {
           projectId: brefonsProject.id,
-          title: "2019 EFY BREFONS - Irrigation Works & Rangeland Micro-Dams Plan",
+          title:
+            "2019 EFY BREFONS - Irrigation Works & Rangeland Micro-Dams Plan",
           budgetYear: "2019 EFY (2026/2027)",
           procurementCategory: "WORKS" as const,
           organization: "Somali & Afar Regional Bureaus",
@@ -594,7 +671,8 @@ export async function populatePresentationData(
         },
         {
           projectId: brefonsProject.id,
-          title: "2018 EFY BREFONS - Veterinary Cold-Chain Equipment (Draft Plan)",
+          title:
+            "2018 EFY BREFONS - Veterinary Cold-Chain Equipment (Draft Plan)",
           budgetYear: "2018 EFY (2025/2026)",
           procurementCategory: "GOODS" as const,
           organization: "National Animal Health Diagnostic Center",
@@ -610,7 +688,8 @@ export async function populatePresentationData(
     if (calmProject?.id) {
       plansToCreate.push({
         projectId: calmProject.id,
-        title: "2019 EFY CALM - Seed Multiplication & Non-Consulting Services Plan",
+        title:
+          "2019 EFY CALM - Seed Multiplication & Non-Consulting Services Plan",
         budgetYear: "2019 EFY (2026/2027)",
         procurementCategory: "NON_CONSULTING" as const,
         organization: "Amhara & Oromia Natural Resources Bureaus",
@@ -625,7 +704,10 @@ export async function populatePresentationData(
     // ──────────────────────────────────────────────────────────────────────────
     // Step 5: Acquire Officer token for drafting plans & activities (without touching browser cookies)
     // ──────────────────────────────────────────────────────────────────────────
-    update(`Authenticating as Officer (${targetOfficerEmail}) to draft plans & activities...`, 55);
+    update(
+      `Authenticating as Officer (${targetOfficerEmail}) to draft plans & activities...`,
+      55,
+    );
     const officerPasswords = [
       directorPassword,
       "Password123!",
@@ -642,11 +724,14 @@ export async function populatePresentationData(
       }
     }
     if (!officerToken) {
-      console.warn("Officer login note: could not authenticate as officer, proceeding with director session.");
+      console.warn(
+        "Officer login note: could not authenticate as officer, proceeding with director session.",
+      );
     }
 
     const planAuthHeaders: Record<string, string> = {};
-    const activeTokenForPlan = officerToken || directorToken || authTokenManager.getToken();
+    const activeTokenForPlan =
+      officerToken || directorToken || authTokenManager.getToken();
     if (activeTokenForPlan) {
       planAuthHeaders["Authorization"] = `Bearer ${activeTokenForPlan}`;
     }
@@ -695,11 +780,14 @@ export async function populatePresentationData(
         // Officer submits plans needing review to Director
         try {
           if (pItem.workflowStage !== "DRAFT") {
-            await directApiFetch<any>(`/plans/${encodeURIComponent(activePlan.id)}/submit`, {
-              method: "POST",
-              headers: planAuthHeaders,
-              skipAuth: Boolean(activeTokenForPlan),
-            });
+            await directApiFetch<any>(
+              `/plans/${encodeURIComponent(activePlan.id)}/submit`,
+              {
+                method: "POST",
+                headers: planAuthHeaders,
+                skipAuth: Boolean(activeTokenForPlan),
+              },
+            );
           }
         } catch (wfErr) {
           console.warn(`Officer submit plan notice for ${pItem.title}:`, wfErr);
@@ -721,7 +809,7 @@ export async function populatePresentationData(
                 method: "POST",
                 headers: dirHeaders,
                 skipAuth: Boolean(dToken),
-              }
+              },
             );
           } catch {}
         }
@@ -730,7 +818,8 @@ export async function populatePresentationData(
 
     const refreshedPlans = (await fetchPlans()).filter((p) => isRealDbId(p.id));
     const driveGoodsPlan =
-      refreshedPlans.find((p) => p.title?.includes("DRIVE - Goods")) || refreshedPlans[0];
+      refreshedPlans.find((p) => p.title?.includes("DRIVE - Goods")) ||
+      refreshedPlans[0];
     const driveConsultPlan =
       refreshedPlans.find((p) => p.title?.includes("DRIVE - Advisory")) ||
       refreshedPlans[1] ||
@@ -743,7 +832,10 @@ export async function populatePresentationData(
     // ──────────────────────────────────────────────────────────────────────────
     // Step 6: Create Procurement Activities with Stages & Roadmaps
     // ──────────────────────────────────────────────────────────────────────────
-    update("Generating procurement activities, milestones & delayed alerts...", 75);
+    update(
+      "Generating procurement activities, milestones & delayed alerts...",
+      75,
+    );
 
     const rfqMethodId = pmRfqId || anyRealMethodId;
     const ncbMethodId = pmNcbId || anyRealMethodId;
@@ -980,7 +1072,10 @@ export async function populatePresentationData(
     // ──────────────────────────────────────────────────────────────────────────
     // Step 7: Create Contracts and Financial Payment Milestones
     // ──────────────────────────────────────────────────────────────────────────
-    update("Linking awarded contracts and recording payment transactions...", 88);
+    update(
+      "Linking awarded contracts and recording payment transactions...",
+      88,
+    );
 
     const existingContracts = await fetchContracts();
     const existingContractNos = new Set(
@@ -1008,7 +1103,8 @@ export async function populatePresentationData(
         sector: "Natural Resources & Irrigation",
         status: "ACTIVE",
         supplierId: supplierId || undefined,
-        activityId: createdActivities[3]?.id || createdActivities[1]?.id || undefined,
+        activityId:
+          createdActivities[3]?.id || createdActivities[1]?.id || undefined,
         advanceAmount: 26400000,
         interimAmount: null,
       },
@@ -1043,16 +1139,19 @@ export async function populatePresentationData(
         if (cId) {
           if (cData.advanceAmount) {
             try {
-              await directApiFetch<any>(`/contracts/${encodeURIComponent(cId)}/payments`, {
-                method: "POST",
-                body: JSON.stringify({
-                  amount: cData.advanceAmount,
-                  referenceNo: `PAY-ADV-${Date.now().toString().slice(-6)}`,
-                  idempotencyKey: `adv-${cId}-${Date.now()}`,
-                }),
-                headers: dirHeaders,
-                skipAuth: Boolean(dToken),
-              });
+              await directApiFetch<any>(
+                `/contracts/${encodeURIComponent(cId)}/payments`,
+                {
+                  method: "POST",
+                  body: JSON.stringify({
+                    amount: cData.advanceAmount,
+                    referenceNo: `PAY-ADV-${Date.now().toString().slice(-6)}`,
+                    idempotencyKey: `adv-${cId}-${Date.now()}`,
+                  }),
+                  headers: dirHeaders,
+                  skipAuth: Boolean(dToken),
+                },
+              );
             } catch (pErr) {
               console.warn("Advance payment notice:", pErr);
             }
@@ -1060,16 +1159,19 @@ export async function populatePresentationData(
 
           if (cData.interimAmount) {
             try {
-              await directApiFetch<any>(`/contracts/${encodeURIComponent(cId)}/payments`, {
-                method: "POST",
-                body: JSON.stringify({
-                  amount: cData.interimAmount,
-                  referenceNo: `PAY-INT-${Date.now().toString().slice(-6)}`,
-                  idempotencyKey: `int-${cId}-${Date.now()}`,
-                }),
-                headers: dirHeaders,
-                skipAuth: Boolean(dToken),
-              });
+              await directApiFetch<any>(
+                `/contracts/${encodeURIComponent(cId)}/payments`,
+                {
+                  method: "POST",
+                  body: JSON.stringify({
+                    amount: cData.interimAmount,
+                    referenceNo: `PAY-INT-${Date.now().toString().slice(-6)}`,
+                    idempotencyKey: `int-${cId}-${Date.now()}`,
+                  }),
+                  headers: dirHeaders,
+                  skipAuth: Boolean(dToken),
+                },
+              );
             } catch (pErr) {
               console.warn("Interim payment notice:", pErr);
             }
@@ -1083,14 +1185,15 @@ export async function populatePresentationData(
     update("Presentation data generation complete!", 100);
     return {
       success: true,
-      summary:
-        `Successfully cleaned up previous unowned projects, authenticated and created 4 MoA flagship projects under Director (${directorEmail}), assigned Officer (${targetOfficerEmail}) to all projects, and generated complete annual plans across all workflow stages!`,
+      summary: `Successfully cleaned up previous unowned projects, authenticated and created 4 MoA flagship projects under Director (${directorEmail}), assigned Officer (${targetOfficerEmail}) to all projects, and generated complete annual plans across all workflow stages!`,
     };
   } catch (err: any) {
     console.warn("Presentation data population notice:", err);
     return {
       success: false,
-      summary: err?.message || "Notice: presentation data population encountered an issue.",
+      summary:
+        err?.message ||
+        "Notice: presentation data population encountered an issue.",
     };
   }
 }

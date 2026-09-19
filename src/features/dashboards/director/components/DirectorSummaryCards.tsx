@@ -22,11 +22,6 @@ export function DirectorSummaryCards({
   selectedSector,
   userRole = "DIRECTOR",
 }: DirectorSummaryCardsProps) {
-  const sectorSubtitle =
-    selectedSector === "All Sectors"
-      ? "all sectors"
-      : selectedSector.toLowerCase();
-
   return (
     <section
       aria-label="Director metrics summary"
@@ -39,7 +34,6 @@ export function DirectorSummaryCards({
             <h3 className="text-xs font-bold text-[#064e3b] tracking-tight">
               Total Projects
             </h3>
-            <span className="h-2 w-2 rounded-full bg-[#006837] shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
             <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-[#0A3C2F] leading-none">
@@ -48,10 +42,7 @@ export function DirectorSummaryCards({
             <span className="text-xs font-semibold text-[#047857]">active</span>
           </div>
         </div>
-        <div className="pt-2 border-t border-[#a7f3d0]/70 flex items-center justify-between text-xs">
-          <span className="text-[#065f46] font-medium text-[11px] truncate">
-            {selectedFiscalYear}, {sectorSubtitle}
-          </span>
+        <div className="pt-2 border-t border-[#a7f3d0]/70 flex items-center justify-end text-xs">
           <Link
             href="/workspace/projects"
             className="text-[#006837] hover:text-[#004f29] font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
@@ -71,7 +62,6 @@ export function DirectorSummaryCards({
                 ? "Executive Authorization"
                 : "Awaiting Review"}
             </h3>
-            <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
             <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-black leading-none">
@@ -80,12 +70,7 @@ export function DirectorSummaryCards({
             <span className="text-xs font-semibold text-slate-500">plans</span>
           </div>
         </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
-            {userRole === "MANAGEMENT"
-              ? "Pending Decision"
-              : "Pending Director"}
-          </span>
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-end text-xs">
           <Link
             href="/workspace/plan-for-review"
             className="text-amber-700 hover:text-amber-800 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
@@ -105,7 +90,6 @@ export function DirectorSummaryCards({
                 ? "Committee Endorsed"
                 : "Committee Progress"}
             </h3>
-            <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
             <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-black leading-none">
@@ -114,10 +98,7 @@ export function DirectorSummaryCards({
             <span className="text-xs font-semibold text-slate-500">plans</span>
           </div>
         </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
-            {userRole === "MANAGEMENT" ? "Deliberations" : "Voting"}
-          </span>
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-end text-xs">
           <Link
             href="/workspace/vote-progress"
             className="text-blue-600 hover:text-blue-700 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
@@ -135,7 +116,6 @@ export function DirectorSummaryCards({
             <h3 className="text-xs font-bold text-slate-800 tracking-tight">
               Critical Delays
             </h3>
-            <span className="h-2 w-2 rounded-full bg-rose-600 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
             <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-black leading-none">
@@ -146,10 +126,7 @@ export function DirectorSummaryCards({
             </span>
           </div>
         </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
-            Requires action
-          </span>
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-end text-xs">
           <Link
             href="/workspace/activity-tracker"
             className="text-rose-600 hover:text-rose-700 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"

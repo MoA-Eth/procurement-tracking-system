@@ -46,7 +46,8 @@ export function EntityTrackingModal({
   onClose: () => void;
   initialEntityType?: EntityType;
 }) {
-  const [selectedType, setSelectedType] = useState<EntityType>(initialEntityType);
+  const [selectedType, setSelectedType] =
+    useState<EntityType>(initialEntityType);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [entities, setEntities] = useState<TrackedEntity[]>([]);
@@ -72,7 +73,10 @@ export function EntityTrackingModal({
           projRes.value.forEach((p: any) => {
             const officers = Array.isArray(p.assignedOfficers)
               ? p.assignedOfficers.map((o: any) => o.name || o).join(", ")
-              : p.officers?.map((o: any) => o.user?.name).filter(Boolean).join(", ") || "Unassigned";
+              : p.officers
+                  ?.map((o: any) => o.user?.name)
+                  .filter(Boolean)
+                  .join(", ") || "Unassigned";
 
             items.push({
               id: `proj-${p.id || p.code}`,
@@ -87,7 +91,8 @@ export function EntityTrackingModal({
               meta: {
                 Region: p.organization || p.region || "Federal",
                 Agency: p.executingAgency || "Ministry of Agriculture",
-                Funding: p.fundingSource?.label || p.fundingSource || "World Bank",
+                Funding:
+                  p.fundingSource?.label || p.fundingSource || "World Bank",
               },
             });
           });
@@ -106,7 +111,8 @@ export function EntityTrackingModal({
               statusColor:
                 pl.status === "Draft"
                   ? "text-slate-700 bg-slate-50 border-slate-200"
-                  : pl.status?.includes("Review") || pl.status?.includes("Committee")
+                  : pl.status?.includes("Review") ||
+                      pl.status?.includes("Committee")
                     ? "text-amber-700 bg-amber-50 border-amber-200"
                     : "text-emerald-700 bg-emerald-50 border-emerald-200",
               assignedTo: pl.assignedOfficer || "Procurement Officer",
@@ -195,7 +201,8 @@ export function EntityTrackingModal({
       !q ||
       item.reference.toLowerCase().includes(q) ||
       item.name.toLowerCase().includes(q) ||
-      (item.parentReference && item.parentReference.toLowerCase().includes(q)) ||
+      (item.parentReference &&
+        item.parentReference.toLowerCase().includes(q)) ||
       (item.assignedTo && item.assignedTo.toLowerCase().includes(q)) ||
       item.status.toLowerCase().includes(q);
 
@@ -224,7 +231,8 @@ export function EntityTrackingModal({
                 Procurement Entity Lifecycle Tracker
               </h2>
               <p className="text-xs text-slate-500 font-medium">
-                Unified audit and status tracking for Projects, Plans, Activities, and Contracts.
+                Unified audit and status tracking for Projects, Plans,
+                Activities, and Contracts.
               </p>
             </div>
           </div>

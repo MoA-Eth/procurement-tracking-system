@@ -667,7 +667,9 @@ export function PlanFullScreenReviewView({
                       <span>Committee Chairperson Authorization Required</span>
                     </div>
                     <p className="text-xs text-amber-900 leading-relaxed">
-                      As Chairperson of the Endorsement Committee, you must review and formally allow this project/plan before committee members can deliberate and vote.
+                      As Chairperson of the Endorsement Committee, you must
+                      review and formally allow this project/plan before
+                      committee members can deliberate and vote.
                     </p>
                     <button
                       type="button"
@@ -686,7 +688,8 @@ export function PlanFullScreenReviewView({
                         Pending Committee Chair Authorization
                       </h4>
                       <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                        The Endorsement Committee Chairperson must first review and allow this project before member voting is unlocked.
+                        The Endorsement Committee Chairperson must first review
+                        and allow this project before member voting is unlocked.
                       </p>
                     </div>
                   </div>
@@ -696,7 +699,10 @@ export function PlanFullScreenReviewView({
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Chairperson Authorized: Committee Deliberation &amp; Voting Active</span>
+                  <span>
+                    Chairperson Authorized: Committee Deliberation &amp; Voting
+                    Active
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button

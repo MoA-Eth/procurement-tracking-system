@@ -187,7 +187,9 @@ export function QuickAssignOfficerModal({
         <div className="rounded-xl bg-emerald-50/70 border border-emerald-200 p-3 text-xs text-emerald-950 flex items-start gap-2.5">
           <ShieldCheck className="h-4 w-4 text-emerald-700 shrink-0 mt-0.5" />
           <p className="leading-relaxed">
-            <strong>Director Authority:</strong> You can add new officers or change assigned officers at any time, including after the project or plan has been approved.
+            <strong>Director Authority:</strong> You can add new officers or
+            change assigned officers at any time, including after the project or
+            plan has been approved.
           </p>
         </div>
 
@@ -234,7 +236,9 @@ export function QuickAssignOfficerModal({
                         <p className="text-xs font-bold text-slate-900">
                           {off.name}
                         </p>
-                        <p className="text-[10px] text-slate-500">{off.email}</p>
+                        <p className="text-[10px] text-slate-500">
+                          {off.email}
+                        </p>
                       </div>
                     </div>
 

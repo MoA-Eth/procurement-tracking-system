@@ -46,7 +46,7 @@ export function PresentationDataModal() {
           { cleanPreviousProjects: true, ...opts },
           (p) => {
             console.log(`[${p.percent}%] ${p.message}`);
-          }
+          },
         );
         console.log("Population finished:", res);
         return res;
@@ -64,7 +64,7 @@ export function PresentationDataModal() {
         { cleanPreviousProjects: cleanPrevious },
         (p) => {
           setProgress(p);
-        }
+        },
       );
       setResult(res);
     } catch (err: any) {
@@ -83,18 +83,20 @@ export function PresentationDataModal() {
       if (role === "DIRECTOR") {
         await authenticate(
           PRESENTATION_DIRECTOR.email,
-          PRESENTATION_DIRECTOR.password
+          PRESENTATION_DIRECTOR.password,
         );
         window.location.href = "/workspace/projects";
       } else {
         await authenticate(
           PRESENTATION_OFFICER.email,
-          PRESENTATION_DIRECTOR.password
+          PRESENTATION_DIRECTOR.password,
         );
         window.location.href = "/dashboard/officer";
       }
     } catch (err: any) {
-      alert("Notice switching role: " + (err?.message || "Please login manually"));
+      alert(
+        "Notice switching role: " + (err?.message || "Please login manually"),
+      );
     } finally {
       setIsSwitching(false);
     }
@@ -149,7 +151,8 @@ export function PresentationDataModal() {
                       </span>
                     </h3>
                     <p className="text-xs text-[#A1D9C5] mt-0.5">
-                      Fills your deployed backend with realistic data for tomorrow&apos;s presentation.
+                      Fills your deployed backend with realistic data for
+                      tomorrow&apos;s presentation.
                     </p>
                   </div>
                 </div>
@@ -172,32 +175,48 @@ export function PresentationDataModal() {
                 <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-start gap-2.5">
                   <FolderKanban className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-slate-800 block">4 Flagship Projects</span>
-                    <span className="text-[11px] text-slate-600">DRIVE, BREFONS, CALM & RLLP</span>
+                    <span className="font-bold text-slate-800 block">
+                      4 Flagship Projects
+                    </span>
+                    <span className="text-[11px] text-slate-600">
+                      DRIVE, BREFONS, CALM & RLLP
+                    </span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-teal-50/70 border border-teal-100 flex items-start gap-2.5">
                   <FileSpreadsheet className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-slate-800 block">5 Annual Plans</span>
-                    <span className="text-[11px] text-slate-600">Approved, Submitted & Drafts</span>
+                    <span className="font-bold text-slate-800 block">
+                      5 Annual Plans
+                    </span>
+                    <span className="text-[11px] text-slate-600">
+                      Approved, Submitted & Drafts
+                    </span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 flex items-start gap-2.5">
                   <Layers className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-slate-800 block">Diverse Activities</span>
-                    <span className="text-[11px] text-slate-600">Milestone stages & delay alerts</span>
+                    <span className="font-bold text-slate-800 block">
+                      Diverse Activities
+                    </span>
+                    <span className="text-[11px] text-slate-600">
+                      Milestone stages & delay alerts
+                    </span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-100 flex items-start gap-2.5">
                   <Receipt className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-bold text-slate-800 block">Contracts & Payments</span>
-                    <span className="text-[11px] text-slate-600">Suppliers & paid transactions</span>
+                    <span className="font-bold text-slate-800 block">
+                      Contracts & Payments
+                    </span>
+                    <span className="text-[11px] text-slate-600">
+                      Suppliers & paid transactions
+                    </span>
                   </div>
                 </div>
               </div>
@@ -243,7 +262,8 @@ export function PresentationDataModal() {
                     </span>
                     {isSwitching && (
                       <span className="text-[10px] text-emerald-600 flex items-center gap-1 font-semibold">
-                        <Loader2 className="w-3 h-3 animate-spin" /> Switching...
+                        <Loader2 className="w-3 h-3 animate-spin" />{" "}
+                        Switching...
                       </span>
                     )}
                   </div>
@@ -285,7 +305,10 @@ export function PresentationDataModal() {
                   className="cursor-pointer font-medium text-slate-700 select-none flex items-center gap-1.5"
                 >
                   <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Delete previous unowned projects &amp; recreate clean flagship data</span>
+                  <span>
+                    Delete previous unowned projects &amp; recreate clean
+                    flagship data
+                  </span>
                 </label>
               </div>
 
@@ -294,7 +317,9 @@ export function PresentationDataModal() {
                 <div className="space-y-2 rounded-xl bg-slate-50 border border-slate-200 p-3.5">
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-slate-700 flex items-center gap-1.5 truncate max-w-[80%]">
-                      {isRunning && <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />}
+                      {isRunning && (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                      )}
                       {progress.message}
                     </span>
                     <span className="text-emerald-700 font-mono font-bold">
@@ -329,7 +354,9 @@ export function PresentationDataModal() {
                     <p className="font-bold">
                       {result.success ? "Success!" : "Notice"}
                     </p>
-                    <p className="text-[11px] leading-relaxed">{result.summary}</p>
+                    <p className="text-[11px] leading-relaxed">
+                      {result.summary}
+                    </p>
                   </div>
                 </div>
               )}

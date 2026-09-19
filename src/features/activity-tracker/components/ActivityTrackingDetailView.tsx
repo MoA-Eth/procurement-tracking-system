@@ -1029,6 +1029,12 @@ function StageEditor({
       setStageError("A completed stage must have an Actual Date.");
       return;
     }
+    if (delay !== null && delay > 0 && !tracking.remarks.trim()) {
+      setStageError(
+        "Please provide a reason for the delay in the Stage Remarks.",
+      );
+      return;
+    }
     const orderError = actualDateOrderError(
       roadmap,
       record,
@@ -1048,12 +1054,14 @@ function StageEditor({
         recordActualStageDates(actId, stage.id, {
           actualStartDate: tracking.actualDate.gregorian,
           actualEndDate: tracking.actualDate.gregorian,
+          remarks: tracking.remarks,
         }).catch((err) =>
           console.warn("Backend recordActualStageDates note:", err),
         );
       } else {
         updateStageDates(actId, stage.id, {
           plannedStartDate: tracking.actualDate?.gregorian || undefined,
+          remarks: tracking.remarks,
         }).catch((err) => console.warn("Backend updateStageDates note:", err));
       }
     }
@@ -1172,8 +1180,15 @@ function StageEditor({
           required={tracking.status === "Completed"}
         />
         <label className="block">
-          <span className="mb-2 block text-[11px] font-bold text-slate-600">
-            Stage Remarks
+          <span className="mb-2 block text-[11px] font-bold text-slate-600 flex justify-between">
+            <span>
+              {delay !== null && delay > 0
+                ? "Reason for Delay"
+                : "Stage Remarks"}
+              {delay !== null && delay > 0 && (
+                <span className="ml-1 text-red-600">*</span>
+              )}
+            </span>
           </span>
           <textarea
             className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"

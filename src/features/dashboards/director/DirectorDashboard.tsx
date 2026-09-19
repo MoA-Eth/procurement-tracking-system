@@ -36,6 +36,7 @@ export function DirectorDashboard({ user }: { user: AuthUser }) {
     displayedPendingPlans,
     displayedCriticalDelays,
     availableFiscalYears,
+    currency,
   } = useDirectorDashboard(user.role);
 
   return (
@@ -74,6 +75,7 @@ export function DirectorDashboard({ user }: { user: AuthUser }) {
         financialSummary={financialSummary}
         spendPercentages={spendPercentages}
         selectedFiscalYear={selectedFiscalYear}
+        currency={currency}
       />
 
       {/* 4. MIDDLE SECTION: WORKFLOW PIPELINE & SPEND COMPOSITION */}

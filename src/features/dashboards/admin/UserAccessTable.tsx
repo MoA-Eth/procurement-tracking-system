@@ -76,7 +76,9 @@ export function UserAccessTable({
   onRefresh,
 }: UserAccessTableProps) {
   const [resendingId, setResendingId] = useState<string | null>(null);
-  const [selectedModalUser, setSelectedModalUser] = useState<ApiUser | null>(null);
+  const [selectedModalUser, setSelectedModalUser] = useState<ApiUser | null>(
+    null,
+  );
   const effectiveCurrentUser = currentUser ?? getCurrentUser();
 
   // Show recent 5 users on main dashboard
@@ -278,22 +280,22 @@ export function UserAccessTable({
                   </tr>
                 )}
               </tbody>
-          </table>
+            </table>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
-    {/* ─── User Profile & Protected Role Change Modal ─────────────── */}
-    {selectedModalUser && (
-      <UserProfileModal
-        user={selectedModalUser}
-        isOpen={Boolean(selectedModalUser)}
-        onClose={() => setSelectedModalUser(null)}
-        onUserUpdated={() => {
-          onRefresh?.();
-        }}
-      />
-    )}
-  </div>
-);
+      {/* ─── User Profile & Protected Role Change Modal ─────────────── */}
+      {selectedModalUser && (
+        <UserProfileModal
+          user={selectedModalUser}
+          isOpen={Boolean(selectedModalUser)}
+          onClose={() => setSelectedModalUser(null)}
+          onUserUpdated={() => {
+            onRefresh?.();
+          }}
+        />
+      )}
+    </div>
+  );
 }

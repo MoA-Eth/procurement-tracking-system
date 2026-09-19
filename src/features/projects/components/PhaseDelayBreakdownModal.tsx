@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   X,
   AlertTriangle,
@@ -109,7 +109,8 @@ function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
 
   const rawStatus = (stage.status || "").toUpperCase();
   const isCompleted =
-    rawStatus === "COMPLETED" || Boolean(actualEnd && !rawStatus.includes("DELAY"));
+    rawStatus === "COMPLETED" ||
+    Boolean(actualEnd && !rawStatus.includes("DELAY"));
 
   if (isNA) {
     delayDays = 0;
@@ -121,7 +122,10 @@ function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
       delayDays = Math.max(0, Math.floor((actEnd - plEnd) / 86400000));
       if (actualStart) {
         const actStart = new Date(actualStart).getTime();
-        actualDuration = Math.max(1, Math.round((actEnd - actStart) / 86400000));
+        actualDuration = Math.max(
+          1,
+          Math.round((actEnd - actStart) / 86400000),
+        );
       } else {
         actualDuration = plannedDuration + delayDays;
       }
@@ -169,12 +173,10 @@ export function PhaseDelayBreakdownModal({
   onClose,
   data,
 }: PhaseDelayBreakdownModalProps) {
-  if (!isOpen || !data) return null;
-
-  const now = Date.now();
-
-  const rawStages = data.stages || [];
+  const rawStages = data?.stages || [];
+  const [now] = useState(() => Date.now());
   const phaseItems: PhaseDelayItem[] = useMemo(() => {
+    if (!data) return [];
     if (rawStages.length > 0) {
       return rawStages.map((st) => computePhaseMetrics(st, now));
     }
@@ -230,7 +232,9 @@ export function PhaseDelayBreakdownModal({
         delayDays: 0,
       },
     ];
-  }, [rawStages, now, data.totalDelayDays]);
+  }, [rawStages, data, now]);
+
+  if (!isOpen || !data) return null;
 
   const totalCalculatedDelay = phaseItems.reduce(
     (sum, item) => sum + (item.delayDays || 0),
@@ -270,7 +274,9 @@ export function PhaseDelayBreakdownModal({
             </h2>
             <p className="text-xs text-emerald-100 font-mono">
               Activity: {data.reference}
-              {data.title && data.title !== data.reference ? ` — ${data.title}` : ""}
+              {data.title && data.title !== data.reference
+                ? ` — ${data.title}`
+                : ""}
             </p>
           </div>
 
@@ -357,7 +363,9 @@ export function PhaseDelayBreakdownModal({
                 <thead>
                   <tr className="bg-slate-100/80 text-slate-700 text-[11px] font-bold border-b border-slate-200">
                     <th className="py-2.5 px-3.5 w-8 text-center">#</th>
-                    <th className="py-2.5 px-4 font-bold">Process / Phase Name</th>
+                    <th className="py-2.5 px-4 font-bold">
+                      Process / Phase Name
+                    </th>
                     <th className="py-2.5 px-3 font-bold text-center">
                       Planned Days
                     </th>
@@ -470,7 +478,8 @@ export function PhaseDelayBreakdownModal({
         {/* Modal Footer */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-4 shrink-0">
           <p className="text-xs text-slate-500">
-            Timeline delays are evaluated against the approved baseline target dates.
+            Timeline delays are evaluated against the approved baseline target
+            dates.
           </p>
 
           <div className="flex items-center gap-2">

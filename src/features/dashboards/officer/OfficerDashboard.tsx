@@ -30,7 +30,8 @@ export function OfficerDashboard({ user }: { user: AuthUser }) {
   const handleSelectDelay = (alert: OfficerAlert) => {
     setDelayModalData({
       reference: alert.referenceLine,
-      title: alert.activityDescription || alert.detailLine || alert.referenceLine,
+      title:
+        alert.activityDescription || alert.detailLine || alert.referenceLine,
       totalDelayDays: alert.delayDays || 1,
       stages: alert.stages || [],
       activityHref: alert.href,

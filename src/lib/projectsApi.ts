@@ -209,7 +209,9 @@ export function mapBackendProjectToProjectItem(
     assignedOfficers,
     description: "Sector project",
     status:
-      bp.status === "ACTIVE"
+      bp.status?.toUpperCase() === "ACTIVE" ||
+      bp.isActive === true ||
+      (!bp.status && bp.isActive !== false)
         ? assignedOfficers.length > 0
           ? "Active"
           : "Draft"

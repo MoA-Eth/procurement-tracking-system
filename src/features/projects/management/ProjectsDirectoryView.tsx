@@ -99,10 +99,6 @@ export function ProjectsDirectoryView({
               MoA Projects Directory
             </h1>
           </div>
-          <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-2xl">
-            Highest procurement container. Stored project-level headers are
-            inherited by all procurement plans and activity items.
-          </p>
         </div>
 
         {!readOnly && (

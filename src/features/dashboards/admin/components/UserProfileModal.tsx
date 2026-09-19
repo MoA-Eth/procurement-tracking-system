@@ -28,6 +28,7 @@ import {
   fetchProjects,
   assignOfficerToProject,
   removeOfficerFromProject,
+  isProjectAssignedToOfficer,
   type BackendProject,
 } from "@/lib/projectsApi";
 import { fetchOfficers, type OfficerUserItem } from "@/lib/lookupsApi";
@@ -98,13 +99,18 @@ export function UserProfileModal({
   onUserUpdated,
 }: UserProfileModalProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<ProvisionableRole>("OFFICER");
+  const [selectedRole, setSelectedRole] =
+    useState<ProvisionableRole>("OFFICER");
   const [isActiveStatus, setIsActiveStatus] = useState(true);
 
   // Projects and Officers state
-  const [assignedProjects, setAssignedProjects] = useState<BackendProject[]>([]);
+  const [assignedProjects, setAssignedProjects] = useState<BackendProject[]>(
+    [],
+  );
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [availableOfficers, setAvailableOfficers] = useState<OfficerUserItem[]>([]);
+  const [availableOfficers, setAvailableOfficers] = useState<OfficerUserItem[]>(
+    [],
+  );
   const [loadingOfficers, setLoadingOfficers] = useState(false);
 
   // Handover state
@@ -145,40 +151,102 @@ export function UserProfileModal({
 
         if (!isMounted) return;
 
-        // Filter projects assigned to this user
-        const userProjects = allProjects.filter((p) => {
-          // Check assignedOfficers array
+        // Filter projects assigned to this user across all backend schemas (members, officers, assignedOfficers)
+        const userProjects = allProjects.filter((p: any) => {
+          // 1. Built-in isProjectAssignedToOfficer helper
+          if (isProjectAssignedToOfficer(p, user as any)) {
+            return true;
+          }
+
+          const uId = (user.id || "").trim();
+          const uEmail = (user.email || "").trim().toLowerCase();
+          const uDisplayName = (user.displayName || "").trim().toLowerCase();
+          const uName = (user.name || "").trim().toLowerCase();
+          const uUsername = (user.username || "").trim().toLowerCase();
+
+          // Helper to match an officer/user entity against target user
+          const matchesUser = (entity: any) => {
+            if (!entity) return false;
+            const targetId = entity.id || entity.userId;
+            if (targetId && uId && String(targetId) === String(uId))
+              return true;
+            if (
+              entity.email &&
+              uEmail &&
+              String(entity.email).trim().toLowerCase() === uEmail
+            )
+              return true;
+            const eName = String(entity.name || entity.displayName || "")
+              .trim()
+              .toLowerCase();
+            if (
+              eName &&
+              ((uDisplayName && eName === uDisplayName) ||
+                (uName && eName === uName))
+            )
+              return true;
+            if (
+              entity.username &&
+              uUsername &&
+              String(entity.username).trim().toLowerCase() === uUsername
+            )
+              return true;
+            return false;
+          };
+
+          // 2. Check BackendProject members array (Prisma relation)
+          if (Array.isArray(p.members)) {
+            const hasMember = p.members.some((m: any) => {
+              if (!m) return false;
+              if (m.userId && uId && String(m.userId) === String(uId))
+                return true;
+              if (m.user && matchesUser(m.user)) return true;
+              return false;
+            });
+            if (hasMember) return true;
+          }
+
+          // 3. Check officers array
+          if (Array.isArray(p.officers)) {
+            const hasOfficer = p.officers.some((off: any) => {
+              if (!off) return false;
+              if (matchesUser(off)) return true;
+              if (off.user && matchesUser(off.user)) return true;
+              return false;
+            });
+            if (hasOfficer) return true;
+          }
+
+          // 4. Check assignedOfficers array (objects or plain strings)
           if (Array.isArray(p.assignedOfficers)) {
-            if (
-              p.assignedOfficers.some(
-                (off) =>
-                  off.id === user.id ||
-                  (off.email &&
-                    user.email &&
-                    off.email.toLowerCase() === user.email.toLowerCase()) ||
-                  (off.name &&
-                    (off.name === user.displayName || off.name === user.name)),
-              )
-            ) {
-              return true;
-            }
+            const hasAssigned = p.assignedOfficers.some((off: any) => {
+              if (!off) return false;
+              if (typeof off === "string") {
+                const s = off.trim().toLowerCase();
+                return (
+                  (uDisplayName && s === uDisplayName) ||
+                  (uName && s === uName) ||
+                  (uEmail && s === uEmail) ||
+                  (uUsername && s === uUsername)
+                );
+              }
+              return matchesUser(off);
+            });
+            if (hasAssigned) return true;
           }
-          // Check officerAssignments array
+
+          // 5. Check officerAssignments array
           if (Array.isArray(p.officerAssignments)) {
-            if (
-              p.officerAssignments.some(
-                (oa) =>
-                  oa.officerId === user.id ||
-                  oa.officer?.id === user.id ||
-                  (oa.officer?.email &&
-                    user.email &&
-                    oa.officer.email.toLowerCase() ===
-                      user.email.toLowerCase()),
-              )
-            ) {
-              return true;
-            }
+            const hasOa = p.officerAssignments.some((oa: any) => {
+              if (!oa) return false;
+              if (oa.officerId && uId && String(oa.officerId) === String(uId))
+                return true;
+              if (oa.officer && matchesUser(oa.officer)) return true;
+              return false;
+            });
+            if (hasOa) return true;
           }
+
           return false;
         });
 
@@ -211,13 +279,18 @@ export function UserProfileModal({
     (normalizeUserRole(user.authRole || user.role) as ProvisionableRole) ||
     "OFFICER";
 
-  // Identify active projects (status === 'Active' or not draft/archived)
-  const activeProjects = assignedProjects.filter(
-    (p) =>
-      p.status === "Active" ||
-      !p.status ||
-      p.status.toLowerCase() === "active",
-  );
+  // Identify active projects (exclude explicitly closed, suspended, archived, or inactive)
+  const activeProjects = assignedProjects.filter((p: any) => {
+    if (p.isActive === false) return false;
+    if (!p.status) return true;
+    const s = String(p.status).trim().toUpperCase();
+    return (
+      s !== "CLOSED" &&
+      s !== "SUSPENDED" &&
+      s !== "ARCHIVED" &&
+      s !== "INACTIVE"
+    );
+  });
 
   const isRoleChanging = selectedRole !== currentRole;
   const requiresOfficerHandover =
@@ -299,7 +372,9 @@ export function UserProfileModal({
             </div>
             <div>
               <h3 className="text-base font-extrabold tracking-tight">
-                {isEditing ? "Edit User Account & Role" : "User Account Details"}
+                {isEditing
+                  ? "Edit User Account & Role"
+                  : "User Account Details"}
               </h3>
               <p className="text-[11px] text-emerald-200/80">
                 Ministry of Agriculture Procurement Tracking System
@@ -486,15 +561,27 @@ export function UserProfileModal({
                             {p.name}
                           </p>
                         </div>
-                        <span
-                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded border shrink-0 ${
-                            p.status === "Active"
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                              : "bg-slate-100 text-slate-600 border-slate-200"
-                          }`}
-                        >
-                          {p.status || "Active"}
-                        </span>
+                        {(() => {
+                          const isProjActive =
+                            p.isActive !== false &&
+                            String(p.status || "ACTIVE").toUpperCase() !==
+                              "CLOSED" &&
+                            String(p.status || "ACTIVE").toUpperCase() !==
+                              "SUSPENDED" &&
+                            String(p.status || "ACTIVE").toUpperCase() !==
+                              "INACTIVE";
+                          return (
+                            <span
+                              className={`text-[10px] font-extrabold px-2 py-0.5 rounded border shrink-0 ${
+                                isProjActive
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                  : "bg-slate-100 text-slate-600 border-slate-200"
+                              }`}
+                            >
+                              {isProjActive ? "Active" : p.status || "Inactive"}
+                            </span>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>
@@ -567,10 +654,12 @@ export function UserProfileModal({
                           {user.displayName || user.name || "This user"}
                         </strong>{" "}
                         is currently assigned to{" "}
-                        <strong>{activeProjects.length} active project(s)</strong>.
-                        To change their role away from Officer, you must select a
-                        replacement procurement officer to hand over these
-                        projects to.
+                        <strong>
+                          {activeProjects.length} active project(s)
+                        </strong>
+                        . To change their role away from Officer, you must
+                        select a replacement procurement officer to hand over
+                        these projects to.
                       </p>
                     </div>
                   </div>

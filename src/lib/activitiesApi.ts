@@ -111,11 +111,13 @@ export interface CreateActivityInput {
 export interface UpdateStageDatesInput {
   plannedStartDate?: string;
   plannedEndDate?: string;
+  remarks?: string;
 }
 
 export interface RecordActualStageDatesInput {
   actualStartDate?: string;
   actualEndDate?: string;
+  remarks?: string;
 }
 
 export interface ReplanStageInput {

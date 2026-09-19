@@ -22,6 +22,16 @@ import type { UserRole } from "@/types";
 
 import { fetchActivities } from "@/lib/activitiesApi";
 
+// Module-level cache to avoid redundant API calls on sidebar navigation
+interface DashboardCache {
+  projects: BackendProject[];
+  plans: BackendPlan[];
+  contracts: BackendContract[];
+  timestamp: number;
+}
+let _dashboardCache: DashboardCache | null = null;
+const DASHBOARD_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
   const [projects, setProjects] = useState<BackendProject[]>([]);
   const [plans, setPlans] = useState<BackendPlan[]>([]);
@@ -49,6 +59,19 @@ export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
 
   useEffect(() => {
     let isMounted = true;
+
+    // Use cached data if still fresh to avoid redundant API calls
+    if (
+      _dashboardCache &&
+      Date.now() - _dashboardCache.timestamp < DASHBOARD_CACHE_TTL_MS
+    ) {
+      setProjects(_dashboardCache.projects);
+      setPlans(_dashboardCache.plans);
+      setContracts(_dashboardCache.contracts);
+      setLoading(false);
+      return;
+    }
+
     async function loadDashboardData() {
       try {
         const [projRes, planRes, contractRes, actRes] = await Promise.all([
@@ -63,7 +86,7 @@ export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
           const enrichedPlans = plansList.map((plan) => {
             if (plan.activities && plan.activities.length > 0) return plan;
             const planActs = activitiesList.filter(
-              (a) => a.planId === plan.id || (a as any).plan?.id === plan.id
+              (a) => a.planId === plan.id || (a as any).plan?.id === plan.id,
             );
             return {
               ...plan,
@@ -76,15 +99,28 @@ export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
             const projectPlans = (projRes || []).flatMap((p) => p.plans || []);
             if (projectPlans.length > 0) {
               finalPlans = projectPlans.map((p) => {
-                const planActs = activitiesList.filter((a) => a.planId === p.id);
+                const planActs = activitiesList.filter(
+                  (a) => a.planId === p.id,
+                );
                 return { ...p, activities: p.activities || planActs };
               });
             }
           }
 
-          setProjects(projRes || []);
+          const cachedProjects = projRes || [];
+          const cachedContracts = contractRes || [];
+
+          // Cache the results
+          _dashboardCache = {
+            projects: cachedProjects,
+            plans: finalPlans,
+            contracts: cachedContracts,
+            timestamp: Date.now(),
+          };
+
+          setProjects(cachedProjects);
           setPlans(finalPlans);
-          setContracts(contractRes || []);
+          setContracts(cachedContracts);
         }
       } catch (err) {
         console.warn("DirectorDashboard load error:", err);
@@ -240,6 +276,22 @@ export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
     setSelectedStatus("ALL");
   };
 
+  const activeCurrency = useMemo(() => {
+    if (selectedProject !== "ALL") {
+      const proj = projects.find(
+        (p) => p.id === selectedProject || p.code === selectedProject,
+      );
+      if (proj?.baseCurrency) return proj.baseCurrency.toUpperCase();
+    }
+    const planWithCurrency = filteredPlans.find(
+      (p) => (p as any).project?.baseCurrency,
+    );
+    if (planWithCurrency && (planWithCurrency as any).project?.baseCurrency) {
+      return (planWithCurrency as any).project.baseCurrency.toUpperCase();
+    }
+    return "ETB";
+  }, [selectedProject, projects, filteredPlans]);
+
   return {
     loading,
     selectedFiscalYear,
@@ -266,5 +318,6 @@ export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
     healthMetrics,
     displayedPendingPlans,
     displayedCriticalDelays,
+    currency: activeCurrency,
   };
 }

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Users,
-  Briefcase,
   AlertTriangle,
   Clock,
   ChevronRight,
@@ -15,7 +14,13 @@ import {
 import Link from "next/link";
 import { fetchProjects } from "@/lib/projectsApi";
 import { fetchActivities } from "@/lib/activitiesApi";
+import { fetchOfficers } from "@/lib/lookupsApi";
 import { PhaseDelayBreakdownModal } from "@/features/projects/components/PhaseDelayBreakdownModal";
+
+// Module-level cache to avoid redundant API calls on sidebar navigation
+let _cachedWorkloadData: OfficerWorkloadSummary[] | null = null;
+let _cacheTimestamp = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 interface OfficerWorkloadSummary {
   officerId: string;
@@ -38,7 +43,9 @@ interface OfficerWorkloadSummary {
 
 export function DirectorOfficerWorkloadPanel() {
   const [loading, setLoading] = useState(true);
-  const [workloadData, setWorkloadData] = useState<OfficerWorkloadSummary[]>([]);
+  const [workloadData, setWorkloadData] = useState<OfficerWorkloadSummary[]>(
+    [],
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDelayActivity, setSelectedDelayActivity] = useState<{
     reference: string;
@@ -50,52 +57,35 @@ export function DirectorOfficerWorkloadPanel() {
 
   useEffect(() => {
     let isMounted = true;
+
+    // Use cache if fresh enough to avoid redundant API calls on navigation
+    if (_cachedWorkloadData && Date.now() - _cacheTimestamp < CACHE_TTL_MS) {
+      setWorkloadData(_cachedWorkloadData);
+      setLoading(false);
+      return;
+    }
+
     async function loadData() {
       try {
-        const [projectsRes, activitiesRes] = await Promise.allSettled([
-          fetchProjects(),
-          fetchActivities(),
-        ]);
+        const [projectsRes, activitiesRes, officersRes] =
+          await Promise.allSettled([
+            fetchProjects(),
+            fetchActivities(),
+            fetchOfficers(),
+          ]);
 
         const projects =
           projectsRes.status === "fulfilled" ? projectsRes.value : [];
         const activities =
           activitiesRes.status === "fulfilled" ? activitiesRes.value : [];
+        const realOfficers =
+          officersRes.status === "fulfilled" ? officersRes.value : [];
 
-        // Build mapping of officer workload
+        // Build mapping of officer workload — seeded from real DB officers
         const officerMap = new Map<string, OfficerWorkloadSummary>();
 
-        // Seed with known procurement officers
-        const defaultOfficers = [
-          {
-            id: "off-1",
-            name: "Yeabsira Fikre",
-            email: "yeabsira.fikre@moa.gov.et",
-          },
-          {
-            id: "off-2",
-            name: "Abebe Kebede",
-            email: "abebe.kebede@moa.gov.et",
-          },
-          {
-            id: "off-3",
-            name: "Almaz Tefera",
-            email: "almaz.tefera@moa.gov.et",
-          },
-          {
-            id: "off-4",
-            name: "Dawit Haile",
-            email: "dawit.haile@moa.gov.et",
-          },
-          {
-            id: "off-5",
-            name: "Fatima Mohammed",
-            email: "fatima.m@moa.gov.et",
-          },
-        ];
-
-        defaultOfficers.forEach((off) => {
-          officerMap.set(off.name.toLowerCase(), {
+        realOfficers.forEach((off) => {
+          officerMap.set(off.id, {
             officerId: off.id,
             officerName: off.name,
             officerEmail: off.email,
@@ -108,30 +98,62 @@ export function DirectorOfficerWorkloadPanel() {
           });
         });
 
-        // Map projects to officers
+        // Map projects to officers via proj.members (Prisma ProjectMember[])
         projects.forEach((proj: any) => {
-          const officerList: Array<{ name: string; email?: string }> = [];
-          if (Array.isArray(proj.officers)) {
+          const memberUsers: Array<{
+            id: string;
+            name: string;
+            email: string;
+          }> = [];
+
+          // Primary: proj.members (ProjectMember with nested user)
+          if (Array.isArray(proj.members)) {
+            proj.members.forEach((m: any) => {
+              const u = m.user || m;
+              if (u?.id)
+                memberUsers.push({
+                  id: u.id,
+                  name: u.name || u.email,
+                  email: u.email,
+                });
+            });
+          }
+          // Fallback: proj.officers
+          if (memberUsers.length === 0 && Array.isArray(proj.officers)) {
             proj.officers.forEach((o: any) => {
               const u = o.user || o;
-              if (u?.name) officerList.push({ name: u.name, email: u.email });
+              if (u?.id)
+                memberUsers.push({
+                  id: u.id,
+                  name: u.name || u.email,
+                  email: u.email,
+                });
             });
-          } else if (Array.isArray(proj.assignedOfficers)) {
+          }
+          // Fallback: proj.assignedOfficers
+          if (
+            memberUsers.length === 0 &&
+            Array.isArray(proj.assignedOfficers)
+          ) {
             proj.assignedOfficers.forEach((o: any) => {
-              if (typeof o === "string") officerList.push({ name: o });
-              else if (o?.name)
-                officerList.push({ name: o.name, email: o.email });
+              if (o?.id)
+                memberUsers.push({
+                  id: o.id,
+                  name: o.name || o.email,
+                  email: o.email || "",
+                });
             });
           }
 
-          officerList.forEach((off) => {
-            const key = off.name.toLowerCase();
-            let summary = officerMap.get(key);
+          memberUsers.forEach((u) => {
+            let summary = officerMap.get(u.id);
             if (!summary) {
+              // Officer assigned to project but not in the officers list (different role maybe)
+              // Still show them
               summary = {
-                officerId: `off-${Math.random().toString(36).slice(2, 7)}`,
-                officerName: off.name,
-                officerEmail: off.email || `${off.name.toLowerCase().replace(/\s+/g, ".")}@moa.gov.et`,
+                officerId: u.id,
+                officerName: u.name,
+                officerEmail: u.email,
                 projectCount: 0,
                 projectCodes: [],
                 totalActivitiesCount: 0,
@@ -139,7 +161,7 @@ export function DirectorOfficerWorkloadPanel() {
                 totalDelayDays: 0,
                 delayedItems: [],
               };
-              officerMap.set(key, summary);
+              officerMap.set(u.id, summary);
             }
             if (!summary.projectCodes.includes(proj.code)) {
               summary.projectCount += 1;
@@ -148,60 +170,12 @@ export function DirectorOfficerWorkloadPanel() {
           });
         });
 
-        // Ensure default numbers for realistic view if DB projects don't have all links
+        // Build summaries from real mapped projects and activities
         const summaries = Array.from(officerMap.values());
-        if (summaries[0] && summaries[0].projectCount === 0) {
-          summaries[0].projectCount = 3;
-          summaries[0].projectCodes = ["AGP-II", "RLLP", "EDLP"];
-          summaries[0].totalActivitiesCount = 14;
-          summaries[0].delayedActivitiesCount = 2;
-          summaries[0].totalDelayDays = 19;
-          summaries[0].delayedItems = [
-            {
-              activityRef: "AGP2-G-04",
-              description: "Procurement of Agricultural Hand Tools & Sprayers",
-              stageName: "Bid Evaluation & Award",
-              delayDays: 12,
-              delayReason: "Supplier clarification response pending & technical re-check",
-              stages: [],
-            },
-            {
-              activityRef: "RLLP-C-02",
-              description: "Watershed Hydrological Study Consultant",
-              stageName: "Contract Signing & Security",
-              delayDays: 7,
-              delayReason: "Legal clearance review turnaround delayed",
-              stages: [],
-            },
-          ];
-        }
 
-        if (summaries[1] && summaries[1].projectCount === 0) {
-          summaries[1].projectCount = 2;
-          summaries[1].projectCodes = ["FSRP", "DRSLP"];
-          summaries[1].totalActivitiesCount = 9;
-          summaries[1].delayedActivitiesCount = 1;
-          summaries[1].totalDelayDays = 6;
-          summaries[1].delayedItems = [
-            {
-              activityRef: "FSRP-W-01",
-              description: "Veterinary Quarantine Post Construction",
-              stageName: "Tender Invitation & Advertising",
-              delayDays: 6,
-              delayReason: "Newspaper publishing cycle scheduling conflict",
-              stages: [],
-            },
-          ];
-        }
-
-        if (summaries[2] && summaries[2].projectCount === 0) {
-          summaries[2].projectCount = 1;
-          summaries[2].projectCodes = ["CALM"];
-          summaries[2].totalActivitiesCount = 6;
-          summaries[2].delayedActivitiesCount = 0;
-          summaries[2].totalDelayDays = 0;
-          summaries[2].delayedItems = [];
-        }
+        // Cache the result
+        _cachedWorkloadData = summaries;
+        _cacheTimestamp = Date.now();
 
         if (isMounted) {
           setWorkloadData(summaries);
@@ -240,9 +214,6 @@ export function DirectorOfficerWorkloadPanel() {
               Procurement Officer Workload & Delay Breakdown
             </h3>
           </div>
-          <p className="text-xs text-slate-500">
-            Director overview of active projects and process delay attribution per assigned officer.
-          </p>
         </div>
 
         {/* Search Input */}
@@ -265,16 +236,14 @@ export function DirectorOfficerWorkloadPanel() {
             <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
               <th className="py-3 px-4">Procurement Officer</th>
               <th className="py-3 px-4 text-center">Projects Assigned</th>
-              <th className="py-3 px-4">Assigned Projects</th>
               <th className="py-3 px-4 text-center">Delayed Activities</th>
               <th className="py-3 px-4">Where & Why Delay Happened</th>
-              <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-slate-400">
+                <td colSpan={4} className="py-8 text-center text-slate-400">
                   No officers found matching search criteria.
                 </td>
               </tr>
@@ -306,32 +275,11 @@ export function DirectorOfficerWorkloadPanel() {
                     </div>
                   </td>
 
-                  {/* Project Count (Req 7) */}
+                  {/* Project Count */}
                   <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold bg-blue-50 text-blue-800 border border-blue-200">
-                      <Briefcase className="h-3 w-3" />
-                      {officer.projectCount} Project{officer.projectCount === 1 ? "" : "s"}
+                    <span className="font-bold text-xs text-slate-800 tabular-nums">
+                      {officer.projectCount}
                     </span>
-                  </td>
-
-                  {/* Project Badges */}
-                  <td className="py-3.5 px-4 min-w-[160px]">
-                    <div className="flex flex-wrap gap-1">
-                      {officer.projectCodes.length > 0 ? (
-                        officer.projectCodes.map((code) => (
-                          <span
-                            key={code}
-                            className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200"
-                          >
-                            {code}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-slate-400 italic text-[11px]">
-                          Unassigned
-                        </span>
-                      )}
-                    </div>
                   </td>
 
                   {/* Delay Status per Officer (Req 8) */}
@@ -406,18 +354,6 @@ export function DirectorOfficerWorkloadPanel() {
                         No active delays reported
                       </span>
                     )}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                    <Link
-                      href="/workspace/projects-management"
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-colors"
-                      title="Manage officer project assignment"
-                    >
-                      <span>Manage Projects</span>
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </Link>
                   </td>
                 </tr>
               ))

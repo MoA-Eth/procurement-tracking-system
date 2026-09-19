@@ -117,7 +117,8 @@ export async function directApiFetch<T>(
       }
     }
     if (response.status === 401) {
-      const isAuthAttempt = cleanPath.includes("/auth/login") || Boolean(skipAuth);
+      const isAuthAttempt =
+        cleanPath.includes("/auth/login") || Boolean(skipAuth);
       if (!isAuthAttempt && typeof window !== "undefined") {
         authTokenManager.clearToken();
         try {

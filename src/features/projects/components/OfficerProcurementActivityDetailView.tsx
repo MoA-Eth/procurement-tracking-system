@@ -23,6 +23,7 @@ import { useState, type ReactNode } from "react";
 import { EditActivityModal } from "@/features/activities/components/EditActivityModal";
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
 import { PhaseDelayBreakdownModal } from "./PhaseDelayBreakdownModal";
+import { getPlanVersionHistory } from "@/features/plans/data/planRevisions";
 
 interface DetailValue {
   label: string;
@@ -471,9 +472,7 @@ export function OfficerProcurementActivityDetailView({
           category: activity.category,
           method: activity.method,
           totalDelayDays:
-            (activity as any).delayDays ||
-            (activity as any).daysOverdue ||
-            12,
+            (activity as any).delayDays || (activity as any).daysOverdue || 12,
           stages:
             (activity as any).stages ||
             (details as any)?.roadmapStages ||

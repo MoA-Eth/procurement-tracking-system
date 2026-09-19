@@ -122,7 +122,8 @@ export function OfficerAlertsCenter({
                           <p className="text-[10px] text-slate-600 mt-0.5">
                             Reason:{" "}
                             <span className="italic text-slate-700">
-                              {alert.delayReason || "Awaiting stage milestone completion"}
+                              {alert.delayReason ||
+                                "Awaiting stage milestone completion"}
                             </span>
                           </p>
                         </div>

@@ -138,7 +138,9 @@ export function ActivityQuickEditModal({
                   : "Add clarification notes..."
               }
               className={`w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all leading-relaxed ${
-                isCommittee ? "bg-slate-50/50 opacity-75 cursor-not-allowed" : "bg-white"
+                isCommittee
+                  ? "bg-slate-50/50 opacity-75 cursor-not-allowed"
+                  : "bg-white"
               }`}
             />
           </div>
@@ -197,7 +199,9 @@ export function ActivityQuickEditModal({
                 }}
                 className="px-5 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
               >
-                {isManagement ? "Save Management Comment" : "Save Activity Changes"}
+                {isManagement
+                  ? "Save Management Comment"
+                  : "Save Activity Changes"}
               </button>
             </>
           )}
