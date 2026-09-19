@@ -279,54 +279,55 @@ export const updatePlanService = async (
 ) => {
   const { plan, user } = await prisma.$transaction(
     async (tx: Prisma.TransactionClient) => {
-    const oldPlan =
-      (await tx.plan.findUnique({
-        where: { id },
-        include: { activities: true, committeeVotes: true },
-      })) ||
-      (await tx.plan.findFirst({
-        where: { title: id },
-        include: { activities: true, committeeVotes: true },
-      }));
-    if (!oldPlan) {
-      throw new Error(`Plan not found with id: ${id}`);
-    }
-
-    const user = await tx.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      throw new Error(`Authenticated user not found with id: ${userId}`);
-    }
-    const validUserId = user.id;
-
-    const plan = await tx.plan.update({
-      where: { id: oldPlan.id },
-      data,
-      include: {
-        project: true,
-        creator: true,
-        activities: true,
-        committeeVotes: true,
-      },
-    });
-
-    try {
-      if (validUserId) {
-        await logRevision(
-          tx,
-          RevisionEntityType.PLAN,
-          RevisionChangeType.UPDATE,
-          oldPlan.id,
-          validUserId,
-          oldPlan,
-          plan,
-        );
+      const oldPlan =
+        (await tx.plan.findUnique({
+          where: { id },
+          include: { activities: true, committeeVotes: true },
+        })) ||
+        (await tx.plan.findFirst({
+          where: { title: id },
+          include: { activities: true, committeeVotes: true },
+        }));
+      if (!oldPlan) {
+        throw new Error(`Plan not found with id: ${id}`);
       }
-    } catch (auditErr) {
-      console.warn('logRevision update plan warning:', auditErr);
-    }
 
-    return { plan, user };
-  });
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new Error(`Authenticated user not found with id: ${userId}`);
+      }
+      const validUserId = user.id;
+
+      const plan = await tx.plan.update({
+        where: { id: oldPlan.id },
+        data,
+        include: {
+          project: true,
+          creator: true,
+          activities: true,
+          committeeVotes: true,
+        },
+      });
+
+      try {
+        if (validUserId) {
+          await logRevision(
+            tx,
+            RevisionEntityType.PLAN,
+            RevisionChangeType.UPDATE,
+            oldPlan.id,
+            validUserId,
+            oldPlan,
+            plan,
+          );
+        }
+      } catch (auditErr) {
+        console.warn('logRevision update plan warning:', auditErr);
+      }
+
+      return { plan, user };
+    },
+  );
 
   if (user?.authRole === UserRole.DIRECTOR) {
     const directorName = user.displayName || user.name || 'Director';
@@ -575,60 +576,62 @@ export const rejectPlanService = async (
   reason: string,
   userId: string,
 ) => {
-  const plan = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    const oldPlan =
-      (await tx.plan.findUnique({
-        where: { id },
-        include: { activities: true, committeeVotes: true },
-      })) ||
-      (await tx.plan.findFirst({
-        where: { title: id },
-        include: { activities: true, committeeVotes: true },
-      }));
-    if (!oldPlan) {
-      throw new Error(`Plan not found with id: ${id}`);
-    }
-
-    const user = await tx.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      throw new Error(`Authenticated user not found with id: ${userId}`);
-    }
-    const validUserId = user.id;
-
-    const plan = await tx.plan.update({
-      where: { id: oldPlan.id },
-      data: {
-        status: PlanStatus.REJECTED,
-        rejectedById: validUserId,
-        rejectionReason: reason,
-        rejectedAt: new Date(),
-      },
-      include: {
-        project: true,
-        creator: true,
-        activities: true,
-        committeeVotes: true,
-      },
-    });
-
-    try {
-      if (validUserId) {
-        await logRevision(
-          tx,
-          RevisionEntityType.PLAN,
-          RevisionChangeType.REJECT,
-          oldPlan.id,
-          validUserId,
-          oldPlan,
-          plan,
-        );
+  const plan = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const oldPlan =
+        (await tx.plan.findUnique({
+          where: { id },
+          include: { activities: true, committeeVotes: true },
+        })) ||
+        (await tx.plan.findFirst({
+          where: { title: id },
+          include: { activities: true, committeeVotes: true },
+        }));
+      if (!oldPlan) {
+        throw new Error(`Plan not found with id: ${id}`);
       }
-    } catch (auditErr) {
-      console.warn('logRevision rejectPlan warning:', auditErr);
-    }
 
-    return plan;
-  });
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new Error(`Authenticated user not found with id: ${userId}`);
+      }
+      const validUserId = user.id;
+
+      const plan = await tx.plan.update({
+        where: { id: oldPlan.id },
+        data: {
+          status: PlanStatus.REJECTED,
+          rejectedById: validUserId,
+          rejectionReason: reason,
+          rejectedAt: new Date(),
+        },
+        include: {
+          project: true,
+          creator: true,
+          activities: true,
+          committeeVotes: true,
+        },
+      });
+
+      try {
+        if (validUserId) {
+          await logRevision(
+            tx,
+            RevisionEntityType.PLAN,
+            RevisionChangeType.REJECT,
+            oldPlan.id,
+            validUserId,
+            oldPlan,
+            plan,
+          );
+        }
+      } catch (auditErr) {
+        console.warn('logRevision rejectPlan warning:', auditErr);
+      }
+
+      return plan;
+    },
+  );
 
   notifyOfficersOnEntityChange({
     planId: plan.id,
@@ -1030,55 +1033,57 @@ export const requestPlanUpdateService = async (id: string, userId: string) => {
 };
 
 export const approvePlanUpdateService = async (id: string, userId: string) => {
-  const plan = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    const oldPlan =
-      (await tx.plan.findUnique({
-        where: { id },
-        include: { activities: true, committeeVotes: true },
-      })) ||
-      (await tx.plan.findFirst({
-        where: { title: id },
-        include: { activities: true, committeeVotes: true },
-      }));
-    if (!oldPlan) {
-      throw new Error(`Plan not found with id: ${id}`);
-    }
-
-    const user = await tx.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      throw new Error(`Authenticated user not found with id: ${userId}`);
-    }
-    const validUserId = user.id;
-
-    const plan = await tx.plan.update({
-      where: { id: oldPlan.id },
-      data: { status: PlanStatus.DRAFT },
-      include: {
-        project: true,
-        creator: true,
-        activities: true,
-        committeeVotes: true,
-      },
-    });
-
-    try {
-      if (validUserId) {
-        await logRevision(
-          tx,
-          RevisionEntityType.PLAN,
-          RevisionChangeType.UPDATE,
-          oldPlan.id,
-          validUserId,
-          oldPlan,
-          plan,
-        );
+  const plan = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const oldPlan =
+        (await tx.plan.findUnique({
+          where: { id },
+          include: { activities: true, committeeVotes: true },
+        })) ||
+        (await tx.plan.findFirst({
+          where: { title: id },
+          include: { activities: true, committeeVotes: true },
+        }));
+      if (!oldPlan) {
+        throw new Error(`Plan not found with id: ${id}`);
       }
-    } catch (auditErr) {
-      console.warn('logRevision approvePlanUpdate warning:', auditErr);
-    }
 
-    return plan;
-  });
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new Error(`Authenticated user not found with id: ${userId}`);
+      }
+      const validUserId = user.id;
+
+      const plan = await tx.plan.update({
+        where: { id: oldPlan.id },
+        data: { status: PlanStatus.DRAFT },
+        include: {
+          project: true,
+          creator: true,
+          activities: true,
+          committeeVotes: true,
+        },
+      });
+
+      try {
+        if (validUserId) {
+          await logRevision(
+            tx,
+            RevisionEntityType.PLAN,
+            RevisionChangeType.UPDATE,
+            oldPlan.id,
+            validUserId,
+            oldPlan,
+            plan,
+          );
+        }
+      } catch (auditErr) {
+        console.warn('logRevision approvePlanUpdate warning:', auditErr);
+      }
+
+      return plan;
+    },
+  );
 
   notifyOfficersOnEntityChange({
     planId: plan.id,

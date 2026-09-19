@@ -283,117 +283,122 @@ export const updateActivityService = async (
 ) => {
   const { activity, oldActivity, user } = await prisma.$transaction(
     async (tx: Prisma.TransactionClient) => {
-    const oldActivity = await tx.activity.findUniqueOrThrow({
-      where: { id },
-      include: { plan: true },
-    });
-    const user = await tx.user.findUnique({ where: { id: userId } });
+      const oldActivity = await tx.activity.findUniqueOrThrow({
+        where: { id },
+        include: { plan: true },
+      });
+      const user = await tx.user.findUnique({ where: { id: userId } });
 
-    if (
-      user &&
-      (user.authRole === UserRole.OFFICER ||
-        (user as { role?: string }).role === 'ProcurementOfficer')
-    ) {
-      const assignment = await tx.userProject.findUnique({
-        where: {
-          userId_projectId: { userId, projectId: oldActivity.plan.projectId },
+      if (
+        user &&
+        (user.authRole === UserRole.OFFICER ||
+          (user as { role?: string }).role === 'ProcurementOfficer')
+      ) {
+        const assignment = await tx.userProject.findUnique({
+          where: {
+            userId_projectId: { userId, projectId: oldActivity.plan.projectId },
+          },
+        });
+        if (!assignment)
+          throw new Error('You are not assigned to this project.');
+        if (
+          oldActivity.plan.status !== PlanStatus.DRAFT &&
+          oldActivity.plan.status !== PlanStatus.REJECTED
+        ) {
+          throw new Error(
+            'Cannot edit activities in a plan that is not in DRAFT or REJECTED status.',
+          );
+        }
+      }
+
+      const inputWithExtra = data as UpdateActivityInput & {
+        stages?: unknown;
+        roadmap?: unknown;
+      };
+      const { lots, fundings, components, ...scalarData } = inputWithExtra;
+      const cleanScalarData = { ...scalarData };
+      delete (cleanScalarData as { stages?: unknown; roadmap?: unknown })
+        .stages;
+      delete (cleanScalarData as { stages?: unknown; roadmap?: unknown })
+        .roadmap;
+
+      // Replace child records if provided
+      if (fundings !== undefined) {
+        await tx.activityFunding.deleteMany({ where: { activityId: id } });
+      }
+      if (components !== undefined) {
+        await tx.activityComponent.deleteMany({ where: { activityId: id } });
+      }
+      if (lots !== undefined) {
+        await tx.activityLot.deleteMany({ where: { activityId: id } });
+      }
+
+      const updateData: Prisma.ActivityUpdateInput = {
+        ...(cleanScalarData as unknown as Prisma.ActivityUpdateInput),
+        ...(user ? { updatedByUser: { connect: { id: user.id } } } : {}),
+      };
+
+      if (fundings !== undefined && fundings.length > 0) {
+        updateData.fundings = {
+          create:
+            fundings as Prisma.ActivityFundingCreateWithoutActivityInput[],
+        };
+      }
+
+      if (components !== undefined && components.length > 0) {
+        updateData.components = {
+          create:
+            components as Prisma.ActivityComponentCreateWithoutActivityInput[],
+        };
+      }
+
+      if (lots !== undefined && lots.length > 0) {
+        updateData.lots = {
+          create: lots as Prisma.ActivityLotCreateWithoutActivityInput[],
+        };
+      }
+
+      const activity = await tx.activity.update({
+        where: { id },
+        data: updateData,
+        include: {
+          lots: true,
+          fundings: true,
+          components: true,
+          creator: true,
+          updatedByUser: true,
         },
       });
-      if (!assignment) throw new Error('You are not assigned to this project.');
-      if (
-        oldActivity.plan.status !== PlanStatus.DRAFT &&
-        oldActivity.plan.status !== PlanStatus.REJECTED
-      ) {
-        throw new Error(
-          'Cannot edit activities in a plan that is not in DRAFT or REJECTED status.',
-        );
-      }
-    }
 
-    const inputWithExtra = data as UpdateActivityInput & {
-      stages?: unknown;
-      roadmap?: unknown;
-    };
-    const { lots, fundings, components, ...scalarData } = inputWithExtra;
-    const cleanScalarData = { ...scalarData };
-    delete (cleanScalarData as { stages?: unknown; roadmap?: unknown }).stages;
-    delete (cleanScalarData as { stages?: unknown; roadmap?: unknown }).roadmap;
-
-    // Replace child records if provided
-    if (fundings !== undefined) {
-      await tx.activityFunding.deleteMany({ where: { activityId: id } });
-    }
-    if (components !== undefined) {
-      await tx.activityComponent.deleteMany({ where: { activityId: id } });
-    }
-    if (lots !== undefined) {
-      await tx.activityLot.deleteMany({ where: { activityId: id } });
-    }
-
-    const updateData: Prisma.ActivityUpdateInput = {
-      ...(cleanScalarData as unknown as Prisma.ActivityUpdateInput),
-      ...(user ? { updatedByUser: { connect: { id: user.id } } } : {}),
-    };
-
-    if (fundings !== undefined && fundings.length > 0) {
-      updateData.fundings = {
-        create: fundings as Prisma.ActivityFundingCreateWithoutActivityInput[],
-      };
-    }
-
-    if (components !== undefined && components.length > 0) {
-      updateData.components = {
-        create:
-          components as Prisma.ActivityComponentCreateWithoutActivityInput[],
-      };
-    }
-
-    if (lots !== undefined && lots.length > 0) {
-      updateData.lots = {
-        create: lots as Prisma.ActivityLotCreateWithoutActivityInput[],
-      };
-    }
-
-    const activity = await tx.activity.update({
-      where: { id },
-      data: updateData,
-      include: {
-        lots: true,
-        fundings: true,
-        components: true,
-        creator: true,
-        updatedByUser: true,
-      },
-    });
-
-    await logRevision(
-      tx,
-      RevisionEntityType.ACTIVITY,
-      RevisionChangeType.UPDATE,
-      id,
-      userId,
-      oldActivity,
-      activity,
-    );
-
-    await createAuditLog(
-      {
+      await logRevision(
+        tx,
+        RevisionEntityType.ACTIVITY,
+        RevisionChangeType.UPDATE,
+        id,
         userId,
-        action: 'ACTIVITY_UPDATED',
-        entityType: 'ACTIVITY',
-        entityId: activity.id,
-        changes: {
-          reference: activity.reference,
-          previousEstimatedBudget: oldActivity.estimatedBudget,
-          newEstimatedBudget: activity.estimatedBudget,
-          currency: activity.currency,
-        },
-      },
-      tx,
-    );
+        oldActivity,
+        activity,
+      );
 
-    return { activity, oldActivity, user };
-  });
+      await createAuditLog(
+        {
+          userId,
+          action: 'ACTIVITY_UPDATED',
+          entityType: 'ACTIVITY',
+          entityId: activity.id,
+          changes: {
+            reference: activity.reference,
+            previousEstimatedBudget: oldActivity.estimatedBudget,
+            newEstimatedBudget: activity.estimatedBudget,
+            currency: activity.currency,
+          },
+        },
+        tx,
+      );
+
+      return { activity, oldActivity, user };
+    },
+  );
 
   if (
     user &&

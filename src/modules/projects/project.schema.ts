@@ -12,11 +12,7 @@ export const createProjectSchema = registry.register(
         .min(1, 'Code is required')
         .max(50)
         .openapi({ example: 'BREFONS' }),
-      pNumber: z
-        .string()
-        .trim()
-        .optional()
-        .openapi({ example: 'P176524' }),
+      pNumber: z.string().trim().optional().openapi({ example: 'P176524' }),
       name: z
         .string()
         .trim()

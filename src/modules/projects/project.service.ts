@@ -139,46 +139,48 @@ export const updateProjectService = async (
 ) => {
   const { project, userExists } = await prisma.$transaction(
     async (tx: Prisma.TransactionClient) => {
-    const userExists = await tx.user.findUnique({ where: { id: userId } });
-    if (!userExists) {
-      throw new Error(`Authenticated user not found with id: ${userId}`);
-    }
+      const userExists = await tx.user.findUnique({ where: { id: userId } });
+      if (!userExists) {
+        throw new Error(`Authenticated user not found with id: ${userId}`);
+      }
 
-    const oldProject = await tx.project.findUniqueOrThrow({ where: { id } });
+      const oldProject = await tx.project.findUniqueOrThrow({ where: { id } });
 
-    const project = await tx.project.update({
-      where: { id },
-      data,
-      include: {
-        fundingSource: true,
-        sector: true,
-        members: {
-          include: {
-            user: true,
+      const project = await tx.project.update({
+        where: { id },
+        data,
+        include: {
+          fundingSource: true,
+          sector: true,
+          members: {
+            include: {
+              user: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    try {
-      await logRevision(
-        tx,
-        RevisionEntityType.PROJECT,
-        RevisionChangeType.UPDATE,
-        id,
-        userExists.id,
-        oldProject,
-        project,
-      );
-    } catch (auditErr) {
-      console.warn('logRevision warning:', auditErr);
-    }
+      try {
+        await logRevision(
+          tx,
+          RevisionEntityType.PROJECT,
+          RevisionChangeType.UPDATE,
+          id,
+          userExists.id,
+          oldProject,
+          project,
+        );
+      } catch (auditErr) {
+        console.warn('logRevision warning:', auditErr);
+      }
 
-    return { project, userExists };
-  });
+      return { project, userExists };
+    },
+  );
 
   if (userExists?.authRole === UserRole.DIRECTOR) {
-    const directorName = userExists.displayName || userExists.name || 'Director';
+    const directorName =
+      userExists.displayName || userExists.name || 'Director';
     notifyOfficersOnEntityChange({
       projectId: project.id,
       actorUserId: userExists.id,
