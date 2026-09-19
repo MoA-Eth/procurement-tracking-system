@@ -172,8 +172,8 @@ export function formatDelayedActivityAlert(
 
   const statusLine =
     delayDays > 0
-      ? `Delayed at ${stageLabel} (+${delayDays}d)`
-      : `Delayed at ${stageLabel}`;
+      ? `${delayDays} Day(s) Overdue`
+      : `Delayed Activity`;
 
   const reference = (
     act.reference ||
