@@ -15,6 +15,8 @@ import {
   AlertTriangle,
   AlertCircle,
   Eye,
+  ShieldAlert,
+  Lock,
 } from "lucide-react";
 import Link from "next/link";
 import { type ProcurementPlan, parseRejectionDetails } from "../../plansData";
@@ -60,6 +62,9 @@ export interface PlanFullScreenReviewViewProps {
   ) => void;
   isCommitteeRejectionModalOpen: boolean;
   setIsCommitteeRejectionModalOpen: (open: boolean) => void;
+  isCommitteeChair?: boolean;
+  isChairAuthorized?: boolean;
+  onChairAuthorize?: (plan: ProcurementPlan) => void;
 }
 
 export function PlanFullScreenReviewView({
@@ -87,6 +92,9 @@ export function PlanFullScreenReviewView({
   onManagementDecision,
   isCommitteeRejectionModalOpen,
   setIsCommitteeRejectionModalOpen,
+  isCommitteeChair = true,
+  isChairAuthorized = false,
+  onChairAuthorize,
 }: PlanFullScreenReviewViewProps) {
   // Auto-scroll to selected target activity if supplied
   useEffect(() => {
@@ -650,27 +658,69 @@ export function PlanFullScreenReviewView({
 
           {/* Action Buttons */}
           {userRole === "ENDORSING_COMMITTEE" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() =>
-                  onCommitteeVote && onCommitteeVote(plan, "APPROVE")
-                }
-                className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
-              >
-                <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
-                <span>Vote: Endorse &amp; Approve Plan</span>
-              </button>
+            !isChairAuthorized ? (
+              <div className="pt-2 border-t border-slate-100">
+                {isCommitteeChair ? (
+                  <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-amber-950 font-bold text-xs">
+                      <ShieldAlert className="h-4 w-4 text-amber-700" />
+                      <span>Committee Chairperson Authorization Required</span>
+                    </div>
+                    <p className="text-xs text-amber-900 leading-relaxed">
+                      As Chairperson of the Endorsement Committee, you must review and formally allow this project/plan before committee members can deliberate and vote.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => onChairAuthorize && onChairAuthorize(plan)}
+                      className="px-5 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
+                      <span>Authorize Project for Committee Deliberation</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 flex items-start gap-3">
+                    <Lock className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800">
+                        Pending Committee Chair Authorization
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                        The Endorsement Committee Chairperson must first review and allow this project before member voting is unlocked.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Chairperson Authorized: Committee Deliberation &amp; Voting Active</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onCommitteeVote && onCommitteeVote(plan, "APPROVE")
+                    }
+                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
+                    <span>Vote: Endorse &amp; Approve Plan</span>
+                  </button>
 
-              <button
-                type="button"
-                onClick={() => setIsCommitteeRejectionModalOpen(true)}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer shadow-2xs"
-              >
-                <RotateCcw className="h-4 w-4" />
-                <span>Vote: Reject / Return Plan</span>
-              </button>
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCommitteeRejectionModalOpen(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer shadow-2xs"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    <span>Vote: Reject / Return Plan</span>
+                  </button>
+                </div>
+              </div>
+            )
           ) : userRole === "MANAGEMENT" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
               <button

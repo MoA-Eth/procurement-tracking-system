@@ -17,6 +17,7 @@ import {
   Sliders,
   Users,
   X,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -26,6 +27,8 @@ import { useState, type MouseEvent, type ReactNode } from "react";
 import type { AuthUser } from "../../lib/authTypes";
 import type { UserRole } from "@/types";
 import { NotificationHeaderDropdown } from "@/features/notifications/components/NotificationHeaderDropdown";
+import { PresentationDataModal } from "../common/PresentationDataModal";
+import { EntityTrackingModal } from "../common/EntityTrackingModal";
 import { ROLE_LABELS } from "../../lib/authTypes";
 import {
   getNavigationForRole,
@@ -75,6 +78,8 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isEntityTrackingModalOpen, setIsEntityTrackingModalOpen] =
+    useState(false);
   const navigation = getNavigationForRole(user.role);
   const userInitials = initials(user.displayName);
 
@@ -261,6 +266,17 @@ export function AppShell({
           </button>
 
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsEntityTrackingModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-emerald-50 hover:border-emerald-300 transition-colors cursor-pointer shadow-2xs"
+              title="Open Procurement Entity Lifecycle Tracker"
+            >
+              <Layers className="h-3.5 w-3.5 text-[#0A3C2F]" />
+              <span className="hidden sm:inline">Entity Tracker</span>
+            </button>
+
+            <PresentationDataModal />
             <NotificationHeaderDropdown user={user} />
 
             <div
@@ -283,6 +299,11 @@ export function AppShell({
           {children}
         </main>
       </div>
+
+      <EntityTrackingModal
+        isOpen={isEntityTrackingModalOpen}
+        onClose={() => setIsEntityTrackingModalOpen(false)}
+      />
     </div>
   );
 }

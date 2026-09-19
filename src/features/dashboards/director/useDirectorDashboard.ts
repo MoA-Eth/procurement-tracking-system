@@ -20,6 +20,8 @@ import {
 } from "./directorCalculations";
 import type { UserRole } from "@/types";
 
+import { fetchActivities } from "@/lib/activitiesApi";
+
 export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
   const [projects, setProjects] = useState<BackendProject[]>([]);
   const [plans, setPlans] = useState<BackendPlan[]>([]);
@@ -49,14 +51,39 @@ export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
     let isMounted = true;
     async function loadDashboardData() {
       try {
-        const [projRes, planRes, contractRes] = await Promise.all([
+        const [projRes, planRes, contractRes, actRes] = await Promise.all([
           fetchProjects(),
           fetchPlans(),
           fetchContracts(),
+          fetchActivities(),
         ]);
         if (isMounted) {
+          const plansList = planRes || [];
+          const activitiesList = actRes || [];
+          const enrichedPlans = plansList.map((plan) => {
+            if (plan.activities && plan.activities.length > 0) return plan;
+            const planActs = activitiesList.filter(
+              (a) => a.planId === plan.id || (a as any).plan?.id === plan.id
+            );
+            return {
+              ...plan,
+              activities: planActs as any,
+            };
+          });
+
+          let finalPlans = enrichedPlans;
+          if (finalPlans.length === 0 && (projRes || []).length > 0) {
+            const projectPlans = (projRes || []).flatMap((p) => p.plans || []);
+            if (projectPlans.length > 0) {
+              finalPlans = projectPlans.map((p) => {
+                const planActs = activitiesList.filter((a) => a.planId === p.id);
+                return { ...p, activities: p.activities || planActs };
+              });
+            }
+          }
+
           setProjects(projRes || []);
-          setPlans(planRes || []);
+          setPlans(finalPlans);
           setContracts(contractRes || []);
         }
       } catch (err) {

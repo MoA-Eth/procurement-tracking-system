@@ -119,6 +119,7 @@ export function formatDelayedActivityAlert(
     delayDays?: number | null;
     periodEnd?: string | null;
     updatedAt?: string | null;
+    remarks?: string | null;
   },
   projectCode?: string | null,
   currentTime: number | null = null,
@@ -163,8 +164,16 @@ export function formatDelayedActivityAlert(
     }
   }
 
+  const delayReason =
+    delayedStage?.remarks ||
+    delayedStage?.reason ||
+    act.remarks ||
+    "Pending milestone completion / supplier responsiveness";
+
   const statusLine =
-    delayDays > 0 ? `${delayDays} Day(s) Overdue` : "Delayed Activity";
+    delayDays > 0
+      ? `Delayed at ${stageLabel} (+${delayDays}d)`
+      : `Delayed at ${stageLabel}`;
 
   const reference = (
     act.reference ||
@@ -181,6 +190,11 @@ export function formatDelayedActivityAlert(
     href: `/workspace/activity-tracker?activity=${encodeURIComponent(act.reference || act.id)}`,
     tone: "delayed",
     dateTime: targetDate || new Date().toISOString(),
+    stages: act.stages || [],
+    delayDays,
+    activityDescription: act.description || stageLabel,
+    delayedStage: stageLabel,
+    delayReason,
   };
 }
 

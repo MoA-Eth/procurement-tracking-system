@@ -27,6 +27,7 @@ import {
   MessageSquare,
   AlertCircle,
   FileCheck2,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState, useEffect } from "react";
@@ -37,6 +38,10 @@ import {
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
 import { exportPlanActivitiesToExcel } from "@/features/projects/utils/projectExcelUtils";
 import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
+import {
+  PhaseDelayBreakdownModal,
+  type PhaseDelayModalData,
+} from "./PhaseDelayBreakdownModal";
 
 type ActivityStatus = ProcurementActivityStatus;
 
@@ -86,8 +91,35 @@ export function OfficerProcurementPlanDetailView({
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
   const [isImportExcelOpen, setIsImportExcelOpen] = useState(false);
+  const [delayModalData, setDelayModalData] =
+    useState<PhaseDelayModalData | null>(null);
   const [editingActivity, setEditingActivity] =
     useState<ProcurementActivitySummary | null>(null);
+
+  const handleSelectActivityDelay = (act: PlanActivity) => {
+    const rawDelay = (act as any).delayDays || (act as any).daysOverdue || 7;
+    setDelayModalData({
+      reference: act.reference,
+      title: act.description || act.reference,
+      category: act.category,
+      method: act.method,
+      totalDelayDays: Number(rawDelay) || 7,
+      stages:
+        (act as any).stages ||
+        (act.details as any)?.roadmapStages ||
+        (act.details as any)?.stages ||
+        [],
+      activityHref:
+        "/workspace/projects?project=" +
+        encodeURIComponent(project.code) +
+        "&plan=" +
+        encodeURIComponent(currentPlan.reference) +
+        "&activity=" +
+        encodeURIComponent(act.reference),
+      planReference: currentPlan.reference,
+      projectCode: project.code,
+    });
+  };
 
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
@@ -713,6 +745,7 @@ export function OfficerProcurementPlanDetailView({
                     activity={activity}
                     canEdit={activePlanStatus === "Draft" || isReturned}
                     isMultiOfficer={isMultiOfficerProject}
+                    onSelectDelay={handleSelectActivityDelay}
                     editHref={
                       "/workspace/projects?project=" +
                       encodeURIComponent(project.code) +
@@ -802,6 +835,12 @@ export function OfficerProcurementPlanDetailView({
         planName={currentPlan.name}
         projectCode={project.code}
       />
+
+      <PhaseDelayBreakdownModal
+        isOpen={Boolean(delayModalData)}
+        onClose={() => setDelayModalData(null)}
+        data={delayModalData}
+      />
     </div>
   );
 }
@@ -812,13 +851,21 @@ function ActivityRow({
   editHref,
   href,
   isMultiOfficer = false,
+  onSelectDelay,
 }: {
   activity: PlanActivity;
   canEdit?: boolean;
   editHref: string;
   href: string;
   isMultiOfficer?: boolean;
+  onSelectDelay?: (activity: PlanActivity) => void;
 }) {
+  const isDelayed =
+    activity.status === "Delayed" ||
+    (activity as any).status === "DELAYED" ||
+    Boolean((activity as any).delayDays) ||
+    Boolean((activity as any).daysOverdue);
+
   return (
     <tr className="even:bg-[#fbfcff] hover:bg-[#f7fbf9] transition-colors">
       <td className="px-3 py-2.5 align-top font-mono text-[10px] font-semibold text-[#1261a8] max-w-28 truncate">
@@ -864,8 +911,21 @@ function ActivityRow({
       <td className="px-3 py-2.5 align-top text-[10px] text-slate-500">
         {activity.currentStage}
       </td>
-      <td className="px-3 py-2.5 align-top">
-        <StatusText className="text-[9px]" label={activity.status} />
+      <td className="px-2 py-2.5 align-top">
+        <div className="flex flex-col gap-1 items-start">
+          <StatusText className="text-[9px]" label={activity.status} />
+          {isDelayed && (
+            <button
+              type="button"
+              onClick={() => onSelectDelay?.(activity)}
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer shadow-2xs"
+              title="Click to view delay in phase breakdown"
+            >
+              <Clock className="w-2.5 h-2.5" />
+              <span>Delay in Phase</span>
+            </button>
+          )}
+        </div>
       </td>
       <td className="px-3 py-2.5 text-right align-top whitespace-nowrap">
         <div className="flex items-center justify-end gap-2">

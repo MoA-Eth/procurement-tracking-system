@@ -209,7 +209,7 @@ export async function fetchPlans(): Promise<BackendPlan[]> {
     const res = await apiClient.get<any>("/plans");
     return Array.isArray(res) ? res : res.data || [];
   } catch (err) {
-    console.error("fetchPlans error:", err);
+    console.warn("fetchPlans notice:", err);
     return [];
   }
 }
@@ -233,6 +233,16 @@ export async function updatePlan(
     data,
   );
   return res.data || res;
+}
+
+export async function deletePlan(id: string): Promise<boolean> {
+  try {
+    await apiClient.delete(`/plans/${encodeURIComponent(id)}`);
+    return true;
+  } catch (err) {
+    console.warn(`deletePlan notice for ${id}:`, err);
+    return false;
+  }
 }
 
 /** Officer submits draft plan to Director */

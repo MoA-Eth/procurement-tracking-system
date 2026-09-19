@@ -605,6 +605,16 @@ export function ProjectsManagementView({
           onCreateClick={handleCreateProjectClick}
           onEditClick={handleEditProjectClick}
           onViewPlansClick={handleViewPlansClick}
+          onUpdateProjectOfficers={(projectId, updatedOfficers) => {
+            setProjects((prev) =>
+              prev.map((p) =>
+                p.id === projectId
+                  ? { ...p, assignedOfficers: updatedOfficers }
+                  : p,
+              ),
+            );
+            showToast("Project officers updated successfully!");
+          }}
           readOnly={readOnly}
         />
       )}

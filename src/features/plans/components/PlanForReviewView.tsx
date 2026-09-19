@@ -172,6 +172,11 @@ export function PlanForReviewView({
         setIsCommitteeRejectionModalOpen={
           review.setIsCommitteeRejectionModalOpen
         }
+        isCommitteeChair={review.isCommitteeChair}
+        isChairAuthorized={review.isPlanChairAuthorized(
+          review.selectedPlanForReview.id,
+        )}
+        onChairAuthorize={review.handleChairAuthorizePlan}
       />
     );
   }

@@ -1272,22 +1272,12 @@ function StageEditor({
 }
 
 function actualDateOrderError(
-  roadmap: readonly ProcurementActivityRoadmapStage[],
-  record: OfficerActivityTrackingRecord,
-  stageName: string,
-  actualDate: string,
+  _roadmap: readonly ProcurementActivityRoadmapStage[],
+  _record: OfficerActivityTrackingRecord,
+  _stageName: string,
+  _actualDate: string,
 ) {
-  if (!actualDate) return "";
-  const index = roadmap.findIndex((stage) => stage.name === stageName);
-  for (let previousIndex = index - 1; previousIndex >= 0; previousIndex -= 1) {
-    const previousStage = roadmap[previousIndex];
-    const previousActual = record.stages.find(
-      (stage) => stage.stageName === previousStage.name,
-    )?.actualDate?.gregorian;
-    if (previousActual && actualDate < previousActual) {
-      return `Actual Date cannot be earlier than ${previousStage.name} (${formatGregorianDate(previousActual)}).`;
-    }
-  }
+  // Back-dated actual completion dates are explicitly accepted for historical and retrospective progress entry.
   return "";
 }
 

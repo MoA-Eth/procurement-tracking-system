@@ -77,7 +77,7 @@ export async function fetchProjects(): Promise<BackendProject[]> {
     const res = await apiClient.get<any>("/projects");
     return Array.isArray(res) ? res : res.data || [];
   } catch (err) {
-    console.error("fetchProjects error:", err);
+    console.warn("fetchProjects notice:", err);
     return [];
   }
 }
@@ -121,6 +121,16 @@ export async function removeOfficerFromProject(
   await apiClient.delete(
     `/projects/${encodeURIComponent(projectId)}/officers/${encodeURIComponent(officerId)}`,
   );
+}
+
+export async function deleteProject(projectId: string): Promise<boolean> {
+  try {
+    await apiClient.delete(`/projects/${encodeURIComponent(projectId)}`);
+    return true;
+  } catch (err) {
+    console.warn(`deleteProject notice for ${projectId}:`, err);
+    return false;
+  }
 }
 
 export function mapBackendProjectToProjectItem(

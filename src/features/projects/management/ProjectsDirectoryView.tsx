@@ -10,14 +10,20 @@ import {
   Eye,
   Edit,
   UserCheck,
+  UserPlus,
 } from "lucide-react";
-import type { ProjectItem } from "./projectsData";
+import type { ProjectItem, ProjectOfficer } from "./projectsData";
+import { QuickAssignOfficerModal } from "./components/QuickAssignOfficerModal";
 
 interface ProjectsDirectoryViewProps {
   projects: ProjectItem[];
   onCreateClick: () => void;
   onEditClick: (project: ProjectItem) => void;
   onViewPlansClick: (project: ProjectItem) => void;
+  onUpdateProjectOfficers?: (
+    projectId: string,
+    updatedOfficers: ProjectOfficer[],
+  ) => void;
   readOnly?: boolean;
 }
 
@@ -26,6 +32,7 @@ export function ProjectsDirectoryView({
   onCreateClick,
   onEditClick,
   onViewPlansClick,
+  onUpdateProjectOfficers,
   readOnly = false,
 }: ProjectsDirectoryViewProps) {
   // Filter & Search state
@@ -33,6 +40,8 @@ export function ProjectsDirectoryView({
   const [statusFilter, setStatusFilter] = useState("All Statuses");
   const [officerFilter, setOfficerFilter] = useState("All Assigned Officers");
   const [fundingFilter, setFundingFilter] = useState("All Funding Sources");
+  const [officerModalProject, setOfficerModalProject] =
+    useState<ProjectItem | null>(null);
 
   // Filtered logic
   const filteredProjects = projects.filter((project) => {
@@ -322,6 +331,17 @@ export function ProjectsDirectoryView({
                             <Edit className="h-4 w-4" />
                           </button>
                         )}
+
+                        {/* Assign / Change Officer Button (Supported even after approval) */}
+                        {!readOnly && (
+                          <button
+                            onClick={() => setOfficerModalProject(project)}
+                            title="Assign or Change Officers (Post-Approval Supported)"
+                            className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                          >
+                            <UserPlus className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -331,6 +351,18 @@ export function ProjectsDirectoryView({
           </table>
         </div>
       </div>
+
+      {/* Quick Assign / Change Officer Modal */}
+      {officerModalProject && (
+        <QuickAssignOfficerModal
+          isOpen={Boolean(officerModalProject)}
+          project={officerModalProject}
+          onClose={() => setOfficerModalProject(null)}
+          onSaveSuccess={(projectId, updatedOfficers) => {
+            onUpdateProjectOfficers?.(projectId, updatedOfficers);
+          }}
+        />
+      )}
     </div>
   );
 }

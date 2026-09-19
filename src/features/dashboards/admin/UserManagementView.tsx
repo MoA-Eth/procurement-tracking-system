@@ -14,6 +14,8 @@ import {
   RefreshCw,
   CheckCircle2,
   X,
+  UserCog,
+  Shield,
 } from "lucide-react";
 import { createInvitedUser, getCurrentUser } from "@/lib/authApi";
 import {
@@ -216,6 +218,15 @@ export function UserManagementView({
   // Action state (toggling status or resending invitation)
   const [actionUserId, setActionUserId] = useState<string | null>(null);
 
+  // Role Management Modal State
+  const [editingRoleUser, setEditingRoleUser] = useState<ApiUser | null>(null);
+  const [selectedNewRole, setSelectedNewRole] =
+    useState<ProvisionableRole>("OFFICER");
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  const [roleSuccessMessage, setRoleSuccessMessage] = useState<string | null>(
+    null,
+  );
+
   useEffect(() => {
     const handleReset = (event: Event) => {
       const customEvent = event as CustomEvent<{ href?: string }>;
@@ -416,6 +427,52 @@ export function UserManagementView({
     }
   };
 
+  // ─── Edit User Role Handlers ─────────────────────────────────────────────
+  const handleOpenEditRole = (user: ApiUser) => {
+    const norm = normalizeUserRole(user.authRole || user.role);
+    setEditingRoleUser(user);
+    setSelectedNewRole(norm as ProvisionableRole);
+    setErrorMessage(null);
+  };
+
+  const handleSaveRole = async () => {
+    if (!editingRoleUser) return;
+    if (
+      isCurrentUser(editingRoleUser, activeUser) &&
+      selectedNewRole !== "ADMIN"
+    ) {
+      setErrorMessage(
+        "You cannot remove Administrator privileges from your own active account.",
+      );
+      return;
+    }
+    setIsUpdatingRole(true);
+    setErrorMessage(null);
+    try {
+      await updateUser(editingRoleUser.id, { role: selectedNewRole });
+      setRoleSuccessMessage(
+        `Role for ${editingRoleUser.displayName || editingRoleUser.name} successfully updated to ${ROLE_LABELS[selectedNewRole] || selectedNewRole}.`,
+      );
+      setEditingRoleUser(null);
+      await loadUsers();
+    } catch (err) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to update user role.",
+      );
+    } finally {
+      setIsUpdatingRole(false);
+    }
+  };
+
+  // Auto-dismiss role success notification after 10 seconds
+  useEffect(() => {
+    if (!roleSuccessMessage) return;
+    const timer = setTimeout(() => {
+      setRoleSuccessMessage(null);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [roleSuccessMessage]);
+
   // Auto-dismiss success notification after 15 seconds
   useEffect(() => {
     if (!invitedInfo) return;
@@ -464,12 +521,34 @@ export function UserManagementView({
               <button
                 type="button"
                 onClick={() => setInvitedInfo(null)}
-                className="text-[#046c50] hover:text-[#04382c] hover:bg-[#d1fae5] p-1.5 rounded-full transition-colors shrink-0 cursor-pointer"
+                className="text-[#046c50] hover:text-[#04382c] transition-colors p-1 rounded-lg hover:bg-emerald-100/50 cursor-pointer"
                 title="Dismiss banner"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Update Success Banner */}
+      {roleSuccessMessage && (
+        <div className="animate-in fade-in slide-in-from-top-2">
+          <div className="relative overflow-hidden bg-gradient-to-r from-[#ecfdf5] via-[#f0fdf4] to-[#e6f4ea] border border-[#a7f3d0] rounded-2xl p-4 sm:p-5 text-xs sm:text-sm shadow-xs flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#044e3a] text-white shrink-0 shadow-2xs">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <p className="text-[#044e3a] font-bold">{roleSuccessMessage}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRoleSuccessMessage(null)}
+              className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer"
+              title="Dismiss banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -789,55 +868,68 @@ export function UserManagementView({
                                 {renderLastLogin(user.lastLoginAt, user.status)}
                               </td>
 
-                              {/* Resend Invitation / Activate / Deactivate Actions */}
+                              {/* Actions Column: Change Role + Resend Invitation / Activate / Deactivate */}
                               <td className="py-4 px-4 text-center align-middle whitespace-nowrap">
-                                {isPending ? (
+                                <div className="flex items-center justify-center gap-2">
+                                  {/* Change Role Button */}
                                   <button
                                     type="button"
-                                    disabled={actionUserId === user.id}
-                                    onClick={() => handleResendInvitation(user)}
-                                    className="px-3.5 py-1 text-xs font-bold rounded-full border border-[#047857] bg-[#ecfdf5] text-[#044e3a] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                                    onClick={() => handleOpenEditRole(user)}
+                                    className="px-3 py-1 text-xs font-bold rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#04382c] hover:border-[#04382c]/40 transition-all cursor-pointer shadow-2xs hover:shadow-xs inline-flex items-center gap-1.5"
+                                    title={`Change role for ${user.displayName || user.name}`}
                                   >
-                                    {actionUserId === user.id ? (
-                                      <Loader2 className="w-3 h-3 animate-spin inline" />
-                                    ) : (
-                                      <RefreshCw className="w-3 h-3 inline" />
-                                    )}
-                                    <span>
-                                      {actionUserId === user.id
-                                        ? "Resending…"
-                                        : "Resend Invitation"}
-                                    </span>
+                                    <UserCog className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>Role</span>
                                   </button>
-                                ) : isSelf && isActive ? (
-                                  <button
-                                    type="button"
-                                    disabled={true}
-                                    title="You cannot deactivate your own administrator account."
-                                    className="px-3.5 py-1 text-xs font-bold rounded-full border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 shadow-none inline-flex items-center gap-1"
-                                  >
-                                    Deactivate
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    disabled={actionUserId === user.id}
-                                    onClick={() => handleToggleStatus(user)}
-                                    className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
-                                      isActive
-                                        ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
-                                        : "border-blue-200/90 bg-blue-50/90 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800"
-                                    }`}
-                                  >
-                                    {actionUserId === user.id ? (
-                                      <Loader2 className="w-3 h-3 animate-spin inline" />
-                                    ) : isActive ? (
-                                      "Deactivate"
-                                    ) : (
-                                      "Activate"
-                                    )}
-                                  </button>
-                                )}
+
+                                  {isPending ? (
+                                    <button
+                                      type="button"
+                                      disabled={actionUserId === user.id}
+                                      onClick={() => handleResendInvitation(user)}
+                                      className="px-3.5 py-1 text-xs font-bold rounded-full border border-[#047857] bg-[#ecfdf5] text-[#044e3a] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                                    >
+                                      {actionUserId === user.id ? (
+                                        <Loader2 className="w-3 h-3 animate-spin inline" />
+                                      ) : (
+                                        <RefreshCw className="w-3 h-3 inline" />
+                                      )}
+                                      <span>
+                                        {actionUserId === user.id
+                                          ? "Resending…"
+                                          : "Resend Invitation"}
+                                      </span>
+                                    </button>
+                                  ) : isSelf && isActive ? (
+                                    <button
+                                      type="button"
+                                      disabled={true}
+                                      title="You cannot deactivate your own administrator account."
+                                      className="px-3.5 py-1 text-xs font-bold rounded-full border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 shadow-none inline-flex items-center gap-1"
+                                    >
+                                      Deactivate
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      disabled={actionUserId === user.id}
+                                      onClick={() => handleToggleStatus(user)}
+                                      className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
+                                        isActive
+                                          ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
+                                          : "border-blue-200/90 bg-blue-50/90 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800"
+                                      }`}
+                                    >
+                                      {actionUserId === user.id ? (
+                                        <Loader2 className="w-3 h-3 animate-spin inline" />
+                                      ) : isActive ? (
+                                        "Deactivate"
+                                      ) : (
+                                        "Activate"
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -910,6 +1002,136 @@ export function UserManagementView({
               </>
             )}
           </section>
+        </div>
+      )}
+
+      {/* ─── Change Role Modal ─────────────────────────────────────── */}
+      {editingRoleUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden animate-in zoom-in-95">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-[#04382c] text-white">
+              <div className="flex items-center gap-2.5">
+                <Shield className="w-5 h-5 text-emerald-300 shrink-0" />
+                <h3 className="text-base font-extrabold tracking-tight">
+                  Change User Role
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingRoleUser(null)}
+                className="p-1 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+                  Target Account
+                </p>
+                <p className="text-sm font-extrabold text-[#0f172a] mt-0.5">
+                  {editingRoleUser.displayName || editingRoleUser.name}
+                </p>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  {editingRoleUser.email}
+                </p>
+                <div className="mt-2 flex items-center gap-2 text-xs">
+                  <span className="text-slate-500">Current Role:</span>
+                  <span className="font-bold text-[#04382c] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    {displayRole(editingRoleUser)}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#0f172a] mb-2 block">
+                  Select New PTS Role
+                </label>
+                <div className="space-y-2">
+                  {[
+                    {
+                      role: "OFFICER" as ProvisionableRole,
+                      label: "Officer",
+                      desc: "Procurement operations, activity drafting and roadmaps",
+                    },
+                    {
+                      role: "DIRECTOR" as ProvisionableRole,
+                      label: "Director",
+                      desc: "Directorate oversight, review & approval of plans",
+                    },
+                    {
+                      role: "ENDORSING_COMMITTEE" as ProvisionableRole,
+                      label: "Endorsement Committee",
+                      desc: "Committee evaluations, meetings & endorsement votes",
+                    },
+                    {
+                      role: "MANAGEMENT" as ProvisionableRole,
+                      label: "Management",
+                      desc: "Executive strategic review & organization-wide approvals",
+                    },
+                    {
+                      role: "ADMIN" as ProvisionableRole,
+                      label: "Administrator",
+                      desc: "System governance, user role management & audit logs",
+                    },
+                  ].map((r) => (
+                    <label
+                      key={r.role}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        selectedNewRole === r.role
+                          ? "border-[#04382c] bg-emerald-50/40 ring-1 ring-[#04382c]"
+                          : "border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="newRole"
+                        value={r.role}
+                        checked={selectedNewRole === r.role}
+                        onChange={() => setSelectedNewRole(r.role)}
+                        className="mt-0.5 text-[#04382c] focus:ring-[#04382c]"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-[#0f172a]">
+                          {r.label}
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          {r.desc}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingRoleUser(null)}
+                  disabled={isUpdatingRole}
+                  className="px-4 py-2 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveRole}
+                  disabled={isUpdatingRole}
+                  className="px-5 py-2 rounded-full bg-[#04382c] hover:bg-[#032e25] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                >
+                  {isUpdatingRole ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving…</span>
+                    </>
+                  ) : (
+                    <span>Save Role</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
