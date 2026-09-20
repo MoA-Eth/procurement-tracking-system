@@ -14,6 +14,8 @@ import { logger } from '../../config/logger.js';
 import { createNotification } from '../alerts/alerts.service.js';
 import { notifyOfficersOnEntityChange } from '../alerts/officer-notification.helper.js';
 
+import { ApiError } from '../../utils/errors.js';
+
 export interface GetPlansQueryOptions {
   page?: number | undefined;
   pageSize?: number | undefined;
@@ -231,27 +233,51 @@ export const createPlanService = async (
   userId: string,
 ) => {
   return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    // 1. Resolve projectId by ID or code
+    // 1. Resolve projectId by ID, code, pNumber, or name
     let resolvedProjectId = data.projectId;
     const project = await tx.project.findFirst({
       where: {
-        OR: [{ id: resolvedProjectId }, { code: resolvedProjectId }],
+        OR: [
+          { id: resolvedProjectId },
+          { code: resolvedProjectId },
+          { pNumber: resolvedProjectId },
+          { name: resolvedProjectId },
+        ],
       },
     });
     if (project) {
       resolvedProjectId = project.id;
+    } else {
+      throw ApiError.badRequest(
+        `Project not found with identifier: "${resolvedProjectId}". Please select a valid existing project.`,
+      );
     }
 
     // 2. Resolve creator user
     const user = await tx.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new Error(`Authenticated user not found with id: ${userId}`);
+      throw ApiError.unauthorized(`Authenticated user not found with id: ${userId}`);
     }
     const validUserId = user.id;
+
+    // 3. Sanitize optional parentPlanId (convert empty string to null)
+    const rawParentId = (data as { parentPlanId?: unknown }).parentPlanId;
+    const parentPlanId =
+      typeof rawParentId === 'string' && rawParentId.trim() !== ''
+        ? rawParentId.trim()
+        : null;
+
+    if (parentPlanId) {
+      const parentPlan = await tx.plan.findUnique({ where: { id: parentPlanId } });
+      if (!parentPlan) {
+        throw ApiError.badRequest(`Parent plan not found with id: "${parentPlanId}".`);
+      }
+    }
 
     const plan = await tx.plan.create({
       data: {
         ...data,
+        parentPlanId,
         projectId: resolvedProjectId,
         status: PlanStatus.DRAFT,
         createdBy: validUserId,

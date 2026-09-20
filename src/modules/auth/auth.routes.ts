@@ -1045,5 +1045,7 @@ export const authErrorHandler = (
     return;
   }
   logger.error({ error }, 'Unhandled API error');
-  res.status(500).json({ message: 'The request could not be completed.' });
+  const message =
+    error instanceof Error ? error.message : 'The request could not be completed.';
+  res.status(500).json({ message });
 };
