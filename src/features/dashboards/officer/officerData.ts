@@ -31,8 +31,8 @@ export const alertToneClasses: Record<
     statusColor: "text-[#b91c1c]",
   },
   upcoming: {
-    barColor: "bg-[#2596a9]",
-    statusColor: "text-[#18879a]",
+    barColor: "bg-sky-500",
+    statusColor: "text-sky-700",
   },
   approved: {
     barColor: "bg-[#006837]",

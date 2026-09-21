@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Download,
   FileEdit,
+  House,
   Loader2,
   Plus,
   Search,
@@ -417,28 +418,28 @@ export function OfficerContractsView({
   }
 
   return (
-    <div className="w-full min-w-0 space-y-5 overflow-x-hidden pb-6">
+    <div className="space-y-6 animate-in fade-in duration-200 pb-10">
       <header className="flex w-full min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
-            <ol className="flex items-center gap-2">
-              <li>
-                <Link
-                  className="hover:text-[#0A3C2F] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
-                  href="/dashboard/officer"
-                >
-                  Home
-                </Link>
-              </li>
-              <li aria-hidden="true" className="text-slate-300">
-                /
-              </li>
-              <li aria-current="page" className="font-semibold text-[#0A3C2F]">
-                Contracts
-              </li>
-            </ol>
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs">
+            <Link
+              href="/dashboard/officer"
+              title="Go to Dashboard"
+              className="text-slate-500 hover:text-slate-900 transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <House className="h-4 w-4" />
+            </Link>
+            <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+            <span className="font-semibold text-[#0A3C2F]">Contracts</span>
           </nav>
-          <h1 className="sr-only">Contracts</h1>
+          <div className="mt-4">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-950 tracking-tight">
+              Contracts
+            </h1>
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-3xl">
+              Manage contract commitments, track payment disbursements, and record amendments.
+            </p>
+          </div>
         </div>
 
         <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
@@ -461,7 +462,7 @@ export function OfficerContractsView({
             Import Contracts
           </button>
           <Link
-            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-[#00552c] bg-[#006837] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006837] transition"
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-[#00552c] bg-[#006837] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] transition"
             href="/workspace/contracts?mode=register"
             style={{ backgroundColor: "#006837", color: "#ffffff" }}
           >
@@ -492,7 +493,7 @@ export function OfficerContractsView({
 
       <section
         aria-label="Contract filters and table controls"
-        className="w-full min-w-0 rounded-md border border-slate-300 bg-white p-3 shadow-sm"
+        className="w-full min-w-0 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-2xs"
       >
         <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(20rem,1fr)_8.5rem_10rem]">
           <label className="relative block min-w-0 sm:col-span-2 xl:col-span-1">
@@ -502,10 +503,10 @@ export function OfficerContractsView({
             </span>
             <Search
               aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-500"
+              className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400"
             />
             <input
-              className="h-10 w-full rounded-sm border border-slate-300 bg-[#fbfcfd] pr-3 pl-10 text-xs text-slate-800 outline-none transition placeholder:text-slate-500 hover:border-[#0A3C2F] focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/15"
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-medium text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all shadow-2xs placeholder:text-slate-400 hover:border-slate-300"
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search Contract #, Ref, or Supplier..."
               type="search"
@@ -614,7 +615,7 @@ export function OfficerContractsView({
                   <input
                     aria-label="Select all visible contracts"
                     checked={allVisibleSelected}
-                    className="h-4 w-4 accent-emerald-500"
+                    className="h-4 w-4 accent-[#0A3C2F]"
                     onChange={toggleAllVisible}
                     type="checkbox"
                   />
@@ -678,7 +679,7 @@ export function OfficerContractsView({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-100 text-xs">
               {filteredContracts.length > 0 ? (
                 filteredContracts.map((contract) => {
                   const isDelayed = contract.status === "Delayed";
@@ -686,19 +687,24 @@ export function OfficerContractsView({
                   return (
                     <tr
                       key={contract.id}
-                      className="even:bg-[#fbfcff] hover:bg-slate-50"
+                      className="even:bg-slate-50/50 hover:bg-slate-50/80"
                     >
                       <td className="px-3 py-2.5 text-center align-top">
                         <input
                           aria-label={`Select contract ${contract.contractNumber}`}
                           checked={selectedIds.has(contract.id)}
-                          className="h-4 w-4 accent-[#006837]"
+                          className="h-4 w-4 accent-[#0A3C2F]"
                           onChange={() => toggleContract(contract.id)}
                           type="checkbox"
                         />
                       </td>
-                      <td className="w-72 min-w-[280px] whitespace-nowrap px-3.5 py-2.5 align-top font-mono text-xs font-semibold text-slate-800">
-                        {contract.contractNumber}
+                      <td className="w-72 min-w-[280px] whitespace-nowrap px-3.5 py-2.5 align-top">
+                        <span
+                          className="font-mono text-xs font-medium text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded-md border border-slate-200/80 inline-block truncate max-w-[260px]"
+                          title={contract.contractNumber}
+                        >
+                          {contract.contractNumber}
+                        </span>
                       </td>
                       <td className="w-80 min-w-[320px] px-3.5 py-2.5 align-top text-xs leading-5 text-slate-700 wrap-break-word">
                         <span
@@ -742,27 +748,27 @@ export function OfficerContractsView({
                           label={contract.status}
                         />
                       </td>
-                      <td className="px-3 py-2.5 text-center align-top">
+                      <td className="px-3 py-2.5 text-center align-top whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           <Link
                             aria-label={`Amend contract ${contract.contractNumber}`}
-                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 text-[11px] font-semibold whitespace-nowrap text-slate-700 shadow-xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-2xs cursor-pointer"
                             href={`/workspace/contracts?mode=add-amendment&contract=${encodeURIComponent(contract.contractNumber)}`}
                           >
                             <FileEdit
                               aria-hidden="true"
-                              className="h-3.5 w-3.5 text-slate-500"
+                              className="h-3.5 w-3.5 text-slate-400"
                             />
                             Amend
                           </Link>
                           <Link
                             aria-label={`Add payment to contract ${contract.contractNumber}`}
-                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-emerald-200 bg-white px-2.5 text-[11px] font-semibold whitespace-nowrap text-[#0A3C2F] shadow-xs hover:border-[#0A3C2F] hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50/50 text-xs font-semibold text-[#0A3C2F] hover:bg-emerald-100/60 hover:border-emerald-300 transition-colors shadow-2xs cursor-pointer"
                             href={`/workspace/contracts?mode=add-payment&contract=${encodeURIComponent(contract.contractNumber)}`}
                           >
                             <Banknote
                               aria-hidden="true"
-                              className="h-3.5 w-3.5"
+                              className="h-3.5 w-3.5 text-emerald-700"
                             />
                             Add Payment
                           </Link>
@@ -785,14 +791,14 @@ export function OfficerContractsView({
           </table>
         </div>
 
-        <footer className="flex flex-col gap-3 border-t border-slate-200 bg-[#fbfcff] px-4 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
           <p aria-live="polite">{entrySummary}</p>
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2">
               Rows per page:
               <select
                 aria-label="Rows per page"
-                className="h-8 rounded-md border border-slate-300 bg-white px-2 text-xs outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+                className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
                 defaultValue="50"
               >
                 <option value="25">25</option>
@@ -803,7 +809,7 @@ export function OfficerContractsView({
             <div aria-label="Contract table pagination" className="flex gap-1">
               <button
                 aria-label="Previous page"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
                 disabled
                 type="button"
               >
@@ -811,14 +817,14 @@ export function OfficerContractsView({
               </button>
               <button
                 aria-label="Next page"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
                 type="button"
               >
                 <ChevronRight aria-hidden="true" className="h-4 w-4" />
               </button>
             </div>
           </div>
-        </footer>
+        </div>
       </section>
 
       <ContractExcelImportModal
@@ -919,10 +925,10 @@ function LabeledSelect({
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-labelledby={`${listboxId}-label ${listboxId}-value`}
-          className={`relative inline-flex cursor-pointer items-center border border-slate-300 text-left font-medium text-slate-700 shadow-xs hover:border-[#0A3C2F] focus-visible:border-[#0A3C2F] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#0A3C2F]/15 ${
+          className={`relative inline-flex cursor-pointer items-center border border-slate-200 text-left font-medium text-slate-700 shadow-2xs hover:border-slate-300 focus-visible:border-[#0A3C2F] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0A3C2F] ${
             compact
-              ? "h-10 w-full rounded-sm bg-[#fbfcfd] py-2 pr-9 pl-3 text-xs"
-              : "h-11 rounded-md bg-white py-2.5 pr-11 pl-4 text-sm"
+              ? "h-10 w-full rounded-2xl bg-white py-2 pr-9 pl-3.5 text-xs"
+              : "h-11 rounded-2xl bg-white py-2.5 pr-11 pl-4 text-sm"
           }`}
           onClick={() => setIsOpen((current) => !current)}
           onKeyDown={(event) => {

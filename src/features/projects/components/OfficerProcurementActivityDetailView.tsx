@@ -260,7 +260,7 @@ export function OfficerProcurementActivityDetailView({
 
             {/* View Delay by Phase button */}
             <button
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 shadow-2xs hover:bg-rose-100 hover:border-rose-300 transition cursor-pointer"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-700 shadow-2xs hover:bg-rose-100 hover:border-rose-300 transition cursor-pointer"
               onClick={() => setIsDelayModalOpen(true)}
               type="button"
               title="View process-by-process breakdown of duration and delay"
@@ -313,7 +313,7 @@ export function OfficerProcurementActivityDetailView({
         number={2}
         title="Related Information"
       >
-        <section className="rounded-md border border-[#cfd8e8] bg-[#f2f5ff] p-3">
+        <section className="rounded-xl border border-slate-200 bg-[#f8fafc] p-3.5 shadow-2xs">
           <h3 className="flex items-center gap-1.5 text-[10px] font-semibold text-[#0A3C2F]">
             <FolderOpen aria-hidden="true" className="h-3.5 w-3.5" />
             Inherited Project &amp; Plan Context
@@ -588,7 +588,7 @@ function DetailCard({
   title: string;
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-2xs">
       <header className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0A3C2F] text-[10px] font-semibold text-white">
           {number}

@@ -42,9 +42,9 @@ const paymentTypes: readonly ContractPaymentType[] = [
 ];
 
 const inputClasses =
-  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15";
+  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
 const textareaClasses =
-  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15";
+  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
 
 export function AddContractPaymentView({
   contract,
@@ -83,6 +83,15 @@ export function AddContractPaymentView({
   const dateComplete = Boolean(form.date.gregorian);
   const canSave =
     typeComplete && amountValid && balanceCheckPassed && dateComplete;
+  const formErrorMessage = !typeComplete
+    ? "Payment type is required."
+    : !amountValid
+      ? "Enter a zero or positive payment amount."
+      : !balanceCheckPassed
+        ? "Extra payment exceeding contract balance requires an explanatory remark."
+        : !dateComplete
+          ? "Select the payment date."
+          : "Fill all required fields to record payment.";
   const updatedTotalPaid = contractTotalPaid + (amountValid ? amount : 0);
   const updatedBalance = Math.max(0, contractCurrentAmount - updatedTotalPaid);
   const overrunAmount = Math.max(0, updatedTotalPaid - contractCurrentAmount);
@@ -115,14 +124,14 @@ export function AddContractPaymentView({
         <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
-              <Link className="hover:text-[#176c55]" href="/dashboard/officer">
+              <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
                 Home
               </Link>
             </li>
             <li aria-hidden="true">/</li>
             <li>
               <Link
-                className="hover:text-[#176c55]"
+                className="hover:text-[#0A3C2F]"
                 href={
                   fromTracker
                     ? "/workspace/activity-tracker"
@@ -138,7 +147,7 @@ export function AddContractPaymentView({
             </li>
           </ol>
         </nav>
-        <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-slate-950">
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
           Add Actual Payment
         </h1>
         <p className="mt-1 text-xs leading-5 text-slate-500">
@@ -151,10 +160,10 @@ export function AddContractPaymentView({
         <main className="min-w-0 space-y-4">
           <section className="overflow-visible rounded-md border border-slate-300 bg-white shadow-sm">
             <div className="border-b border-slate-200 bg-[#f8faf9] px-4 py-3">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <Banknote
                   aria-hidden="true"
-                  className="h-4 w-4 text-[#176c55]"
+                  className="h-4 w-4 text-[#0A3C2F]"
                 />
                 <h2>Payment Details</h2>
               </div>
@@ -305,7 +314,7 @@ export function AddContractPaymentView({
               </div>
 
               <div className="mt-5 border-t border-slate-200 pt-4">
-                <h3 className="text-xs font-bold text-slate-800">
+                <h3 className="text-xs font-semibold text-slate-800">
                   Calculated Contract Balance
                 </h3>
                 <p className="mt-1 text-[10px] text-slate-500">

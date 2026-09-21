@@ -573,7 +573,7 @@ export function OfficerProcurementPlanDetailView({
         >
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
           <div className="space-y-1">
-            <h3 className="text-xs font-bold text-rose-950">
+            <h3 className="text-xs font-semibold text-rose-950">
               Database Submission Failed
             </h3>
             <p className="text-xs leading-relaxed text-rose-800">
@@ -696,17 +696,17 @@ export function OfficerProcurementPlanDetailView({
       {activePlanStatus === "Draft" && (
         <section
           aria-label="Submit plan for review"
-          className="flex flex-col gap-4 rounded-xl border border-[#c7d7d0] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-center gap-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#edf5f1] text-[#176c55]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[#0A3C2F] border border-emerald-200">
               <CheckCircle2
                 aria-hidden="true"
-                className="h-5 w-5 text-[#176c55]"
+                className="h-5 w-5 text-[#0A3C2F]"
               />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-[#10243f]">
+              <h2 className="text-sm font-semibold text-[#10243f]">
                 Plan is ready for review
               </h2>
               <p className="text-xs text-slate-500">
@@ -740,22 +740,22 @@ export function OfficerProcurementPlanDetailView({
       {activePlanStatus === "Submitted to Director" && !isSyncedToDatabase && (
         <section
           aria-label="Database sync warning"
-          className="rounded-2xl border-2 border-amber-300 bg-amber-50/90 p-5 shadow-sm space-y-3 animate-in fade-in"
+          className="notice-card-clean border-l-4 border-l-amber-500 p-5 shadow-xs space-y-3 animate-in fade-in"
         >
           <div className="flex items-start gap-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 border border-amber-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-800 border border-amber-200">
               <AlertCircle className="h-5 w-5 text-amber-700" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-sm font-bold text-amber-950">
+                <h2 className="text-sm font-semibold text-slate-900">
                   Plan Not Synced to Server Database
                 </h2>
-                <span className="rounded-full bg-amber-200/80 px-2.5 py-0.5 text-[11px] font-bold text-amber-900">
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 border border-amber-200">
                   Local Browser Storage Only
                 </span>
               </div>
-              <p className="mt-1 text-xs text-amber-800 leading-relaxed">
+              <p className="mt-1 text-xs text-slate-600 leading-relaxed">
                 This plan is marked as submitted in your local browser cache,
                 but the backend server database has no confirmed record of it.
                 The Director cannot see this plan in &ldquo;Plan for
@@ -791,17 +791,17 @@ export function OfficerProcurementPlanDetailView({
       {activePlanStatus === "Submitted to Director" && isSyncedToDatabase && (
         <section
           aria-label="Plan submission status"
-          className="flex items-center justify-between gap-3.5 rounded-xl border border-[#c7d7d0] bg-[#edf5f1] p-4 shadow-2xs"
+          className="flex items-center justify-between gap-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-2xs"
         >
           <div className="flex items-center gap-3.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#d8e8e0] text-[#0A3C2F]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[#0A3C2F] border border-emerald-200">
               <Send aria-hidden="true" className="h-4.5 w-4.5" />
             </div>
             <div>
               <h2 className="text-xs font-semibold text-[#10243f]">
                 Submitted to Director for Review (Version {versionNumber})
               </h2>
-              <p className="text-[11px] text-[#0A3C2F]">
+              <p className="text-[11px] text-slate-600">
                 This procurement plan and all its {activities.length} activities
                 are currently under review by the Director.
               </p>
@@ -1147,7 +1147,7 @@ function ActivityRow({
             <button
               type="button"
               onClick={() => onSelectDelay?.(activity)}
-              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer shadow-2xs"
               title="Click to view delay in phase breakdown"
             >
               <Clock className="w-2.5 h-2.5" />

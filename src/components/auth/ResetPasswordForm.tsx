@@ -98,7 +98,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
                   showNewPassword ? "Hide new password" : "Show new password"
                 }
                 aria-pressed={showNewPassword}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#064e3b] cursor-pointer"
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#0A3C2F] cursor-pointer"
               >
                 {showNewPassword ? (
                   <EyeOff size={20} aria-hidden="true" />
@@ -132,7 +132,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
                     : "Show confirmation password"
                 }
                 aria-pressed={showConfirmPassword}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#064e3b] cursor-pointer"
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#0A3C2F] cursor-pointer"
               >
                 {showConfirmPassword ? (
                   <EyeOff size={20} aria-hidden="true" />

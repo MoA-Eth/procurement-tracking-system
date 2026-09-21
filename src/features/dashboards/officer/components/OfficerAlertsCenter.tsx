@@ -35,7 +35,7 @@ export function OfficerAlertsCenter({
             </h2>
           </div>
           {!loading && alerts.length > 0 && (
-            <span className="shrink-0 rounded-md bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-medium text-amber-800">
+            <span className="shrink-0 rounded-md bg-rose-50 border border-rose-200 px-2 py-0.5 text-xs font-semibold text-rose-700">
               {alerts.length}
             </span>
           )}

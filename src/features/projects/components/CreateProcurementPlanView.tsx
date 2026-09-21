@@ -33,7 +33,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode, type SyntheticEvent } from "react";
 
 type SaveAction = "activity" | "draft" | null;
 
@@ -51,7 +51,7 @@ interface PlanFormState {
 }
 
 const compactFieldClasses =
-  "h-10 w-full rounded-none border border-slate-400 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15";
+  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
 
 export const procurementCategories = [
   {
@@ -228,7 +228,7 @@ export function CreateProcurementPlanView({
   }
 
   async function handleSubmit(
-    event: FormEvent<HTMLFormElement> | null,
+    event: SyntheticEvent | null,
     action: Exclude<SaveAction, null>,
   ) {
     if (event) event.preventDefault();
@@ -293,7 +293,7 @@ export function CreateProcurementPlanView({
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-xl font-semibold tracking-tight text-slate-900">
                 {isEditing
                   ? isPlanReturned
                     ? "Revise Procurement Plan"
@@ -301,7 +301,7 @@ export function CreateProcurementPlanView({
                   : "Create Procurement Plan"}
               </h1>
               {initialPlan && (
-                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700 border border-slate-300">
+                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 border border-slate-300">
                   v{initialPlan.version || 1}
                 </span>
               )}
@@ -323,7 +323,7 @@ export function CreateProcurementPlanView({
           <div className="rounded border border-red-300 bg-red-50 p-4 text-xs text-red-800 flex items-start gap-3 shadow-xs">
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-red-900">Database Action Failed</p>
+              <p className="font-semibold text-red-900">Database Action Failed</p>
               <p className="mt-1 leading-relaxed text-red-800">{submitError}</p>
             </div>
           </div>
@@ -334,7 +334,7 @@ export function CreateProcurementPlanView({
           initialPlan?.rejectionReason) && (
           <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-xs shadow-2xs space-y-2.5">
             <div>
-              <p className="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+              <p className="font-semibold text-amber-900 mb-1 flex items-center gap-1.5">
                 <MessageSquare className="h-4 w-4 text-amber-700" />
                 Director Feedback &amp; Revision Instructions:
               </p>
@@ -347,7 +347,7 @@ export function CreateProcurementPlanView({
             </div>
             {Boolean(initialPlan.managementComment) && (
               <div className="pt-2 border-t border-amber-200/70">
-                <p className="font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
+                <p className="font-semibold text-indigo-900 mb-1 flex items-center gap-1.5">
                   <MessageSquare className="h-4 w-4 text-indigo-700" />
                   Management Rejection Comment:
                 </p>
@@ -367,7 +367,7 @@ export function CreateProcurementPlanView({
           >
             <CheckCircle2
               aria-hidden="true"
-              className="mt-0.5 h-4 w-4 shrink-0 text-[#176c55]"
+              className="mt-0.5 h-4 w-4 shrink-0 text-[#0A3C2F]"
             />
             <span>
               {isEditing
@@ -383,13 +383,13 @@ export function CreateProcurementPlanView({
         onSubmit={(event) => handleSubmit(event, "activity")}
       >
         {/* Section 1: Inherited Project Information */}
-        <section className="overflow-hidden rounded border border-slate-300 bg-white shadow-xs">
-          <div className="flex items-center gap-2 border-b border-slate-200 bg-[#f8f8ff] px-5 py-3.5">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-3.5">
             <LockKeyhole
               aria-hidden="true"
               className="h-4 w-4 text-slate-500"
             />
-            <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-slate-700">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-700">
               Inherited Project Information
             </h2>
             <span className="ml-auto text-xs text-slate-400">
@@ -433,9 +433,9 @@ export function CreateProcurementPlanView({
         </section>
 
         {/* Section 2: Plan Configuration & Scope */}
-        <section className="overflow-hidden rounded border border-slate-300 bg-white shadow-xs">
-          <div className="border-b border-slate-200 bg-[#edf5f1] px-5 py-3.5">
-            <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-slate-800">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-slate-50 px-5 py-3.5">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-800">
               Plan Identification & Classification
             </h2>
           </div>
@@ -591,9 +591,9 @@ export function CreateProcurementPlanView({
         </section>
 
         {/* Section 3: Plan Timeline & Notice Dates */}
-        <section className="relative z-10 rounded border border-slate-300 bg-white shadow-xs">
-          <div className="rounded-t border-b border-slate-200 bg-[#edf5f1] px-5 py-3.5">
-            <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-slate-800">
+        <section className="relative z-10 rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="rounded-t-xl border-b border-slate-200 bg-slate-50 px-5 py-3.5">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-800">
               Plan Schedule &amp; Coverage Period
             </h2>
           </div>
@@ -652,7 +652,7 @@ export function CreateProcurementPlanView({
                   label="Description / Remarks"
                 >
                   <textarea
-                    className="min-h-24 w-full resize-y rounded-none border border-slate-400 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+                    className="min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
                     id="remarks"
                     onChange={(event) =>
                       updateField("remarks", event.target.value)
@@ -668,15 +668,15 @@ export function CreateProcurementPlanView({
 
         {/* Section 4: Revision Justification (When in Returned / Revision status) */}
         {isPlanReturned && (
-          <section className="overflow-hidden rounded border border-amber-300 bg-amber-50/40 p-5 shadow-xs space-y-2.5">
+          <section className="notice-card-clean space-y-2.5">
             <div className="flex items-center gap-2">
               <RotateCcw className="h-4 w-4 text-amber-700" />
-              <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-amber-900">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-800">
                 Revision Reason / Justification for Audit Trail
               </h2>
             </div>
             <textarea
-              className="min-h-20 w-full resize-y rounded border border-amber-300 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+              className="min-h-20 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
               onChange={(e) => setRevisionReason(e.target.value)}
               placeholder="Specify justification for this revision (e.g., Updated budget year and adjusted coverage schedule per Director feedback)..."
               value={revisionReason}
@@ -699,24 +699,20 @@ export function CreateProcurementPlanView({
           <div className="flex flex-wrap items-center gap-3">
             <button
               disabled={isSubmitting}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => handleSubmit(null, "draft")}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={(event) => handleSubmit(event, "draft")}
               type="button"
             >
-              {isSubmitting && saveAction === "draft" ? (
-                <>
-                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
-                  Saving...
-                </>
-              ) : isEditing ? (
-                "Save Plan Changes"
-              ) : (
-                "Save Draft"
-              )}
+              <Save aria-hidden="true" className="h-3.5 w-3.5 text-slate-600" />
+              {isSubmitting && saveAction === "draft"
+                ? "Saving..."
+                : isEditing
+                  ? "Update Plan"
+                  : "Save Draft"}
             </button>
             <button
               disabled={isSubmitting}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-[#125442] bg-[#176c55] px-4 text-xs font-medium text-white hover:bg-[#125f4c] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#0A3C2F] bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => handleSubmit(null, "activity")}
               type="button"
             >
@@ -754,19 +750,19 @@ function CreatePlanBreadcrumb({
     <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
       <ol className="flex flex-wrap items-center gap-2">
         <li>
-          <Link className="hover:text-[#176c55]" href="/dashboard/officer">
+          <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
             Home
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#176c55]" href="/workspace/projects">
+          <Link className="hover:text-[#0A3C2F]" href="/workspace/projects">
             Projects
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#176c55]" href={detailHref}>
+          <Link className="hover:text-[#0A3C2F]" href={detailHref}>
             {project.shortName}
           </Link>
         </li>
@@ -775,7 +771,7 @@ function CreatePlanBreadcrumb({
           <>
             <li>
               <Link
-                className="hover:text-[#176c55]"
+                className="hover:text-[#0A3C2F]"
                 href={`/workspace/projects?project=${encodeURIComponent(
                   project.code,
                 )}&plan=${encodeURIComponent(initialPlan.reference)}`}
@@ -817,7 +813,7 @@ function LockedInput({
       <p className="mb-1.5 text-xs font-semibold text-slate-500">{label}</p>
       <div className="relative">
         <input
-          className={`h-9 w-full truncate rounded-none border border-slate-400 bg-white px-2.5 text-xs text-slate-600 outline-none ${
+          className={`h-9 w-full truncate rounded-md border border-slate-300 bg-slate-50/80 px-2.5 text-xs text-slate-600 outline-none ${
             icon ? "pl-7" : ""
           }`}
           readOnly

@@ -1903,7 +1903,7 @@ export function OfficerProjectsView({
           </p>
           <div className="mt-6 flex justify-center">
             <Link
-              className="inline-flex items-center gap-2 rounded-lg bg-[#006837] px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006837]"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#006837] px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
               href="/workspace/projects"
             >
               View My Assigned Projects
@@ -1984,7 +1984,7 @@ function OfficerProjectsList({
 
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-[#10243f]">
+            <h1 className="text-2xl font-semibold tracking-tight text-[#10243f]">
               My Projects
             </h1>
             <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
