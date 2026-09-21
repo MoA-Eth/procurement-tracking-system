@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   CheckCheck,
@@ -29,9 +30,9 @@ import {
   type NotificationType,
   type SystemNotification,
 } from "@/lib/alertsApi";
-import { useEffect } from "react";
 
 export function NotificationsView({ user }: { user?: AuthUser }) {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     if (user) return user;
     if (typeof window !== "undefined") return getCurrentUser();
@@ -106,6 +107,15 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
     markAlertAsRead(id);
+  };
+
+  const handleCardClick = (n: SystemNotification) => {
+    if (!n.read) {
+      handleMarkAsRead(n.id);
+    }
+    if (n.link) {
+      router.push(n.link);
+    }
   };
 
   const handleToggleRead = (id: string) => {
@@ -365,7 +375,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
           filteredNotifications.map((n) => (
             <div
               key={n.id}
-              onClick={() => handleMarkAsRead(n.id)}
+              onClick={() => handleCardClick(n)}
               className={`group rounded-2xl border p-4 sm:p-5 transition-all shadow-2xs relative flex flex-col sm:flex-row sm:items-start justify-between gap-4 cursor-pointer ${
                 n.read
                   ? "bg-white border-slate-200 hover:border-slate-300"

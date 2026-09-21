@@ -1,10 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import type { AuthUser } from "@/lib/authTypes";
 import { useOfficerDashboard } from "./useOfficerDashboard";
 import { OfficerOverviewStatusBarChart } from "./components/OfficerOverviewStatusBarChart";
 import { OfficerActiveProjectsTable } from "./components/OfficerActiveProjectsTable";
 import { OfficerAlertsCenter } from "./components/OfficerAlertsCenter";
+import type { OfficerAlert } from "./officerData";
+import {
+  PhaseDelayBreakdownModal,
+  type PhaseDelayModalData,
+} from "@/features/projects/components/PhaseDelayBreakdownModal";
 
 // Re-export pure calculations and formatters for backward compatibility & tests
 export {
@@ -18,6 +24,19 @@ export {
 export function OfficerDashboard({ user }: { user: AuthUser }) {
   const { loading, officerProjectsList, overviewStatusItems, dynamicAlerts } =
     useOfficerDashboard(user);
+  const [delayModalData, setDelayModalData] =
+    useState<PhaseDelayModalData | null>(null);
+
+  const handleSelectDelay = (alert: OfficerAlert) => {
+    setDelayModalData({
+      reference: alert.referenceLine,
+      title:
+        alert.activityDescription || alert.detailLine || alert.referenceLine,
+      totalDelayDays: alert.delayDays || 1,
+      stages: alert.stages || [],
+      activityHref: alert.href,
+    });
+  };
 
   return (
     <div className="space-y-5 pb-6">
@@ -46,8 +65,18 @@ export function OfficerDashboard({ user }: { user: AuthUser }) {
           />
         </div>
 
-        <OfficerAlertsCenter alerts={dynamicAlerts} loading={loading} />
+        <OfficerAlertsCenter
+          alerts={dynamicAlerts}
+          loading={loading}
+          onSelectDelay={handleSelectDelay}
+        />
       </div>
+
+      <PhaseDelayBreakdownModal
+        isOpen={Boolean(delayModalData)}
+        onClose={() => setDelayModalData(null)}
+        data={delayModalData}
+      />
     </div>
   );
 }

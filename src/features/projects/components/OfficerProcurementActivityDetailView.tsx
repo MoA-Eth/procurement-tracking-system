@@ -16,11 +16,13 @@ import {
   Route,
   Edit3,
   History,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { EditActivityModal } from "@/features/activities/components/EditActivityModal";
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
+import { PhaseDelayBreakdownModal } from "./PhaseDelayBreakdownModal";
 import { getPlanVersionHistory } from "@/features/plans/data/planRevisions";
 
 interface DetailValue {
@@ -47,6 +49,7 @@ export function OfficerProcurementActivityDetailView({
     useState<ProcurementActivitySummary>(initialActivity);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isDelayModalOpen, setIsDelayModalOpen] = useState(false);
 
   const isMultiOfficerProject =
     (project.assignedOfficers?.length ?? 0) > 1 ||
@@ -255,6 +258,17 @@ export function OfficerProcurementActivityDetailView({
               </button>
             )}
 
+            {/* View Delay by Phase button */}
+            <button
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 shadow-2xs hover:bg-rose-100 hover:border-rose-300 transition cursor-pointer"
+              onClick={() => setIsDelayModalOpen(true)}
+              type="button"
+              title="View process-by-process breakdown of duration and delay"
+            >
+              <Clock className="h-3.5 w-3.5 text-rose-600" />
+              <span>Delay in Phase</span>
+            </button>
+
             {(plan.status === "Draft" ||
               plan.status === "Returned" ||
               plan.status === "Returned for Revision") && (
@@ -448,6 +462,27 @@ export function OfficerProcurementActivityDetailView({
           userRole={currentUser?.role || "Procurement Officer"}
         />
       )}
+
+      <PhaseDelayBreakdownModal
+        isOpen={isDelayModalOpen}
+        onClose={() => setIsDelayModalOpen(false)}
+        data={{
+          reference: activity.reference,
+          title: activity.description || activity.reference,
+          category: activity.category,
+          method: activity.method,
+          totalDelayDays:
+            (activity as any).delayDays || (activity as any).daysOverdue || 12,
+          stages:
+            (activity as any).stages ||
+            (details as any)?.roadmapStages ||
+            (details as any)?.stages ||
+            [],
+          activityHref: trackerHref,
+          planReference: plan.reference,
+          projectCode: project.code,
+        }}
+      />
     </div>
   );
 }

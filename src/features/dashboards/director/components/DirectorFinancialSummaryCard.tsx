@@ -1,7 +1,6 @@
 "use client";
 
 import type { FinancialCapitalSummary } from "../directorData";
-import { formatCompactM, formatETB } from "../directorFormatters";
 
 interface DirectorFinancialSummaryCardProps {
   financialSummary: FinancialCapitalSummary;
@@ -11,13 +10,20 @@ interface DirectorFinancialSummaryCardProps {
     uncontracted: string;
   };
   selectedFiscalYear: string;
+  currency?: string;
 }
 
 export function DirectorFinancialSummaryCard({
   financialSummary,
   spendPercentages,
   selectedFiscalYear,
+  currency = "ETB",
 }: DirectorFinancialSummaryCardProps) {
+  const isDollar =
+    currency?.toUpperCase() === "USD" ||
+    currency?.toLowerCase() === "dollar" ||
+    currency === "$";
+
   // Extract number and unit cleanly for display
   const formatMValue = (val: number) => {
     const numInM = (val / 1_000_000).toFixed(1);
@@ -35,7 +41,9 @@ export function DirectorFinancialSummaryCard({
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
               {selectedFiscalYear} Allocation · Currency:{" "}
-              <span className="font-semibold text-slate-700">ETB</span>
+              <span className="font-semibold text-slate-700">
+                {isDollar ? "USD ($)" : "Birr (ETB)"}
+              </span>
             </p>
           </div>
           <div className="self-start sm:self-auto shrink-0">
@@ -54,17 +62,28 @@ export function DirectorFinancialSummaryCard({
           <p className="text-xs font-semibold text-slate-500 truncate">
             Planned Value
           </p>
-          <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-bold tabular-nums text-black tracking-tight leading-none">
+          <div className="my-1.5 flex items-baseline gap-1">
+            {isDollar && (
+              <span className="text-2xl sm:text-3xl font-medium text-slate-700">
+                $
+              </span>
+            )}
+            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-slate-900 tracking-tight leading-none">
               {formatMValue(financialSummary.planEstimatedValueETB)}
             </span>
-            <span className="text-xs sm:text-sm font-bold text-slate-500">
-              M ETB
+            <span className="text-xs sm:text-sm font-medium text-slate-500">
+              M
             </span>
           </div>
-          <p className="text-xs text-slate-400 font-medium truncate">
-            Approved budget
-          </p>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 truncate">
+            {!isDollar && (
+              <>
+                <span className="font-semibold text-slate-600">Birr</span>
+                <span className="text-slate-300">·</span>
+              </>
+            )}
+            <span className="text-slate-400 font-medium">Approved budget</span>
+          </div>
         </div>
 
         {/* Col 2: Signed Contracts */}
@@ -72,17 +91,30 @@ export function DirectorFinancialSummaryCard({
           <p className="text-xs font-semibold text-slate-500 truncate">
             Signed Contracts
           </p>
-          <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-bold tabular-nums text-black tracking-tight leading-none">
+          <div className="my-1.5 flex items-baseline gap-1">
+            {isDollar && (
+              <span className="text-2xl sm:text-3xl font-medium text-slate-700">
+                $
+              </span>
+            )}
+            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-slate-900 tracking-tight leading-none">
               {formatMValue(financialSummary.signedContractsCommittedETB)}
             </span>
-            <span className="text-xs sm:text-sm font-bold text-slate-500">
-              M ETB
+            <span className="text-xs sm:text-sm font-medium text-slate-500">
+              M
             </span>
           </div>
-          <p className="text-xs font-bold text-[#006837] truncate">
-            {financialSummary.contractExecutionRatePct}% execution rate
-          </p>
+          <div className="flex items-center gap-1.5 text-xs text-[#006837] truncate">
+            {!isDollar && (
+              <>
+                <span className="font-semibold text-slate-600">Birr</span>
+                <span className="text-slate-300">·</span>
+              </>
+            )}
+            <span className="font-semibold">
+              {financialSummary.contractExecutionRatePct}% execution rate
+            </span>
+          </div>
         </div>
 
         {/* Col 3: Actual Disbursed */}
@@ -90,17 +122,30 @@ export function DirectorFinancialSummaryCard({
           <p className="text-xs font-semibold text-slate-500 truncate">
             Actual Disbursed
           </p>
-          <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-bold tabular-nums text-black tracking-tight leading-none">
+          <div className="my-1.5 flex items-baseline gap-1">
+            {isDollar && (
+              <span className="text-2xl sm:text-3xl font-medium text-slate-700">
+                $
+              </span>
+            )}
+            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-slate-900 tracking-tight leading-none">
               {formatMValue(financialSummary.actualDisbursedETB)}
             </span>
-            <span className="text-xs sm:text-sm font-bold text-slate-500">
-              M ETB
+            <span className="text-xs sm:text-sm font-medium text-slate-500">
+              M
             </span>
           </div>
-          <p className="text-xs font-bold text-[#006837] truncate">
-            {financialSummary.disbursedOfContractedPct}% of contracts
-          </p>
+          <div className="flex items-center gap-1.5 text-xs text-[#006837] truncate">
+            {!isDollar && (
+              <>
+                <span className="font-semibold text-slate-600">Birr</span>
+                <span className="text-slate-300">·</span>
+              </>
+            )}
+            <span className="font-semibold">
+              {financialSummary.disbursedOfContractedPct}% of contracts
+            </span>
+          </div>
         </div>
 
         {/* Col 4: Remaining Balance */}
@@ -108,17 +153,30 @@ export function DirectorFinancialSummaryCard({
           <p className="text-xs font-semibold text-slate-500 truncate">
             Remaining Balance
           </p>
-          <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-bold tabular-nums text-black tracking-tight leading-none">
+          <div className="my-1.5 flex items-baseline gap-1">
+            {isDollar && (
+              <span className="text-2xl sm:text-3xl font-medium text-slate-700">
+                $
+              </span>
+            )}
+            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-slate-900 tracking-tight leading-none">
               {formatMValue(financialSummary.remainingUncommittedETB)}
             </span>
-            <span className="text-xs sm:text-sm font-bold text-slate-500">
-              M ETB
+            <span className="text-xs sm:text-sm font-medium text-slate-500">
+              M
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-medium truncate">
-            {financialSummary.availableCapacityPct}% available
-          </p>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 truncate">
+            {!isDollar && (
+              <>
+                <span className="font-semibold text-slate-600">Birr</span>
+                <span className="text-slate-300">·</span>
+              </>
+            )}
+            <span className="font-medium">
+              {financialSummary.availableCapacityPct}% available
+            </span>
+          </div>
         </div>
       </div>
 
@@ -134,7 +192,9 @@ export function DirectorFinancialSummaryCard({
             <span className="h-2.5 w-2.5 rounded-xs bg-[#0A3C2F] inline-block shrink-0" />
             <span className="text-slate-700 font-semibold">Disbursed</span>
             <span className="text-slate-500">
-              ({formatMValue(financialSummary.actualDisbursedETB)}M ETB · Paid)
+              ({isDollar ? "$" : ""}
+              {formatMValue(financialSummary.actualDisbursedETB)}M{" "}
+              {!isDollar ? "Birr " : ""}· Paid)
             </span>
           </div>
           <div
@@ -144,8 +204,9 @@ export function DirectorFinancialSummaryCard({
             <span className="h-2.5 w-2.5 rounded-xs bg-[#B7892B] inline-block shrink-0" />
             <span className="text-slate-700 font-semibold">Committed</span>
             <span className="text-slate-500">
-              ({formatMValue(financialSummary.committedPendingPayETB)}M ETB ·
-              Under Contract)
+              ({isDollar ? "$" : ""}
+              {formatMValue(financialSummary.committedPendingPayETB)}M{" "}
+              {!isDollar ? "Birr " : ""}· Under Contract)
             </span>
           </div>
           <div
@@ -155,8 +216,9 @@ export function DirectorFinancialSummaryCard({
             <span className="h-2.5 w-2.5 rounded-xs bg-[#CBD5E1] inline-block shrink-0" />
             <span className="text-slate-700 font-semibold">Uncommitted</span>
             <span className="text-slate-500">
-              ({formatMValue(financialSummary.uncontractedETB)}M ETB · Available
-              Budget)
+              ({isDollar ? "$" : ""}
+              {formatMValue(financialSummary.uncontractedETB)}M{" "}
+              {!isDollar ? "Birr " : ""}· Available Budget)
             </span>
           </div>
         </div>
@@ -166,17 +228,17 @@ export function DirectorFinancialSummaryCard({
           <div
             style={{ width: `${spendPercentages.disbursed}%` }}
             className="bg-[#0A3C2F] h-full transition-all duration-500 border-r border-white/60 last:border-r-0"
-            title={`Disbursed (Paid): ${spendPercentages.disbursed}% (${formatMValue(financialSummary.actualDisbursedETB)}M ETB)`}
+            title={`Disbursed (Paid): ${spendPercentages.disbursed}% (${isDollar ? "$" : ""}${formatMValue(financialSummary.actualDisbursedETB)}M)`}
           />
           <div
             style={{ width: `${spendPercentages.committedPending}%` }}
             className="bg-[#B7892B] h-full transition-all duration-500 border-r border-white/60 last:border-r-0"
-            title={`Committed (Under Contract): ${spendPercentages.committedPending}% (${formatMValue(financialSummary.committedPendingPayETB)}M ETB)`}
+            title={`Committed (Under Contract): ${spendPercentages.committedPending}% (${isDollar ? "$" : ""}${formatMValue(financialSummary.committedPendingPayETB)}M)`}
           />
           <div
             style={{ width: `${spendPercentages.uncontracted}%` }}
             className="bg-[#CBD5E1] h-full transition-all duration-500"
-            title={`Uncommitted (Available): ${spendPercentages.uncontracted}% (${formatMValue(financialSummary.uncontractedETB)}M ETB)`}
+            title={`Uncommitted (Available): ${spendPercentages.uncontracted}% (${isDollar ? "$" : ""}${formatMValue(financialSummary.uncontractedETB)}M)`}
           />
         </div>
       </div>

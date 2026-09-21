@@ -52,7 +52,9 @@ export function useAdminDashboard(currentUser: AuthUser) {
           setTotalUserCount(usersRes.meta?.total ?? usersRes.data.length);
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.warn("Notice: Failed to fetch users for admin dashboard:", err);
+      })
       .finally(() => {
         if (active) setIsUsersLoading(false);
       });
@@ -63,7 +65,12 @@ export function useAdminDashboard(currentUser: AuthUser) {
           setLogs(logsRes.data);
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.warn(
+          "Notice: Failed to fetch audit logs for admin dashboard:",
+          err,
+        );
+      })
       .finally(() => {
         if (active) setIsLogsLoading(false);
       });

@@ -76,13 +76,16 @@ export function AddContractPaymentView({
   const amountValid =
     amountEntered && Number.isFinite(parsedAmount) && parsedAmount >= 0;
   const amount = amountValid ? parsedAmount : 0;
-  const withinContractBalance = amount <= contractRemainingBalance;
+  const isExtraPayment = amount > contractRemainingBalance;
+  const hasRemark = form.remarks.trim().length > 0;
+  const balanceCheckPassed = !isExtraPayment || hasRemark;
   const typeComplete = Boolean(form.paymentType);
   const dateComplete = Boolean(form.date.gregorian);
   const canSave =
-    typeComplete && amountValid && withinContractBalance && dateComplete;
+    typeComplete && amountValid && balanceCheckPassed && dateComplete;
   const updatedTotalPaid = contractTotalPaid + (amountValid ? amount : 0);
   const updatedBalance = Math.max(0, contractCurrentAmount - updatedTotalPaid);
+  const overrunAmount = Math.max(0, updatedTotalPaid - contractCurrentAmount);
 
   function updateField<K extends keyof PaymentFormState>(
     field: K,
@@ -136,10 +139,11 @@ export function AddContractPaymentView({
           </ol>
         </nav>
         <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-slate-950">
-          Add Payment
+          Add Actual Payment
         </h1>
         <p className="mt-1 text-xs leading-5 text-slate-500">
-          Record a payment transaction against {contract.contractNumber}.
+          Record an actual disbursement transaction against{" "}
+          {contract.contractNumber}.
         </p>
       </header>
 
@@ -155,8 +159,9 @@ export function AddContractPaymentView({
                 <h2>Payment Details</h2>
               </div>
               <p className="mt-1 text-[10px] leading-4 text-slate-500">
-                The contract context is inherited. Enter only this payment
-                transaction details.
+                Record actual disbursed funds. Extra payments exceeding the
+                contract balance are permitted with a mandatory justification
+                remark.
               </p>
             </div>
             <div className="p-4">
@@ -195,12 +200,12 @@ export function AddContractPaymentView({
                   error={
                     attempted && !amountValid
                       ? "Enter a zero or positive payment amount."
-                      : attempted && !withinContractBalance
-                        ? "Payment cannot exceed the remaining contract balance."
+                      : attempted && isExtraPayment && !hasRemark
+                        ? "Extra payment exceeding contract balance requires an explanatory remark."
                         : undefined
                   }
-                  hint={`Available balance: ${formatAmount(contractRemainingBalance)} ${contract.currency}`}
-                  label="Amount"
+                  hint={`Available balance: ${formatAmount(contractRemainingBalance)} ${contract.currency}. Extra payments exceeding balance are allowed with remark.`}
+                  label="Actual Payment Amount"
                   required
                 >
                   <div className="relative">
@@ -264,13 +269,36 @@ export function AddContractPaymentView({
                   />
                 </Field>
 
-                <Field label="Remarks">
+                <Field
+                  error={
+                    attempted && isExtraPayment && !hasRemark
+                      ? "Remark is required when recording an extra payment exceeding contract balance."
+                      : undefined
+                  }
+                  hint={
+                    isExtraPayment
+                      ? "Required: explain reason for extra payment / contract variation."
+                      : "Optional payment-specific note"
+                  }
+                  label="Remarks / Justification"
+                  required={isExtraPayment}
+                >
                   <textarea
-                    className={textareaClasses}
+                    className={`${textareaClasses} ${
+                      isExtraPayment && !hasRemark && attempted
+                        ? "border-rose-400 ring-2 ring-rose-100"
+                        : isExtraPayment
+                          ? "border-amber-400 bg-amber-50/20"
+                          : ""
+                    }`}
                     onChange={(event) =>
                       updateField("remarks", event.target.value)
                     }
-                    placeholder="Optional payment-specific note"
+                    placeholder={
+                      isExtraPayment
+                        ? "Required: explain why this payment exceeds remaining contract balance..."
+                        : "Optional payment-specific note"
+                    }
                     value={form.remarks}
                   />
                 </Field>
@@ -303,8 +331,12 @@ export function AddContractPaymentView({
                   <SummaryValue
                     currency={contract.currency}
                     emphasized
-                    label="Remaining Balance"
-                    value={updatedBalance}
+                    label={
+                      overrunAmount > 0
+                        ? "Contract Overrun (+)"
+                        : "Remaining Balance"
+                    }
+                    value={overrunAmount > 0 ? overrunAmount : updatedBalance}
                   />
                 </div>
               </div>
@@ -321,19 +353,32 @@ export function AddContractPaymentView({
           </div>
           <div className="space-y-3 p-3">
             <ChecklistItem complete={typeComplete} label="Payment type" />
-            <ChecklistItem complete={amountValid} label="Payment amount" />
             <ChecklistItem
-              complete={amountValid && withinContractBalance}
-              label="Within contract balance"
+              complete={amountValid}
+              label="Actual payment amount"
+            />
+            <ChecklistItem
+              complete={amountValid && balanceCheckPassed}
+              label={
+                isExtraPayment
+                  ? hasRemark
+                    ? "Extra payment remarks provided"
+                    : "Remark required for extra payment"
+                  : "Within contract balance"
+              }
             />
             <ChecklistItem complete={dateComplete} label="Payment date" />
           </div>
           <div className="border-t border-slate-200 p-3">
             <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500">
-              Remaining After Payment
+              {overrunAmount > 0 ? "Total Overrun" : "Remaining After Payment"}
             </p>
-            <p className="mt-1 font-mono text-base font-bold tabular-nums text-slate-900">
-              {formatAmount(updatedBalance)}{" "}
+            <p
+              className={`mt-1 font-mono text-base font-bold tabular-nums ${overrunAmount > 0 ? "text-amber-700" : "text-slate-900"}`}
+            >
+              {overrunAmount > 0
+                ? `+${formatAmount(overrunAmount)}`
+                : formatAmount(updatedBalance)}{" "}
               <span className="text-xs text-slate-500">
                 {contract.currency}
               </span>
@@ -454,7 +499,7 @@ function Field({
   children: ReactNode;
   error?: string;
   hint?: string;
-  label: string;
+  label: ReactNode;
   required?: boolean;
 }) {
   return (

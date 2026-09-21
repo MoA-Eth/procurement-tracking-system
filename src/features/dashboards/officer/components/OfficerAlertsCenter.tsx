@@ -1,17 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Bell, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Bell, CheckCircle2, Clock } from "lucide-react";
 import { alertToneClasses, type OfficerAlert } from "../officerData";
 
 interface OfficerAlertsCenterProps {
   alerts: readonly OfficerAlert[];
   loading?: boolean;
+  onSelectDelay?: (alert: OfficerAlert) => void;
 }
 
 export function OfficerAlertsCenter({
   alerts,
   loading = false,
+  onSelectDelay,
 }: OfficerAlertsCenterProps) {
   return (
     <div className="min-h-[380px] xl:min-h-[415px] max-h-[640px] xl:max-h-none xl:h-full xl:relative">
@@ -107,8 +109,49 @@ export function OfficerAlertsCenter({
                       </div>
                     )}
 
+                    {/* Delay Breakdown Trigger for Delayed Activities */}
+                    {alert.tone === "delayed" && (
+                      <div className="mt-2 space-y-1.5">
+                        <div className="rounded-lg bg-rose-50/80 p-2 text-[11px] border border-rose-200/80">
+                          <p className="font-bold text-rose-900">
+                            Where:{" "}
+                            <span className="font-semibold text-slate-800">
+                              {alert.delayedStage || alert.detailLine}
+                            </span>
+                          </p>
+                          <p className="text-[10px] text-slate-600 mt-0.5">
+                            Reason:{" "}
+                            <span className="italic text-slate-700">
+                              {alert.delayReason ||
+                                "Awaiting stage milestone completion"}
+                            </span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onSelectDelay?.(alert);
+                          }}
+                          className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-rose-700 border border-rose-200 hover:bg-rose-50 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs w-fit"
+                          title="Click to view breakdown of delay per process and phase"
+                        >
+                          <Clock className="w-3 h-3 text-rose-600 shrink-0" />
+                          <span>View Delay in Phase</span>
+                        </button>
+                      </div>
+                    )}
+
                     {/* Action Button / Link (e.g. Review ->) */}
-                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-end">
+                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                      {alert.tone === "delayed" ? (
+                        <span className="text-[10px] font-semibold text-rose-600">
+                          {alert.statusLine}
+                        </span>
+                      ) : (
+                        <span />
+                      )}
                       <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#0a4d40] group-hover:text-[#06332b] group-hover:underline">
                         {alert.actionLabel || "Review"}
                         <ArrowRight

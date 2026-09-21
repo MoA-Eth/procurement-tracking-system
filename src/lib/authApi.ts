@@ -238,12 +238,29 @@ export async function createInvitedUser(
   const cleanEmail = email.trim().toLowerCase();
 
   try {
-    const payloadRole = role;
-    const res = await apiClient.post<any>("/admin/users", {
-      displayName: cleanDisplayName,
-      email: cleanEmail,
-      role: payloadRole,
-    });
+    let payloadRole: string = role === "MANAGEMENT" ? "MANAGEMENT_TEAM" : role;
+    let res: any;
+    try {
+      res = await apiClient.post<any>("/admin/users", {
+        displayName: cleanDisplayName,
+        email: cleanEmail,
+        role: payloadRole,
+      });
+    } catch (err: any) {
+      if (
+        role === "MANAGEMENT" &&
+        err?.message?.includes('invalid input value for enum "UserRole"')
+      ) {
+        payloadRole = "ManagementTeam";
+        res = await apiClient.post<any>("/admin/users", {
+          displayName: cleanDisplayName,
+          email: cleanEmail,
+          role: payloadRole,
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const userObj = res.user || res.data || res;
     return {

@@ -334,10 +334,24 @@ export function CreateProjectView({
     setErrorMsg("");
 
     if (currentStep === 1) {
-      if (!step1Data.code.trim()) {
+      const cleanCode = step1Data.code.trim().toUpperCase();
+      if (!cleanCode) {
         setErrorMsg("Project Code / Acronym is required.");
         return false;
       }
+
+      const isDuplicateCode = existingProjects.some(
+        (p) =>
+          p.code.toUpperCase() === cleanCode &&
+          (!initialData || p.id !== initialData.id),
+      );
+      if (isDuplicateCode) {
+        setErrorMsg(
+          `Project Code "${cleanCode}" is already in use. Each project must have a unique code.`,
+        );
+        return false;
+      }
+
       if (!step1Data.name.trim()) {
         setErrorMsg("Project Full Name is required.");
         return false;

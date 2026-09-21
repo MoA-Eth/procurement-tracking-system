@@ -119,6 +119,7 @@ export function formatDelayedActivityAlert(
     delayDays?: number | null;
     periodEnd?: string | null;
     updatedAt?: string | null;
+    remarks?: string | null;
   },
   projectCode?: string | null,
   currentTime: number | null = null,
@@ -163,8 +164,14 @@ export function formatDelayedActivityAlert(
     }
   }
 
+  const delayReason =
+    delayedStage?.remarks ||
+    delayedStage?.reason ||
+    act.remarks ||
+    "Pending milestone completion / supplier responsiveness";
+
   const statusLine =
-    delayDays > 0 ? `${delayDays} Day(s) Overdue` : "Delayed Activity";
+    delayDays > 0 ? `${delayDays} Day(s) Overdue` : `Delayed Activity`;
 
   const reference = (
     act.reference ||
@@ -181,6 +188,11 @@ export function formatDelayedActivityAlert(
     href: `/workspace/activity-tracker?activity=${encodeURIComponent(act.reference || act.id)}`,
     tone: "delayed",
     dateTime: targetDate || new Date().toISOString(),
+    stages: act.stages || [],
+    delayDays,
+    activityDescription: act.description || stageLabel,
+    delayedStage: stageLabel,
+    delayReason,
   };
 }
 
@@ -188,11 +200,19 @@ export function filterAssignedProjects(
   projects: BackendProject[],
   user: AuthUser,
 ): BackendProject[] {
-  return projects.filter((p) => isProjectAssignedToOfficer(p, user));
+  const filtered = projects.filter((p) => isProjectAssignedToOfficer(p, user));
+  const seen = new Set<string>();
+  return filtered.filter((p) => {
+    const key = (p.code || p.id || "").toLowerCase().trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export function mapOfficerProjectsList(assignedProjects: BackendProject[]) {
   return assignedProjects.map((p) => ({
+    id: p.id,
     code: p.code,
     name: p.name,
     fundingSource: p.fundingSource?.label || p.fundingSource?.code || "—",

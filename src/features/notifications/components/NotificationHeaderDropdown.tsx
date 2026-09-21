@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   Check,
@@ -27,6 +28,7 @@ import {
 } from "@/lib/alertsApi";
 
 export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     if (user) return user;
@@ -122,6 +124,16 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
     markAlertAsRead(id);
   };
 
+  const handleItemClick = (n: SystemNotification) => {
+    if (!n.read) {
+      handleMarkAsRead(n.id);
+    }
+    if (n.link) {
+      setIsOpen(false);
+      router.push(n.link);
+    }
+  };
+
   const handleMarkAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     markAllAlertsAsRead();
@@ -211,16 +223,21 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
               roleNotifications.slice(0, 5).map((n) => (
                 <div
                   key={n.id}
-                  onClick={() => handleMarkAsRead(n.id)}
-                  className={`p-3 sm:p-3.5 transition-colors flex items-start gap-3 cursor-pointer hover:bg-slate-50 ${
-                    n.read ? "bg-white" : "bg-emerald-50/40"
+                  onClick={() => handleItemClick(n)}
+                  className={`p-3 sm:p-3.5 transition-colors flex items-start gap-3 cursor-pointer hover:bg-slate-50 relative ${
+                    n.read ? "bg-white" : "bg-emerald-50/50"
                   }`}
                 >
+                  {/* Unread indicator dot */}
+                  {!n.read && (
+                    <span className="absolute top-3.5 right-3 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white" />
+                  )}
+
                   <div className="p-2 rounded-lg bg-slate-100 shrink-0 mt-0.5">
                     {getNotificationIcon(n.type)}
                   </div>
 
-                  <div className="flex-1 min-w-0 space-y-0.5">
+                  <div className="flex-1 min-w-0 space-y-0.5 pr-2">
                     <div className="flex items-center justify-between gap-1">
                       <h4
                         className={`text-xs truncate ${
@@ -245,14 +262,10 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
                         {n.timestamp}
                       </span>
                       {n.link && (
-                        <Link
-                          href={n.link}
-                          onClick={() => setIsOpen(false)}
-                          className="text-[11px] font-bold text-[#0A3C2F] hover:underline inline-flex items-center gap-0.5"
-                        >
+                        <span className="text-[11px] font-bold text-[#0A3C2F] hover:underline inline-flex items-center gap-0.5">
                           <span>{n.actionLabel || "View"}</span>
                           <ExternalLink size={10} />
-                        </Link>
+                        </span>
                       )}
                     </div>
                   </div>

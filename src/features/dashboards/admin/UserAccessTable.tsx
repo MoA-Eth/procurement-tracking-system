@@ -11,6 +11,7 @@ import {
   normalizeUserRole,
   ROLE_LABELS,
 } from "@/lib/authTypes";
+import { UserProfileModal } from "./components/UserProfileModal";
 
 interface UserAccessTableProps {
   users: ApiUser[];
@@ -75,6 +76,9 @@ export function UserAccessTable({
   onRefresh,
 }: UserAccessTableProps) {
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [selectedModalUser, setSelectedModalUser] = useState<ApiUser | null>(
+    null,
+  );
   const effectiveCurrentUser = currentUser ?? getCurrentUser();
 
   // Show recent 5 users on main dashboard
@@ -163,9 +167,11 @@ export function UserAccessTable({
                   return (
                     <tr
                       key={user.id}
-                      className={`border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50/80 ${
+                      onClick={() => setSelectedModalUser(user)}
+                      className={`border-b border-slate-100 transition-colors duration-150 hover:bg-emerald-50/50 cursor-pointer ${
                         isOddRow ? "bg-[#f8fafc]/60" : "bg-white"
                       }`}
+                      title={`Click to view profile & details for ${user.displayName || user.name}`}
                     >
                       <td className="py-3.5 px-4 align-middle">
                         <div className="font-bold text-[#0f172a] text-xs flex items-center gap-1.5">
@@ -210,7 +216,10 @@ export function UserAccessTable({
                           <button
                             type="button"
                             disabled={isWorking}
-                            onClick={() => handleResend(user)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResend(user);
+                            }}
                             className="px-3.5 py-1 text-xs font-bold rounded-full border border-[#047857] bg-[#ecfdf5] text-[#044e3a] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
                           >
                             {isWorking ? (
@@ -226,6 +235,7 @@ export function UserAccessTable({
                           <button
                             type="button"
                             disabled={true}
+                            onClick={(e) => e.stopPropagation()}
                             title="You cannot deactivate your own administrator account."
                             className="px-3.5 py-1 text-xs font-bold rounded-full border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 shadow-none inline-flex items-center gap-1"
                           >
@@ -235,7 +245,10 @@ export function UserAccessTable({
                           <button
                             type="button"
                             disabled={isWorking}
-                            onClick={() => onToggleStatus?.(user)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleStatus?.(user);
+                            }}
                             className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
                               isActive
                                 ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
@@ -270,6 +283,18 @@ export function UserAccessTable({
             </table>
           </div>
         </div>
+      )}
+
+      {/* ─── User Profile & Protected Role Change Modal ─────────────── */}
+      {selectedModalUser && (
+        <UserProfileModal
+          user={selectedModalUser}
+          isOpen={Boolean(selectedModalUser)}
+          onClose={() => setSelectedModalUser(null)}
+          onUserUpdated={() => {
+            onRefresh?.();
+          }}
+        />
       )}
     </div>
   );

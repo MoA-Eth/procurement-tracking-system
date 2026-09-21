@@ -48,7 +48,7 @@ export function DualCalendarField({
   readOnly = false,
   icon,
   variant = "director",
-  popDirection = "up",
+  popDirection = "auto",
   className = "",
 }: DualCalendarFieldProps) {
   const error = Boolean(errorMessage);
@@ -158,7 +158,7 @@ function EthiopianCalendarPicker({
   onSelect,
   onClear,
   disabled,
-  popDirection = "up",
+  popDirection = "auto",
 }: {
   id: string;
   value: string;
@@ -169,7 +169,7 @@ function EthiopianCalendarPicker({
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [autoPlacement, setAutoPlacement] = useState<"up" | "down">("up");
+  const [autoPlacement, setAutoPlacement] = useState<"up" | "down">("down");
   const effectivePlacement =
     popDirection === "auto" ? autoPlacement : popDirection;
 
@@ -218,7 +218,7 @@ function EthiopianCalendarPicker({
       : "top-full mt-2 right-0 origin-top-right";
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className={`relative w-full ${open ? "z-50" : ""}`}>
       <button
         id={id}
         type="button"
@@ -234,7 +234,7 @@ function EthiopianCalendarPicker({
                 const spaceAbove = rect.top;
                 const spaceBelow = window.innerHeight - rect.bottom;
                 setAutoPlacement(
-                  spaceAbove > 280 || spaceAbove >= spaceBelow ? "up" : "down",
+                  spaceBelow >= 320 || spaceBelow >= spaceAbove ? "down" : "up",
                 );
               }
             }

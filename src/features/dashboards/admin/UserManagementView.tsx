@@ -14,8 +14,10 @@ import {
   RefreshCw,
   CheckCircle2,
   X,
+  Shield,
 } from "lucide-react";
 import { createInvitedUser, getCurrentUser } from "@/lib/authApi";
+import { UserProfileModal } from "./components/UserProfileModal";
 import {
   fetchUsers,
   updateUser,
@@ -215,6 +217,14 @@ export function UserManagementView({
 
   // Action state (toggling status or resending invitation)
   const [actionUserId, setActionUserId] = useState<string | null>(null);
+
+  // User Profile / Details Modal State
+  const [selectedDetailUser, setSelectedDetailUser] = useState<ApiUser | null>(
+    null,
+  );
+  const [roleSuccessMessage, setRoleSuccessMessage] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const handleReset = (event: Event) => {
@@ -416,6 +426,15 @@ export function UserManagementView({
     }
   };
 
+  // Auto-dismiss role success notification after 10 seconds
+  useEffect(() => {
+    if (!roleSuccessMessage) return;
+    const timer = setTimeout(() => {
+      setRoleSuccessMessage(null);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [roleSuccessMessage]);
+
   // Auto-dismiss success notification after 15 seconds
   useEffect(() => {
     if (!invitedInfo) return;
@@ -466,12 +485,34 @@ export function UserManagementView({
               <button
                 type="button"
                 onClick={() => setInvitedInfo(null)}
-                className="text-[#046c50] hover:text-[#04382c] hover:bg-[#d1fae5] p-1.5 rounded-full transition-colors shrink-0 cursor-pointer"
+                className="text-[#046c50] hover:text-[#04382c] transition-colors p-1 rounded-lg hover:bg-emerald-100/50 cursor-pointer"
                 title="Dismiss banner"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Update Success Banner */}
+      {roleSuccessMessage && (
+        <div className="animate-in fade-in slide-in-from-top-2">
+          <div className="relative overflow-hidden bg-gradient-to-r from-[#ecfdf5] via-[#f0fdf4] to-[#e6f4ea] border border-[#a7f3d0] rounded-2xl p-4 sm:p-5 text-xs sm:text-sm shadow-xs flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#044e3a] text-white shrink-0 shadow-2xs">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <p className="text-[#044e3a] font-bold">{roleSuccessMessage}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRoleSuccessMessage(null)}
+              className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer"
+              title="Dismiss banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -745,9 +786,11 @@ export function UserManagementView({
                           return (
                             <tr
                               key={user.id}
-                              className={`border-b border-slate-100 transition-colors duration-150 hover:bg-[#f1f5f9] ${
+                              onClick={() => setSelectedDetailUser(user)}
+                              className={`border-b border-slate-100 transition-colors duration-150 hover:bg-emerald-50/50 cursor-pointer ${
                                 isOddRow ? "bg-[#f8fafc]/60" : "bg-white"
                               }`}
+                              title={`Click to view profile & details for ${user.displayName || user.name}`}
                             >
                               <td className="py-4 px-4 align-middle max-w-xs wrap-break-word">
                                 <div className="font-bold text-[#0f172a] text-xs wrap-break-word line-clamp-2 flex items-center gap-1.5">
@@ -791,55 +834,64 @@ export function UserManagementView({
                                 {renderLastLogin(user.lastLoginAt, user.status)}
                               </td>
 
-                              {/* Resend Invitation / Activate / Deactivate Actions */}
+                              {/* Actions Column: Resend Invitation / Activate / Deactivate */}
                               <td className="py-4 px-4 text-center align-middle whitespace-nowrap">
-                                {isPending ? (
-                                  <button
-                                    type="button"
-                                    disabled={actionUserId === user.id}
-                                    onClick={() => handleResendInvitation(user)}
-                                    className="px-3.5 py-1 text-xs font-bold rounded-full border border-[#047857] bg-[#ecfdf5] text-[#044e3a] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
-                                  >
-                                    {actionUserId === user.id ? (
-                                      <Loader2 className="w-3 h-3 animate-spin inline" />
-                                    ) : (
-                                      <RefreshCw className="w-3 h-3 inline" />
-                                    )}
-                                    <span>
-                                      {actionUserId === user.id
-                                        ? "Resending…"
-                                        : "Resend Invitation"}
-                                    </span>
-                                  </button>
-                                ) : isSelf && isActive ? (
-                                  <button
-                                    type="button"
-                                    disabled={true}
-                                    title="You cannot deactivate your own administrator account."
-                                    className="px-3.5 py-1 text-xs font-bold rounded-full border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 shadow-none inline-flex items-center gap-1"
-                                  >
-                                    Deactivate
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    disabled={actionUserId === user.id}
-                                    onClick={() => handleToggleStatus(user)}
-                                    className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
-                                      isActive
-                                        ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
-                                        : "border-blue-200/90 bg-blue-50/90 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800"
-                                    }`}
-                                  >
-                                    {actionUserId === user.id ? (
-                                      <Loader2 className="w-3 h-3 animate-spin inline" />
-                                    ) : isActive ? (
-                                      "Deactivate"
-                                    ) : (
-                                      "Activate"
-                                    )}
-                                  </button>
-                                )}
+                                <div className="flex items-center justify-center gap-2">
+                                  {isPending ? (
+                                    <button
+                                      type="button"
+                                      disabled={actionUserId === user.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleResendInvitation(user);
+                                      }}
+                                      className="px-3.5 py-1 text-xs font-bold rounded-full border border-[#047857] bg-[#ecfdf5] text-[#044e3a] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                                    >
+                                      {actionUserId === user.id ? (
+                                        <Loader2 className="w-3 h-3 animate-spin inline" />
+                                      ) : (
+                                        <RefreshCw className="w-3 h-3 inline" />
+                                      )}
+                                      <span>
+                                        {actionUserId === user.id
+                                          ? "Resending…"
+                                          : "Resend Invitation"}
+                                      </span>
+                                    </button>
+                                  ) : isSelf && isActive ? (
+                                    <button
+                                      type="button"
+                                      disabled={true}
+                                      onClick={(e) => e.stopPropagation()}
+                                      title="You cannot deactivate your own administrator account."
+                                      className="px-3.5 py-1 text-xs font-bold rounded-full border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 shadow-none inline-flex items-center gap-1"
+                                    >
+                                      Deactivate
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      disabled={actionUserId === user.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleStatus(user);
+                                      }}
+                                      className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
+                                        isActive
+                                          ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
+                                          : "border-blue-200/90 bg-blue-50/90 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800"
+                                      }`}
+                                    >
+                                      {actionUserId === user.id ? (
+                                        <Loader2 className="w-3 h-3 animate-spin inline" />
+                                      ) : isActive ? (
+                                        "Deactivate"
+                                      ) : (
+                                        "Activate"
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -913,6 +965,18 @@ export function UserManagementView({
             )}
           </section>
         </div>
+      )}
+
+      {/* ─── User Profile & Protected Role Change Modal ─────────────── */}
+      {selectedDetailUser && (
+        <UserProfileModal
+          user={selectedDetailUser}
+          isOpen={Boolean(selectedDetailUser)}
+          onClose={() => setSelectedDetailUser(null)}
+          onUserUpdated={async () => {
+            await loadUsers();
+          }}
+        />
       )}
     </div>
   );

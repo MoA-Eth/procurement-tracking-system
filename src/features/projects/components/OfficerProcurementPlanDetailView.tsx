@@ -27,6 +27,7 @@ import {
   MessageSquare,
   AlertCircle,
   FileCheck2,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState, useEffect } from "react";
@@ -38,6 +39,10 @@ import {
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
 import { exportPlanActivitiesToExcel } from "@/features/projects/utils/projectExcelUtils";
 import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
+import {
+  PhaseDelayBreakdownModal,
+  type PhaseDelayModalData,
+} from "./PhaseDelayBreakdownModal";
 import { CreateAdditionalPlanModal } from "@/features/plans/components/CreateAdditionalPlanModal";
 import { saveOfficerPlanDraft } from "@/features/projects/data/officerPlanDrafts";
 
@@ -53,8 +58,12 @@ export function OfficerProcurementPlanDetailView({
   plan,
   project,
   savedActivities = [],
+  isSyncedToDatabase = true,
 }: {
-  onSubmitToDirector?: (planReference: string, revisionReason?: string) => void;
+  onSubmitToDirector?: (
+    planReference: string,
+    revisionReason?: string,
+  ) => Promise<void> | void;
   onUpdatePlan?: (plan: ProcurementPlanSummary) => void;
   onUpdateActivity?: (activity: ProcurementActivitySummary) => void;
   onBulkImportActivities?: (
@@ -63,6 +72,7 @@ export function OfficerProcurementPlanDetailView({
   plan: ProcurementPlanSummary;
   project: OfficerProject;
   savedActivities?: readonly ProcurementActivitySummary[];
+  isSyncedToDatabase?: boolean;
 }) {
   const [currentPlanOverride, setCurrentPlanOverride] =
     useState<ProcurementPlanSummary | null>(null);
@@ -78,6 +88,8 @@ export function OfficerProcurementPlanDetailView({
   const [submittedPlanReference, setSubmittedPlanReference] = useState<
     string | null
   >(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const activePlanStatus =
     submittedPlanReference === currentPlan.reference
@@ -93,10 +105,37 @@ export function OfficerProcurementPlanDetailView({
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
   const [isImportExcelOpen, setIsImportExcelOpen] = useState(false);
+  const [delayModalData, setDelayModalData] =
+    useState<PhaseDelayModalData | null>(null);
   const [isCreateAdditionalPlanOpen, setIsCreateAdditionalPlanOpen] =
     useState(false);
   const [editingActivity, setEditingActivity] =
     useState<ProcurementActivitySummary | null>(null);
+
+  const handleSelectActivityDelay = (act: PlanActivity) => {
+    const rawDelay = (act as any).delayDays || (act as any).daysOverdue || 7;
+    setDelayModalData({
+      reference: act.reference,
+      title: act.description || act.reference,
+      category: act.category,
+      method: act.method,
+      totalDelayDays: Number(rawDelay) || 7,
+      stages:
+        (act as any).stages ||
+        (act.details as any)?.roadmapStages ||
+        (act.details as any)?.stages ||
+        [],
+      activityHref:
+        "/workspace/projects?project=" +
+        encodeURIComponent(project.code) +
+        "&plan=" +
+        encodeURIComponent(currentPlan.reference) +
+        "&activity=" +
+        encodeURIComponent(act.reference),
+      planReference: currentPlan.reference,
+      projectCode: project.code,
+    });
+  };
 
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
@@ -220,31 +259,45 @@ export function OfficerProcurementPlanDetailView({
     }
   };
 
-  const handleSubmitToDirector = (reason?: string) => {
-    setSubmittedPlanReference(currentPlan.reference);
+  const handleSubmitToDirector = async (reason?: string) => {
+    setSubmitError(null);
+    setIsSubmitting(true);
 
-    const nextVer = isReturned ? versionNumber + 1 : versionNumber;
+    try {
+      if (onSubmitToDirector) {
+        await onSubmitToDirector(currentPlan.reference, reason);
+      }
 
-    // Record audit revision
-    recordPlanVersionEvent({
-      planId: currentPlan.id || currentPlan.reference,
-      planReference: currentPlan.reference,
-      projectCode: project.code,
-      versionNumber: nextVer,
-      action: isReturned ? "RESUBMITTED" : "SUBMITTED",
-      actionLabel: isReturned
-        ? `Plan Resubmitted (v${nextVer})`
-        : "Plan Submitted for Director Review",
-      changedBy: "Procurement Officer",
-      changedByRole: "Procurement Officer",
-      reason:
-        reason ||
-        (isReturned
-          ? "Resubmitted with revisions addressing Director feedback."
-          : "Submitted for review."),
-    });
+      setSubmittedPlanReference(currentPlan.reference);
 
-    onSubmitToDirector?.(currentPlan.reference, reason);
+      const nextVer = isReturned ? versionNumber + 1 : versionNumber;
+
+      // Record audit revision
+      recordPlanVersionEvent({
+        planId: currentPlan.id || currentPlan.reference,
+        planReference: currentPlan.reference,
+        projectCode: project.code,
+        versionNumber: nextVer,
+        action: isReturned ? "RESUBMITTED" : "SUBMITTED",
+        actionLabel: isReturned
+          ? `Plan Resubmitted (v${nextVer})`
+          : "Plan Submitted for Director Review",
+        changedBy: "Procurement Officer",
+        changedByRole: "Procurement Officer",
+        reason:
+          reason ||
+          (isReturned
+            ? "Resubmitted with revisions addressing Director feedback."
+            : "Submitted for review."),
+      });
+    } catch (err: any) {
+      const msg =
+        err?.message ||
+        "Could not submit plan to the server database. Please check your backend connection.";
+      setSubmitError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCreateAdditionalPlan = async (additionalPlanData: {
@@ -512,6 +565,24 @@ export function OfficerProcurementPlanDetailView({
         </div>
       </header>
 
+      {/* ── DATABASE SUBMISSION ERROR ALERT ───────────────────────── */}
+      {submitError && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-900 shadow-xs animate-in fade-in"
+        >
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+          <div className="space-y-1">
+            <h3 className="text-xs font-bold text-rose-950">
+              Database Submission Failed
+            </h3>
+            <p className="text-xs leading-relaxed text-rose-800">
+              {submitError}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── RETURNED FEEDBACK ALERT BANNER ───────────────────────────── */}
       {isReturned && (
         <section
@@ -600,12 +671,22 @@ export function OfficerProcurementPlanDetailView({
             </div>
 
             <button
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#176c55] px-5 text-xs font-bold text-white shadow-xs hover:bg-[#125f4c] transition cursor-pointer"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#176c55] px-5 text-xs font-bold text-white shadow-xs hover:bg-[#125f4c] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
               onClick={() => handleSubmitToDirector()}
               type="button"
             >
-              <span>Resubmit Revised Plan to Director</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              {isSubmitting ? (
+                <>
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Submitting to Database...</span>
+                </>
+              ) : (
+                <>
+                  <span>Resubmit Revised Plan to Director</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </>
+              )}
             </button>
           </div>
         </section>
@@ -635,18 +716,79 @@ export function OfficerProcurementPlanDetailView({
             </div>
           </div>
           <button
-            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-xs font-bold text-white shadow-2xs hover:bg-[#125f4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] transition cursor-pointer"
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-xs font-bold text-white shadow-2xs hover:bg-[#125f4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={isSubmitting}
             onClick={() => handleSubmitToDirector()}
             type="button"
           >
-            Submit to Director
-            <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+            {isSubmitting ? (
+              <>
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span>Submitting to Database...</span>
+              </>
+            ) : (
+              <>
+                <span>Submit to Director</span>
+                <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
+              </>
+            )}
           </button>
         </section>
       )}
 
-      {/* ── SUBMITTED STATUS BANNER ─────────────────────────────────── */}
-      {activePlanStatus === "Submitted to Director" && (
+      {/* ── UNSYNCED LOCAL DRAFT WARNING ───────────────────────────── */}
+      {activePlanStatus === "Submitted to Director" && !isSyncedToDatabase && (
+        <section
+          aria-label="Database sync warning"
+          className="rounded-2xl border-2 border-amber-300 bg-amber-50/90 p-5 shadow-sm space-y-3 animate-in fade-in"
+        >
+          <div className="flex items-start gap-3.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 border border-amber-300">
+              <AlertCircle className="h-5 w-5 text-amber-700" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm font-bold text-amber-950">
+                  Plan Not Synced to Server Database
+                </h2>
+                <span className="rounded-full bg-amber-200/80 px-2.5 py-0.5 text-[11px] font-bold text-amber-900">
+                  Local Browser Storage Only
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-amber-800 leading-relaxed">
+                This plan is marked as submitted in your local browser cache,
+                but the backend server database has no confirmed record of it.
+                The Director cannot see this plan in &ldquo;Plan for
+                Review&rdquo; until it is successfully recorded in the database.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-amber-200/60">
+            <button
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#176c55] px-4 text-xs font-bold text-white shadow-xs hover:bg-[#125f4c] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
+              onClick={() => handleSubmitToDirector()}
+              type="button"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Submitting to Database...</span>
+                </>
+              ) : (
+                <>
+                  <span>Submit Plan to Database Now</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </>
+              )}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* ── SUBMITTED STATUS BANNER (DATABASE CONFIRMED) ─────────────── */}
+      {activePlanStatus === "Submitted to Director" && isSyncedToDatabase && (
         <section
           aria-label="Plan submission status"
           className="flex items-center justify-between gap-3.5 rounded-xl border border-[#c7d7d0] bg-[#edf5f1] p-4 shadow-2xs"
@@ -822,6 +964,7 @@ export function OfficerProcurementPlanDetailView({
                     activity={activity}
                     canEdit={activePlanStatus === "Draft" || isReturned}
                     isMultiOfficer={isMultiOfficerProject}
+                    onSelectDelay={handleSelectActivityDelay}
                     editHref={
                       "/workspace/projects?project=" +
                       encodeURIComponent(project.code) +
@@ -912,6 +1055,12 @@ export function OfficerProcurementPlanDetailView({
         projectCode={project.code}
       />
 
+      <PhaseDelayBreakdownModal
+        isOpen={Boolean(delayModalData)}
+        onClose={() => setDelayModalData(null)}
+        data={delayModalData}
+      />
+
       <CreateAdditionalPlanModal
         isOpen={isCreateAdditionalPlanOpen}
         onClose={() => setIsCreateAdditionalPlanOpen(false)}
@@ -931,13 +1080,21 @@ function ActivityRow({
   editHref,
   href,
   isMultiOfficer = false,
+  onSelectDelay,
 }: {
   activity: PlanActivity;
   canEdit?: boolean;
   editHref: string;
   href: string;
   isMultiOfficer?: boolean;
+  onSelectDelay?: (activity: PlanActivity) => void;
 }) {
+  const isDelayed =
+    activity.status === "Delayed" ||
+    (activity as any).status === "DELAYED" ||
+    Boolean((activity as any).delayDays) ||
+    Boolean((activity as any).daysOverdue);
+
   return (
     <tr className="even:bg-[#fbfcff] hover:bg-[#f7fbf9] transition-colors">
       <td className="px-2 py-2.5 align-top font-mono text-[10px] font-semibold text-[#1261a8] truncate">
@@ -983,8 +1140,21 @@ function ActivityRow({
       <td className="px-2 py-2.5 align-top text-[10px] text-slate-500">
         {activity.currentStage}
       </td>
-      <td className="px-2 py-2.5 align-top whitespace-nowrap">
-        <StatusText className="text-[9px]" label={activity.status} />
+      <td className="px-2 py-2.5 align-top">
+        <div className="flex flex-col gap-1 items-start">
+          <StatusText className="text-[9px]" label={activity.status} />
+          {isDelayed && (
+            <button
+              type="button"
+              onClick={() => onSelectDelay?.(activity)}
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer shadow-2xs"
+              title="Click to view delay in phase breakdown"
+            >
+              <Clock className="w-2.5 h-2.5" />
+              <span>Delay in Phase</span>
+            </button>
+          )}
+        </div>
       </td>
       <td className="px-2 py-2.5 text-right align-top whitespace-nowrap">
         <div className="flex items-center justify-end gap-1.5 shrink-0">

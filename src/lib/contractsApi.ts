@@ -151,7 +151,7 @@ export async function fetchContracts(params?: {
     });
     return Array.isArray(res) ? res : res.data || [];
   } catch (err) {
-    console.error("fetchContracts error:", err);
+    console.warn("fetchContracts notice:", err);
     return [];
   }
 }
