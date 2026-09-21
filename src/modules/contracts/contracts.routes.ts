@@ -38,6 +38,10 @@ router.post(
   (req, res) => contractsController.createContract(req, res),
 );
 
+router.get('/template', (req, res) =>
+  excelController.exportContractsTemplate(req, res),
+);
+
 router.get('/:id', (req, res) => contractsController.getContractById(req, res));
 router.patch(
   '/:id',
@@ -82,10 +86,6 @@ router.post(
     'ADMIN',
   ),
   (req, res) => contractsController.recordPayment(req, res),
-);
-
-router.get('/template', (req, res) =>
-  excelController.exportContractsTemplate(req, res),
 );
 
 router.post(

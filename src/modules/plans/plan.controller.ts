@@ -199,7 +199,7 @@ export const returnToOfficer = async (
       req.body.comment?.trim() ||
       req.body.reason?.trim() ||
       'Returned to officer for revision';
-    const plan = await planService.rejectPlanService(
+    const plan = await planService.returnToOfficerService(
       req.params.id as string,
       reason,
       req.user.id,

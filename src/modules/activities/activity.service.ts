@@ -310,12 +310,15 @@ export const updateActivityService = async (
         });
         if (!assignment)
           throw new Error('You are not assigned to this project.');
-        if (
-          oldActivity.plan.status !== PlanStatus.DRAFT &&
-          oldActivity.plan.status !== PlanStatus.REJECTED
-        ) {
+        const editableStatuses: PlanStatus[] = [
+          PlanStatus.DRAFT,
+          PlanStatus.REJECTED,
+          PlanStatus.RETURNED_FOR_REVISION,
+          PlanStatus.UPDATE_REQUESTED,
+        ];
+        if (!editableStatuses.includes(oldActivity.plan.status)) {
           throw new Error(
-            'Cannot edit activities in a plan that is not in DRAFT or REJECTED status.',
+            `Cannot edit activities in a plan with status ${oldActivity.plan.status}. Plan must be in DRAFT, RETURNED_FOR_REVISION, REJECTED, or UPDATE_REQUESTED status.`,
           );
         }
       }

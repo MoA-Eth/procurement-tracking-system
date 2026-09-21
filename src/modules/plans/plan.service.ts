@@ -697,6 +697,84 @@ export const rejectPlanService = async (
   return plan;
 };
 
+export const returnToOfficerService = async (
+  id: string,
+  reason: string,
+  userId: string,
+) => {
+  const plan = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const oldPlan =
+        (await tx.plan.findUnique({
+          where: { id },
+          include: { activities: true, committeeVotes: true },
+        })) ||
+        (await tx.plan.findFirst({
+          where: { title: id },
+          include: { activities: true, committeeVotes: true },
+        }));
+      if (!oldPlan) {
+        throw new Error(`Plan not found with id: ${id}`);
+      }
+
+      const user = await tx.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new Error(`Authenticated user not found with id: ${userId}`);
+      }
+      const validUserId = user.id;
+
+      const plan = await tx.plan.update({
+        where: { id: oldPlan.id },
+        data: {
+          status: PlanStatus.RETURNED_FOR_REVISION,
+          directorRevisionComment: reason,
+          rejectedById: validUserId,
+          rejectedAt: new Date(),
+        },
+        include: {
+          project: true,
+          creator: true,
+          activities: true,
+          committeeVotes: true,
+        },
+      });
+
+      try {
+        if (validUserId) {
+          await logRevision(
+            tx,
+            RevisionEntityType.PLAN,
+            RevisionChangeType.UPDATE,
+            oldPlan.id,
+            validUserId,
+            oldPlan,
+            plan,
+          );
+        }
+      } catch (auditErr) {
+        console.warn('logRevision returnToOfficer warning:', auditErr);
+      }
+
+      return plan;
+    },
+  );
+
+  notifyOfficersOnEntityChange({
+    planId: plan.id,
+    projectId: plan.projectId,
+    creatorId: plan.createdBy,
+    actorUserId: userId,
+    title: `Plan Returned for Revision: ${plan.title}`,
+    message: `Director returned plan "${plan.title}" for revision with comments: "${reason}"`,
+    type: 'DECISION',
+    severity: 'HIGH',
+    link: '/workspace/plan-management',
+  }).catch(() => {});
+
+  return plan;
+};
+
+
 export const submitCommitteeVoteService = async (
   id: string,
   decision: VoteDecision,
