@@ -253,6 +253,34 @@ export const createPlanService = async (
       );
     }
 
+    // Validate plan period dates vs project start & end dates
+    const planStart = new Date(data.periodStart as string | Date);
+    const planEnd = new Date(data.periodEnd as string | Date);
+
+    if (planEnd < planStart) {
+      throw ApiError.badRequest(
+        'Plan period end date cannot be earlier than period start date.',
+      );
+    }
+
+    const projStart = project.projectStartDate || project.effectivenessDate;
+    if (projStart && planStart < projStart) {
+      const projStartStr = projStart.toISOString().split('T')[0];
+      const planStartStr = planStart.toISOString().split('T')[0];
+      throw ApiError.badRequest(
+        `Plan period start date (${planStartStr}) cannot be earlier than the project start date (${projStartStr}).`,
+      );
+    }
+
+    const projEnd = project.projectEndDate || project.closingDate;
+    if (projEnd && planEnd > projEnd) {
+      const projEndStr = projEnd.toISOString().split('T')[0];
+      const planEndStr = planEnd.toISOString().split('T')[0];
+      throw ApiError.badRequest(
+        `Plan period end date (${planEndStr}) cannot be later than the project end date (${projEndStr}).`,
+      );
+    }
+
     // 2. Resolve creator user
     const user = await tx.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -320,11 +348,11 @@ export const updatePlanService = async (
       const oldPlan =
         (await tx.plan.findUnique({
           where: { id },
-          include: { activities: true, committeeVotes: true },
+          include: { activities: true, committeeVotes: true, project: true },
         })) ||
         (await tx.plan.findFirst({
           where: { title: id },
-          include: { activities: true, committeeVotes: true },
+          include: { activities: true, committeeVotes: true, project: true },
         }));
       if (!oldPlan) {
         throw new Error(`Plan not found with id: ${id}`);
@@ -335,6 +363,46 @@ export const updatePlanService = async (
         throw new Error(`Authenticated user not found with id: ${userId}`);
       }
       const validUserId = user.id;
+
+      if (data.periodStart !== undefined || data.periodEnd !== undefined) {
+        const targetStart =
+          data.periodStart !== undefined
+            ? new Date(data.periodStart as string | Date)
+            : oldPlan.periodStart;
+        const targetEnd =
+          data.periodEnd !== undefined
+            ? new Date(data.periodEnd as string | Date)
+            : oldPlan.periodEnd;
+
+        if (targetStart && targetEnd && targetEnd < targetStart) {
+          throw ApiError.badRequest(
+            'Plan period end date cannot be earlier than period start date.',
+          );
+        }
+
+        if (oldPlan.project) {
+          const projStart =
+            oldPlan.project.projectStartDate ||
+            oldPlan.project.effectivenessDate;
+          if (projStart && targetStart && targetStart < projStart) {
+            const projStartStr = projStart.toISOString().split('T')[0];
+            const planStartStr = targetStart.toISOString().split('T')[0];
+            throw ApiError.badRequest(
+              `Plan period start date (${planStartStr}) cannot be earlier than the project start date (${projStartStr}).`,
+            );
+          }
+
+          const projEnd =
+            oldPlan.project.projectEndDate || oldPlan.project.closingDate;
+          if (projEnd && targetEnd && targetEnd > projEnd) {
+            const projEndStr = projEnd.toISOString().split('T')[0];
+            const planEndStr = targetEnd.toISOString().split('T')[0];
+            throw ApiError.badRequest(
+              `Plan period end date (${planEndStr}) cannot be later than the project end date (${projEndStr}).`,
+            );
+          }
+        }
+      }
 
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },

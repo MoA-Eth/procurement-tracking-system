@@ -34,25 +34,42 @@ export const createPlanSchema = registry.register(
     parentPlanId: z.string().trim().optional(),
     planType: z.string().trim().optional(),
     additionalPlanReason: z.string().trim().optional(),
+  })
+  .refine((data) => data.periodEnd >= data.periodStart, {
+    message: 'Period end date must be on or after period start date',
+    path: ['periodEnd'],
   }),
 );
 
 export const updatePlanSchema = registry.register(
   'UpdatePlan',
-  z.object({
-    title: z.string().trim().min(1).max(255).optional(),
-    budgetYear: z.string().trim().optional(),
-    procurementCategory: z.string().trim().optional(),
-    organization: z.string().trim().optional(),
-    description: z.string().trim().optional(),
-    periodStart: z.coerce.date().optional(),
-    periodEnd: z.coerce.date().optional(),
-    gpnDate: z.coerce.date().optional(),
-    status: z.nativeEnum(PlanStatus).optional(),
-    parentPlanId: z.string().trim().optional(),
-    planType: z.string().trim().optional(),
-    additionalPlanReason: z.string().trim().optional(),
-  }),
+  z
+    .object({
+      title: z.string().trim().min(1).max(255).optional(),
+      budgetYear: z.string().trim().optional(),
+      procurementCategory: z.string().trim().optional(),
+      organization: z.string().trim().optional(),
+      description: z.string().trim().optional(),
+      periodStart: z.coerce.date().optional(),
+      periodEnd: z.coerce.date().optional(),
+      gpnDate: z.coerce.date().optional(),
+      status: z.nativeEnum(PlanStatus).optional(),
+      parentPlanId: z.string().trim().optional(),
+      planType: z.string().trim().optional(),
+      additionalPlanReason: z.string().trim().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.periodStart && data.periodEnd) {
+          return data.periodEnd >= data.periodStart;
+        }
+        return true;
+      },
+      {
+        message: 'Period end date must be on or after period start date',
+        path: ['periodEnd'],
+      },
+    ),
 );
 
 export const rejectPlanSchema = registry.register(

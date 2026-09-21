@@ -1760,6 +1760,24 @@ export class ExcelService {
           );
         }
 
+        const projStart = project.projectStartDate || project.effectivenessDate;
+        if (projStart && periodStart < projStart) {
+          const projStartStr = projStart.toISOString().split('T')[0];
+          const planStartStr = periodStart.toISOString().split('T')[0];
+          throw new Error(
+            `Row ${rowNumber}: Plan period start date (${planStartStr}) cannot be earlier than project start date (${projStartStr}).`,
+          );
+        }
+
+        const projEnd = project.projectEndDate || project.closingDate;
+        if (projEnd && periodEnd > projEnd) {
+          const projEndStr = projEnd.toISOString().split('T')[0];
+          const planEndStr = periodEnd.toISOString().split('T')[0];
+          throw new Error(
+            `Row ${rowNumber}: Plan period end date (${planEndStr}) cannot be later than project end date (${projEndStr}).`,
+          );
+        }
+
         const data = {
           projectId: project.id,
           title,
