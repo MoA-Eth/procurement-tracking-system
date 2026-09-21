@@ -1174,10 +1174,7 @@ function ActivityTrackerList({
                 >
                   Project / FY
                 </th>
-                <th
-                  className="py-3.5 px-4 min-w-[140px]"
-                  scope="col"
-                >
+                <th className="py-3.5 px-4 min-w-[140px]" scope="col">
                   Category &amp; Method
                 </th>
                 <th className="py-3.5 px-4 min-w-[160px]" scope="col">
@@ -1246,7 +1243,7 @@ function ActivityTrackerList({
               Page {currentPageNumber} of {totalPages}
             </span>
             <div className="flex items-center gap-1">
-                <button
+              <button
                 aria-label="Previous page"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
                 disabled={currentPageNumber === 1}
@@ -1323,7 +1320,8 @@ function TrackerRow({
         </Link>
         {item.activity.details?.roadmap.length ? (
           <p className="mt-1 text-[11px] text-slate-500 font-medium">
-            {progress.completed} of {progress.total} stages completed ({progress.percent}%)
+            {progress.completed} of {progress.total} stages completed (
+            {progress.percent}%)
           </p>
         ) : null}
       </td>

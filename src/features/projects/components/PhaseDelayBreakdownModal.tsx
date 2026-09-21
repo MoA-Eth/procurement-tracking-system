@@ -375,7 +375,9 @@ export function PhaseDelayBreakdownModal({
                     <th className="py-2.5 px-3 font-semibold text-center">
                       Process Delay
                     </th>
-                    <th className="py-2.5 px-3.5 font-semibold">Stage Status</th>
+                    <th className="py-2.5 px-3.5 font-semibold">
+                      Stage Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">

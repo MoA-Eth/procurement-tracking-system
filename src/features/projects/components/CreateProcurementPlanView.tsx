@@ -33,7 +33,13 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, type FormEvent, type ReactNode, type SyntheticEvent } from "react";
+import {
+  useEffect,
+  useState,
+  type FormEvent,
+  type ReactNode,
+  type SyntheticEvent,
+} from "react";
 
 type SaveAction = "activity" | "draft" | null;
 
@@ -323,7 +329,9 @@ export function CreateProcurementPlanView({
           <div className="rounded border border-red-300 bg-red-50 p-4 text-xs text-red-800 flex items-start gap-3 shadow-xs">
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-red-900">Database Action Failed</p>
+              <p className="font-semibold text-red-900">
+                Database Action Failed
+              </p>
               <p className="mt-1 leading-relaxed text-red-800">{submitError}</p>
             </div>
           </div>

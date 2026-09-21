@@ -421,7 +421,10 @@ export function OfficerContractsView({
     <div className="space-y-6 animate-in fade-in duration-200 pb-10">
       <header className="flex w-full min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs"
+          >
             <Link
               href="/dashboard/officer"
               title="Go to Dashboard"
@@ -437,7 +440,8 @@ export function OfficerContractsView({
               Contracts
             </h1>
             <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-3xl">
-              Manage contract commitments, track payment disbursements, and record amendments.
+              Manage contract commitments, track payment disbursements, and
+              record amendments.
             </p>
           </div>
         </div>
