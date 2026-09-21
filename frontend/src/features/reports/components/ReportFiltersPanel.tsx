@@ -60,11 +60,11 @@ export function ReportFiltersPanel({
       <div className="flex items-center justify-between gap-2.5 mb-3 pb-2.5 border-b border-slate-100">
         <div className="flex items-center gap-2">
           <Filter className="h-3.5 w-3.5 text-[#0A3C2F]" />
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
             Filters
           </h3>
           <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
               activeFilterCount > 0
                 ? "bg-[#0A3C2F] text-white"
                 : "bg-slate-100 text-slate-500"

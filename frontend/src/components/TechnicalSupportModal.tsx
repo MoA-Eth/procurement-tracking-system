@@ -36,13 +36,13 @@ export function TechnicalSupportModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-3">
-            <span className="rounded-xl bg-emerald-50 p-2 text-[#064e3b]">
+            <span className="rounded-xl bg-emerald-50 p-2 text-[#0A3C2F]">
               <Headphones />
             </span>
             <div>
               <h2
                 id="support-title"
-                className="text-lg font-bold text-slate-900"
+                className="text-lg font-semibold text-slate-900"
               >
                 MoA ICT Technical Support
               </h2>

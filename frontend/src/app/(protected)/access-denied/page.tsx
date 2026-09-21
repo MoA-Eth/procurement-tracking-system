@@ -13,10 +13,10 @@ export default async function AccessDeniedPage() {
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-600">
         <ShieldX size={32} />
       </div>
-      <p className="mt-6 text-sm font-bold uppercase tracking-wider text-red-600">
+      <p className="mt-6 text-sm font-semibold uppercase tracking-wider text-red-600">
         Access denied
       </p>
-      <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-950">
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
         You do not have permission to view this page
       </h1>
       <p className="mx-auto mt-4 max-w-lg leading-7 text-slate-600">
@@ -25,7 +25,7 @@ export default async function AccessDeniedPage() {
       </p>
       <Link
         href={dashboardPath(session.user.role)}
-        className="mx-auto mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#064a3a] px-5 font-bold text-white hover:bg-[#043b2d]"
+        className="mx-auto mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0A3C2F] px-5 font-semibold text-white hover:bg-[#072F25]"
       >
         <ArrowLeft size={18} /> Return to dashboard
       </Link>

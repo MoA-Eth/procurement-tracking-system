@@ -105,7 +105,9 @@ export function ProfileView({ user }: { user: AuthUser }) {
       <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs">
         <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
           <UserIcon className="w-5 h-5 text-slate-700" />
-          <h2 className="text-lg font-bold text-slate-900">Profile Details</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Profile Details
+          </h2>
         </div>
 
         {profileSuccess && (
@@ -173,7 +175,9 @@ export function ProfileView({ user }: { user: AuthUser }) {
       <section className="rounded-2xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-xs">
         <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
           <Lock className="w-5 h-5 text-slate-700" />
-          <h2 className="text-lg font-bold text-slate-900">Change Password</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Change Password
+          </h2>
         </div>
 
         {passwordSuccess && (

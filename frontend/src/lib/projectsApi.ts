@@ -113,13 +113,35 @@ export interface UpdateProjectInput {
   projectEndDate?: string;
 }
 
+let _cachedProjects: BackendProject[] | null = null;
+let _cachedProjectsTimestamp = 0;
+
+export function getCachedProjects(): BackendProject[] | null {
+  return _cachedProjects;
+}
+
+export function setCachedProjects(projects: BackendProject[]) {
+  _cachedProjects = projects;
+  _cachedProjectsTimestamp = Date.now();
+}
+
+export function invalidateProjectsCache() {
+  _cachedProjects = null;
+  _cachedProjectsTimestamp = 0;
+}
+
 export async function fetchProjects(): Promise<BackendProject[]> {
   try {
     const res = await apiClient.get<any>("/projects");
-    return Array.isArray(res) ? res : res.data || [];
+    const data = Array.isArray(res) ? res : res.data || [];
+    if (Array.isArray(data) && data.length > 0) {
+      _cachedProjects = data;
+      _cachedProjectsTimestamp = Date.now();
+    }
+    return data;
   } catch (err) {
-    console.error("fetchProjects error:", err);
-    return [];
+    console.warn("fetchProjects notice:", err);
+    return _cachedProjects || [];
   }
 }
 
@@ -131,6 +153,7 @@ export async function fetchProjectById(id: string): Promise<BackendProject> {
 export async function createProject(
   data: CreateProjectInput,
 ): Promise<BackendProject> {
+  invalidateProjectsCache();
   const res = await apiClient.post<any>("/projects", data);
   return res.data || res;
 }
@@ -139,6 +162,7 @@ export async function updateProject(
   id: string,
   data: UpdateProjectInput,
 ): Promise<BackendProject> {
+  invalidateProjectsCache();
   const res = await apiClient.patch<any>(
     `/projects/${encodeURIComponent(id)}`,
     data,
@@ -162,6 +186,16 @@ export async function removeOfficerFromProject(
   await apiClient.delete(
     `/projects/${encodeURIComponent(projectId)}/officers/${encodeURIComponent(officerId)}`,
   );
+}
+
+export async function deleteProject(projectId: string): Promise<boolean> {
+  try {
+    await apiClient.delete(`/projects/${encodeURIComponent(projectId)}`);
+    return true;
+  } catch (err) {
+    console.warn(`deleteProject notice for ${projectId}:`, err);
+    return false;
+  }
 }
 
 export function mapBackendProjectToProjectItem(
@@ -199,7 +233,9 @@ export function mapBackendProjectToProjectItem(
     assignedOfficers,
     description: "Sector project",
     status:
-      bp.status === "ACTIVE"
+      bp.status?.toUpperCase() === "ACTIVE" ||
+      bp.isActive === true ||
+      (!bp.status && bp.isActive !== false)
         ? assignedOfficers.length > 0
           ? "Active"
           : "Draft"

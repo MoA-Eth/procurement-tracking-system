@@ -361,8 +361,8 @@ export function CommitteeProgressView({
             rejectedCount >= 3 ||
             bp.status === "COMMITTEE_REJECTED" ||
             bp.status === "REJECTED" ||
-            matchingDraft?.status === "Returned" ||
-            matchingDraft?.status === "Rejected"
+            (matchingDraft?.status === "Returned" && rejectedCount >= 3) ||
+            (matchingDraft?.status === "Rejected" && rejectedCount >= 3)
           ) {
             committeeStatus = "Rejected";
           } else if (
@@ -370,7 +370,8 @@ export function CommitteeProgressView({
             bp.status === "COMMITTEE_ENDORSED" ||
             bp.status === "AWAITING_MANAGEMENT_APPROVAL" ||
             bp.status === "MANAGEMENT_APPROVED" ||
-            bp.status === "MANAGEMENT_REJECTED"
+            bp.status === "MANAGEMENT_REJECTED" ||
+            (matchingDraft?.status === "Finally Approved" && approvedCount >= 3)
           ) {
             committeeStatus = "Approved";
           }
@@ -403,7 +404,7 @@ export function CommitteeProgressView({
             }
           }
 
-          // Overall Status
+          // Overall Status (Requires at least 3 rejections to be completely rejected)
           let overallStatus:
             | "Approved"
             | "Rejected"
@@ -411,19 +412,20 @@ export function CommitteeProgressView({
             | "Returned for Revision" = "Pending Approval";
           if (
             bp.status === "RETURNED_FOR_REVISION" ||
-            matchingDraft?.status === "Returned"
+            (matchingDraft?.status === "Returned" && rejectedCount >= 3)
           ) {
             overallStatus = "Returned for Revision";
           } else if (
             managementStatus === "Approved" ||
-            bp.status === "APPROVED"
+            bp.managementDecision === "APPROVE" ||
+            (bp.status === "APPROVED" && bp.managementDecision !== "REJECT")
           ) {
             overallStatus = "Approved";
           } else if (
             managementStatus === "Rejected" ||
             committeeStatus === "Rejected" ||
             bp.status === "REJECTED" ||
-            rejectedCount > 0
+            rejectedCount >= 3
           ) {
             overallStatus = "Rejected";
           } else {
@@ -620,6 +622,25 @@ export function CommitteeProgressView({
           fetchActivities().catch(() => []),
         ]);
 
+        const isDuplicateAct = (a: any, b: any) => {
+          const norm = (s?: string) => (s || "").trim().toLowerCase();
+          const aId = norm(a.id);
+          const bId = norm(b.id);
+          const aRef = norm(a.reference || a.activityRefNo);
+          const bRef = norm(b.reference || b.activityRefNo);
+          if (aId && bId && aId === bId) return true;
+          if (aRef && bRef && aRef === bRef) return true;
+
+          const aDesc = norm(a.description);
+          const bDesc = norm(b.description);
+          if (aDesc && bDesc && aDesc === bDesc) {
+            const aAmt = Number(a.estimatedBudget || a.estimatedAmount) || 0;
+            const bAmt = Number(b.estimatedBudget || b.estimatedAmount) || 0;
+            if (aAmt === bAmt || Math.abs(aAmt - bAmt) < 1) return true;
+          }
+          return false;
+        };
+
         const combined = [...(selectedPlan?.activities || [])];
         for (const ba of [...planBackendActs, ...allBackendActs]) {
           const baPlanId = (ba.planId || ba.plan?.id || "")
@@ -643,13 +664,13 @@ export function CommitteeProgressView({
               selectedPlan?.planNumber &&
               selectedPlan.planNumber.toLowerCase().includes(baPlanTitle));
           if (matches) {
-            const baRef = ba.reference || (ba as any).activityRefNo || ba.id;
-            if (
-              !combined.some(
-                (x: any) => (x.reference || x.activityRefNo || x.id) === baRef,
-              )
-            ) {
+            const existingIdx = combined.findIndex((x: any) =>
+              isDuplicateAct(x, ba),
+            );
+            if (existingIdx === -1) {
               combined.push(ba);
+            } else {
+              combined[existingIdx] = { ...combined[existingIdx], ...ba };
             }
           }
         }
@@ -675,39 +696,39 @@ export function CommitteeProgressView({
                   .trim();
                 const planId = (selectedPlan.id || "").toLowerCase().trim();
                 if (
-                  draftPlanRef === planRef ||
-                  draftPlanRef === planId ||
-                  (d.projectCode &&
-                    selectedPlan.projectCode &&
-                    d.projectCode.toLowerCase() ===
-                      selectedPlan.projectCode.toLowerCase())
+                  draftPlanRef &&
+                  (draftPlanRef === planRef ||
+                    draftPlanRef === planId ||
+                    (selectedPlan.planTitle &&
+                      draftPlanRef ===
+                        selectedPlan.planTitle.toLowerCase().trim()) ||
+                    (selectedPlan.planNumber &&
+                      draftPlanRef ===
+                        selectedPlan.planNumber.toLowerCase().trim()))
                 ) {
                   const act = d.activity;
                   if (act) {
-                    const actRef =
-                      act.reference || (act as any).activityRefNo || act.id;
-                    if (
-                      !combined.some(
-                        (x: any) =>
-                          (x.reference || x.activityRefNo || x.id) === actRef,
-                      )
-                    ) {
-                      combined.push({
-                        id: act.id || `draft-${Date.now()}`,
-                        reference: act.reference || (act as any).activityRefNo,
-                        activityRefNo:
-                          (act as any).activityRefNo || act.reference,
-                        description: act.description,
-                        estimatedBudget: act.estimatedAmount || 0,
-                        estimatedAmount: act.estimatedAmount || 0,
-                        procurementMethod: {
-                          label: act.method || "National Competitive Bidding",
-                          code: (act as any).methodCode || "NCB",
-                        },
-                        method: act.method || "RFB - National",
-                        reviewType: act.details?.form?.reviewType || "Post",
-                        stages: act.details?.roadmap || [],
-                      });
+                    const newAct = {
+                      id: act.id || `draft-${Date.now()}`,
+                      reference: act.reference || (act as any).activityRefNo,
+                      activityRefNo:
+                        (act as any).activityRefNo || act.reference,
+                      description: act.description,
+                      estimatedBudget: act.estimatedAmount || 0,
+                      estimatedAmount: act.estimatedAmount || 0,
+                      procurementMethod: {
+                        label: act.method || "National Competitive Bidding",
+                        code: (act as any).methodCode || "NCB",
+                      },
+                      method: act.method || "RFB - National",
+                      reviewType: act.details?.form?.reviewType || "Post",
+                      stages: act.details?.roadmap || [],
+                    };
+                    const existingIdx = combined.findIndex((x: any) =>
+                      isDuplicateAct(x, newAct),
+                    );
+                    if (existingIdx === -1) {
+                      combined.push(newAct);
                     }
                   }
                 }
@@ -843,7 +864,15 @@ export function CommitteeProgressView({
       setTimeout(() => setToastMessage(null), 5000);
     } catch (err: any) {
       console.error("Error returning plan for revision:", err);
-      alert(err.message || "Failed to return plan for revision.");
+      const rawMsg = err?.message || "Failed to return plan for revision.";
+      const cleanMsg =
+        typeof rawMsg === "string" && rawMsg.includes("<")
+          ? rawMsg
+              .replace(/<[^>]*>/g, " ")
+              .replace(/\s+/g, " ")
+              .trim()
+          : rawMsg;
+      alert(cleanMsg);
     } finally {
       setIsSubmittingRevision(false);
     }
@@ -1032,7 +1061,7 @@ export function CommitteeProgressView({
           className={`transition-colors cursor-pointer ${
             selectedPlan
               ? "text-slate-500 hover:text-slate-900"
-              : "font-bold text-[#0A3C2F]"
+              : "font-semibold text-[#0A3C2F]"
           }`}
         >
           {currentUser?.role === "ENDORSING_COMMITTEE"
@@ -1042,7 +1071,7 @@ export function CommitteeProgressView({
         {selectedPlan && (
           <>
             <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            <span className="font-bold text-[#0A3C2F] font-mono">
+            <span className="font-semibold text-[#0A3C2F] font-mono">
               {selectedPlan.planNumber} Voting & Review Details
             </span>
           </>
@@ -1058,7 +1087,7 @@ export function CommitteeProgressView({
               <div className="space-y-1.5">
                 <button
                   onClick={handleBackToOverview}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer mb-1"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer mb-1"
                 >
                   <ArrowLeft className="h-4 w-4" />{" "}
                   {currentUser?.role === "ENDORSING_COMMITTEE"
@@ -1067,10 +1096,10 @@ export function CommitteeProgressView({
                 </button>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-md font-mono text-xs font-bold bg-slate-100 text-slate-700">
+                  <span className="px-2.5 py-0.5 rounded-md font-mono text-xs font-semibold bg-slate-100 text-slate-700">
                     {selectedPlan.planNumber}
                   </span>
-                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-950 tracking-tight">
+                  <h1 className="text-xl sm:text-2xl font-semibold text-slate-950 tracking-tight break-words break-all [overflow-wrap:anywhere]">
                     {selectedPlan.planTitle}
                   </h1>
                 </div>
@@ -1104,7 +1133,7 @@ export function CommitteeProgressView({
                     <span className="text-slate-400 font-medium block text-[11px]">
                       Total Estimated Budget:
                     </span>
-                    <strong className="text-[#0A3C2F] font-mono font-bold text-sm">
+                    <strong className="text-[#0A3C2F] font-mono font-semibold text-sm">
                       {selectedPlan.currency}{" "}
                       {selectedPlan.totalBudget.toLocaleString("en-US", {
                         minimumFractionDigits: 2,
@@ -1117,14 +1146,14 @@ export function CommitteeProgressView({
 
               <div className="flex flex-col items-end gap-2">
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium border ${
                     selectedPlan.overallStatus === "Approved"
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
                       : selectedPlan.overallStatus === "Rejected"
-                        ? "bg-rose-50 text-rose-800 border-rose-200"
+                        ? "bg-rose-50 text-rose-800 border-rose-200/80"
                         : selectedPlan.overallStatus === "Returned for Revision"
-                          ? "bg-amber-50 text-amber-800 border-amber-300"
-                          : "bg-blue-50 text-blue-800 border-blue-200"
+                          ? "bg-rose-50 text-rose-800 border-rose-200/80"
+                          : "bg-blue-50/60 text-blue-800 border-blue-200/80"
                   }`}
                 >
                   {selectedPlan.overallStatus === "Approved" && (
@@ -1145,19 +1174,19 @@ export function CommitteeProgressView({
             </div>
 
             {selectedPlan.description && (
-              <p className="text-xs text-slate-600 italic leading-relaxed">
+              <p className="text-xs text-slate-600 italic leading-relaxed break-words break-all [overflow-wrap:anywhere]">
                 &quot;{selectedPlan.description}&quot;
               </p>
             )}
 
             {/* If plan was returned for revision, show Director instructions */}
             {selectedPlan.directorRevisionComment && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 space-y-1.5 text-xs text-amber-950">
-                <div className="flex items-center gap-2 font-bold text-amber-900">
-                  <RotateCcw className="h-4 w-4 text-amber-700" />
+              <div className="notice-card-clean space-y-1.5 text-xs text-slate-800">
+                <div className="flex items-center gap-2 font-semibold text-slate-900">
+                  <RotateCcw className="h-4 w-4 text-slate-600" />
                   <span>Director Revision Instructions:</span>
                 </div>
-                <p className="italic pl-6 leading-relaxed">
+                <p className="italic pl-6 leading-relaxed break-words break-all [overflow-wrap:anywhere] text-slate-700 font-normal">
                   &quot;{selectedPlan.directorRevisionComment}&quot;
                 </p>
               </div>
@@ -1170,39 +1199,133 @@ export function CommitteeProgressView({
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-[#0A3C2F] flex items-center justify-center font-bold">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-[#0A3C2F] flex items-center justify-center font-semibold">
                     <Users className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">
+                    <h3 className="text-sm font-semibold text-slate-900">
                       Section A: Endorsement Committee Votes
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                      Requires at least 3 of 5 approvals to endorse to
-                      Management.
+                      Requires at least 3 approvals to endorse, or at least 3
+                      rejections to completely reject.
                     </p>
                   </div>
                 </div>
 
-                <span
-                  className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
-                    selectedPlan.committeeStatus === "Approved"
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                      : selectedPlan.committeeStatus === "Rejected"
-                        ? "bg-rose-50 text-rose-800 border-rose-200"
-                        : "bg-blue-50 text-blue-800 border-blue-200"
-                  }`}
-                >
-                  {selectedPlan.approvedCount}/5 Approved
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`badge-status-base ${
+                      selectedPlan.committeeStatus === "Approved"
+                        ? "badge-status-completed font-semibold"
+                        : "badge-status-completed"
+                    }`}
+                  >
+                    {selectedPlan.approvedCount}/5 Approved
+                  </span>
+                  <span
+                    className={`badge-status-base ${
+                      selectedPlan.committeeStatus === "Rejected"
+                        ? "badge-status-delayed font-semibold"
+                        : selectedPlan.rejectedCount > 0
+                          ? "badge-status-delayed"
+                          : "badge-status-not-started"
+                    }`}
+                  >
+                    {selectedPlan.rejectedCount}/5 Rejected
+                  </span>
+                </div>
               </div>
+
+              {/* Informative Objection / Rejection Alert Banner for Director */}
+              {selectedPlan.rejectedCount > 0 &&
+                selectedPlan.rejectedCount < 3 && (
+                  <div className="notice-card-clean space-y-1 text-xs animate-in fade-in">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle className="h-4 w-4 text-slate-700 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <p className="font-semibold text-slate-900">
+                          Committee Objection In Progress (
+                          {selectedPlan.rejectedCount} of 3 Rejections Required
+                          to Fully Reject Plan)
+                        </p>
+                        <p className="text-[11px] text-slate-600 leading-relaxed">
+                          {selectedPlan.rejectedCount} committee member
+                          {selectedPlan.rejectedCount > 1
+                            ? "s have"
+                            : " has"}{" "}
+                          registered rejection objections. Per regulation, at
+                          least 3 committee rejection votes are required for the
+                          plan to be formally rejected and returned, but
+                          deliberation comments and flagged activities are
+                          immediately visible below for directorate oversight.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              {selectedPlan.rejectedCount >= 3 && (
+                <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-950 text-xs animate-in fade-in">
+                  <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-rose-900">
+                      Plan Rejected by Committee Majority (
+                      {selectedPlan.rejectedCount} of 5 Committee Members
+                      Rejected)
+                    </p>
+                    <p className="text-[11px] text-rose-800/90 leading-relaxed">
+                      The plan has reached the 3-rejection threshold and is
+                      officially returned to the Director. Review the aggregated
+                      feedback below to return the plan to the Procurement
+                      Officer for revision.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {selectedPlan.approvedCount >= 3 &&
+                selectedPlan.overallStatus !== "Approved" && (
+                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-sky-50 border border-sky-300 text-sky-950 text-xs animate-in fade-in">
+                    <CheckCircle2 className="h-4 w-4 text-sky-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-semibold text-sky-900">
+                        Committee Endorsed ({selectedPlan.approvedCount} of 5
+                        Approval Votes) — Awaiting Executive Management Approval
+                      </p>
+                      <p className="text-[11px] text-sky-800/90 leading-relaxed">
+                        The Endorsement Committee has endorsed this procurement
+                        plan. Per governance policy, the plan requires final
+                        authorization from Executive Management before it
+                        becomes Finally Approved.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {selectedPlan.overallStatus === "Approved" && (
+                <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs animate-in fade-in">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-emerald-900">
+                      Finally Approved by Executive Management
+                    </p>
+                    <p className="text-[11px] text-emerald-800/90 leading-relaxed">
+                      This procurement plan has received committee endorsement
+                      and final authorization from Executive Management. It is
+                      now active for contract registration and procurement
+                      execution.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Committee Members Voting Cards */}
               <div className="space-y-3">
                 {selectedPlan.memberVotes.map((member) => (
                   <div
                     key={member.id}
-                    className={`p-3.5 rounded-xl border transition-all ${
+                    className={`p-3.5 rounded-xl border transition-all overflow-hidden ${
                       member.voteStatus === "Approved"
                         ? "border-emerald-200 bg-emerald-50/20"
                         : member.voteStatus === "Rejected"
@@ -1212,7 +1335,7 @@ export function CommitteeProgressView({
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <h4 className="text-xs font-bold text-slate-950">
+                        <h4 className="text-xs font-semibold text-slate-950">
                           {member.name}
                         </h4>
                         {member.email && (
@@ -1223,7 +1346,7 @@ export function CommitteeProgressView({
                       </div>
 
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
                           member.voteStatus === "Approved"
                             ? "bg-emerald-100 text-emerald-800"
                             : member.voteStatus === "Rejected"
@@ -1265,13 +1388,13 @@ export function CommitteeProgressView({
 
                         return (
                           <div
-                            className={`mt-2.5 p-3.5 rounded-xl border text-xs ${
+                            className={`mt-2.5 p-3.5 rounded-xl border text-xs overflow-hidden break-words break-all [overflow-wrap:anywhere] ${
                               member.voteStatus === "Rejected"
                                 ? "bg-rose-50 border-rose-200 text-rose-950"
                                 : "bg-emerald-50 border-emerald-200 text-emerald-950"
                             }`}
                           >
-                            <div className="flex flex-wrap items-center justify-between gap-2 font-bold mb-1.5">
+                            <div className="flex flex-wrap items-center justify-between gap-2 font-semibold mb-1.5">
                               <div className="flex items-center gap-1.5">
                                 {member.voteStatus === "Rejected" ? (
                                   <>
@@ -1291,7 +1414,7 @@ export function CommitteeProgressView({
                               </div>
 
                               {isRejectedWithSpecific && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide bg-rose-200/80 text-rose-900 border border-rose-300">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wide bg-rose-200/80 text-rose-900 border border-rose-300">
                                   Specific Activity Objection
                                 </span>
                               )}
@@ -1301,7 +1424,7 @@ export function CommitteeProgressView({
                             {flaggedRefsToDisplay.length > 0 && (
                               <div className="my-2.5 p-3 rounded-xl bg-white/95 border border-rose-200 shadow-2xs space-y-2">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <span className="text-[11px] font-extrabold text-rose-950 flex items-center gap-1.5">
+                                  <span className="text-[11px] font-semibold text-rose-950 flex items-center gap-1.5">
                                     <AlertTriangle className="h-3.5 w-3.5 text-rose-600" />
                                     <span>
                                       Flagged Activities (Click to Open):
@@ -1327,7 +1450,7 @@ export function CommitteeProgressView({
                                           );
                                         }
                                       }}
-                                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-mono font-bold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-2xs hover:shadow-xs transition-all cursor-pointer group"
+                                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-mono font-semibold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-2xs hover:shadow-xs transition-all cursor-pointer group"
                                       title={`Click to open Director view for activity ${ref}`}
                                     >
                                       <span>{ref}</span>
@@ -1342,13 +1465,13 @@ export function CommitteeProgressView({
                               </div>
                             )}
 
-                            <div className="pl-1 pt-1">
+                            <div className="pl-1 pt-1 break-words break-all [overflow-wrap:anywhere] min-w-0">
                               {flaggedRefsToDisplay.length > 0 && (
-                                <span className="text-[11px] font-bold text-slate-700">
+                                <span className="text-[11px] font-semibold text-slate-700">
                                   Member Notes:{" "}
                                 </span>
                               )}
-                              <span className="font-medium italic leading-relaxed text-slate-800">
+                              <span className="font-medium italic leading-relaxed text-slate-800 break-words break-all [overflow-wrap:anywhere] block">
                                 &quot;{parsed.cleanRemarks || member.feedback}
                                 &quot;
                               </span>
@@ -1371,11 +1494,11 @@ export function CommitteeProgressView({
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-[#0A3C2F] flex items-center justify-center font-bold">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-[#0A3C2F] flex items-center justify-center font-semibold">
                     <Building2 className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">
+                    <h3 className="text-sm font-semibold text-slate-900">
                       Section B: Executive Management Review
                     </h3>
                     <p className="text-[11px] text-slate-500">
@@ -1385,14 +1508,14 @@ export function CommitteeProgressView({
                 </div>
 
                 <span
-                  className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
+                  className={`text-xs px-2.5 py-0.5 rounded-md font-medium border ${
                     selectedPlan.managementStatus === "Approved"
-                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
                       : selectedPlan.managementStatus === "Rejected"
-                        ? "bg-rose-50 text-rose-800 border-rose-200"
+                        ? "bg-rose-50 text-rose-800 border-rose-200/80"
                         : selectedPlan.managementStatus === "Awaiting Review"
-                          ? "bg-amber-50 text-amber-800 border-amber-200"
-                          : "bg-slate-100 text-slate-600 border-slate-200"
+                          ? "bg-slate-100 text-slate-800 border-slate-200"
+                          : "bg-slate-50 text-slate-600 border-slate-200/70"
                   }`}
                 >
                   {selectedPlan.managementStatus === "Awaiting Review"
@@ -1409,7 +1532,7 @@ export function CommitteeProgressView({
               {!selectedPlan.hasAdvancedToManagement ? (
                 <div className="p-8 text-center bg-slate-50/70 rounded-xl border border-dashed border-slate-200 space-y-2">
                   <Clock className="h-8 w-8 text-slate-400 mx-auto" />
-                  <p className="text-xs font-bold text-slate-700">
+                  <p className="text-xs font-semibold text-slate-700">
                     Awaiting Endorsement Committee Quorum
                   </p>
                   <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
@@ -1427,7 +1550,7 @@ export function CommitteeProgressView({
                         ? "bg-emerald-50 border-emerald-200 text-emerald-950"
                         : selectedPlan.managementStatus === "Rejected"
                           ? "bg-rose-50 border-rose-200 text-rose-950"
-                          : "bg-amber-50 border-amber-200 text-amber-950"
+                          : "notice-card-clean text-slate-800"
                     }`}
                   >
                     {selectedPlan.managementStatus === "Approved" && (
@@ -1437,11 +1560,11 @@ export function CommitteeProgressView({
                       <XCircle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
                     )}
                     {selectedPlan.managementStatus === "Awaiting Review" && (
-                      <Clock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                      <Clock className="h-5 w-5 text-slate-600 shrink-0 mt-0.5" />
                     )}
 
                     <div className="space-y-1">
-                      <h4 className="text-xs font-extrabold">
+                      <h4 className="text-xs font-semibold">
                         {selectedPlan.managementStatus === "Approved" &&
                           "Authorized by Executive Management"}
                         {selectedPlan.managementStatus === "Rejected" &&
@@ -1472,7 +1595,7 @@ export function CommitteeProgressView({
                   {/* Management Comment / Rationale */}
                   {selectedPlan.managementComment && (
                     <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-1.5">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
                         <MessageSquare className="h-3.5 w-3.5 text-[#0A3C2F]" />
                         <span>Executive Review Comments & Directives:</span>
                       </div>
@@ -1486,7 +1609,7 @@ export function CommitteeProgressView({
                   {selectedPlan.comments &&
                     selectedPlan.comments.length > 0 && (
                       <div className="space-y-2 pt-2 border-t border-slate-100">
-                        <h5 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <h5 className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                           <MessageSquare className="h-3.5 w-3.5 text-slate-500" />
                           <span>Recorded Plan & Activity Annotations:</span>
                         </h5>
@@ -1561,10 +1684,10 @@ export function CommitteeProgressView({
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-slate-900">
+                        <h3 className="text-sm font-semibold text-slate-900">
                           Package Activities Directory
                         </h3>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md">
                           <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                           Plan Endorsed &amp; Approved
                         </span>
@@ -1580,9 +1703,9 @@ export function CommitteeProgressView({
                     <button
                       type="button"
                       onClick={handleOpenFullActivitiesTracker}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-2xs transition-colors cursor-pointer shrink-0"
                     >
-                      <ListChecks className="h-4 w-4 text-[#A3E635]" />
+                      <ListChecks className="h-4 w-4 text-emerald-200" />
                       <span>Inspect Full Activities Tracker</span>
                     </button>
                   </div>
@@ -1596,7 +1719,7 @@ export function CommitteeProgressView({
                   <div className="flex items-center gap-2">
                     <ListChecks className="h-5 w-5 text-[#0A3C2F]" />
                     <div>
-                      <h3 className="text-sm font-bold text-slate-900">
+                      <h3 className="text-sm font-semibold text-slate-900">
                         Package Activities in this Plan
                       </h3>
                       <p className="text-xs text-slate-500">
@@ -1608,16 +1731,16 @@ export function CommitteeProgressView({
 
                   <Link
                     href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}&from=vote-progress`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold transition-colors shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold transition-colors shadow-2xs"
                   >
                     <span>Open Full Plan Review</span>
-                    <ExternalLink className="h-3.5 w-3.5 text-[#A3E635]" />
+                    <ExternalLink className="h-3.5 w-3.5 text-emerald-200" />
                   </Link>
                 </div>
 
                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-50 text-slate-700 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                    <thead className="bg-[#0A3C2F] text-white font-semibold uppercase text-[10px] tracking-wider">
                       <tr>
                         <th className="py-2.5 px-3 w-10 text-center">#</th>
                         <th className="py-2.5 px-3">Ref No</th>
@@ -1687,11 +1810,11 @@ export function CommitteeProgressView({
                             <td className="py-2.5 px-3 text-center font-mono text-slate-400">
                               {idx + 1}
                             </td>
-                            <td className="py-2.5 px-3 font-mono font-bold text-slate-900">
+                            <td className="py-2.5 px-3 font-mono font-semibold text-slate-900">
                               <div className="flex items-center gap-1.5">
                                 <span>{ref}</span>
                                 {isFlaggedInVotes && (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-rose-100 text-rose-800 border border-rose-300">
                                     <AlertTriangle className="h-2.5 w-2.5 text-rose-600" />
                                     Flagged
                                   </span>
@@ -1706,7 +1829,7 @@ export function CommitteeProgressView({
                                 act.method ||
                                 "RFB - National"}
                             </td>
-                            <td className="py-2.5 px-3 font-mono font-bold text-[#0A3C2F] text-right">
+                            <td className="py-2.5 px-3 font-mono font-semibold text-[#0A3C2F] text-right">
                               {selectedPlan.currency}{" "}
                               {(
                                 act.estimatedBudget ||
@@ -1727,7 +1850,7 @@ export function CommitteeProgressView({
                                     );
                                   }
                                 }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-[#0A3C2F] hover:text-white text-slate-700 transition-colors shadow-2xs cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-[#0A3C2F] hover:text-white text-slate-700 transition-colors shadow-2xs cursor-pointer"
                               >
                                 <span>Open</span>
                                 <ArrowRight className="h-3 w-3" />
@@ -1755,25 +1878,29 @@ export function CommitteeProgressView({
               selectedPlan.rejectedCount > 0 ||
               Boolean(selectedPlan.rejectionReason)) &&
             selectedPlan.rawStatus !== "RETURNED_FOR_REVISION" && (
-              <div className="rounded-2xl border border-amber-200/90 bg-amber-50/60 p-6 shadow-2xs space-y-4">
-                <div className="flex items-center gap-2.5 border-b border-amber-200/60 pb-3">
-                  <div className="h-8 w-8 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center font-bold shrink-0">
-                    <RotateCcw className="h-4.5 w-4.5 text-amber-800" />
+              <div className="notice-card-clean p-6 space-y-4">
+                <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
+                  <div className="h-8 w-8 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 flex items-center justify-center font-semibold shrink-0">
+                    <RotateCcw className="h-4 w-4 text-slate-700" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold text-amber-950">
-                      Return Plan to Officer for Revision
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      {selectedPlan.rejectedCount >= 3 ||
+                      selectedPlan.committeeStatus === "Rejected"
+                        ? "Return Plan to Officer for Revision (Majority Rejected)"
+                        : "Return Plan to Officer for Revision (Early Action on Objection)"}
                     </h3>
-                    <p className="text-xs text-amber-800/80">
-                      Synthesize committee and executive management rejection
-                      feedback into clear revision directives for the
-                      procurement officer.
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {selectedPlan.rejectedCount >= 3 ||
+                      selectedPlan.committeeStatus === "Rejected"
+                        ? "Synthesize committee rejection feedback into clear revision directives for the procurement officer."
+                        : "Committee deliberation is ongoing (awaiting 3 rejection votes to fully reject), but you may intervene early and return this plan to the procurement officer with instructions based on the objections above."}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <label className="text-xs font-medium text-slate-800 flex items-center gap-1.5">
                     <MessageSquare className="h-3.5 w-3.5 text-[#0A3C2F]" />
                     <span>
                       Director Revision Instructions for Officer{" "}
@@ -1785,7 +1912,7 @@ export function CommitteeProgressView({
                     value={resendComment}
                     onChange={(e) => setResendComment(e.target.value)}
                     placeholder="Provide actionable guidance for adjusting activities, estimated budget, or procurement packages..."
-                    className="w-full p-3 rounded-xl border border-amber-300/80 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] outline-none text-xs text-slate-800 bg-white"
+                    className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] outline-none text-xs text-slate-800 bg-white"
                   />
                 </div>
 
@@ -1796,7 +1923,7 @@ export function CommitteeProgressView({
                       handleReturnToOfficer(selectedPlan, resendComment)
                     }
                     disabled={!resendComment.trim() || isSubmittingRevision}
-                    className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-[#0A3C2F] hover:bg-[#072a21] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-2xs transition-all cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-[#0A3C2F] hover:bg-[#072F25] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-2xs transition-all cursor-pointer"
                   >
                     <Send className="h-4 w-4" />
                     <span>
@@ -1818,7 +1945,7 @@ export function CommitteeProgressView({
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
                 In Committee
               </span>
-              <p className="text-xl font-extrabold text-blue-700">
+              <p className="text-xl font-semibold text-blue-700">
                 {stats.inCommittee}
               </p>
               <span className="text-[10px] text-slate-400 block">
@@ -1830,7 +1957,7 @@ export function CommitteeProgressView({
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
                 Endorsed
               </span>
-              <p className="text-xl font-extrabold text-[#0A3C2F]">
+              <p className="text-xl font-semibold text-[#0A3C2F]">
                 {stats.committeeEndorsed}
               </p>
               <span className="text-[10px] text-slate-400 block">
@@ -1842,7 +1969,7 @@ export function CommitteeProgressView({
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
                 Awaiting Mgmt
               </span>
-              <p className="text-xl font-extrabold text-amber-600">
+              <p className="text-xl font-semibold text-amber-600">
                 {stats.awaitingManagement}
               </p>
               <span className="text-[10px] text-slate-400 block">
@@ -1854,7 +1981,7 @@ export function CommitteeProgressView({
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
                 Mgmt Approved
               </span>
-              <p className="text-xl font-extrabold text-emerald-600">
+              <p className="text-xl font-semibold text-emerald-600">
                 {stats.managementApproved}
               </p>
               <span className="text-[10px] text-slate-400 block">
@@ -1866,7 +1993,7 @@ export function CommitteeProgressView({
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
                 Action Required
               </span>
-              <p className="text-xl font-extrabold text-rose-600">
+              <p className="text-xl font-semibold text-rose-600">
                 {stats.needsRevision}
               </p>
               <span className="text-[10px] text-slate-400 block">
@@ -1910,11 +2037,11 @@ export function CommitteeProgressView({
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
             <div className="p-4 bg-emerald-50/60 border-b border-emerald-100/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-[#0A3C2F] text-white flex items-center justify-center font-bold text-xs">
+                <div className="h-7 w-7 rounded-lg bg-[#0A3C2F] text-white flex items-center justify-center font-semibold text-xs">
                   <Users className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-extrabold text-[#0A3C2F] uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
                     Section A: Endorsement Committee Progress
                   </h3>
                   <p className="text-[11px] text-slate-500">
@@ -1923,19 +2050,21 @@ export function CommitteeProgressView({
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-[#0A3C2F]">
+              <span className="text-xs font-semibold text-[#0A3C2F]">
                 {committeeItems.length} Plans
               </span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-240">
+              <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-4 min-w-36">Plan Number</th>
-                    <th className="py-3 px-4 min-w-56">Plan Title & Project</th>
+                    <th className="py-3 px-4 min-w-56">
+                      Plan Title &amp; Project
+                    </th>
                     <th className="py-3 px-4 min-w-32">Total Budget</th>
-                    <th className="py-3 px-4 text-center min-w-44">
+                    <th className="py-3 px-4 text-center min-w-36">
                       Committee Votes
                     </th>
                     <th className="py-3 px-4 text-center min-w-36">
@@ -1964,13 +2093,18 @@ export function CommitteeProgressView({
                         className="hover:bg-slate-50/70 transition-colors"
                       >
                         {/* Plan Number */}
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">
-                          {item.planNumber}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span
+                            className="font-mono text-[11px] font-medium text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded-md border border-slate-200/80 inline-block max-w-[200px] truncate"
+                            title={item.planNumber}
+                          >
+                            {item.planNumber}
+                          </span>
                         </td>
 
                         {/* Plan Title & Project */}
                         <td className="py-3 px-4 min-w-56 max-w-xs">
-                          <p className="font-bold text-slate-950 text-xs leading-snug line-clamp-1">
+                          <p className="font-semibold text-slate-950 text-xs leading-snug line-clamp-1">
                             {item.planTitle}
                           </p>
                           <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
@@ -1979,11 +2113,15 @@ export function CommitteeProgressView({
                         </td>
 
                         {/* Total Budget */}
-                        <td className="py-3 px-4 font-mono font-semibold text-slate-800 whitespace-nowrap">
-                          {item.currency}{" "}
-                          {item.totalBudget.toLocaleString("en-US", {
-                            maximumFractionDigits: 0,
-                          })}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className="text-[11px] font-medium text-slate-500 mr-1">
+                            {item.currency}
+                          </span>
+                          <span className="font-sans font-semibold tabular-nums text-slate-900 text-xs">
+                            {item.totalBudget.toLocaleString("en-US", {
+                              maximumFractionDigits: 0,
+                            })}
+                          </span>
                         </td>
 
                         {/* Committee Members Voting Boxes */}
@@ -1996,7 +2134,7 @@ export function CommitteeProgressView({
                                   <div
                                     key={member.id}
                                     title={`${member.name}: Approved`}
-                                    className="h-6 w-6 rounded bg-[#0A3C2F] text-white flex items-center justify-center text-[11px] font-bold"
+                                    className="h-6 w-6 rounded-md bg-[#0A3C2F] text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
                                   >
                                     ✓
                                   </div>
@@ -2007,7 +2145,7 @@ export function CommitteeProgressView({
                                   <div
                                     key={member.id}
                                     title={`${member.name}: Rejected`}
-                                    className="h-6 w-6 rounded bg-rose-700 text-white flex items-center justify-center text-[11px] font-bold"
+                                    className="h-6 w-6 rounded-md bg-rose-600 text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
                                   >
                                     ✕
                                   </div>
@@ -2017,7 +2155,7 @@ export function CommitteeProgressView({
                                 <div
                                   key={member.id}
                                   title={`${member.name}: Pending Vote`}
-                                  className="h-6 w-6 rounded bg-slate-100 text-slate-500 flex items-center justify-center text-[11px] font-semibold"
+                                  className="h-6 w-6 rounded-md bg-slate-100 text-slate-500 border border-slate-200/80 flex items-center justify-center text-[11px] font-medium"
                                 >
                                   {boxNum}
                                 </div>
@@ -2029,7 +2167,7 @@ export function CommitteeProgressView({
                         {/* Endorsement Status */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                            className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-medium border ${
                               item.committeeStatus === "Approved"
                                 ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                 : item.committeeStatus === "Rejected"
@@ -2065,7 +2203,7 @@ export function CommitteeProgressView({
                                     setRevisionInstructions("");
                                   }}
                                   title="Return plan to Officer for revision"
-                                  className="flex h-7 items-center gap-1 px-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer text-[11px] font-bold"
+                                  className="flex h-7 items-center gap-1 px-2.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer text-xs font-medium"
                                 >
                                   <RotateCcw className="h-3 w-3" />
                                   <span>Return</span>
@@ -2085,11 +2223,11 @@ export function CommitteeProgressView({
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
             <div className="p-4 bg-emerald-50/60 border-b border-emerald-100/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-[#0A3C2F] text-white flex items-center justify-center font-bold text-xs">
+                <div className="h-7 w-7 rounded-lg bg-[#0A3C2F] text-white flex items-center justify-center font-semibold text-xs">
                   <Building2 className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-extrabold text-[#0A3C2F] uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
                     Section B: Executive Management Progress
                   </h3>
                   <p className="text-[11px] text-slate-500">
@@ -2099,17 +2237,19 @@ export function CommitteeProgressView({
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-[#0A3C2F]">
+              <span className="text-xs font-semibold text-[#0A3C2F]">
                 {managementItems.length} Plans
               </span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-240">
+              <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-4 min-w-36">Plan Number</th>
-                    <th className="py-3 px-4 min-w-56">Plan Title & Project</th>
+                    <th className="py-3 px-4 min-w-56">
+                      Plan Title &amp; Project
+                    </th>
                     <th className="py-3 px-4 min-w-32">Total Budget</th>
                     <th className="py-3 px-4 text-center min-w-36">
                       Committee Endorsement
@@ -2140,13 +2280,18 @@ export function CommitteeProgressView({
                         className="hover:bg-slate-50/70 transition-colors"
                       >
                         {/* Plan Number */}
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900 text-xs whitespace-nowrap">
-                          {item.planNumber}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span
+                            className="font-mono text-[11px] font-medium text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded-md border border-slate-200/80 inline-block max-w-[200px] truncate"
+                            title={item.planNumber}
+                          >
+                            {item.planNumber}
+                          </span>
                         </td>
 
                         {/* Plan Title & Project */}
                         <td className="py-3 px-4 min-w-56 max-w-xs">
-                          <p className="font-bold text-slate-950 text-xs leading-snug line-clamp-1">
+                          <p className="font-semibold text-slate-950 text-xs leading-snug line-clamp-1">
                             {item.planTitle}
                           </p>
                           <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
@@ -2155,16 +2300,20 @@ export function CommitteeProgressView({
                         </td>
 
                         {/* Total Budget */}
-                        <td className="py-3 px-4 font-mono font-semibold text-slate-800 whitespace-nowrap">
-                          {item.currency}{" "}
-                          {item.totalBudget.toLocaleString("en-US", {
-                            maximumFractionDigits: 0,
-                          })}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className="text-[11px] font-medium text-slate-500 mr-1">
+                            {item.currency}
+                          </span>
+                          <span className="font-sans font-semibold tabular-nums text-slate-900 text-xs">
+                            {item.totalBudget.toLocaleString("en-US", {
+                              maximumFractionDigits: 0,
+                            })}
+                          </span>
                         </td>
 
                         {/* Committee Result */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                             <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                             <span>{item.approvedCount}/5 Endorsed</span>
                           </span>
@@ -2173,12 +2322,12 @@ export function CommitteeProgressView({
                         {/* Management Status */}
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                            className={`badge-status-base ${
                               item.managementStatus === "Approved"
-                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                ? "badge-status-completed"
                                 : item.managementStatus === "Rejected"
-                                  ? "bg-rose-50 text-rose-800 border-rose-200"
-                                  : "bg-amber-50 text-amber-800 border-amber-200"
+                                  ? "badge-status-delayed"
+                                  : "badge-status-under-review"
                             }`}
                           >
                             {item.managementStatus === "Approved" &&
@@ -2212,7 +2361,7 @@ export function CommitteeProgressView({
                                     setRevisionInstructions("");
                                   }}
                                   title="Return plan to Officer for revision"
-                                  className="flex h-7 items-center gap-1 px-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer text-[11px] font-bold"
+                                  className="flex h-7 items-center gap-1 px-2.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer text-xs font-medium"
                                 >
                                   <RotateCcw className="h-3 w-3" />
                                   <span>Return</span>
@@ -2236,11 +2385,11 @@ export function CommitteeProgressView({
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                <div className="h-8 w-8 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center font-semibold">
                   <RotateCcw className="h-4.5 w-4.5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-slate-900">
+                  <h3 className="text-sm font-semibold text-slate-900">
                     Return Plan to Officer for Revision
                   </h3>
                   <p className="text-xs text-slate-500 font-mono">
@@ -2262,13 +2411,13 @@ export function CommitteeProgressView({
                 <span className="font-semibold text-slate-500">
                   Plan Title:
                 </span>
-                <span className="font-bold text-slate-900">
+                <span className="font-semibold text-slate-900">
                   {revisionModalPlan.planTitle}
                 </span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
                 <span className="font-semibold text-slate-500">Project:</span>
-                <span className="font-bold text-slate-900">
+                <span className="font-semibold text-slate-900">
                   {revisionModalPlan.projectName}
                 </span>
               </div>
@@ -2276,7 +2425,7 @@ export function CommitteeProgressView({
               {/* Committee Rejection info */}
               {revisionModalPlan.committeeStatus === "Rejected" && (
                 <div className="pt-1.5 border-t border-slate-200">
-                  <span className="text-rose-700 font-bold block text-[11px] mb-1">
+                  <span className="text-rose-700 font-semibold block text-[11px] mb-1">
                     Committee Rejection Feedback:
                   </span>
                   {revisionModalPlan.memberVotes
@@ -2296,7 +2445,7 @@ export function CommitteeProgressView({
               {revisionModalPlan.managementStatus === "Rejected" &&
                 revisionModalPlan.managementComment && (
                   <div className="pt-1.5 border-t border-slate-200">
-                    <span className="text-rose-700 font-bold block text-[11px] mb-1">
+                    <span className="text-rose-700 font-semibold block text-[11px] mb-1">
                       Management Rejection Rationale:
                     </span>
                     <p className="text-slate-700 italic pl-3 border-l-2 border-rose-300 text-[11px]">
@@ -2308,7 +2457,7 @@ export function CommitteeProgressView({
 
             {/* Revision Instructions Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+              <label className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
                 <MessageSquare className="h-3.5 w-3.5 text-[#0A3C2F]" />
                 <span>
                   Director Revision Instructions for Officer{" "}
@@ -2329,7 +2478,7 @@ export function CommitteeProgressView({
                 type="button"
                 onClick={() => setRevisionModalPlan(null)}
                 disabled={isSubmittingRevision}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -2339,7 +2488,7 @@ export function CommitteeProgressView({
                   handleReturnToOfficer(revisionModalPlan, revisionInstructions)
                 }
                 disabled={!revisionInstructions.trim() || isSubmittingRevision}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#0A3C2F] hover:bg-[#083025] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-xs transition-colors cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5" />
                 <span>

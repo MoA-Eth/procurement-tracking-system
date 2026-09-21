@@ -36,7 +36,7 @@ export function PlanRestrictedEditView({
           Plan for Review
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-bold text-[#0A3C2F]">
+        <span className="font-semibold text-[#0A3C2F]">
           Restricted Plan Edits ({editingPlan.planName})
         </span>
       </nav>

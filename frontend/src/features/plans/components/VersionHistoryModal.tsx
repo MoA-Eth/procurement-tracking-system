@@ -102,8 +102,8 @@ export function VersionHistoryModal({
         };
       case "RETURNED":
         return {
-          icon: <RotateCcw className="h-3 w-3 text-amber-600" />,
-          bg: "bg-amber-50 text-amber-800 border-amber-300",
+          icon: <RotateCcw className="h-3 w-3 text-rose-700" />,
+          bg: "bg-rose-50 text-rose-800 border-rose-200/80",
           label: "Returned for Revision",
         };
       case "PLAN_REVISED":
@@ -159,19 +159,19 @@ export function VersionHistoryModal({
       <div className="fixed inset-y-0 right-0 z-50 flex max-w-full pl-6 pointer-events-none">
         <aside className="pointer-events-auto w-screen max-w-[420px] bg-white shadow-2xl border-l border-slate-200/90 flex flex-col animate-in slide-in-from-right duration-200 ease-out">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-200/90 px-4 py-3 bg-[#edf5f1]/70">
+          <div className="flex items-center justify-between border-b border-slate-200/90 px-4 py-3 bg-slate-50">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#176c55] text-white shadow-2xs">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0A3C2F] text-white shadow-2xs">
                 <History className="h-3.5 w-3.5" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold text-[#16253d] truncate">
+                  <h2 className="text-sm font-semibold text-[#16253d] truncate">
                     {activityReference
                       ? "Activity Version History"
                       : "Version History"}
                   </h2>
-                  <span className="shrink-0 rounded-full bg-[#176c55]/15 px-2 py-0.5 text-[10px] font-bold text-[#176c55]">
+                  <span className="shrink-0 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
                     {versionNumbers.length > 0
                       ? `v${Math.max(...versionNumbers)}`
                       : "v1"}
@@ -215,7 +215,7 @@ export function VersionHistoryModal({
               <button
                 className={`rounded px-2 py-0.5 text-[11px] font-semibold transition shrink-0 cursor-pointer ${
                   filterVersion === "ALL"
-                    ? "bg-[#176c55] text-white shadow-2xs"
+                    ? "bg-[#0A3C2F] text-white shadow-2xs"
                     : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                 }`}
                 onClick={() => setFilterVersion("ALL")}
@@ -228,7 +228,7 @@ export function VersionHistoryModal({
                   key={vNum}
                   className={`rounded px-2 py-0.5 text-[11px] font-semibold transition shrink-0 cursor-pointer ${
                     filterVersion === vNum
-                      ? "bg-[#176c55] text-white shadow-2xs"
+                      ? "bg-[#0A3C2F] text-white shadow-2xs"
                       : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                   }`}
                   onClick={() => setFilterVersion(vNum)}
@@ -256,7 +256,7 @@ export function VersionHistoryModal({
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-400">
                   <History className="h-4 w-4" />
                 </div>
-                <h3 className="mt-2.5 text-xs font-bold text-slate-800">
+                <h3 className="mt-2.5 text-xs font-semibold text-slate-800">
                   {activityReference
                     ? "Initial Baseline (v1)"
                     : "Baseline Version (v1)"}
@@ -279,7 +279,7 @@ export function VersionHistoryModal({
                     <div key={rec.id} className="relative pl-7">
                       {/* Timeline Node */}
                       <div className="absolute left-1 top-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-white ring-2 ring-slate-100 border border-slate-300">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#176c55]" />
+                        <div className="h-1.5 w-1.5 rounded-full bg-[#0A3C2F]" />
                       </div>
 
                       {/* Card */}
@@ -288,18 +288,18 @@ export function VersionHistoryModal({
                         <div className="flex flex-col gap-1.5">
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <span
-                              className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-bold ${badge.bg}`}
+                              className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-semibold ${badge.bg}`}
                             >
                               {badge.icon}
                               {badge.label}
                             </span>
-                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
                               v{rec.versionNumber || 1}
                             </span>
                           </div>
 
                           {rec.activityReference && (
-                            <span className="text-[11px] font-semibold font-mono text-[#0a4d40]">
+                            <span className="text-[11px] font-semibold font-mono text-[#0A3C2F]">
                               Activity: {rec.activityReference}
                             </span>
                           )}
@@ -333,16 +333,16 @@ export function VersionHistoryModal({
 
                         {/* Reason / Remarks Box */}
                         {rec.reason && (
-                          <div className="mt-2.5 rounded-md border border-amber-200/80 bg-amber-50/70 p-2 text-xs text-amber-900">
+                          <div className="mt-2.5 rounded-lg border border-slate-200 bg-[#F8FAFC] p-2.5 text-xs text-slate-700">
                             <div className="flex items-start gap-1.5">
-                              <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700" />
+                              <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
                               <div className="min-w-0">
-                                <span className="font-bold text-amber-950 text-[11px]">
+                                <span className="font-semibold text-slate-800 text-[11px]">
                                   {rec.action === "RETURNED"
                                     ? "Director Feedback:"
                                     : "Revision Note:"}
                                 </span>{" "}
-                                <span className="italic font-medium break-words text-[11px]">
+                                <span className="italic font-normal break-words text-[11px] text-slate-600">
                                   &ldquo;{rec.reason}&rdquo;
                                 </span>
                               </div>
@@ -354,11 +354,11 @@ export function VersionHistoryModal({
                         {rec.changes && rec.changes.length > 0 && (
                           <div className="mt-2.5 pt-2 border-t border-slate-100">
                             <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-bold text-slate-700">
+                              <span className="text-[11px] font-semibold text-slate-700">
                                 Changes ({rec.changes.length})
                               </span>
                               <button
-                                className="text-[10px] font-semibold text-[#176c55] hover:underline cursor-pointer"
+                                className="text-[10px] font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
                                 onClick={() => toggleExpand(rec.id)}
                                 type="button"
                               >
@@ -381,7 +381,7 @@ export function VersionHistoryModal({
                                         {String(ch.previousValue)}
                                       </span>
                                       <ArrowRight className="h-3 w-3 text-slate-400 shrink-0" />
-                                      <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                      <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
                                         {String(ch.newValue)}
                                       </span>
                                     </div>

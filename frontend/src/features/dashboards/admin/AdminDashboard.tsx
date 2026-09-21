@@ -79,7 +79,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
       {/* Top Header Row with Title and Search Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
             Dashboard
           </h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -140,7 +140,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
               <div>
                 <h2
                   id="user-roles-breakdown-heading"
-                  className="text-base font-bold text-slate-900"
+                  className="text-base font-semibold text-slate-900"
                 >
                   Access Role Allocation
                 </h2>
@@ -252,10 +252,10 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                       })}
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none select-none">
-                    <span className="text-2xl font-black tracking-tight text-slate-900 leading-none">
+                    <span className="text-2xl font-semibold tracking-tight text-slate-900 leading-none">
                       {totalAllocated}
                     </span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-1">
                       Users
                     </span>
                   </div>
@@ -300,7 +300,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                             {pct}%
                           </span>
                           <span
-                            className={`font-bold tabular-nums min-w-[20px] text-right ${
+                            className={`font-semibold tabular-nums min-w-[20px] text-right ${
                               isSelected ? "text-white" : "text-slate-900"
                             }`}
                           >
@@ -327,7 +327,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             <div>
               <h2
                 id="system-controls-heading"
-                className="text-base font-bold text-slate-900"
+                className="text-base font-semibold text-slate-900"
               >
                 Environment Health
               </h2>
@@ -379,7 +379,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             <div>
               <h2
                 id="user-access-table-heading"
-                className="text-base font-bold text-slate-900"
+                className="text-base font-semibold text-slate-900"
               >
                 User Profiles &amp; Access Controls
               </h2>
@@ -413,7 +413,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
           <div>
             <h2
               id="recent-audit-logs-heading"
-              className="text-base font-bold text-slate-900"
+              className="text-base font-semibold text-slate-900"
             >
               Recent Audit Trail
             </h2>

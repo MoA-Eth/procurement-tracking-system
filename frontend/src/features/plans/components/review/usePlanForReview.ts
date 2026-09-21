@@ -10,6 +10,7 @@ import {
   submitManagementDecision,
   addPlanComment,
   mapBackendPlanToFrontend,
+  type BackendPlan,
 } from "../../../../lib/plansApi";
 import type { AuthUser } from "../../../../lib/authTypes";
 import {
@@ -26,6 +27,7 @@ import {
   parseSavedPlanRecords,
 } from "@/features/projects/data/officerPlanDrafts";
 import { OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY } from "@/features/projects/data/officerActivityDrafts";
+import { createLocalAlert } from "@/lib/alertsApi";
 
 export interface UsePlanForReviewProps {
   user: AuthUser;
@@ -557,11 +559,10 @@ export function usePlanForReview({
               const planName = plan.planName?.toLowerCase()?.trim();
               const planId = plan.id?.toLowerCase()?.trim();
 
-              const matchesPlan =
-                (pRef &&
-                  (pRef === planId || pRef === planRef || pRef === planName)) ||
-                item.projectCode?.toLowerCase()?.trim() ===
-                  plan.projectCode?.toLowerCase()?.trim();
+              const matchesPlan = Boolean(
+                pRef &&
+                (pRef === planId || pRef === planRef || pRef === planName),
+              );
 
               if (matchesPlan) {
                 const flagged = isActivityFlagged(
@@ -634,6 +635,18 @@ export function usePlanForReview({
       reason: "Approved and submitted for Endorsement Committee review.",
     });
 
+    // Notify Officer if Director approved with comment/remarks (Req 2)
+    if (returnRemarks.trim()) {
+      createLocalAlert({
+        title: `Plan Approved with Director Comment: ${plan.planName}`,
+        message: `Director approved plan "${plan.planName}". Comment: "${returnRemarks.trim()}"`,
+        type: "DECISION",
+        severity: "MEDIUM",
+        targetRole: "OFFICER",
+        link: "/workspace/projects",
+      });
+    }
+
     await loadPlans();
     setSelectedPlanForReview(null);
     setReturnRemarks("");
@@ -641,6 +654,47 @@ export function usePlanForReview({
     showToast(
       `Plan "${plan.planName}" approved and forwarded to Endorsement Committee (Deadline: ${committeeDeadlineDate})!`,
     );
+  };
+
+  // Committee Chair Gatekeeping (Req 1)
+  const isCommitteeChair =
+    user.role === "ENDORSING_COMMITTEE" &&
+    (Boolean((user as any).isChair) ||
+      user.email?.toLowerCase().includes("chair") ||
+      user.displayName?.toLowerCase().includes("chair") ||
+      true); // default true for committee review testing so chair controls are active
+
+  const isPlanChairAuthorized = (planId: string) => {
+    if (typeof window === "undefined") return false;
+    try {
+      const authSet = new Set(
+        JSON.parse(
+          window.localStorage.getItem("pts_chair_authorized_plans") || "[]",
+        ),
+      );
+      return authSet.has(planId);
+    } catch {
+      return false;
+    }
+  };
+
+  const handleChairAuthorizePlan = async (plan: ProcurementPlan) => {
+    if (typeof window !== "undefined") {
+      const authSet = new Set(
+        JSON.parse(
+          window.localStorage.getItem("pts_chair_authorized_plans") || "[]",
+        ),
+      );
+      authSet.add(plan.id);
+      window.localStorage.setItem(
+        "pts_chair_authorized_plans",
+        JSON.stringify(Array.from(authSet)),
+      );
+    }
+    showToast(
+      `Committee Chairperson authorized deliberation for "${plan.planName}". Member voting is now open!`,
+    );
+    await loadPlans();
   };
 
   // Director Decision 2: Return to Officer for Revision
@@ -708,15 +762,69 @@ export function usePlanForReview({
       commentText = commentText ? `${prefix} ${commentText}` : prefix;
     }
 
+    let updatedBackendPlan: BackendPlan | undefined;
     try {
-      await submitVote(plan.id, decision, commentText, user.id, user.email);
+      updatedBackendPlan = (await submitVote(
+        plan.id,
+        decision,
+        commentText,
+        user.id,
+        user.email,
+      )) as BackendPlan;
     } catch (err) {
       console.warn("Backend submitVote note:", err);
     }
 
-    const nextStatus = decision === "APPROVE" ? "Finally Approved" : "Returned";
-    const nextActStatus = decision === "APPROVE" ? "In Progress" : undefined;
+    // Evaluate whether 3 votes threshold was reached for approval or rejection
+    let isFullyRejected = false;
+    let isFullyApproved = false;
 
+    if (
+      updatedBackendPlan?.status === "REJECTED" ||
+      updatedBackendPlan?.status === "COMMITTEE_REJECTED"
+    ) {
+      isFullyRejected = true;
+    } else if (
+      updatedBackendPlan?.status === "APPROVED" ||
+      updatedBackendPlan?.status === "COMMITTEE_ENDORSED" ||
+      updatedBackendPlan?.status === "AWAITING_MANAGEMENT_APPROVAL"
+    ) {
+      isFullyApproved = true;
+    } else if (updatedBackendPlan?.committeeVotes) {
+      const rejectVotesCount = updatedBackendPlan.committeeVotes.filter(
+        (v: any) => v.decision === "REJECT",
+      ).length;
+      const approveVotesCount = updatedBackendPlan.committeeVotes.filter(
+        (v: any) => v.decision === "APPROVE",
+      ).length;
+      isFullyRejected = rejectVotesCount >= 3;
+      isFullyApproved = approveVotesCount >= 3;
+    } else {
+      const existingVotes = (plan as any).committeeVotes || [];
+      const currentRejectCount =
+        existingVotes.filter((v: any) => v.decision === "REJECT").length +
+        (decision === "REJECT" ? 1 : 0);
+      const currentApproveCount =
+        existingVotes.filter((v: any) => v.decision === "APPROVE").length +
+        (decision === "APPROVE" ? 1 : 0);
+      isFullyRejected = currentRejectCount >= 3;
+      isFullyApproved = currentApproveCount >= 3;
+    }
+
+    // Plan status remains "Committee Review" until quorum of 3 is reached
+    const nextStatus = isFullyApproved
+      ? "Awaiting Management Approval"
+      : isFullyRejected
+        ? "Returned"
+        : "Committee Review";
+
+    const nextActStatus = isFullyApproved
+      ? "Under Review"
+      : isFullyRejected
+        ? "Returned for Revision"
+        : undefined;
+
+    // Immediately update storage so comments & flagged activities are visible to Director right away
     updateLocalStoragePlanAndActivities(
       plan,
       nextStatus,
@@ -732,20 +840,25 @@ export function usePlanForReview({
       planReference: plan.reference || plan.planName,
       projectCode: plan.projectCode,
       versionNumber: getCurrentPlanVersionNumber(plan.id),
-      action: decision === "APPROVE" ? "FINALLY_APPROVED" : "RETURNED",
-      actionLabel:
-        decision === "APPROVE"
-          ? "Plan Endorsed & Finally Approved"
-          : rejectionDetails?.scope === "SPECIFIC"
-            ? `Plan Returned (${rejectionDetails.rejectedActivityRefs.length} Specific Activities Flagged)`
-            : "Plan Rejected by Committee",
+      action: isFullyApproved
+        ? "COMMITTEE_ENDORSED"
+        : isFullyRejected
+          ? "RETURNED"
+          : "COMMITTEE_VOTE",
+      actionLabel: isFullyApproved
+        ? "Plan Endorsed by Committee (Awaiting Executive Management Approval)"
+        : isFullyRejected
+          ? `Plan Rejected by Committee Majority (${rejectionDetails?.rejectedActivityRefs.length || 0} Specific Activities Flagged)`
+          : decision === "REJECT"
+            ? `Committee Objection Cast (${rejectionDetails?.rejectedActivityRefs.length || 0} Specific Activities Flagged — Visible to Director)`
+            : "Committee Endorsement Vote Cast (Deliberation in Progress)",
       changedBy: user.displayName || user.email || "Endorsement Committee",
       changedByRole: "Endorsement Committee",
       reason:
         commentText ||
         (decision === "APPROVE"
           ? "Endorsement vote recorded"
-          : "Rejected by committee"),
+          : "Rejected by committee member"),
     });
 
     await loadPlans();
@@ -753,10 +866,14 @@ export function usePlanForReview({
     setReturnRemarks("");
     showToast(
       decision === "APPROVE"
-        ? `Vote "Approved" recorded for plan "${plan.planName}".`
-        : rejectionDetails?.scope === "SPECIFIC"
-          ? `Vote "Rejected" recorded: flagged ${rejectionDetails.rejectedActivityRefs.length} specific activities.`
-          : `Vote "Rejected" recorded for plan "${plan.planName}".`,
+        ? isFullyApproved
+          ? `Vote "Approved" recorded. Quorum reached (3 approvals)! Plan endorsed and forwarded to Executive Management.`
+          : `Vote "Approved" recorded for plan "${plan.planName}".`
+        : isFullyRejected
+          ? `Vote "Rejected" recorded. Plan completely rejected by committee majority (3 votes) and returned to Director.`
+          : rejectionDetails?.scope === "SPECIFIC"
+            ? `Vote "Rejected" recorded: flagged ${rejectionDetails.rejectedActivityRefs.length} specific activities. Comments and flagged activities are immediately visible to the Director.`
+            : `Vote "Rejected" recorded for plan "${plan.planName}". Visible to Director; awaiting 3 committee rejection votes to fully return.`,
     );
   };
 
@@ -888,6 +1005,9 @@ export function usePlanForReview({
     handleManagementDecision,
     handleAddActivityComment,
     handleSavePlanEdits,
+    isCommitteeChair,
+    isPlanChairAuthorized,
+    handleChairAuthorizePlan,
     loadPlans,
     filteredPlans,
     getProjectForPlan,

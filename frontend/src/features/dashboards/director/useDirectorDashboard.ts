@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { fetchProjects, type BackendProject } from "@/lib/projectsApi";
-import { fetchPlans, type BackendPlan } from "@/lib/plansApi";
+import {
+  fetchProjects,
+  getCachedProjects,
+  type BackendProject,
+} from "@/lib/projectsApi";
+import { fetchPlans, getCachedPlans, type BackendPlan } from "@/lib/plansApi";
 import { fetchContracts, type BackendContract } from "@/lib/contractsApi";
 import {
   filterPlans,
@@ -20,17 +24,34 @@ import {
 } from "./directorCalculations";
 import type { UserRole } from "@/types";
 
-export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
-  const [projects, setProjects] = useState<BackendProject[]>([]);
-  const [plans, setPlans] = useState<BackendPlan[]>([]);
-  const [contracts, setContracts] = useState<BackendContract[]>([]);
-  const [loading, setLoading] = useState(true);
+import { fetchActivities } from "@/lib/activitiesApi";
 
-  // Dynamic default Ethiopian Fiscal Year based on current date
-  const defaultFiscalYear = useMemo(
-    () => `${getCurrentEthiopianYear()} EFY`,
-    [],
+// Module-level cache to avoid redundant API calls on sidebar navigation
+interface DashboardCache {
+  projects: BackendProject[];
+  plans: BackendPlan[];
+  contracts: BackendContract[];
+  timestamp: number;
+}
+let _dashboardCache: DashboardCache | null = null;
+const DASHBOARD_CACHE_TTL_MS = 10 * 1000; // 10 seconds
+
+export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
+  const initialProjects =
+    _dashboardCache?.projects || getCachedProjects() || [];
+  const initialPlans = _dashboardCache?.plans || getCachedPlans() || [];
+
+  const [projects, setProjects] = useState<BackendProject[]>(initialProjects);
+  const [plans, setPlans] = useState<BackendPlan[]>(initialPlans);
+  const [contracts, setContracts] = useState<BackendContract[]>(
+    () => _dashboardCache?.contracts || [],
   );
+  const [loading, setLoading] = useState(
+    () => initialProjects.length === 0 && initialPlans.length === 0,
+  );
+
+  // Default Ethiopian Fiscal Year is All Fiscal Years
+  const defaultFiscalYear = "All Fiscal Years";
 
   // Filter States matching mockup
   const [selectedFiscalYear, setSelectedFiscalYear] =
@@ -47,17 +68,68 @@ export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
 
   useEffect(() => {
     let isMounted = true;
+
+    // Use cached data if still fresh to avoid redundant API calls
+    if (
+      _dashboardCache &&
+      Date.now() - _dashboardCache.timestamp < DASHBOARD_CACHE_TTL_MS
+    ) {
+      setProjects(_dashboardCache.projects);
+      setPlans(_dashboardCache.plans);
+      setContracts(_dashboardCache.contracts);
+      setLoading(false);
+      return;
+    }
+
     async function loadDashboardData() {
       try {
-        const [projRes, planRes, contractRes] = await Promise.all([
+        const [projRes, planRes, contractRes, actRes] = await Promise.all([
           fetchProjects(),
           fetchPlans(),
           fetchContracts(),
+          fetchActivities(),
         ]);
         if (isMounted) {
-          setProjects(projRes || []);
-          setPlans(planRes || []);
-          setContracts(contractRes || []);
+          const plansList = planRes || [];
+          const activitiesList = actRes || [];
+          const enrichedPlans = plansList.map((plan) => {
+            if (plan.activities && plan.activities.length > 0) return plan;
+            const planActs = activitiesList.filter(
+              (a) => a.planId === plan.id || (a as any).plan?.id === plan.id,
+            );
+            return {
+              ...plan,
+              activities: planActs as any,
+            };
+          });
+
+          let finalPlans = enrichedPlans;
+          if (finalPlans.length === 0 && (projRes || []).length > 0) {
+            const projectPlans = (projRes || []).flatMap((p) => p.plans || []);
+            if (projectPlans.length > 0) {
+              finalPlans = projectPlans.map((p) => {
+                const planActs = activitiesList.filter(
+                  (a) => a.planId === p.id,
+                );
+                return { ...p, activities: p.activities || planActs };
+              });
+            }
+          }
+
+          const cachedProjects = projRes || [];
+          const cachedContracts = contractRes || [];
+
+          // Cache the results
+          _dashboardCache = {
+            projects: cachedProjects,
+            plans: finalPlans,
+            contracts: cachedContracts,
+            timestamp: Date.now(),
+          };
+
+          setProjects(cachedProjects);
+          setPlans(finalPlans);
+          setContracts(cachedContracts);
         }
       } catch (err) {
         console.warn("DirectorDashboard load error:", err);
@@ -213,6 +285,22 @@ export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
     setSelectedStatus("ALL");
   };
 
+  const activeCurrency = useMemo(() => {
+    if (selectedProject !== "ALL") {
+      const proj = projects.find(
+        (p) => p.id === selectedProject || p.code === selectedProject,
+      );
+      if (proj?.baseCurrency) return proj.baseCurrency.toUpperCase();
+    }
+    const planWithCurrency = filteredPlans.find(
+      (p) => (p as any).project?.baseCurrency,
+    );
+    if (planWithCurrency && (planWithCurrency as any).project?.baseCurrency) {
+      return (planWithCurrency as any).project.baseCurrency.toUpperCase();
+    }
+    return "ETB";
+  }, [selectedProject, projects, filteredPlans]);
+
   return {
     loading,
     selectedFiscalYear,
@@ -239,5 +327,6 @@ export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
     healthMetrics,
     displayedPendingPlans,
     displayedCriticalDelays,
+    currency: activeCurrency,
   };
 }

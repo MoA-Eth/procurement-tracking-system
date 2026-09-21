@@ -4,6 +4,7 @@ import Link from "next/link";
 import { actionLinkClasses } from "../officerData";
 
 interface OfficerProjectItem {
+  id?: string;
   code: string;
   name: string;
   fundingSource: string;
@@ -22,25 +23,25 @@ export function OfficerActiveProjectsTable({
   return (
     <section
       aria-labelledby="my-active-projects"
-      className="overflow-hidden rounded-xl border border-[#bdd0c8] bg-white shadow-sm"
+      className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
     >
-      <div className="border-b border-[#c7d7d0] bg-[#edf5f1] px-5 py-4">
+      <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
         <h2
           id="my-active-projects"
-          className="text-lg font-extrabold text-[#16253d]"
+          className="text-lg font-semibold text-[#16253d]"
         >
           My Active Projects
         </h2>
       </div>
       <div
         aria-label="My active projects table"
-        className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#176c55]"
+        className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0A3C2F]"
         role="region"
         tabIndex={0}
       >
         <table className="w-full table-fixed border-collapse text-left">
           <thead className="bg-[#0A3C2F]">
-            <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+            <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
               <th className="w-[36%] px-5 py-3.5" scope="col">
                 Project name &amp; code
               </th>
@@ -69,7 +70,7 @@ export function OfficerActiveProjectsTable({
                   className="px-5 py-8 text-center text-sm text-slate-500"
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#176c55] border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0A3C2F] border-t-transparent" />
                     <span>Loading active projects...</span>
                   </div>
                 </td>
@@ -80,37 +81,40 @@ export function OfficerActiveProjectsTable({
                   colSpan={4}
                   className="px-5 py-8 text-center text-sm text-slate-500"
                 >
-                  No active projects assigned yet.
+                  No active projects assigned.
                 </td>
               </tr>
             ) : (
-              projects.map((project) => (
-                <tr key={project.code} className="hover:bg-[#f7fbf9]">
+              projects.map((project, index) => (
+                <tr
+                  key={project.id || `${project.code}-${index}`}
+                  className="hover:bg-slate-50"
+                >
                   <td className="px-5 py-4 align-middle">
                     <Link
                       title={project.name}
-                      className="line-clamp-2 break-words [overflow-wrap:anywhere] [word-break:break-word] font-semibold leading-snug text-slate-900 underline-offset-4 hover:text-[#176c55] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] block"
+                      className="line-clamp-2 break-words [overflow-wrap:anywhere] [word-break:break-word] font-semibold leading-snug text-slate-900 underline-offset-4 hover:text-[#0A3C2F] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] block"
                       href={`/workspace/projects?project=${encodeURIComponent(
-                        project.code,
+                        project.id || project.code,
                       )}`}
                     >
                       {project.name}
                     </Link>
-                    <p className="mt-0.5 text-xs font-mono font-medium text-slate-500 truncate">
+                    <p className="mt-1 font-mono text-xs text-slate-500">
                       {project.code}
                     </p>
                   </td>
-                  <td className="px-5 py-4 align-middle text-sm text-slate-700 break-words [overflow-wrap:anywhere] [word-break:break-word] line-clamp-2">
+                  <td className="px-5 py-4 text-xs font-semibold text-slate-700">
                     {project.fundingSource}
                   </td>
-                  <td className="px-4 py-4 align-middle text-center font-semibold text-slate-800 whitespace-nowrap">
+                  <td className="px-4 py-4 text-center text-sm font-semibold text-slate-800">
                     {project.activePlans}
                   </td>
-                  <td className="pr-5 pl-2 py-4 align-middle text-right text-sm whitespace-nowrap">
+                  <td className="pr-5 pl-2 py-4 text-right">
                     <Link
                       className={actionLinkClasses}
                       href={`/workspace/projects?project=${encodeURIComponent(
-                        project.code,
+                        project.id || project.code,
                       )}`}
                     >
                       Open project

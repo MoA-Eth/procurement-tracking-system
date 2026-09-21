@@ -246,4 +246,39 @@ describe("auth API", () => {
       }),
     );
   });
+
+  it("maps canonical MANAGEMENT role to backend Prisma enum MANAGEMENT_TEAM", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          user: {
+            id: "4",
+            email: "management@moa.gov.et",
+            displayName: "Executive Manager",
+            role: "MANAGEMENT_TEAM",
+          },
+          invitationExpiresAt: new Date().toISOString(),
+          message: "Invitation sent successfully",
+        }),
+        { status: 201 },
+      ),
+    );
+
+    await createInvitedUser(
+      "Executive Manager",
+      "management@moa.gov.et",
+      "MANAGEMENT",
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/admin/users"),
+      expect.objectContaining({
+        body: JSON.stringify({
+          displayName: "Executive Manager",
+          email: "management@moa.gov.et",
+          role: "MANAGEMENT_TEAM",
+        }),
+      }),
+    );
+  });
 });

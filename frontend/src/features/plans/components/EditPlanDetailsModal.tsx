@@ -159,11 +159,11 @@ export function EditPlanDetailsModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#176c55] text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0A3C2F] text-white">
               <Edit3 className="h-4.5 w-4.5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-semibold text-slate-900">
                 Edit Plan Details
               </h3>
               <p className="text-xs text-slate-500">
@@ -189,12 +189,12 @@ export function EditPlanDetailsModal({
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Plan Title / Name <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
-              className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+              className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -202,24 +202,24 @@ export function EditPlanDetailsModal({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Budget Year
               </label>
               <input
                 type="text"
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
                 value={budgetYear}
                 onChange={(e) => setBudgetYear(e.target.value)}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Organization / Region
               </label>
               <input
                 type="text"
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
                 value={organizationRegion}
                 onChange={(e) => setOrganizationRegion(e.target.value)}
               />
@@ -253,11 +253,11 @@ export function EditPlanDetailsModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Description / Objectives
             </label>
             <textarea
-              className="w-full rounded-lg border border-slate-300 p-3 text-xs leading-5 text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+              className="w-full rounded-lg border border-slate-300 p-3 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -265,13 +265,13 @@ export function EditPlanDetailsModal({
           </div>
 
           {/* Revision Reason / Justification */}
-          <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 p-4 space-y-2">
-            <label className="block text-xs font-bold text-amber-950">
+          <div className="notice-card-clean space-y-2">
+            <label className="block text-xs font-semibold text-slate-900">
               Revision Reason / Justification for Audit Trail
             </label>
             <input
               type="text"
-              className="w-full h-9 rounded-lg border border-amber-300 bg-white px-3 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+              className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
               placeholder="e.g., Updated budget year and adjusted coverage schedule per Director feedback..."
               value={revisionReason}
               onChange={(e) => setRevisionReason(e.target.value)}
@@ -289,7 +289,7 @@ export function EditPlanDetailsModal({
             Cancel
           </button>
           <button
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#176c55] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#125f4c] transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition cursor-pointer"
             onClick={handleSave}
             type="button"
           >

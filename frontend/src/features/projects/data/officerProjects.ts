@@ -49,6 +49,11 @@ export interface ProcurementPlanSummary {
   createdAt?: string;
   updatedAt?: string;
   planActivities?: readonly import("./officerActivityDrafts").ProcurementActivitySummary[];
+  parentPlanId?: string;
+  parentPlanReference?: string;
+  parentPlanName?: string;
+  planType?: "ANNUAL" | "ADDITIONAL";
+  additionalPlanReason?: string;
 }
 
 export interface OfficerProject {

@@ -140,7 +140,7 @@ export function DashboardOverview({
 
                 {/* 2. MIDDLE ROW: Clean, Prominent Metric Number */}
                 <div className="my-2.5">
-                  <p className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-none">
+                  <p className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 leading-none">
                     {value}
                   </p>
                 </div>

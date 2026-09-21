@@ -30,7 +30,7 @@ export function DirectorActionPanels({
               <FileText className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-xs sm:text-sm leading-tight">
+              <h3 className="font-semibold text-slate-900 text-xs sm:text-sm leading-tight">
                 {isManagement
                   ? `Plans Awaiting Executive Authorization (${pendingPlans.length})`
                   : `Plans Awaiting Director Review (${pendingPlans.length})`}
@@ -44,7 +44,7 @@ export function DirectorActionPanels({
           </div>
           <Link
             href="/workspace/plan-for-review"
-            className="text-[#006837] hover:text-[#004f29] font-bold text-xs flex items-center gap-0.5 shrink-0 hover:underline cursor-pointer"
+            className="text-[#0A3C2F] hover:text-[#083025] font-semibold text-xs flex items-center gap-0.5 shrink-0 hover:underline cursor-pointer"
           >
             View All <ChevronRight className="h-3 w-3" />
           </Link>
@@ -65,14 +65,13 @@ export function DirectorActionPanels({
                 {/* Top row: Badge and Budget */}
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <span
-                    className={`px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wide ${
+                    className={`px-2 py-0.5 rounded-md border text-xs font-medium tracking-wide ${
                       isManagement
-                        ? "border-indigo-300 bg-indigo-50 text-indigo-800"
-                        : plan.status === "Returned for Revision"
-                          ? "border-amber-300 bg-amber-50 text-amber-800"
-                          : plan.status === "Rejected"
-                            ? "border-rose-300 bg-rose-50 text-rose-800"
-                            : "border-amber-300 bg-amber-50 text-amber-800"
+                        ? "border-indigo-200 bg-indigo-50 text-indigo-800"
+                        : plan.status === "Returned for Revision" ||
+                            plan.status === "Rejected"
+                          ? "border-rose-200/80 bg-rose-50 text-rose-800"
+                          : "border-slate-200 bg-slate-100 text-slate-800"
                     }`}
                   >
                     {isManagement
@@ -84,7 +83,7 @@ export function DirectorActionPanels({
                           : "Awaiting Review"}
                   </span>
                   <div className="text-right">
-                    <span className="font-extrabold text-slate-900 text-xs sm:text-sm">
+                    <span className="font-semibold text-slate-900 text-xs sm:text-sm">
                       {formatETB(plan.estimatedBudgetETB)} ETB
                     </span>
                     <p className="text-[10px] text-slate-500">
@@ -95,7 +94,7 @@ export function DirectorActionPanels({
 
                 {/* Middle: Plan title and Sector */}
                 <div>
-                  <h4 className="font-bold text-slate-900 text-xs leading-snug">
+                  <h4 className="font-semibold text-slate-900 text-xs leading-snug">
                     {plan.title}
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5">
@@ -113,7 +112,7 @@ export function DirectorActionPanels({
                   </span>
                   <Link
                     href={`/workspace/plan-for-review?plan=${encodeURIComponent(plan.id)}`}
-                    className="inline-flex items-center gap-1 bg-[#006837] hover:bg-[#005229] text-white text-xs font-semibold px-3 py-1 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1 bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold px-3 py-1 rounded-lg transition-colors cursor-pointer shadow-2xs"
                   >
                     Review Plan <ChevronRight className="h-3 w-3" />
                   </Link>
@@ -133,7 +132,7 @@ export function DirectorActionPanels({
               <AlertCircle className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-xs sm:text-sm leading-tight">
+              <h3 className="font-semibold text-slate-900 text-xs sm:text-sm leading-tight">
                 Critical Delays ({criticalDelays.length})
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
@@ -141,7 +140,7 @@ export function DirectorActionPanels({
               </p>
             </div>
           </div>
-          <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 font-bold text-[10px] tracking-wider shrink-0">
+          <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-800 border border-rose-200 font-medium text-[10px] tracking-wider shrink-0">
             ALERT ACTIVE
           </span>
         </div>
@@ -149,12 +148,12 @@ export function DirectorActionPanels({
         {/* Delays Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/70 border-b border-slate-100 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+            <thead className="bg-[#0A3C2F] text-white text-[10px] uppercase font-semibold tracking-wider">
               <tr>
-                <th className="px-3.5 py-2">Activity &amp; Project</th>
-                <th className="px-2.5 py-2">Owner</th>
-                <th className="px-2.5 py-2">Delay</th>
-                <th className="px-3.5 py-2 text-right">Action</th>
+                <th className="px-3.5 py-2.5">Activity &amp; Project</th>
+                <th className="px-2.5 py-2.5">Owner</th>
+                <th className="px-2.5 py-2.5">Delay</th>
+                <th className="px-3.5 py-2.5 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -174,7 +173,7 @@ export function DirectorActionPanels({
                     className="hover:bg-slate-50/60 transition-colors"
                   >
                     <td className="px-3.5 py-2.5">
-                      <p className="font-bold text-slate-900 text-xs leading-tight">
+                      <p className="font-semibold text-slate-900 text-xs leading-tight">
                         {delay.activityTitle}
                       </p>
                       <p className="text-[10px] text-slate-400 mt-0.5">
@@ -188,14 +187,14 @@ export function DirectorActionPanels({
                       {delay.assignedOfficer}
                     </td>
                     <td className="px-2.5 py-2.5">
-                      <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-700 font-bold text-[11px]">
+                      <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/70 font-medium text-[11px]">
                         +{delay.daysOverdue} Days
                       </span>
                     </td>
                     <td className="px-3.5 py-2.5 text-right">
                       <Link
                         href={`/workspace/activity-tracker?activity=${encodeURIComponent(delay.id)}`}
-                        className="text-[#006837] hover:text-[#004f29] font-bold text-xs hover:underline cursor-pointer"
+                        className="text-[#0A3C2F] hover:text-[#083025] font-semibold text-xs hover:underline cursor-pointer"
                       >
                         Inspect
                       </Link>

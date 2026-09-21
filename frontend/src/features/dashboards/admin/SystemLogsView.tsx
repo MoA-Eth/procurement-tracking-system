@@ -147,7 +147,7 @@ export function SystemLogsView() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#0f172a]">
+          <h1 className="text-2xl font-semibold tracking-tight text-[#0f172a]">
             System Audit Trail
           </h1>
           <p className="mt-1 text-sm text-[#64748b] font-medium">
@@ -160,7 +160,7 @@ export function SystemLogsView() {
       <section className="rounded-2xl border border-[#e2e8f0] bg-white p-6 sm:p-8 shadow-xs space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-[#0f172a] tracking-tight">
+            <h2 className="text-lg font-semibold text-[#0f172a] tracking-tight">
               System Audit Log Trail
             </h2>
             <p className="mt-0.5 text-xs text-[#64748b] font-medium">
@@ -186,7 +186,7 @@ export function SystemLogsView() {
               <select
                 value={selectedAction}
                 onChange={(e) => handleActionChange(e.target.value)}
-                className="bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-4 py-2 text-xs font-bold text-[#334155] focus:outline-none cursor-pointer w-full"
+                className="bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-4 py-2 text-xs font-semibold text-[#334155] focus:outline-none cursor-pointer w-full"
               >
                 <option value="ALL">All Actions</option>
                 <option value="LOGIN_SUCCEEDED">Login Succeeded</option>
@@ -217,7 +217,7 @@ export function SystemLogsView() {
             <button
               type="button"
               onClick={loadLogs}
-              className="px-4 py-2 text-xs font-bold rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
             >
               Try Again
             </button>
@@ -231,17 +231,17 @@ export function SystemLogsView() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[650px]">
                   <thead>
-                    <tr className="bg-[#04382c] text-white text-xs font-bold">
-                      <th className="py-3.5 px-4 font-bold tracking-wide w-[220px]">
+                    <tr className="bg-[#0A3C2F] text-white text-xs font-semibold">
+                      <th className="py-3.5 px-4 font-semibold tracking-wide w-[220px]">
                         Timestamp
                       </th>
-                      <th className="py-3.5 px-4 font-bold tracking-wide w-[180px]">
+                      <th className="py-3.5 px-4 font-semibold tracking-wide w-[180px]">
                         User & Details
                       </th>
-                      <th className="py-3.5 px-4 font-bold tracking-wide w-[180px]">
+                      <th className="py-3.5 px-4 font-semibold tracking-wide w-[180px]">
                         Action
                       </th>
-                      <th className="py-3.5 px-4 font-bold tracking-wide">
+                      <th className="py-3.5 px-4 font-semibold tracking-wide">
                         Details / Activity Description
                       </th>
                     </tr>
@@ -261,7 +261,7 @@ export function SystemLogsView() {
                             {formatTimestamp(log.createdAt)}
                           </td>
 
-                          <td className="py-4 px-4 font-bold text-[#0f172a] align-middle max-w-xs wrap-break-word">
+                          <td className="py-4 px-4 font-semibold text-[#0f172a] align-middle max-w-xs wrap-break-word">
                             <div>
                               <span className="wrap-break-word line-clamp-2">
                                 {log.user?.name ?? "System"}
@@ -270,7 +270,7 @@ export function SystemLogsView() {
                           </td>
 
                           <td className="py-4 px-4 whitespace-nowrap align-middle">
-                            <span className="text-[#044e3a] text-xs font-bold uppercase tracking-wider">
+                            <span className="text-[#0A3C2F] text-xs font-semibold uppercase tracking-wider">
                               {log.action}
                             </span>
                           </td>
@@ -302,12 +302,12 @@ export function SystemLogsView() {
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                 <p className="text-xs text-slate-500 font-medium">
                   Showing{" "}
-                  <span className="font-bold text-slate-700">
+                  <span className="font-semibold text-slate-700">
                     {meta.total === 0 ? 0 : (meta.page - 1) * meta.pageSize + 1}
                     –{Math.min(meta.page * meta.pageSize, meta.total)}
                   </span>{" "}
                   of{" "}
-                  <span className="font-bold text-slate-700 font-bold">
+                  <span className="font-semibold text-slate-700 font-semibold">
                     {meta.total}
                   </span>{" "}
                   entries
@@ -322,7 +322,7 @@ export function SystemLogsView() {
                     >
                       <ChevronLeft className="w-4 h-4 text-slate-600" />
                     </button>
-                    <span className="text-xs font-bold text-slate-600 min-w-[60px] text-center">
+                    <span className="text-xs font-semibold text-slate-600 min-w-[60px] text-center">
                       Page {meta.page} of {meta.totalPages}
                     </span>
                     <button

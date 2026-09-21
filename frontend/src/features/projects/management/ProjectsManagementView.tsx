@@ -30,7 +30,12 @@ import {
   rejectPlan,
   mapBackendPlanToFrontend,
 } from "@/lib/plansApi";
-import { fetchLookups, fetchOfficers, type LookupItem } from "@/lib/lookupsApi";
+import {
+  fetchLookups,
+  createLookup,
+  fetchOfficers,
+  type LookupItem,
+} from "@/lib/lookupsApi";
 import { OFFICER_PLAN_DRAFTS_STORAGE_KEY } from "@/features/projects/data/officerPlanDrafts";
 import { OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY } from "@/features/projects/data/officerActivityDrafts";
 import {
@@ -320,33 +325,84 @@ export function ProjectsManagementView({
         showToast(`Project "${savedProject.code}" updated successfully!`);
       } else {
         // Create Project on backend
-        let createdId = savedProject.id;
+        let projectSavedOnBackend = false;
         try {
           const [secLookupList, fundLookupList] = await Promise.all([
             fetchLookups("SECTOR"),
             fetchLookups("FUNDING_SOURCE"),
           ]);
 
-          const matchedSector =
-            secLookupList.find(
-              (s) =>
-                s.label.toLowerCase() === savedProject.sector.toLowerCase() ||
-                s.code.toLowerCase() === savedProject.sector.toLowerCase(),
-            ) || secLookupList[0];
+          const isRealId = (id?: string | null): boolean => {
+            if (!id || typeof id !== "string") return false;
+            return (
+              !id.startsWith("sec-") &&
+              !id.startsWith("fs-") &&
+              !id.startsWith("pm-") &&
+              !id.startsWith("custom-") &&
+              !id.startsWith("proj-code-") &&
+              id.length > 5
+            );
+          };
 
-          const matchedFs =
-            fundLookupList.find(
-              (f) =>
-                f.label
-                  .toLowerCase()
-                  .includes(savedProject.fundingSource.toLowerCase()) ||
+          // Find real DB sector lookup, or create one in the backend
+          let targetSectorId = secLookupList.find(
+            (s) =>
+              isRealId(s.id) &&
+              (s.label.toLowerCase() === savedProject.sector.toLowerCase() ||
+                s.code.toLowerCase() === savedProject.sector.toLowerCase()),
+          )?.id;
+
+          if (!targetSectorId) {
+            const anyRealSec = secLookupList.find((s) => isRealId(s.id));
+            if (anyRealSec) {
+              targetSectorId = anyRealSec.id;
+            } else {
+              try {
+                const newSec = await createLookup({
+                  type: "SECTOR",
+                  code:
+                    savedProject.sector
+                      .replace(/[^A-Za-z0-9]/g, "_")
+                      .toUpperCase()
+                      .slice(0, 10) || "SEC_GEN",
+                  label: savedProject.sector || "General Sector",
+                });
+                if (isRealId(newSec.id)) targetSectorId = newSec.id;
+              } catch {}
+            }
+          }
+
+          // Find real DB funding source lookup, or create one in the backend
+          let targetFsId = fundLookupList.find(
+            (f) =>
+              isRealId(f.id) &&
+              (f.label
+                .toLowerCase()
+                .includes(savedProject.fundingSource.toLowerCase()) ||
                 f.code
                   .toLowerCase()
-                  .includes(savedProject.fundingSource.toLowerCase()),
-            ) || fundLookupList[0];
+                  .includes(savedProject.fundingSource.toLowerCase())),
+          )?.id;
 
-          const targetSectorId = matchedSector?.id;
-          const targetFsId = matchedFs?.id;
+          if (!targetFsId) {
+            const anyRealFs = fundLookupList.find((f) => isRealId(f.id));
+            if (anyRealFs) {
+              targetFsId = anyRealFs.id;
+            } else {
+              try {
+                const newFs = await createLookup({
+                  type: "FUNDING_SOURCE",
+                  code:
+                    savedProject.fundingSource
+                      .replace(/[^A-Za-z0-9]/g, "_")
+                      .toUpperCase()
+                      .slice(0, 10) || "FS_GEN",
+                  label: savedProject.fundingSource || "General Funding",
+                });
+                if (isRealId(newFs.id)) targetFsId = newFs.id;
+              } catch {}
+            }
+          }
 
           if (targetSectorId && targetFsId) {
             const result = await createProject({
@@ -372,7 +428,8 @@ export function ProjectsManagementView({
             });
 
             if (result && result.id) {
-              createdId = result.id;
+              projectSavedOnBackend = true;
+              savedProject.id = result.id;
               if (
                 savedProject.assignedOfficers &&
                 savedProject.assignedOfficers.length > 0
@@ -391,7 +448,16 @@ export function ProjectsManagementView({
           console.warn("Backend create project API note:", apiErr);
         }
 
-        await loadData();
+        if (projectSavedOnBackend) {
+          await loadData();
+        } else {
+          // Optimistic local state fallback: ensures project appears in the table immediately
+          setProjects((prev) => [
+            savedProject,
+            ...prev.filter((p) => p.code !== savedProject.code),
+          ]);
+        }
+
         showToast(
           `New sector project "${savedProject.code}" registered and officer assigned!`,
         );
@@ -595,7 +661,7 @@ export function ProjectsManagementView({
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 right-5 z-50 flex items-center gap-3 rounded-xl bg-slate-900 text-white px-4 py-3 shadow-xl border border-slate-700 animate-in slide-in-from-top-3 max-w-md">
-          <BellRing className="h-4 w-4 text-[#A3E635] shrink-0" />
+          <BellRing className="h-4 w-4 text-emerald-400 shrink-0" />
           <p className="text-xs font-medium leading-relaxed">{toastMessage}</p>
         </div>
       )}
@@ -610,6 +676,16 @@ export function ProjectsManagementView({
           onImportClick={
             readOnly ? undefined : () => setIsImportModalOpen(true)
           }
+          onUpdateProjectOfficers={(projectId, updatedOfficers) => {
+            setProjects((prev) =>
+              prev.map((p) =>
+                p.id === projectId
+                  ? { ...p, assignedOfficers: updatedOfficers }
+                  : p,
+              ),
+            );
+            showToast("Project officers updated successfully!");
+          }}
           readOnly={readOnly}
         />
       )}
@@ -620,6 +696,7 @@ export function ProjectsManagementView({
           availableOfficers={
             availableOfficers.length > 0 ? availableOfficers : undefined
           }
+          allProjects={projects}
           onBackClick={() => {
             setEditingProject(null);
             setViewMode("list");

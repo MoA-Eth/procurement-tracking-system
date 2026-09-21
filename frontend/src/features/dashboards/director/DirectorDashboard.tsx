@@ -9,6 +9,7 @@ import { DirectorWorkflowPipelineChart } from "./components/DirectorWorkflowPipe
 import { DirectorSpendCompositionChart } from "./components/DirectorSpendCompositionChart";
 import { DirectorFinancialPositionChart } from "./components/DirectorFinancialPositionChart";
 import { DirectorActionPanels } from "./components/DirectorActionPanels";
+import { DirectorOfficerWorkloadPanel } from "./components/DirectorOfficerWorkloadPanel";
 
 export function DirectorDashboard({ user }: { user: AuthUser }) {
   const {
@@ -35,6 +36,7 @@ export function DirectorDashboard({ user }: { user: AuthUser }) {
     displayedPendingPlans,
     displayedCriticalDelays,
     availableFiscalYears,
+    currency,
   } = useDirectorDashboard(user.role);
 
   return (
@@ -73,6 +75,7 @@ export function DirectorDashboard({ user }: { user: AuthUser }) {
         financialSummary={financialSummary}
         spendPercentages={spendPercentages}
         selectedFiscalYear={selectedFiscalYear}
+        currency={currency}
       />
 
       {/* 4. MIDDLE SECTION: WORKFLOW PIPELINE & SPEND COMPOSITION */}
@@ -103,6 +106,9 @@ export function DirectorDashboard({ user }: { user: AuthUser }) {
         userRole={user.role}
       />
 
+      {/* 6.1 OFFICER WORKLOAD & DELAYS PER OFFICER (Req 7 & 8) */}
+      <DirectorOfficerWorkloadPanel />
+
       {/* 7. SYSTEM FOOTER BAR */}
       <footer className="pt-2 pb-2 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 font-medium">
         <div className="flex items-center gap-2.5">
@@ -112,7 +118,8 @@ export function DirectorDashboard({ user }: { user: AuthUser }) {
           </span>
           <span>•</span>
           <span>
-            Baseline Lock: <strong className="text-slate-700">Active</strong>
+            Baseline Lock:{" "}
+            <span className="font-semibold text-slate-700">Active</span>
           </span>
         </div>
         <div>Ministry of Agriculture • {selectedFiscalYear}</div>

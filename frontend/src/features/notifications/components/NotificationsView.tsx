@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   CheckCheck,
@@ -29,9 +30,9 @@ import {
   type NotificationType,
   type SystemNotification,
 } from "@/lib/alertsApi";
-import { useEffect } from "react";
 
 export function NotificationsView({ user }: { user?: AuthUser }) {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     if (user) return user;
     if (typeof window !== "undefined") return getCurrentUser();
@@ -108,6 +109,15 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
     markAlertAsRead(id);
   };
 
+  const handleCardClick = (n: SystemNotification) => {
+    if (!n.read) {
+      handleMarkAsRead(n.id);
+    }
+    if (n.link) {
+      router.push(n.link);
+    }
+  };
+
   const handleToggleRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)),
@@ -159,20 +169,20 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
     switch (priority) {
       case "urgent":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-extrabold text-rose-700 border border-rose-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700 border border-rose-200">
             <ShieldAlert size={11} /> Urgent
           </span>
         );
       case "normal":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 border border-blue-200">
             Normal
           </span>
         );
       case "info":
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 border border-slate-200">
+          <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 border border-slate-200">
             Informational
           </span>
         );
@@ -190,11 +200,11 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
                   Notifications &amp; Alerts Center
                 </h1>
                 {userRole && (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
                     {ROLE_LABELS[userRole] || userRole}
                   </span>
                 )}
@@ -210,7 +220,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
           <button
             type="button"
             onClick={handleMarkAllAsRead}
-            className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors shadow-2xs cursor-pointer flex items-center gap-2 self-start sm:self-center"
+            className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors shadow-2xs cursor-pointer flex items-center gap-2 self-start sm:self-center"
           >
             <CheckCheck size={16} className="text-emerald-700" />
             <span>Mark All as Read</span>
@@ -225,7 +235,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             <span className="text-xs font-semibold text-slate-500">
               Total Notifications
             </span>
-            <p className="text-2xl font-black text-slate-900 mt-0.5">
+            <p className="text-2xl font-semibold text-slate-900 mt-0.5">
               {notifications.length}
             </p>
           </div>
@@ -239,11 +249,11 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             <span className="text-xs font-semibold text-emerald-800">
               Unread Messages
             </span>
-            <p className="text-2xl font-black text-emerald-950 mt-0.5">
+            <p className="text-2xl font-semibold text-emerald-950 mt-0.5">
               {unreadCount}
             </p>
           </div>
-          <div className="p-3 rounded-xl bg-emerald-600 text-white font-bold text-xs">
+          <div className="p-3 rounded-xl bg-[#006837] text-white font-medium text-xs">
             {unreadCount > 0 ? `${unreadCount} New` : "Clean"}
           </div>
         </div>
@@ -253,7 +263,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             <span className="text-xs font-semibold text-rose-800">
               Urgent Alerts
             </span>
-            <p className="text-2xl font-black text-rose-950 mt-0.5">
+            <p className="text-2xl font-semibold text-rose-950 mt-0.5">
               {urgentCount}
             </p>
           </div>
@@ -271,7 +281,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             <button
               type="button"
               onClick={() => setActiveTab("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === "all"
                   ? "bg-white text-slate-900 shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -282,7 +292,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             <button
               type="button"
               onClick={() => setActiveTab("unread")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === "unread"
                   ? "bg-white text-slate-900 shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -290,7 +300,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             >
               <span>Unread</span>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-rose-500 text-white">
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-rose-500 text-white">
                   {unreadCount}
                 </span>
               )}
@@ -298,7 +308,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             <button
               type="button"
               onClick={() => setActiveTab("urgent")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === "urgent"
                   ? "bg-white text-rose-800 shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -306,7 +316,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             >
               <span>Urgent</span>
               {urgentCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-rose-500 text-white">
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-rose-500 text-white">
                   {urgentCount}
                 </span>
               )}
@@ -352,7 +362,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
             <div className="p-3 rounded-full bg-slate-100 text-slate-400 w-fit mx-auto">
               <Bell size={28} />
             </div>
-            <h3 className="text-sm font-bold text-slate-800">
+            <h3 className="text-sm font-semibold text-slate-800">
               No Notifications Found
             </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
@@ -365,7 +375,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
           filteredNotifications.map((n) => (
             <div
               key={n.id}
-              onClick={() => handleMarkAsRead(n.id)}
+              onClick={() => handleCardClick(n)}
               className={`group rounded-2xl border p-4 sm:p-5 transition-all shadow-2xs relative flex flex-col sm:flex-row sm:items-start justify-between gap-4 cursor-pointer ${
                 n.read
                   ? "bg-white border-slate-200 hover:border-slate-300"
@@ -388,7 +398,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3
-                      className={`text-sm font-extrabold tracking-tight ${
+                      className={`text-sm font-semibold tracking-tight ${
                         n.read ? "text-slate-800" : "text-slate-950"
                       }`}
                     >
@@ -416,7 +426,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
                 {n.link && (
                   <Link
                     href={n.link}
-                    className="px-3 py-1.5 rounded-lg bg-[#0A3C2F] hover:bg-[#072a21] text-white text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-[#0A3C2F] hover:bg-[#072F25] text-white text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <span>{n.actionLabel || "View"}</span>
                     <ExternalLink size={12} />

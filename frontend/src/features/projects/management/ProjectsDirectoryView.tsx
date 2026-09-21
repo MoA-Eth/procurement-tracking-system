@@ -11,8 +11,10 @@ import {
   Edit,
   UserCheck,
   Upload,
+  UserPlus,
 } from "lucide-react";
-import type { ProjectItem } from "./projectsData";
+import type { ProjectItem, ProjectOfficer } from "./projectsData";
+import { QuickAssignOfficerModal } from "./components/QuickAssignOfficerModal";
 
 interface ProjectsDirectoryViewProps {
   projects: ProjectItem[];
@@ -20,6 +22,10 @@ interface ProjectsDirectoryViewProps {
   onEditClick: (project: ProjectItem) => void;
   onViewPlansClick: (project: ProjectItem) => void;
   onImportClick?: () => void;
+  onUpdateProjectOfficers?: (
+    projectId: string,
+    updatedOfficers: ProjectOfficer[],
+  ) => void;
   readOnly?: boolean;
 }
 
@@ -29,6 +35,7 @@ export function ProjectsDirectoryView({
   onEditClick,
   onViewPlansClick,
   onImportClick,
+  onUpdateProjectOfficers,
   readOnly = false,
 }: ProjectsDirectoryViewProps) {
   // Filter & Search state
@@ -36,6 +43,8 @@ export function ProjectsDirectoryView({
   const [statusFilter, setStatusFilter] = useState("All Statuses");
   const [officerFilter, setOfficerFilter] = useState("All Assigned Officers");
   const [fundingFilter, setFundingFilter] = useState("All Funding Sources");
+  const [officerModalProject, setOfficerModalProject] =
+    useState<ProjectItem | null>(null);
 
   // Filtered logic
   const filteredProjects = projects.filter((project) => {
@@ -79,21 +88,19 @@ export function ProjectsDirectoryView({
           <Home className="h-4 w-4" />
         </Link>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-bold text-[#0A3C2F]">Projects Management</span>
+        <span className="font-semibold text-[#0A3C2F]">
+          Projects Management
+        </span>
       </nav>
 
       {/* 2. Page Title Header & Top Action Button */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold text-slate-950 tracking-tight">
               MoA Projects Directory
             </h1>
           </div>
-          <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-2xl">
-            Highest procurement container. Stored project-level headers are
-            inherited by all procurement plans and activity items.
-          </p>
         </div>
 
         {!readOnly && (
@@ -101,7 +108,7 @@ export function ProjectsDirectoryView({
             {onImportClick && (
               <button
                 onClick={onImportClick}
-                className="border border-slate-300 bg-white hover:border-[#0A3C2F] hover:bg-[#edf5f1] hover:text-[#0A3C2F] text-slate-700 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+                className="border border-slate-300 bg-white hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] text-slate-700 font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
                 type="button"
               >
                 <Upload className="h-4 w-4 text-slate-500" />
@@ -110,7 +117,7 @@ export function ProjectsDirectoryView({
             )}
             <button
               onClick={onCreateClick}
-              className="bg-[#0A3C2F] hover:bg-[#072b22] text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+              className="bg-[#0A3C2F] hover:bg-[#083025] text-white font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
               type="button"
             >
               <Plus className="h-4 w-4 stroke-[2.5]" />
@@ -182,7 +189,7 @@ export function ProjectsDirectoryView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1250px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3.5 px-4 text-center w-12">#</th>
                 <th className="py-3.5 px-4 min-w-[140px]">Code / SAP ID</th>
                 <th className="py-3.5 px-4 min-w-[300px] w-[28%]">
@@ -220,14 +227,14 @@ export function ProjectsDirectoryView({
                     className="hover:bg-slate-50/70 transition-colors"
                   >
                     {/* Index */}
-                    <td className="py-4 px-4 text-center font-bold text-slate-400">
+                    <td className="py-4 px-4 text-center font-semibold text-slate-400">
                       {index + 1}
                     </td>
 
                     {/* Code & SAP ID */}
                     <td className="py-4 px-4 whitespace-nowrap">
                       <p
-                        className="font-mono font-extrabold text-slate-900 text-xs max-w-36 truncate"
+                        className="font-semibold text-slate-900 text-xs max-w-36 truncate"
                         title={`Project Code: ${project.code}`}
                       >
                         {project.code}
@@ -244,7 +251,7 @@ export function ProjectsDirectoryView({
 
                     {/* Project Name (Expanded width & 3-line wrap + hover tooltip) */}
                     <td
-                      className="py-4 px-4 font-bold text-slate-900 min-w-[300px] max-w-[380px] wrap-break-word"
+                      className="py-4 px-4 font-semibold text-slate-900 min-w-[300px] max-w-[380px] wrap-break-word"
                       title={project.name}
                     >
                       <div className="leading-snug line-clamp-3 wrap-break-word">
@@ -253,19 +260,32 @@ export function ProjectsDirectoryView({
                     </td>
 
                     {/* Donor & Funding Type */}
-                    <td className="py-4 px-4 space-y-1 min-w-[200px]">
-                      <span
-                        className="inline-block  px-2 py-0.5 text-[10px] font-semibold text-blue-800"
-                        title={`Funding Source: ${project.fundingSource}`}
-                      >
+                    <td
+                      className="py-4 px-4 min-w-[200px] max-w-[260px]"
+                      title={`Funding Source: ${project.fundingSource} | Type: ${project.fundingType}`}
+                    >
+                      <p className="font-semibold text-slate-900 text-[11px] leading-tight break-words">
                         {project.fundingSource}
-                      </span>
-                      <div>
-                        <span className="inline-block  px-2 py-0.5 text-[10px] font-medium text-slate-600">
-                          {project.fundingType} (
-                          {project.currency.split(" ")[0]})
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-medium mt-1">
+                        Type:{" "}
+                        <span className="text-slate-700 font-semibold">
+                          {project.fundingType
+                            ? project.fundingType.toUpperCase() === "LOAN"
+                              ? "Loan"
+                              : project.fundingType.toUpperCase() === "GRANT"
+                                ? "Grant"
+                                : project.fundingType
+                            : "—"}
+                        </span>{" "}
+                        <span className="text-slate-500 font-medium">
+                          (
+                          {project.currency
+                            ? project.currency.split(" ")[0]
+                            : "ETB"}
+                          )
                         </span>
-                      </div>
+                      </p>
                     </td>
 
                     {/* Agency & Region (Expanded width & full multi-line wrap + hover tooltip) */}
@@ -307,12 +327,12 @@ export function ProjectsDirectoryView({
                     {/* Status Badge */}
                     <td className="py-4 px-4 text-center whitespace-nowrap min-w-[100px]">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold border ${
+                        className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-medium border ${
                           project.status === "Active"
-                            ? "bg-emerald-50 text-emerald-850 border-emerald-200"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
                             : project.status === "Draft"
-                              ? "bg-amber-50 text-amber-850 border-amber-200"
-                              : "bg-slate-100 text-slate-600 border-slate-200"
+                              ? "bg-slate-50 text-slate-700 border-slate-200/80"
+                              : "bg-slate-100 text-slate-700 border-slate-200"
                         }`}
                       >
                         {project.status === "Draft" ? "Draft" : project.status}
@@ -341,6 +361,17 @@ export function ProjectsDirectoryView({
                             <Edit className="h-4 w-4" />
                           </button>
                         )}
+
+                        {/* Assign / Change Officer Button (Supported even after approval) */}
+                        {!readOnly && (
+                          <button
+                            onClick={() => setOfficerModalProject(project)}
+                            title="Assign or Change Officers (Post-Approval Supported)"
+                            className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+                          >
+                            <UserPlus className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -350,6 +381,18 @@ export function ProjectsDirectoryView({
           </table>
         </div>
       </div>
+
+      {/* Quick Assign / Change Officer Modal */}
+      {officerModalProject && (
+        <QuickAssignOfficerModal
+          isOpen={Boolean(officerModalProject)}
+          project={officerModalProject}
+          onClose={() => setOfficerModalProject(null)}
+          onSaveSuccess={(projectId, updatedOfficers) => {
+            onUpdateProjectOfficers?.(projectId, updatedOfficers);
+          }}
+        />
+      )}
     </div>
   );
 }

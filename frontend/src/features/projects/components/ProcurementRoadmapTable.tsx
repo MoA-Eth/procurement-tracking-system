@@ -52,10 +52,10 @@ export function ProcurementRoadmapTable({
     <div className="space-y-4">
       <div className="flex flex-col gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[9px] font-extrabold uppercase tracking-[0.08em] text-slate-500">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-500">
             Generated roadmap template
           </p>
-          <p className="mt-0.5 text-[11px] font-bold text-[#16243a]">
+          <p className="mt-0.5 text-[11px] font-semibold text-[#16243a]">
             {methodLabel}
           </p>
         </div>
@@ -111,7 +111,7 @@ export function ProcurementRoadmapTable({
       ) : null}
 
       <details className="rounded-lg border border-slate-300 bg-white shadow-sm">
-        <summary className="cursor-pointer list-none px-4 py-3 text-[10px] font-bold text-slate-700 marker:hidden">
+        <summary className="cursor-pointer list-none px-4 py-3 text-[10px] font-semibold text-slate-700 marker:hidden">
           Optional stage remarks
           <span className="ml-2 font-normal text-slate-400">
             Add notes only where needed
@@ -121,7 +121,7 @@ export function ProcurementRoadmapTable({
           {stages.map((stage, index) => (
             <CompactField key={stage.name} label={stage.name}>
               <textarea
-                className="min-h-16 w-full resize-y rounded border border-slate-300 bg-white px-2.5 py-2 text-[10px] leading-4 text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+                className="min-h-16 w-full resize-y rounded border border-slate-300 bg-white px-2.5 py-2 text-[10px] leading-4 text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
                 onChange={(event) =>
                   updateStage(index, { remarks: event.target.value })
                 }
@@ -161,13 +161,13 @@ function RoadmapSection({
 }) {
   return (
     <section className="overflow-visible rounded-xl border border-slate-200/80 bg-white shadow-2xs">
-      <h2 className="border-b border-slate-200 bg-[#edf5f1] px-4 py-2.5 text-[11px] font-extrabold text-[#16243a]">
+      <h2 className="border-b border-slate-200 bg-slate-50 px-4 py-2.5 text-[11px] font-semibold text-[#16243a]">
         {title}
       </h2>
       <div className="overflow-visible">
         <table className="w-full table-fixed border-collapse text-left">
           <thead>
-            <tr className="bg-[#0A3C2F] text-white text-[10px] font-extrabold uppercase tracking-wider">
+            <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
               <th className="w-[35%] px-3 py-2.5" scope="col">
                 Stage
               </th>
@@ -247,7 +247,7 @@ function RoadmapSection({
                     <input
                       aria-label={"Mark " + stage.name + " not applicable"}
                       checked={stage.notApplicable}
-                      className="h-3.5 w-3.5 accent-[#176c55] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="h-3.5 w-3.5 accent-[#006837] disabled:cursor-not-allowed disabled:opacity-40"
                       disabled={!stage.allowNotApplicable}
                       onChange={(event) => {
                         const checked = event.target.checked;
@@ -296,7 +296,7 @@ function RoadmapDateCell({
             ? "border-red-400 bg-white text-red-700 focus:ring-2 focus:ring-red-100"
             : gregorianValue
               ? "border-transparent bg-transparent text-slate-700 hover:border-slate-300 hover:bg-white"
-              : "border-slate-300 bg-white text-slate-400 hover:border-[#176c55]")
+              : "border-slate-300 bg-white text-slate-400 hover:border-[#0A3C2F]")
         }
         onClick={() => setEditing((current) => !current)}
         type="button"
@@ -333,7 +333,7 @@ function RoadmapDateCell({
             }}
           />
           <button
-            className="mt-2 text-[9px] font-semibold text-slate-500 hover:text-[#176c55]"
+            className="mt-2 text-[9px] font-semibold text-slate-500 hover:text-[#0A3C2F]"
             onClick={() => setEditing(false)}
             type="button"
           >

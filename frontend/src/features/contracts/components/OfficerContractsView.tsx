@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  FileEdit,
+  House,
   Loader2,
   Plus,
   Search,
@@ -23,6 +25,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { AddContractAmendmentView } from "./AddContractAmendmentView";
 import { AddContractPaymentView } from "./AddContractPaymentView";
 import { RegisterContractView } from "./RegisterContractView";
 import { ContractExcelImportModal } from "./ContractExcelImportModal";
@@ -44,11 +47,14 @@ import {
 } from "../data/officerPayments";
 import {
   createContract,
+  createContractAmendment,
   recordContractPayment,
   fetchContracts,
   mapBackendContractToOfficerContract,
   importContracts,
 } from "@/lib/contractsApi";
+import { BACKEND_API_URL } from "@/lib/apiClient";
+import { authTokenManager } from "@/lib/authTokenManager";
 import {
   contractFiscalYear,
   filterOfficerContracts,
@@ -61,11 +67,17 @@ const amountFormatter = new Intl.NumberFormat("en-US", {
 
 export function OfficerContractsView({
   fromTracker,
+  initialActivityReference,
+  initialPlanReference,
+  initialProjectCode,
   mode,
   selectedContractNumber,
 }: {
   fromTracker?: boolean;
-  mode?: "add-payment" | "register";
+  initialActivityReference?: string;
+  initialPlanReference?: string;
+  initialProjectCode?: string;
+  mode?: "add-payment" | "register" | "add-amendment";
   selectedContractNumber?: string;
 }) {
   const router = useRouter();
@@ -241,6 +253,58 @@ export function OfficerContractsView({
     router.push("/workspace/contracts");
   }
 
+  async function saveAmendment(amendmentData: {
+    variationAmount: number;
+    reason: string;
+    effectiveDate?: string;
+    approvalRef?: string;
+    notes?: string;
+    newTotalAmount: number;
+    newRemainingBalance: number;
+  }) {
+    if (!selectedContract) return;
+
+    const updatedContract: OfficerContract = {
+      ...selectedContract,
+      currentAmount: amendmentData.newTotalAmount,
+      remainingBalance: amendmentData.newRemainingBalance,
+      details: selectedContract.details
+        ? {
+            ...selectedContract.details,
+            amountWithVat: amendmentData.newTotalAmount,
+            amendments: [
+              ...(selectedContract.details.amendments || []),
+              {
+                id: (selectedContract.details.amendments?.length || 0) + 1,
+                amount: amendmentData.variationAmount,
+              },
+            ],
+          }
+        : undefined,
+    };
+
+    const nextContracts = addSavedContract(savedContracts, updatedContract);
+    setSavedContracts(nextContracts);
+    window.localStorage.setItem(
+      OFFICER_CONTRACTS_STORAGE_KEY,
+      JSON.stringify(nextContracts),
+    );
+
+    try {
+      await createContractAmendment(selectedContract.id, {
+        variationAmount: amendmentData.variationAmount,
+        reason: amendmentData.reason,
+        effectiveDate: amendmentData.effectiveDate,
+        approvalRef: amendmentData.approvalRef,
+        notes: amendmentData.notes,
+      });
+    } catch (err) {
+      console.warn("Backend createContractAmendment note:", err);
+    }
+
+    router.push("/workspace/contracts");
+  }
+
   const allVisibleSelected =
     filteredContracts.length > 0 &&
     filteredContracts.every((contract) => selectedIds.has(contract.id));
@@ -325,6 +389,9 @@ export function OfficerContractsView({
       <RegisterContractView
         existingContracts={contracts}
         fromTracker={fromTracker}
+        initialActivityReference={initialActivityReference}
+        initialPlanReference={initialPlanReference}
+        initialProjectCode={initialProjectCode}
         onSave={saveContract}
       />
     );
@@ -340,34 +407,48 @@ export function OfficerContractsView({
     );
   }
 
+  if (mode === "add-amendment" && selectedContract) {
+    return (
+      <AddContractAmendmentView
+        contract={selectedContract}
+        fromTracker={fromTracker}
+        onSave={saveAmendment}
+      />
+    );
+  }
+
   return (
-    <div className="w-full min-w-0 space-y-5 overflow-x-hidden pb-6">
+    <div className="space-y-6 animate-in fade-in duration-200 pb-10">
       <header className="flex w-full min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
-            <ol className="flex items-center gap-2">
-              <li>
-                <Link
-                  className="hover:text-[#176c55] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
-                  href="/dashboard/officer"
-                >
-                  Home
-                </Link>
-              </li>
-              <li aria-hidden="true" className="text-slate-300">
-                /
-              </li>
-              <li aria-current="page" className="font-bold text-[#176c55]">
-                Contracts
-              </li>
-            </ol>
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-xs"
+          >
+            <Link
+              href="/dashboard/officer"
+              title="Go to Dashboard"
+              className="text-slate-500 hover:text-slate-900 transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <House className="h-4 w-4" />
+            </Link>
+            <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+            <span className="font-semibold text-[#0A3C2F]">Contracts</span>
           </nav>
-          <h1 className="sr-only">Contracts</h1>
+          <div className="mt-4">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-950 tracking-tight">
+              Contracts
+            </h1>
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-3xl">
+              Manage contract commitments, track payment disbursements, and
+              record amendments.
+            </p>
+          </div>
         </div>
 
         <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           <button
-            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] cursor-pointer"
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] cursor-pointer"
             onClick={() => handleExportContracts(selectedIds.size > 0)}
             type="button"
           >
@@ -377,7 +458,7 @@ export function OfficerContractsView({
               : "Export Contracts"}
           </button>
           <button
-            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] cursor-pointer"
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] cursor-pointer"
             onClick={handleImportClick}
             type="button"
           >
@@ -385,9 +466,9 @@ export function OfficerContractsView({
             Import Contracts
           </button>
           <Link
-            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] transition"
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-[#00552c] bg-[#006837] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] transition"
             href="/workspace/contracts?mode=register"
-            style={{ backgroundColor: "#176c55", color: "#ffffff" }}
+            style={{ backgroundColor: "#006837", color: "#ffffff" }}
           >
             <Plus aria-hidden="true" className="h-4 w-4" />
             Register Contract
@@ -405,7 +486,7 @@ export function OfficerContractsView({
         >
           <span>{importNotification.message}</span>
           <button
-            className="font-bold underline cursor-pointer"
+            className="font-semibold underline cursor-pointer"
             onClick={() => setImportNotification(null)}
             type="button"
           >
@@ -416,7 +497,7 @@ export function OfficerContractsView({
 
       <section
         aria-label="Contract filters and table controls"
-        className="w-full min-w-0 rounded-md border border-slate-300 bg-white p-3 shadow-sm"
+        className="w-full min-w-0 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-2xs"
       >
         <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(20rem,1fr)_8.5rem_10rem]">
           <label className="relative block min-w-0 sm:col-span-2 xl:col-span-1">
@@ -426,10 +507,10 @@ export function OfficerContractsView({
             </span>
             <Search
               aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-500"
+              className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400"
             />
             <input
-              className="h-10 w-full rounded-sm border border-slate-300 bg-[#fbfcfd] pr-3 pl-10 text-xs text-slate-800 outline-none transition placeholder:text-slate-500 hover:border-[#9fb8ad] focus:border-[#176c55] focus:bg-white focus:ring-2 focus:ring-[#176c55]/15"
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-medium text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all shadow-2xs placeholder:text-slate-400 hover:border-slate-300"
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search Contract #, Ref, or Supplier..."
               type="search"
@@ -485,7 +566,7 @@ export function OfficerContractsView({
       {selectedIds.size > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-2.5 text-xs font-semibold text-emerald-900 shadow-2xs">
           <div className="flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#176c55] text-white text-[10px] font-bold">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0A3C2F] text-white text-[10px] font-semibold">
               {selectedIds.size}
             </span>
             <span>
@@ -495,7 +576,7 @@ export function OfficerContractsView({
           </div>
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#176c55] px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#125442] transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#006837] px-3 py-1.5 text-xs font-semibold text-white shadow-2xs hover:bg-[#00552c] transition cursor-pointer"
               onClick={() => handleExportContracts(true)}
               type="button"
             >
@@ -510,7 +591,7 @@ export function OfficerContractsView({
               Export All ({filteredContracts.length})
             </button>
             <button
-              className="rounded-md px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-950 transition cursor-pointer underline"
+              className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-950 transition cursor-pointer underline"
               onClick={() => setSelectedIds(new Set())}
               type="button"
             >
@@ -527,18 +608,18 @@ export function OfficerContractsView({
         <h2 className="sr-only">Contract register</h2>
         <div
           aria-label="Contract register table"
-          className="max-w-full min-w-0 flex-1 overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#176c55]"
+          className="max-w-full min-w-0 flex-1 overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0A3C2F]"
           role="region"
           tabIndex={0}
         >
           <table className="w-full min-w-[2200px] table-fixed border-collapse text-left">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="w-12 px-3 py-3 text-center" scope="col">
                   <input
                     aria-label="Select all visible contracts"
                     checked={allVisibleSelected}
-                    className="h-4 w-4 accent-emerald-500"
+                    className="h-4 w-4 accent-[#0A3C2F]"
                     onChange={toggleAllVisible}
                     type="checkbox"
                   />
@@ -595,14 +676,14 @@ export function OfficerContractsView({
                   Status
                 </th>
                 <th
-                  className="w-32 min-w-[128px] px-3 py-3 text-center"
+                  className="w-56 min-w-[200px] px-3 py-3 text-center"
                   scope="col"
                 >
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-100 text-xs">
               {filteredContracts.length > 0 ? (
                 filteredContracts.map((contract) => {
                   const isDelayed = contract.status === "Delayed";
@@ -610,19 +691,24 @@ export function OfficerContractsView({
                   return (
                     <tr
                       key={contract.id}
-                      className="even:bg-[#fbfcff] hover:bg-[#f7fbf9]"
+                      className="even:bg-slate-50/50 hover:bg-slate-50/80"
                     >
                       <td className="px-3 py-2.5 text-center align-top">
                         <input
                           aria-label={`Select contract ${contract.contractNumber}`}
                           checked={selectedIds.has(contract.id)}
-                          className="h-4 w-4 accent-[#176c55]"
+                          className="h-4 w-4 accent-[#0A3C2F]"
                           onChange={() => toggleContract(contract.id)}
                           type="checkbox"
                         />
                       </td>
-                      <td className="w-72 min-w-[280px] whitespace-nowrap px-3.5 py-2.5 align-top font-mono text-xs font-bold text-slate-800">
-                        {contract.contractNumber}
+                      <td className="w-72 min-w-[280px] whitespace-nowrap px-3.5 py-2.5 align-top">
+                        <span
+                          className="font-mono text-xs font-medium text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded-md border border-slate-200/80 inline-block truncate max-w-[260px]"
+                          title={contract.contractNumber}
+                        >
+                          {contract.contractNumber}
+                        </span>
                       </td>
                       <td className="w-80 min-w-[320px] px-3.5 py-2.5 align-top text-xs leading-5 text-slate-700 wrap-break-word">
                         <span
@@ -666,18 +752,31 @@ export function OfficerContractsView({
                           label={contract.status}
                         />
                       </td>
-                      <td className="px-3 py-2.5 text-center align-top">
-                        <Link
-                          aria-label={`Add payment to contract ${contract.contractNumber}`}
-                          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-[#a9cbbd] bg-white px-3 text-[11px] font-bold whitespace-nowrap text-[#07523f] shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
-                          href={`/workspace/contracts?mode=add-payment&contract=${encodeURIComponent(contract.contractNumber)}`}
-                        >
-                          <Banknote
-                            aria-hidden="true"
-                            className="h-3.5 w-3.5"
-                          />
-                          Add Payment
-                        </Link>
+                      <td className="px-3 py-2.5 text-center align-top whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Link
+                            aria-label={`Amend contract ${contract.contractNumber}`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-2xs cursor-pointer"
+                            href={`/workspace/contracts?mode=add-amendment&contract=${encodeURIComponent(contract.contractNumber)}`}
+                          >
+                            <FileEdit
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5 text-slate-400"
+                            />
+                            Amend
+                          </Link>
+                          <Link
+                            aria-label={`Add payment to contract ${contract.contractNumber}`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50/50 text-xs font-semibold text-[#0A3C2F] hover:bg-emerald-100/60 hover:border-emerald-300 transition-colors shadow-2xs cursor-pointer"
+                            href={`/workspace/contracts?mode=add-payment&contract=${encodeURIComponent(contract.contractNumber)}`}
+                          >
+                            <Banknote
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5 text-emerald-700"
+                            />
+                            Add Payment
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -696,14 +795,14 @@ export function OfficerContractsView({
           </table>
         </div>
 
-        <footer className="flex flex-col gap-3 border-t border-slate-200 bg-[#fbfcff] px-4 py-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
           <p aria-live="polite">{entrySummary}</p>
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2">
               Rows per page:
               <select
                 aria-label="Rows per page"
-                className="h-8 rounded-md border border-slate-300 bg-white px-2 text-xs outline-none focus:border-[#348267] focus:ring-2 focus:ring-[#348267]/15"
+                className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
                 defaultValue="50"
               >
                 <option value="25">25</option>
@@ -714,7 +813,7 @@ export function OfficerContractsView({
             <div aria-label="Contract table pagination" className="flex gap-1">
               <button
                 aria-label="Previous page"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-300"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
                 disabled
                 type="button"
               >
@@ -722,14 +821,14 @@ export function OfficerContractsView({
               </button>
               <button
                 aria-label="Next page"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
                 type="button"
               >
                 <ChevronRight aria-hidden="true" className="h-4 w-4" />
               </button>
             </div>
           </div>
-        </footer>
+        </div>
       </section>
 
       <ContractExcelImportModal
@@ -830,10 +929,10 @@ function LabeledSelect({
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-labelledby={`${listboxId}-label ${listboxId}-value`}
-          className={`relative inline-flex cursor-pointer items-center border border-slate-300 text-left font-medium text-slate-700 shadow-xs hover:border-[#8db7a6] focus-visible:border-[#348267] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#348267]/15 ${
+          className={`relative inline-flex cursor-pointer items-center border border-slate-200 text-left font-medium text-slate-700 shadow-2xs hover:border-slate-300 focus-visible:border-[#0A3C2F] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0A3C2F] ${
             compact
-              ? "h-10 w-full rounded-sm bg-[#fbfcfd] py-2 pr-9 pl-3 text-xs"
-              : "h-11 rounded-md bg-white py-2.5 pr-11 pl-4 text-sm"
+              ? "h-10 w-full rounded-2xl bg-white py-2 pr-9 pl-3.5 text-xs"
+              : "h-11 rounded-2xl bg-white py-2.5 pr-11 pl-4 text-sm"
           }`}
           onClick={() => setIsOpen((current) => !current)}
           onKeyDown={(event) => {
@@ -892,7 +991,7 @@ function LabeledSelect({
                   aria-selected={isSelected}
                   className={`flex w-full items-center justify-between gap-6 rounded px-3 py-2.5 text-left text-sm font-medium whitespace-nowrap outline-none ${
                     isSelected
-                      ? "bg-[#edf5f1] text-[#07523f]"
+                      ? "bg-emerald-50 text-emerald-900"
                       : "text-slate-700 hover:bg-slate-50 focus-visible:bg-slate-50"
                   }`}
                   key={option.value}
@@ -955,7 +1054,7 @@ function AmountCell({
     <td
       className={`px-3 py-2.5 text-right align-top font-mono text-sm tabular-nums ${
         emphasized
-          ? "font-bold text-slate-800"
+          ? "font-semibold text-slate-800"
           : muted
             ? "text-slate-500"
             : "text-slate-700"

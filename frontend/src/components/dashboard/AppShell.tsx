@@ -99,9 +99,9 @@ export function AppShell({
   };
 
   const sidebar = (
-    <aside className="flex h-full w-64 flex-col justify-between bg-[#0A3C2F] text-white border-r border-[#125442] shrink-0 z-20">
+    <aside className="flex h-full w-64 flex-col justify-between bg-[#0A3C2F] text-white border-r border-[#072F25] shrink-0 z-20">
       <div>
-        <div className="p-4 flex items-center gap-3.5 border-b border-[#145241] bg-[#072F25]">
+        <div className="p-4 flex items-center gap-3.5 border-b border-[#0A3C2F] bg-[#072F25]">
           <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 bg-white shadow-sm border border-emerald-300/30 relative">
             <Image
               src="/moa-logo.png"
@@ -118,7 +118,7 @@ export function AppShell({
             />
           </div>
           <div className="min-w-0">
-            <p className="font-extrabold text-md tracking-tight text-white leading-tight">
+            <p className="font-semibold text-md tracking-tight text-white leading-tight">
               MoA PTS
             </p>
             <p className="text-xs text-emerald-200 font-medium tracking-wide truncate mt-0.5">
@@ -143,15 +143,15 @@ export function AppShell({
                 onClick={(event) => handleNavClick(item.href, event)}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   isActive
-                    ? "bg-[#A3E635] text-[#082920] font-semibold shadow-sm"
-                    : "text-[#D1F2E7] hover:bg-[#125241] hover:text-white"
+                    ? "bg-[#135341] text-white font-semibold shadow-2xs"
+                    : "text-[#D1F2E7] hover:bg-[#072F25] hover:text-white"
                 }`}
               >
                 <Icon
                   size={16}
                   strokeWidth={isActive ? 2.2 : 1.8}
                   className={`w-4 h-4 shrink-0 ${
-                    isActive ? "text-[#082920]" : "text-[#87D2B9]"
+                    isActive ? "text-emerald-300" : "text-emerald-300/80"
                   }`}
                 />
                 <span className="truncate">{item.label}</span>
@@ -162,15 +162,15 @@ export function AppShell({
       </div>
 
       {/* Pinned Utility Footer: Settings & User Account */}
-      <div className="border-t border-[#145241] bg-[#072F25] p-3 space-y-1.5">
+      <div className="border-t border-[#0A3C2F] bg-[#072F25] p-3 space-y-1.5">
         {(user.role === "DIRECTOR" || user.role === "ADMIN") && (
           <Link
             href="/workspace/settings"
             onClick={(event) => handleNavClick("/workspace/settings", event)}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
               pathname === "/workspace/settings"
-                ? "bg-[#125241] text-white font-semibold ring-1 ring-[#A3E635]/40"
-                : "text-[#D1F2E7] hover:bg-[#125241]/70 hover:text-white"
+                ? "bg-[#135341] text-white font-semibold shadow-2xs"
+                : "text-[#D1F2E7] hover:bg-[#0A3C2F]/70 hover:text-white"
             }`}
           >
             <Settings
@@ -178,8 +178,8 @@ export function AppShell({
               strokeWidth={1.8}
               className={`w-4.5 h-4.5 shrink-0 ${
                 pathname === "/workspace/settings"
-                  ? "text-[#A3E635]"
-                  : "text-[#87D2B9]"
+                  ? "text-emerald-300"
+                  : "text-emerald-300/80"
               }`}
             />
             <span className="truncate">Settings</span>
@@ -187,25 +187,25 @@ export function AppShell({
         )}
 
         {/* User Footer Card */}
-        <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#145241]/60">
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#0A3C2F]/60">
           <Link
             href="/profile"
             onClick={() => setIsMobileMenuOpen(false)}
             title="View & Edit Profile"
             className={`flex items-center gap-2.5 min-w-0 flex-1 group rounded-xl p-1.5 transition-all ${
               pathname === "/profile"
-                ? "bg-[#125241] ring-1 ring-[#A3E635]/40"
-                : "hover:bg-[#125241]/70"
+                ? "bg-[#135341] ring-1 ring-emerald-400/40"
+                : "hover:bg-[#0A3C2F]/70"
             }`}
           >
-            <div className="w-8 h-8 rounded-full bg-[#82C899] text-[#062D23] font-bold text-xs flex items-center justify-center shrink-0 border border-white/20 shadow-xs group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-full bg-emerald-800 text-white font-semibold text-xs flex items-center justify-center shrink-0 border border-emerald-400/30 shadow-xs group-hover:scale-105 transition-transform">
               {userInitials}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-white truncate group-hover:text-[#A3E635] transition-colors">
+              <p className="text-xs font-semibold text-white truncate group-hover:text-emerald-200 transition-colors">
                 {user.displayName}
               </p>
-              <p className="text-[11px] text-[#83CDB5] truncate capitalize">
+              <p className="text-[11px] text-emerald-200 truncate capitalize">
                 {ROLE_LABELS[user.role]}
               </p>
             </div>

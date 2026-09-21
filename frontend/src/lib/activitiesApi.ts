@@ -90,6 +90,7 @@ export interface BackendActivity {
 
 export interface CreateActivityInput {
   planId: string;
+  reference?: string;
   procurementMethodId: string;
   description: string;
   estimatedBudget: number;
@@ -111,11 +112,13 @@ export interface CreateActivityInput {
 export interface UpdateStageDatesInput {
   plannedStartDate?: string;
   plannedEndDate?: string;
+  remarks?: string;
 }
 
 export interface RecordActualStageDatesInput {
   actualStartDate?: string;
   actualEndDate?: string;
+  remarks?: string;
 }
 
 export interface ReplanStageInput {
@@ -200,7 +203,7 @@ export async function fetchActivities(
     });
     return Array.isArray(res) ? res : res.data || [];
   } catch (err) {
-    console.error("fetchActivities error:", err);
+    console.warn("fetchActivities notice:", err);
     return [];
   }
 }
@@ -226,6 +229,16 @@ export async function updateActivity(
     data,
   );
   return res.data || res;
+}
+
+export async function deleteActivity(id: string): Promise<boolean> {
+  try {
+    await apiClient.delete(`/activities/${encodeURIComponent(id)}`);
+    return true;
+  } catch (err) {
+    console.warn(`deleteActivity notice for ${id}:`, err);
+    return false;
+  }
 }
 
 export async function updateStageDates(

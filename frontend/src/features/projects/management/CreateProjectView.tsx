@@ -1,6 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { fetchOfficers } from "@/lib/lookupsApi";
+import {
+  fetchProjects,
+  mapBackendProjectToProjectItem,
+} from "@/lib/projectsApi";
 import {
   Building2,
   CircleDollarSign,
@@ -10,7 +15,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import {
-  INITIAL_OFFICERS,
   SECTOR_OPTIONS,
   COUNTRY_ORG_OPTIONS,
   EXECUTING_AGENCY_OPTIONS,
@@ -20,6 +24,7 @@ import {
   CURRENCY_OPTIONS,
   type ProjectItem,
   type ProjectOfficer,
+  type OfficerWorkload,
 } from "./projectsData";
 
 import {
@@ -46,6 +51,7 @@ export interface CreateProjectViewProps {
   onSaveProject?: (projectData: ProjectItem) => void | Promise<void>;
   initialData?: ProjectItem | null;
   availableOfficers?: ProjectOfficer[];
+  allProjects?: ProjectItem[];
 }
 
 const WIZARD_STEPS: WizardStep[] = [
@@ -79,11 +85,128 @@ export function CreateProjectView({
   onBackClick,
   onSaveProject,
   initialData,
-  availableOfficers = INITIAL_OFFICERS,
+  availableOfficers: propAvailableOfficers,
+  allProjects: propAllProjects,
 }: CreateProjectViewProps) {
   const isEditing = Boolean(initialData);
   const [currentStep, setCurrentStep] = useState(1);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const [existingProjects, setExistingProjects] = useState<ProjectItem[]>(
+    () => {
+      return propAllProjects && propAllProjects.length > 0
+        ? propAllProjects
+        : [];
+    },
+  );
+
+  useEffect(() => {
+    if (propAllProjects && propAllProjects.length > 0) {
+      setExistingProjects(propAllProjects);
+    } else {
+      fetchProjects()
+        .then((bpList) => {
+          if (bpList && bpList.length > 0) {
+            setExistingProjects(bpList.map(mapBackendProjectToProjectItem));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [propAllProjects]);
+
+  const [officers, setOfficers] = useState<ProjectOfficer[]>(() => {
+    return propAvailableOfficers && propAvailableOfficers.length > 0
+      ? propAvailableOfficers
+      : [];
+  });
+
+  useEffect(() => {
+    if (propAvailableOfficers && propAvailableOfficers.length > 0) {
+      setOfficers(propAvailableOfficers);
+    } else {
+      fetchOfficers()
+        .then((fetched) => {
+          if (fetched && fetched.length > 0) {
+            setOfficers(
+              fetched.map((o) => ({
+                id: o.id,
+                name: o.name,
+                email: o.email,
+                roleTag: "OFFICER",
+                isActive: o.isActive,
+                status: o.status,
+              })),
+            );
+          }
+        })
+        .catch(() => {});
+    }
+  }, [propAvailableOfficers]);
+
+  // Ensure officers already assigned to this project are selectable even if not yet in directory
+  const allOfficers = (() => {
+    const list = [...officers];
+    if (initialData?.assignedOfficers) {
+      for (const assigned of initialData.assignedOfficers) {
+        if (!list.some((o) => o.id === assigned.id)) {
+          list.push(assigned);
+        }
+      }
+    }
+    return list;
+  })();
+
+  // Compute officer project workloads across all projects
+  const officerWorkloadMap = useMemo(() => {
+    const map: Record<string, OfficerWorkload> = {};
+
+    for (const off of allOfficers) {
+      const assigned = existingProjects.filter((p) => {
+        return (p.assignedOfficers || []).some((ao) => {
+          if (ao.id && off.id && ao.id === off.id) return true;
+          if (
+            ao.email &&
+            off.email &&
+            ao.email.trim().toLowerCase() === off.email.trim().toLowerCase()
+          ) {
+            return true;
+          }
+          return false;
+        });
+      });
+
+      const currentProjId = initialData?.id;
+      const currentProjCode = initialData?.code;
+      const isAssignedToCurrentProject = assigned.some(
+        (p) =>
+          (currentProjId && p.id === currentProjId) ||
+          (currentProjCode &&
+            p.code.toUpperCase() === currentProjCode.toUpperCase()),
+      );
+
+      const totalCount = assigned.length;
+      let loadLevel: "light" | "moderate" | "heavy" = "light";
+      if (totalCount >= 3) {
+        loadLevel = "heavy";
+      } else if (totalCount >= 1) {
+        loadLevel = "moderate";
+      }
+
+      map[off.id] = {
+        officerId: off.id,
+        totalProjects: totalCount,
+        projects: assigned.map((p) => ({
+          id: p.id,
+          code: p.code,
+          name: p.name,
+        })),
+        isAssignedToCurrentProject,
+        loadLevel,
+      };
+    }
+
+    return map;
+  }, [allOfficers, existingProjects, initialData]);
 
   // Step 1 State
   const [step1Data, setStep1Data] = useState<Step1IdentityFormData>({
@@ -120,23 +243,59 @@ export function CreateProjectView({
   });
 
   // Step 3 State
-  const initialComponents: ProjectComponentFormItem[] =
-    initialData?.components && initialData.components.length > 0
-      ? initialData.components.map((c, i) => ({
-          id: `comp-${i}`,
-          name: typeof c === "string" ? c : (c as any).name || "",
-          subcomponents:
-            initialData.subcomponents && initialData.subcomponents.length > 0
-              ? initialData.subcomponents
-              : [""],
-        }))
-      : [
-          {
-            id: "comp-1",
-            name: "",
-            subcomponents: [""],
-          },
-        ];
+  const initialComponents: ProjectComponentFormItem[] = (() => {
+    if (!initialData?.components || initialData.components.length === 0) {
+      return [
+        {
+          id: "comp-1",
+          name: "",
+          subcomponents: [""],
+        },
+      ];
+    }
+
+    // Deduplicate any existing subcomponents
+    const allSubs = Array.from(
+      new Set(
+        (initialData.subcomponents || [])
+          .map((s) => (typeof s === "string" ? s.trim() : ""))
+          .filter(Boolean),
+      ),
+    );
+
+    // Check if subcomponents use numbered prefixes (e.g. "1.1", "2.1", "3.1")
+    const hasNumberedSubs = allSubs.some((s) => /^\d+\.\d+/.test(s));
+
+    return initialData.components.map((c, i) => {
+      const compNum = i + 1;
+      let matchedSubs: string[] = [];
+
+      if (hasNumberedSubs) {
+        matchedSubs = allSubs.filter((s) => {
+          const trimmed = s.trim();
+          return (
+            trimmed.startsWith(`${compNum}.`) ||
+            trimmed.startsWith(`Component ${compNum}`) ||
+            trimmed.startsWith(`(${compNum})`)
+          );
+        });
+      }
+
+      // If no prefix matched or subcomponents aren't numbered:
+      // If there is only 1 component, assign all subcomponents to it.
+      // Otherwise, leave empty so subcomponents are not blindly duplicated across all components.
+      if (matchedSubs.length === 0 && initialData.components.length === 1) {
+        matchedSubs = allSubs;
+      }
+
+      return {
+        id: `comp-${i}`,
+        name: typeof c === "string" ? c : (c as any).name || "",
+        subcomponents: matchedSubs.length > 0 ? matchedSubs : [""],
+      };
+    });
+  })();
+
   const [step3Data, setStep3Data] = useState<Step3ComponentsFormData>({
     componentsList: initialComponents,
     startDate: initialData?.startDate || "",
@@ -175,10 +334,24 @@ export function CreateProjectView({
     setErrorMsg("");
 
     if (currentStep === 1) {
-      if (!step1Data.code.trim()) {
+      const cleanCode = step1Data.code.trim().toUpperCase();
+      if (!cleanCode) {
         setErrorMsg("Project Code / Acronym is required.");
         return false;
       }
+
+      const isDuplicateCode = existingProjects.some(
+        (p) =>
+          p.code.toUpperCase() === cleanCode &&
+          (!initialData || p.id !== initialData.id),
+      );
+      if (isDuplicateCode) {
+        setErrorMsg(
+          `Project Code "${cleanCode}" is already in use. Each project must have a unique code.`,
+        );
+        return false;
+      }
+
       if (!step1Data.name.trim()) {
         setErrorMsg("Project Full Name is required.");
         return false;
@@ -209,6 +382,21 @@ export function CreateProjectView({
       }
     }
 
+    if (currentStep === 3) {
+      if (!step3Data.startDate || !step3Data.startDate.trim()) {
+        setErrorMsg("Project Start Date is required.");
+        return false;
+      }
+      if (!step3Data.endDate || !step3Data.endDate.trim()) {
+        setErrorMsg("Project End Date is required.");
+        return false;
+      }
+      if (new Date(step3Data.endDate) <= new Date(step3Data.startDate)) {
+        setErrorMsg("Project End Date must be after the Project Start Date.");
+        return false;
+      }
+    }
+
     if (currentStep === 4) {
       // Officer assignment is optional - projects without assigned officers will be saved as Draft
     }
@@ -235,6 +423,22 @@ export function CreateProjectView({
   function handleSubmit() {
     if (!validateCurrentStep()) return;
 
+    if (!step3Data.startDate || !step3Data.startDate.trim()) {
+      setErrorMsg("Project Start Date is required.");
+      setCurrentStep(3);
+      return;
+    }
+    if (!step3Data.endDate || !step3Data.endDate.trim()) {
+      setErrorMsg("Project End Date is required.");
+      setCurrentStep(3);
+      return;
+    }
+    if (new Date(step3Data.endDate) <= new Date(step3Data.startDate)) {
+      setErrorMsg("Project End Date must be after the Project Start Date.");
+      setCurrentStep(3);
+      return;
+    }
+
     const finalCountryOrg =
       step1Data.countryOrg === "Other (Specify Custom Organisation)"
         ? step1Data.customCountryOrg.trim() || "Custom Organisation"
@@ -255,15 +459,21 @@ export function CreateProjectView({
       num.trim(),
     );
 
-    const componentsArray = step3Data.componentsList
-      .map((c) => c.name.trim())
-      .filter(Boolean);
+    const componentsArray = Array.from(
+      new Set(
+        step3Data.componentsList.map((c) => c.name.trim()).filter(Boolean),
+      ),
+    );
 
-    const subcomponentsArray = step3Data.componentsList
-      .flatMap((c) => c.subcomponents.map((s) => s.trim()))
-      .filter(Boolean);
+    const subcomponentsArray = Array.from(
+      new Set(
+        step3Data.componentsList
+          .flatMap((c) => c.subcomponents.map((s) => s.trim()))
+          .filter(Boolean),
+      ),
+    );
 
-    const assignedOfficers = availableOfficers.filter((o) =>
+    const assignedOfficers = allOfficers.filter((o) =>
       selectedOfficerIds.includes(o.id),
     );
 
@@ -324,7 +534,7 @@ export function CreateProjectView({
 
       {/* Error Alert */}
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
@@ -346,13 +556,15 @@ export function CreateProjectView({
 
         {currentStep === 4 && (
           <Step4OfficersReview
-            officersList={INITIAL_OFFICERS}
+            officersList={allOfficers}
+            workloadMap={officerWorkloadMap}
+            currentProjectId={initialData?.id}
             selectedOfficerIds={selectedOfficerIds}
             officerSearch={officerSearch}
             onSearchChange={setOfficerSearch}
             onToggleOfficer={toggleOfficer}
             onSelectAllOfficers={() =>
-              setSelectedOfficerIds(INITIAL_OFFICERS.map((o) => o.id))
+              setSelectedOfficerIds(allOfficers.map((o) => o.id))
             }
             onClearAllOfficers={() => setSelectedOfficerIds([])}
             code={step1Data.code}
@@ -362,6 +574,8 @@ export function CreateProjectView({
             customFundingSource={step2Data.customFundingSource}
             currency={step2Data.currency}
             componentsCount={step3Data.componentsList.length}
+            startDate={step3Data.startDate}
+            endDate={step3Data.endDate}
           />
         )}
 
@@ -370,7 +584,7 @@ export function CreateProjectView({
           <button
             type="button"
             onClick={currentStep === 1 ? onBackClick : handlePrev}
-            className="px-5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="px-5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             {currentStep === 1 ? "Cancel" : "← Previous Step"}
           </button>
@@ -380,7 +594,7 @@ export function CreateProjectView({
               <button
                 type="button"
                 onClick={handleNext}
-                className="px-6 py-2.5 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                className="px-6 py-2.5 rounded-xl bg-[#0A3C2F] hover:bg-[#072F25] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
               >
                 <span>Continue to Step 0{currentStep + 1}</span>
                 <span>→</span>
@@ -389,7 +603,7 @@ export function CreateProjectView({
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="px-7 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2"
+                className="px-7 py-2.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-all shadow-md cursor-pointer flex items-center gap-2"
               >
                 <Save className="h-4 w-4" />
                 <span>

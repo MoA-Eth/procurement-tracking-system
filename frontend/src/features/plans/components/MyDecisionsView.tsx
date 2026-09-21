@@ -202,6 +202,25 @@ export function MyDecisionsView({
           fetchActivities().catch(() => []),
         ]);
 
+        const isDuplicateAct = (a: any, b: any) => {
+          const norm = (s?: string) => (s || "").trim().toLowerCase();
+          const aId = norm(a.id);
+          const bId = norm(b.id);
+          const aRef = norm(a.reference || a.activityRefNo);
+          const bRef = norm(b.reference || b.activityRefNo);
+          if (aId && bId && aId === bId) return true;
+          if (aRef && bRef && aRef === bRef) return true;
+
+          const aDesc = norm(a.description);
+          const bDesc = norm(b.description);
+          if (aDesc && bDesc && aDesc === bDesc) {
+            const aAmt = Number(a.estimatedBudget || a.estimatedAmount) || 0;
+            const bAmt = Number(b.estimatedBudget || b.estimatedAmount) || 0;
+            if (aAmt === bAmt || Math.abs(aAmt - bAmt) < 1) return true;
+          }
+          return false;
+        };
+
         const combined = [...planBackendActs];
         for (const ba of allBackendActs) {
           const baPlanId = (ba.planId || ba.plan?.id || "")
@@ -222,8 +241,13 @@ export function MyDecisionsView({
               selectedPlan?.planName &&
               selectedPlan.planName.toLowerCase().includes(baPlanTitle))
           ) {
-            if (!combined.some((x) => x.id === ba.id)) {
+            const existingIdx = combined.findIndex((x) =>
+              isDuplicateAct(x, ba),
+            );
+            if (existingIdx === -1) {
               combined.push(ba);
+            } else {
+              combined[existingIdx] = { ...combined[existingIdx], ...ba };
             }
           }
         }
@@ -249,21 +273,19 @@ export function MyDecisionsView({
                   .trim();
                 const planId = (selectedPlan.id || "").toLowerCase().trim();
                 if (
-                  draftPlanRef === planRef ||
-                  draftPlanRef === planId ||
-                  (d.projectCode &&
-                    selectedPlan.projectCode &&
-                    d.projectCode.toLowerCase() ===
-                      selectedPlan.projectCode.toLowerCase())
+                  draftPlanRef &&
+                  (draftPlanRef === planRef ||
+                    draftPlanRef === planId ||
+                    (selectedPlan.planName &&
+                      draftPlanRef ===
+                        selectedPlan.planName.toLowerCase().trim()) ||
+                    (selectedPlan.reference &&
+                      draftPlanRef ===
+                        selectedPlan.reference.toLowerCase().trim()))
                 ) {
                   const act = d.activity;
-                  if (
-                    act &&
-                    !combined.some(
-                      (x) => x.id === act.id || x.reference === act.reference,
-                    )
-                  ) {
-                    combined.push({
+                  if (act) {
+                    const newAct = {
                       id: act.id || `draft-${Date.now()}`,
                       reference: act.reference,
                       description: act.description,
@@ -278,7 +300,14 @@ export function MyDecisionsView({
                       },
                       reviewType: act.details?.form?.reviewType || "Post",
                       stages: act.details?.roadmap || [],
-                    } as any);
+                    } as any;
+
+                    const existingIdx = combined.findIndex((x) =>
+                      isDuplicateAct(x, newAct),
+                    );
+                    if (existingIdx === -1) {
+                      combined.push(newAct);
+                    }
                   }
                 }
               }
@@ -502,7 +531,7 @@ export function MyDecisionsView({
   // Compute status badge style
   const getOverallStatusStyle = (status: string) => {
     if (status === "Finally Approved" || status === "Approved") {
-      return "bg-emerald-50 text-emerald-800 border-emerald-200";
+      return "bg-emerald-50 text-emerald-800 border-emerald-200/80";
     }
     if (
       status === "Returned" ||
@@ -510,15 +539,15 @@ export function MyDecisionsView({
       status === "Committee Rejected" ||
       status === "Management Rejected"
     ) {
-      return "bg-rose-50 text-rose-800 border-rose-200";
+      return "bg-rose-50 text-rose-800 border-rose-200/80";
     }
     if (
       status === "Awaiting Management Approval" ||
       status === "Committee Endorsed"
     ) {
-      return "bg-indigo-50 text-indigo-800 border-indigo-200";
+      return "bg-indigo-50 text-indigo-800 border-indigo-200/80";
     }
-    return "bg-amber-50 text-amber-800 border-amber-200";
+    return "bg-slate-50 text-slate-700 border-slate-200/80";
   };
 
   const activeProject = useMemo(() => {
@@ -584,7 +613,7 @@ export function MyDecisionsView({
           className={`transition-colors cursor-pointer ${
             selectedPlan
               ? "text-slate-500 hover:text-slate-900"
-              : "font-bold text-[#0A3C2F]"
+              : "font-semibold text-[#0A3C2F]"
           }`}
         >
           My Decisions
@@ -592,7 +621,7 @@ export function MyDecisionsView({
         {selectedPlan && (
           <>
             <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            <span className="font-bold text-[#0A3C2F] truncate max-w-xs sm:max-w-md">
+            <span className="font-semibold text-[#0A3C2F] truncate max-w-xs sm:max-w-md">
               Decision: {selectedPlan.planName}
             </span>
           </>
@@ -608,21 +637,31 @@ export function MyDecisionsView({
               <div className="space-y-2">
                 <button
                   onClick={handleBackToList}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer mb-1"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer mb-1"
                 >
                   <ArrowLeft className="h-4 w-4" /> Back to My Decisions List
                 </button>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-md font-mono text-xs font-extrabold bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className="px-2.5 py-0.5 rounded-md font-mono text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                     {selectedPlan.reference || selectedPlan.planName}
                   </span>
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-[#0A3C2F] border border-emerald-200">
+                  <span
+                    className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-medium border uppercase tracking-wider whitespace-nowrap ${
+                      selectedPlan.category === "Goods"
+                        ? "bg-blue-50 text-blue-800 border-blue-200/80"
+                        : selectedPlan.category === "Works"
+                          ? "bg-indigo-50 text-indigo-800 border-indigo-200/80"
+                          : selectedPlan.category === "Consultancy Services"
+                            ? "bg-purple-50 text-purple-800 border-purple-200/80"
+                            : "bg-slate-50 text-slate-700 border-slate-200/80"
+                    }`}
+                  >
                     {selectedPlan.category}
                   </span>
                 </div>
 
-                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-950 tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-semibold text-slate-950 tracking-tight">
                   {selectedPlan.planName}
                 </h1>
               </div>
@@ -630,7 +669,7 @@ export function MyDecisionsView({
               {/* Badges: My Vote & Overall Status */}
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <span
-                  className={`inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1.5 rounded-full border shadow-3xs ${
+                  className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md border shadow-3xs ${
                     selectedPlan.committeeDecision === "Approved"
                       ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                       : "bg-rose-50 text-rose-800 border-rose-200"
@@ -648,7 +687,7 @@ export function MyDecisionsView({
                 </span>
 
                 <span
-                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${getOverallStatusStyle(
+                  className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${getOverallStatusStyle(
                     selectedPlan.status,
                   )}`}
                 >
@@ -658,10 +697,10 @@ export function MyDecisionsView({
                 <button
                   type="button"
                   onClick={handleOpenFullActivitiesTracker}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-2xs transition-colors cursor-pointer mt-0.5"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#083025] text-xs font-semibold shadow-2xs transition-colors cursor-pointer mt-0.5"
                   title="Inspect Full Activities Tracker"
                 >
-                  <ListChecks className="h-3.5 w-3.5 text-[#A3E635]" />
+                  <ListChecks className="h-3.5 w-3.5 text-emerald-200" />
                   <span>Inspect Full Activities Tracker</span>
                 </button>
               </div>
@@ -670,28 +709,28 @@ export function MyDecisionsView({
             {/* Plan Metrics Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-slate-600 pt-1">
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wide">
+                <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wide">
                   Project:
                 </span>
-                <strong className="text-slate-900 font-bold mt-0.5 block">
+                <strong className="text-slate-900 font-semibold mt-0.5 block">
                   {selectedPlan.projectName} ({selectedPlan.projectCode})
                 </strong>
               </div>
 
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wide">
+                <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wide">
                   Budget Year:
                 </span>
-                <strong className="text-slate-900 font-bold mt-0.5 block">
+                <strong className="text-slate-900 font-semibold mt-0.5 block">
                   {selectedPlan.budgetYear}
                 </strong>
               </div>
 
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wide">
+                <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wide">
                   Total Estimated Value:
                 </span>
-                <strong className="text-[#0A3C2F] font-mono font-extrabold text-sm mt-0.5 block">
+                <strong className="text-[#0A3C2F] font-sans font-semibold tabular-nums text-sm mt-0.5 block">
                   {selectedPlan.currency || "ETB"}{" "}
                   {(selectedPlan.estimatedValue || 0).toLocaleString("en-US", {
                     minimumFractionDigits: 2,
@@ -701,10 +740,10 @@ export function MyDecisionsView({
               </div>
 
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                <span className="text-slate-400 font-bold block text-[10px] uppercase tracking-wide">
+                <span className="text-slate-400 font-semibold block text-[10px] uppercase tracking-wide">
                   Date My Vote Recorded:
                 </span>
-                <strong className="text-slate-900 font-bold mt-0.5 block">
+                <strong className="text-slate-900 font-semibold mt-0.5 block">
                   {selectedPlan.decisionRecordedDate || "Recent"}
                 </strong>
               </div>
@@ -713,7 +752,7 @@ export function MyDecisionsView({
             {/* Directorate Justification / Plan Description */}
             {selectedPlan.description && (
               <div className="pt-2 border-t border-slate-100 space-y-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
                   Directorate Justification &amp; Overview
                 </span>
                 <p className="text-xs text-slate-700 italic leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200/60">
@@ -730,7 +769,7 @@ export function MyDecisionsView({
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-semibold text-slate-900">
                     My Deliberation &amp; Voting Record
                   </h3>
                   <p className="text-[11px] text-slate-500">
@@ -743,16 +782,16 @@ export function MyDecisionsView({
               {selectedPlan.committeeDecision === "Rejected" ? (
                 <div className="space-y-3.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-700">
+                    <span className="text-xs font-semibold text-slate-700">
                       Rejection Scope:
                     </span>
                     {parsedRejection.scope === "SPECIFIC" ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-50 text-amber-900 border border-amber-300">
-                        <AlertTriangle className="h-3 w-3 text-amber-700" />
+                      <span className="badge-status-base badge-status-delayed font-medium">
+                        <AlertTriangle className="h-3 w-3 text-rose-600" />
                         Specific Defective Activities Flagged
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-rose-50 text-rose-800 border border-rose-300">
+                      <span className="badge-status-base badge-status-delayed font-medium">
                         <AlertCircle className="h-3 w-3 text-rose-600" />
                         Entire Plan Package Rejection
                       </span>
@@ -762,8 +801,8 @@ export function MyDecisionsView({
                   {/* Flagged Activities List Pills */}
                   {parsedRejection.scope === "SPECIFIC" &&
                     parsedRejection.rejectedActivityRefs.length > 0 && (
-                      <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5 space-y-2">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wide text-amber-900 block">
+                      <div className="notice-card-clean space-y-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-slate-800 block">
                           Flagged Activities (
                           {parsedRejection.rejectedActivityRefs.length}):
                         </span>
@@ -775,7 +814,7 @@ export function MyDecisionsView({
                               onClick={() =>
                                 handleOpenFlaggedActivityInTracker(ref)
                               }
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-rose-100 text-rose-900 border border-rose-300 hover:bg-rose-200 transition-colors cursor-pointer shadow-3xs"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold font-mono bg-rose-50 text-rose-800 border border-rose-200/80 hover:bg-rose-100/70 transition-colors cursor-pointer shadow-3xs"
                               title="Inspect this flagged activity in full tracker"
                             >
                               <AlertTriangle className="h-3 w-3 text-rose-700" />
@@ -791,10 +830,10 @@ export function MyDecisionsView({
 
                   {/* Deliberation Notes / Feedback Text */}
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide block">
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide block">
                       Deliberation Feedback &amp; Directives:
                     </span>
-                    <div className="bg-rose-50/60 border border-rose-200 rounded-xl p-4 text-xs text-slate-800 font-medium leading-relaxed italic">
+                    <div className="bg-rose-50/60 border border-rose-200 rounded-xl p-4 text-xs text-slate-800 font-medium leading-relaxed italic break-words break-all [overflow-wrap:anywhere]">
                       &ldquo;
                       {parsedRejection.cleanRemarks ||
                         selectedPlan.rejectionReason ||
@@ -805,7 +844,7 @@ export function MyDecisionsView({
                 </div>
               ) : (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 space-y-2 text-xs text-emerald-950">
-                  <div className="flex items-center gap-2 font-bold text-emerald-900">
+                  <div className="flex items-center gap-2 font-semibold text-emerald-900">
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                     <span>Plan Endorsed &amp; Approved</span>
                   </div>
@@ -815,10 +854,10 @@ export function MyDecisionsView({
                   </p>
                   {selectedPlan.rejectionReason && (
                     <div className="pt-2 border-t border-emerald-200/60">
-                      <span className="text-[10px] font-bold text-emerald-800 uppercase block mb-0.5">
+                      <span className="text-[10px] font-semibold text-emerald-800 uppercase block mb-0.5">
                         Approval Remarks:
                       </span>
-                      <p className="italic text-slate-700">
+                      <p className="italic text-slate-700 break-words break-all [overflow-wrap:anywhere]">
                         &ldquo;{selectedPlan.rejectionReason}&rdquo;
                       </p>
                     </div>
@@ -832,7 +871,7 @@ export function MyDecisionsView({
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <Users className="h-5 w-5 text-[#0A3C2F]" />
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-semibold text-slate-900">
                     Consensus &amp; Quorum Status
                   </h3>
                   <p className="text-[11px] text-slate-500">
@@ -843,7 +882,7 @@ export function MyDecisionsView({
               </div>
 
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
                   <span>Committee Voting Progress</span>
                   <span>
                     {selectedPlan.progressText || "Voting in progress"}
@@ -862,7 +901,7 @@ export function MyDecisionsView({
               <div className="pt-3 border-t border-slate-100 space-y-2">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-indigo-700" />
-                  <span className="text-xs font-bold text-slate-900">
+                  <span className="text-xs font-semibold text-slate-900">
                     Executive Management Stage:
                   </span>
                 </div>
@@ -876,7 +915,7 @@ export function MyDecisionsView({
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <strong className="font-extrabold">
+                      <strong className="font-semibold">
                         Management Decision: {selectedPlan.managementDecision}
                       </strong>
                       {selectedPlan.managementAt && (
@@ -916,7 +955,7 @@ export function MyDecisionsView({
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900">
+                    <h3 className="text-sm font-semibold text-slate-900">
                       Package Activities Directory
                     </h3>
                     <span className="text-xs font-semibold text-slate-500">
@@ -936,18 +975,18 @@ export function MyDecisionsView({
                 <button
                   type="button"
                   onClick={handleOpenFullActivitiesTracker}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#083025] text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                 >
-                  <ListChecks className="h-4 w-4 text-[#A3E635]" />
+                  <ListChecks className="h-4 w-4 text-emerald-200" />
                   <span>Inspect Full Activities Tracker</span>
                 </button>
               </div>
 
               {/* Activities Table */}
               <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                <table className="w-full text-left border-collapse text-xs min-w-200">
+                <table className="w-full text-left border-collapse text-xs min-w-[850px]">
                   <thead>
-                    <tr className="bg-[#0A3C2F] text-white text-[10px] font-extrabold uppercase tracking-wider">
+                    <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
                       <th className="py-3 px-3.5 w-10 text-center">#</th>
                       <th className="py-3 px-3.5 min-w-36">Activity Ref</th>
                       <th className="py-3 px-3.5 min-w-64">Description</th>
@@ -992,13 +1031,13 @@ export function MyDecisionsView({
                             }
                             className="bg-rose-50/80 hover:bg-rose-100/70 border-l-4 border-l-rose-600 transition-all duration-200 cursor-pointer"
                           >
-                            <td className="py-3 px-3.5 text-center font-mono text-slate-400 font-semibold">
+                            <td className="py-3 px-3.5 text-center font-sans tabular-nums text-slate-400 font-medium">
                               {index + 1}
                             </td>
 
-                            <td className="py-3 px-3.5 font-mono font-bold text-slate-900">
+                            <td className="py-3 px-3.5 font-mono font-semibold text-slate-900">
                               <div>{act.activityRefNo}</div>
-                              <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">
+                              <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-rose-50 text-rose-800 border border-rose-200/80">
                                 <AlertTriangle className="h-2.5 w-2.5 text-rose-600" />
                                 Flagged for Rejection
                               </span>
@@ -1011,7 +1050,7 @@ export function MyDecisionsView({
                             </td>
 
                             <td className="py-3 px-3.5 text-xs">
-                              <div className="font-bold text-[#0A3C2F]">
+                              <div className="font-semibold text-[#0A3C2F]">
                                 {act.method}
                               </div>
                               <div className="text-[10px] text-slate-500">
@@ -1020,18 +1059,12 @@ export function MyDecisionsView({
                             </td>
 
                             <td className="py-3 px-3.5">
-                              <span
-                                className={`text-xs font-bold ${
-                                  act.reviewType === "Prior"
-                                    ? "text-amber-800"
-                                    : "text-slate-700"
-                                }`}
-                              >
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-slate-200/80 text-[10px] font-medium bg-slate-50 text-slate-700">
                                 {act.reviewType}
                               </span>
                             </td>
 
-                            <td className="py-3 px-3.5 font-mono font-bold text-slate-900 text-xs">
+                            <td className="py-3 px-3.5 font-sans font-semibold tabular-nums text-slate-900 text-xs whitespace-nowrap">
                               {act.currency}{" "}
                               {(act.estimatedAmount || 0).toLocaleString()}
                             </td>
@@ -1046,7 +1079,7 @@ export function MyDecisionsView({
                                   );
                                 }}
                                 title="Inspect Activity Details"
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-[#0A3C2F] hover:text-white transition-colors cursor-pointer text-[11px] font-bold"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-[#0A3C2F] hover:text-white transition-colors cursor-pointer text-[11px] font-semibold"
                               >
                                 <Eye className="h-3 w-3" />
                                 <span>Inspect</span>
@@ -1065,10 +1098,10 @@ export function MyDecisionsView({
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900">
+                    <h3 className="text-sm font-semibold text-slate-900">
                       Package Activities Directory
                     </h3>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md">
                       <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                       Plan Endorsed &amp; Approved
                     </span>
@@ -1083,9 +1116,9 @@ export function MyDecisionsView({
                 <button
                   type="button"
                   onClick={handleOpenFullActivitiesTracker}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#083025] text-xs font-semibold shadow-2xs transition-colors cursor-pointer shrink-0"
                 >
-                  <ListChecks className="h-4 w-4 text-[#A3E635]" />
+                  <ListChecks className="h-4 w-4 text-emerald-200" />
                   <span>Inspect Full Activities Tracker</span>
                 </button>
               </div>
@@ -1140,16 +1173,20 @@ export function MyDecisionsView({
           {/* Tabular Decisions Directory */}
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-200 text-xs">
+              <table className="w-full text-left border-collapse min-w-[1050px] text-xs">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
-                    <th className="py-3 px-4">Plan</th>
-                    <th className="py-3 px-4">Project</th>
-                    <th className="py-3 px-4">Category</th>
-                    <th className="py-3 px-4">Date Voted</th>
-                    <th className="py-3 px-4">My Vote</th>
-                    <th className="py-3 px-4">Overall Plan Status</th>
-                    <th className="py-3 px-4 text-center">Action</th>
+                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                    <th className="py-3.5 px-4 min-w-[260px]">Plan</th>
+                    <th className="py-3.5 px-4 min-w-[140px]">Project</th>
+                    <th className="py-3.5 px-4 min-w-[120px]">Category</th>
+                    <th className="py-3.5 px-4 min-w-[120px]">Date Voted</th>
+                    <th className="py-3.5 px-4 min-w-[130px]">My Vote</th>
+                    <th className="py-3.5 px-4 min-w-[160px]">
+                      Overall Plan Status
+                    </th>
+                    <th className="py-3.5 px-4 text-center min-w-[120px]">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -1179,46 +1216,48 @@ export function MyDecisionsView({
                       <tr
                         key={plan.id}
                         onClick={() => handleSelectPlan(plan)}
-                        className="hover:bg-emerald-50/50 transition-colors cursor-pointer"
+                        className="hover:bg-slate-50/70 transition-colors cursor-pointer"
                       >
-                        <td className="py-3.5 px-4 font-bold text-slate-900 max-w-xs wrap-break-word">
-                          <span className="wrap-break-word line-clamp-2">
+                        <td className="py-3.5 px-4 max-w-xs wrap-break-word">
+                          <p className="font-semibold text-slate-900 text-xs wrap-break-word line-clamp-2 leading-snug">
                             {plan.planName}
-                          </span>
+                          </p>
                           <div className="text-[10px] text-slate-400 font-normal mt-0.5 wrap-break-word line-clamp-2">
                             {plan.budgetYear} • {plan.activitiesCount}{" "}
                             Activities
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4 font-semibold text-slate-800 wrap-break-word max-w-44">
+                        <td className="py-3.5 px-4 font-semibold text-slate-900 text-xs whitespace-nowrap">
                           {plan.projectCode}
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                            className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-medium border uppercase tracking-wider whitespace-nowrap ${
                               plan.category === "Goods"
-                                ? "bg-blue-50 text-blue-700 border-blue-100"
-                                : plan.category === "Consultancy Services"
-                                  ? "bg-purple-50 text-purple-700 border-purple-100"
-                                  : "bg-amber-50 text-amber-700 border-amber-100"
+                                ? "bg-blue-50 text-blue-800 border-blue-200/80"
+                                : plan.category === "Works"
+                                  ? "bg-indigo-50 text-indigo-800 border-indigo-200/80"
+                                  : plan.category === "Consultancy Services"
+                                    ? "bg-purple-50 text-purple-800 border-purple-200/80"
+                                    : "bg-slate-50 text-slate-700 border-slate-200/80"
                             }`}
                           >
                             {plan.category}
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4 text-slate-500 font-medium">
+                        <td className="py-3.5 px-4 text-slate-600 font-medium text-xs font-sans tabular-nums whitespace-nowrap">
                           {plan.decisionRecordedDate || "Recent"}
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border ${
+                            className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-0.5 rounded-md border whitespace-nowrap ${
                               plan.committeeDecision === "Approved"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                : "bg-rose-50 text-rose-700 border-rose-100"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
+                                : "bg-rose-50 text-rose-800 border-rose-200/80"
                             }`}
                           >
                             {plan.committeeDecision === "Approved" ? (
@@ -1232,9 +1271,9 @@ export function MyDecisionsView({
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded border ${getOverallStatusStyle(
+                            className={`inline-flex items-center text-[10px] font-medium px-2.5 py-0.5 rounded-md border whitespace-nowrap ${getOverallStatusStyle(
                               plan.status,
                             )}`}
                           >
@@ -1249,9 +1288,9 @@ export function MyDecisionsView({
                               e.stopPropagation();
                               handleSelectPlan(plan);
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A3C2F] text-white hover:bg-[#072b22] transition-colors cursor-pointer text-[10px] font-bold shadow-3xs"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#083025] transition-all cursor-pointer text-xs font-semibold shadow-2xs"
                           >
-                            <Eye className="h-3 w-3" />
+                            <Eye className="h-3.5 w-3.5" />
                             <span>Inspect details</span>
                           </button>
                         </td>
