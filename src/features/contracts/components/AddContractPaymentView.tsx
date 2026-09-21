@@ -344,10 +344,10 @@ export function AddContractPaymentView({
           </section>
         </main>
         <aside className="sticky top-4 overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-200 bg-[#edf5f1] px-3 py-3 text-xs font-extrabold text-slate-900">
+          <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-900">
             <ClipboardCheck
               aria-hidden="true"
-              className="h-4 w-4 text-[#176c55]"
+              className="h-4 w-4 text-[#0A3C2F]"
             />
             Check Entries
           </div>
@@ -370,11 +370,11 @@ export function AddContractPaymentView({
             <ChecklistItem complete={dateComplete} label="Payment date" />
           </div>
           <div className="border-t border-slate-200 p-3">
-            <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               {overrunAmount > 0 ? "Total Overrun" : "Remaining After Payment"}
             </p>
             <p
-              className={`mt-1 font-mono text-base font-bold tabular-nums ${overrunAmount > 0 ? "text-amber-700" : "text-slate-900"}`}
+              className={`mt-1 font-mono text-base font-semibold tabular-nums ${overrunAmount > 0 ? "text-amber-700" : "text-slate-900"}`}
             >
               {overrunAmount > 0
                 ? `+${formatAmount(overrunAmount)}`
@@ -388,39 +388,34 @@ export function AddContractPaymentView({
             <div
               className={`flex items-start gap-2 rounded px-2.5 py-2 text-[10px] leading-4 ${
                 canSave
-                  ? "bg-[#e5f3ee] text-[#07523f]"
+                  ? "bg-emerald-50 text-emerald-900"
                   : attempted
                     ? "bg-red-50 text-red-700"
                     : "bg-slate-50 text-slate-600"
               }`}
             >
-              {canSave ? (
-                <CheckCircle2
-                  aria-hidden="true"
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                />
-              ) : attempted ? (
-                <CircleAlert
-                  aria-hidden="true"
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                />
-              ) : (
-                <Info
-                  aria-hidden="true"
-                  className="mt-0.5 h-3.5 w-3.5 shrink-0"
-                />
-              )}
-              {canSave
-                ? "Ready to save payment."
-                : attempted
-                  ? "Correct the highlighted entries before saving."
-                  : "Complete the required payment details."}
+              <Info
+                aria-hidden="true"
+                className="mt-0.5 h-3.5 w-3.5 shrink-0"
+              />
+              <span>
+                {canSave
+                  ? "Form complete and ready to save."
+                  : attempted
+                    ? formErrorMessage
+                    : "Fill all required fields to record payment."}
+              </span>
             </div>
           </div>
         </aside>
       </div>
-      <footer className="fixed right-0 bottom-0 left-0 z-40 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-5px_18px_rgba(15,23,42,0.06)] backdrop-blur md:left-[17rem]">
-        <div className="mx-auto flex max-w-[100rem] items-center justify-between gap-3">
+
+      <footer className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+        <p className="text-xs text-slate-500">
+          Recording this payment will immediately update the contract&apos;s
+          Total Paid and Remaining Balance.
+        </p>
+        <div className="flex items-center gap-2">
           <Link
             className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"
             href={
@@ -435,7 +430,7 @@ export function AddContractPaymentView({
             {fromTracker ? "Back to Tracker" : "Back"}
           </Link>
           <button
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-xs font-bold text-white shadow-sm hover:bg-[#125442] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-[#00552c] bg-[#006837] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006837]"
             onClick={savePayment}
             type="button"
           >
@@ -466,7 +461,7 @@ function ContractContext({ contract }: { contract: OfficerContract }) {
 
   return (
     <div className="rounded-md border border-[#c9d8ec] bg-[#f0f3ff] p-3">
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#07523f]">
+      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#0A3C2F]">
         <LockKeyhole aria-hidden="true" className="h-3.5 w-3.5" />
         Inherited Contract Context
       </div>
@@ -535,7 +530,7 @@ function ChecklistItem({
       {complete ? (
         <CheckCircle2
           aria-hidden="true"
-          className="h-3.5 w-3.5 shrink-0 text-[#176c55]"
+          className="h-3.5 w-3.5 shrink-0 text-[#006837]"
         />
       ) : (
         <Circle
@@ -563,16 +558,16 @@ function SummaryValue({
     <div
       className={
         emphasized
-          ? "min-w-0 overflow-hidden bg-[#edf5f1] p-3"
+          ? "min-w-0 overflow-hidden bg-emerald-50 p-3"
           : "min-w-0 overflow-hidden bg-slate-50 p-3"
       }
     >
-      <p className="truncate text-[9px] font-bold uppercase tracking-[0.06em] text-slate-500">
+      <p className="truncate text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
         {label}
       </p>
       <p
-        className={`mt-1 truncate font-mono text-xs font-bold tabular-nums ${
-          emphasized ? "text-[#07523f]" : "text-slate-800"
+        className={`mt-1 truncate font-mono text-xs font-semibold tabular-nums ${
+          emphasized ? "text-[#0A3C2F]" : "text-slate-800"
         }`}
         title={`${formatAmount(value)} ${currency}`}
       >

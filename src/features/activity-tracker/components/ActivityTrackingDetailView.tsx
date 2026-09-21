@@ -1191,7 +1191,7 @@ function StageEditor({
             </span>
           </span>
           <textarea
-            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
             onChange={(event) => onUpdate({ remarks: event.target.value })}
             placeholder="Delay, rebid, issue, or completion note..."
             value={tracking.remarks}
@@ -1199,7 +1199,7 @@ function StageEditor({
         </label>
         {stageError ? <ErrorMessage>{stageError}</ErrorMessage> : null}
         <button
-          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#176c55] px-4 text-xs font-bold text-white hover:bg-[#125442]"
+          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] transition cursor-pointer"
           onClick={saveStage}
           type="button"
         >
@@ -1209,8 +1209,8 @@ function StageEditor({
 
       <div className="space-y-4 border-t border-slate-200 pt-4">
         <div className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4 text-[#176c55]" />
-          <h4 className="text-xs font-extrabold text-[#10243f]">
+          <RefreshCw className="h-4 w-4 text-[#0A3C2F]" />
+          <h4 className="text-xs font-semibold text-[#10243f]">
             Controlled Replanning
           </h4>
         </div>
@@ -1230,11 +1230,11 @@ function StageEditor({
           required
         />
         <label className="block">
-          <span className="mb-2 block text-[11px] font-bold text-slate-600">
+          <span className="mb-2 block text-[11px] font-semibold text-slate-600">
             Replanning Reason <span className="text-red-600">*</span>
           </span>
           <textarea
-            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
             onChange={(event) => {
               setRevisionError("");
               setRevisionReason(event.target.value);
@@ -1245,7 +1245,7 @@ function StageEditor({
         </label>
         {revisionError ? <ErrorMessage>{revisionError}</ErrorMessage> : null}
         <button
-          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-[#176c55] bg-white px-4 text-xs font-bold text-[#176c55] hover:bg-[#edf5f1] disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-[#0A3C2F] bg-white px-4 text-xs font-semibold text-[#0A3C2F] hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
           disabled={!originalDate.gregorian}
           onClick={addRevision}
           type="button"
@@ -1255,23 +1255,23 @@ function StageEditor({
 
         {tracking.revisions.length > 0 ? (
           <div className="space-y-2 border-t border-slate-200 pt-4">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-slate-500">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-500">
               Revision History
             </p>
             {[...tracking.revisions].reverse().map((revision) => (
               <div
-                className="rounded border border-slate-200 bg-white p-3"
+                className="rounded border border-slate-200 bg-slate-50 p-2"
                 key={revision.revisionNumber}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-[10px] font-bold text-[#176c55]">
+                  <span className="font-mono text-[10px] font-semibold text-[#0A3C2F]">
                     R{revision.revisionNumber}
                   </span>
                   <span className="text-[9px] text-slate-400">
                     {formatDateTime(revision.createdAt)}
                   </span>
                 </div>
-                <p className="mt-1 text-[10px] font-bold text-slate-700">
+                <p className="mt-1 text-[10px] font-semibold text-slate-700">
                   {formatGregorianDate(revision.targetDate.gregorian)}
                 </p>
                 <p className="mt-1 text-[10px] leading-4 text-slate-500">
@@ -1341,9 +1341,9 @@ function SectionHeading({
   title: string;
 }) {
   return (
-    <div className="flex items-center gap-2 border-b border-[#c7d8cf] bg-[#edf5f1] px-4 py-3 text-[#176c55]">
+    <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[#0A3C2F]">
       {icon}
-      <h2 className="text-sm font-extrabold text-[#10243f]">{title}</h2>
+      <h2 className="text-sm font-semibold text-[#10243f]">{title}</h2>
     </div>
   );
 }
@@ -1361,11 +1361,11 @@ function FieldSelect({
 }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-2 block text-[11px] font-bold text-slate-600">
+      <span className="mb-2 block text-[11px] font-semibold text-slate-600">
         {label}
       </span>
       <select
-        className="h-10 w-full cursor-pointer rounded border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+        className="h-10 w-full cursor-pointer rounded border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >

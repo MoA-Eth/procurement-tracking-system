@@ -518,10 +518,44 @@ export function CreateProcurementPlanView({
                 <input
                   className={compactFieldClasses}
                   id="budgetYear"
-                  onChange={(event) =>
-                    updateField("budgetYear", event.target.value)
-                  }
+                  inputMode="numeric"
+                  maxLength={4}
+                  onChange={(event) => {
+                    const digitsOnly = event.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 4);
+                    updateField("budgetYear", digitsOnly);
+                  }}
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "Backspace" ||
+                      event.key === "Delete" ||
+                      event.key === "Tab" ||
+                      event.key === "Escape" ||
+                      event.key === "Enter" ||
+                      event.key.startsWith("Arrow") ||
+                      event.key === "Home" ||
+                      event.key === "End" ||
+                      event.ctrlKey ||
+                      event.metaKey
+                    ) {
+                      return;
+                    }
+                    if (!/^[0-9]$/.test(event.key)) {
+                      event.preventDefault();
+                    }
+                  }}
+                  onPaste={(event) => {
+                    event.preventDefault();
+                    const pasteText = event.clipboardData.getData("text");
+                    const digitsOnly = pasteText.replace(/\D/g, "").slice(0, 4);
+                    if (digitsOnly) {
+                      updateField("budgetYear", digitsOnly);
+                    }
+                  }}
+                  pattern="[0-9]*"
                   placeholder="e.g. 2017"
+                  type="text"
                   value={form.budgetYear}
                 />
               </CompactFormField>

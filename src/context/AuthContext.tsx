@@ -51,7 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ? "/change-password"
           : dashboardPath(session.user.role),
       );
-      router.refresh();
     } catch (error) {
       setLoginError(
         error instanceof Error
