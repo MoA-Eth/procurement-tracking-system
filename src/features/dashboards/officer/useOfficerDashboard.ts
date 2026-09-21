@@ -2,8 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { AuthUser } from "@/lib/authTypes";
-import { fetchProjects, type BackendProject } from "@/lib/projectsApi";
-import { fetchPlans, type BackendPlan } from "@/lib/plansApi";
+import {
+  fetchProjects,
+  getCachedProjects,
+  type BackendProject,
+} from "@/lib/projectsApi";
+import { fetchPlans, getCachedPlans, type BackendPlan } from "@/lib/plansApi";
 import {
   filterAssignedProjects,
   mapOfficerProjectsList,
@@ -15,9 +19,15 @@ import {
 import type { OfficerAlert } from "./officerData";
 
 export function useOfficerDashboard(user: AuthUser) {
-  const [backendProjects, setBackendProjects] = useState<BackendProject[]>([]);
-  const [backendPlans, setBackendPlans] = useState<BackendPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialProjects = getCachedProjects() || [];
+  const initialPlans = getCachedPlans() || [];
+
+  const [backendProjects, setBackendProjects] =
+    useState<BackendProject[]>(initialProjects);
+  const [backendPlans, setBackendPlans] = useState<BackendPlan[]>(initialPlans);
+  const [loading, setLoading] = useState(
+    () => initialProjects.length === 0 && initialPlans.length === 0,
+  );
   const [currentTime, setCurrentTime] = useState<number | null>(null);
 
   useEffect(() => {
@@ -29,7 +39,9 @@ export function useOfficerDashboard(user: AuthUser) {
     let isMounted = true;
     async function loadData() {
       try {
-        setLoading(true);
+        if (backendProjects.length === 0) {
+          setLoading(true);
+        }
         const [projects, plans] = await Promise.all([
           fetchProjects(),
           fetchPlans(),
@@ -53,9 +65,9 @@ export function useOfficerDashboard(user: AuthUser) {
   }, []);
 
   const assignedProjects = useMemo(() => {
-    if (loading || backendProjects.length === 0) return [];
+    if (backendProjects.length === 0) return [];
     return filterAssignedProjects(backendProjects, user);
-  }, [backendProjects, loading, user]);
+  }, [backendProjects, user]);
 
   const officerProjectsList = useMemo(() => {
     return mapOfficerProjectsList(assignedProjects);

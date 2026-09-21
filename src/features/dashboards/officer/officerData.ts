@@ -11,6 +11,11 @@ export interface OfficerAlert {
   dateTime?: string;
   timeAgo?: string;
   directorNote?: string;
+  stages?: any[];
+  delayDays?: number;
+  activityDescription?: string;
+  delayedStage?: string;
+  delayReason?: string;
 }
 
 export const alertToneClasses: Record<

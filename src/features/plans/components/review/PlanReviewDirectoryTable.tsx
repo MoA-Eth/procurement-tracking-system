@@ -96,13 +96,6 @@ export function PlanReviewDirectoryTable({
                 ? "Executive Management — Plans for Review"
                 : "Director — Plan for Review"}
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            {userRole === "ENDORSING_COMMITTEE"
-              ? "Review procurement plans awaiting committee endorsement and record your approval or rejection vote."
-              : userRole === "MANAGEMENT"
-                ? "Review procurement plans endorsed by the committee and record final executive authorization or rejection."
-                : "Review procurement plans submitted by Officers, examine activities, and approve or return for revision."}
-          </p>
         </div>
       </div>
 

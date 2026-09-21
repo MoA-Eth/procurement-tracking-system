@@ -18,6 +18,7 @@ import {
 } from "../utils/ethiopianCalendar";
 import { DualCalendarField } from "./DualCalendarField";
 import {
+  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   ChevronDown,
@@ -50,7 +51,7 @@ interface PlanFormState {
 }
 
 const compactFieldClasses =
-  "h-10 w-full rounded-none border border-slate-400 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
+  "h-10 w-full rounded-none border border-slate-400 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15";
 
 export const procurementCategories = [
   {
@@ -95,7 +96,7 @@ export function CreateProcurementPlanView({
     input: ProcurementPlanDraftInput,
     action: Exclude<SaveAction, null>,
     revisionReason?: string,
-  ) => void;
+  ) => Promise<void> | void;
   project: OfficerProject;
 }) {
   const isEditing = Boolean(initialPlan);
@@ -106,12 +107,11 @@ export function CreateProcurementPlanView({
   );
   const [revisionReason, setRevisionReason] = useState("");
   const [saveAction, setSaveAction] = useState<SaveAction>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationAttempted, setValidationAttempted] = useState(false);
   const [form, setForm] = useState<PlanFormState>(() => ({
-    budgetYear:
-      (initialPlan?.budgetYear
-        ? initialPlan.budgetYear.replace(/\D/g, "").slice(0, 4)
-        : "") || "2017",
+    budgetYear: initialPlan?.budgetYear?.replace(/ EFY/i, "").trim() || "2017",
     generalProcurementNoticeDate:
       initialPlan?.generalProcurementNoticeDate?.gregorian || "",
     generalProcurementNoticeDateEthiopian:
@@ -134,10 +134,7 @@ export function CreateProcurementPlanView({
     setSelectedCategory(initialPlan.category ?? null);
     setPlanNameEdited(true);
     setForm({
-      budgetYear:
-        (initialPlan.budgetYear
-          ? initialPlan.budgetYear.replace(/\D/g, "").slice(0, 4)
-          : "") || "2017",
+      budgetYear: initialPlan.budgetYear?.replace(/ EFY/i, "").trim() || "2017",
       generalProcurementNoticeDate:
         initialPlan.generalProcurementNoticeDate?.gregorian || "",
       generalProcurementNoticeDateEthiopian:
@@ -189,16 +186,10 @@ export function CreateProcurementPlanView({
     if (field === "planName") setPlanNameEdited(true);
 
     setForm((current) => {
-      const sanitizedValue =
-        field === "budgetYear" ? value.replace(/\D/g, "").slice(0, 4) : value;
-      const next = { ...current, [field]: sanitizedValue };
+      const next = { ...current, [field]: value };
 
       if (field === "budgetYear" && selectedCategory && !planNameEdited) {
-        next.planName = suggestedPlanName(
-          project,
-          selectedCategory,
-          sanitizedValue,
-        );
+        next.planName = suggestedPlanName(project, selectedCategory, value);
       }
 
       return next;
@@ -236,12 +227,13 @@ export function CreateProcurementPlanView({
     });
   }
 
-  function handleSubmit(
+  async function handleSubmit(
     event: FormEvent<HTMLFormElement> | null,
     action: Exclude<SaveAction, null>,
   ) {
     if (event) event.preventDefault();
     setValidationAttempted(true);
+    setSubmitError(null);
 
     if (
       !selectedCategory ||
@@ -255,13 +247,24 @@ export function CreateProcurementPlanView({
       return;
     }
 
-    onSavePlan(
-      { ...form, category: selectedCategory },
-      action,
-      revisionReason.trim() ||
-        (isEditing ? "Updated plan parameters" : undefined),
-    );
-    setSaveAction(action);
+    try {
+      setIsSubmitting(true);
+      setSaveAction(action);
+      await onSavePlan(
+        { ...form, category: selectedCategory },
+        action,
+        revisionReason.trim() ||
+          (isEditing ? "Updated plan parameters" : undefined),
+      );
+    } catch (err: any) {
+      setSubmitError(
+        err?.message ||
+          "Failed to create or update plan in the server database.",
+      );
+      window.scrollTo({ behavior: "smooth", top: 0 });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const organizationRegions =
@@ -290,7 +293,7 @@ export function CreateProcurementPlanView({
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">
                 {isEditing
                   ? isPlanReturned
                     ? "Revise Procurement Plan"
@@ -298,7 +301,7 @@ export function CreateProcurementPlanView({
                   : "Create Procurement Plan"}
               </h1>
               {initialPlan && (
-                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 border border-slate-300">
+                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700 border border-slate-300">
                   v{initialPlan.version || 1}
                 </span>
               )}
@@ -315,16 +318,27 @@ export function CreateProcurementPlanView({
           </div>
         </div>
 
+        {/* Database Submission Error Alert Banner */}
+        {submitError && (
+          <div className="rounded border border-red-300 bg-red-50 p-4 text-xs text-red-800 flex items-start gap-3 shadow-xs">
+            <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-red-900">Database Action Failed</p>
+              <p className="mt-1 leading-relaxed text-red-800">{submitError}</p>
+            </div>
+          </div>
+        )}
+
         {/* Director / Management Feedback Banner if Returned */}
         {(initialPlan?.directorRevisionComment ||
           initialPlan?.rejectionReason) && (
-          <div className="notice-card-clean text-xs space-y-2.5">
+          <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-xs shadow-2xs space-y-2.5">
             <div>
-              <p className="font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
-                <MessageSquare className="h-4 w-4 text-slate-600" />
+              <p className="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+                <MessageSquare className="h-4 w-4 text-amber-700" />
                 Director Feedback &amp; Revision Instructions:
               </p>
-              <p className="italic leading-relaxed text-slate-700 font-normal">
+              <p className="italic leading-relaxed text-amber-950">
                 &ldquo;
                 {initialPlan.directorRevisionComment ||
                   initialPlan.rejectionReason}
@@ -332,12 +346,12 @@ export function CreateProcurementPlanView({
               </p>
             </div>
             {Boolean(initialPlan.managementComment) && (
-              <div className="pt-2 border-t border-slate-200">
-                <p className="font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
-                  <MessageSquare className="h-4 w-4 text-slate-600" />
+              <div className="pt-2 border-t border-amber-200/70">
+                <p className="font-bold text-indigo-900 mb-1 flex items-center gap-1.5">
+                  <MessageSquare className="h-4 w-4 text-indigo-700" />
                   Management Rejection Comment:
                 </p>
-                <p className="italic leading-relaxed text-slate-700 font-normal">
+                <p className="italic leading-relaxed text-indigo-950">
                   &ldquo;{initialPlan.managementComment}&rdquo;
                 </p>
               </div>
@@ -353,7 +367,7 @@ export function CreateProcurementPlanView({
           >
             <CheckCircle2
               aria-hidden="true"
-              className="mt-0.5 h-4 w-4 shrink-0 text-[#0A3C2F]"
+              className="mt-0.5 h-4 w-4 shrink-0 text-[#176c55]"
             />
             <span>
               {isEditing
@@ -375,7 +389,7 @@ export function CreateProcurementPlanView({
               aria-hidden="true"
               className="h-4 w-4 text-slate-500"
             />
-            <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-700">
+            <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-slate-700">
               Inherited Project Information
             </h2>
             <span className="ml-auto text-xs text-slate-400">
@@ -420,8 +434,8 @@ export function CreateProcurementPlanView({
 
         {/* Section 2: Plan Configuration & Scope */}
         <section className="overflow-hidden rounded border border-slate-300 bg-white shadow-xs">
-          <div className="border-b border-slate-200 bg-slate-50 px-5 py-3.5">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-800">
+          <div className="border-b border-slate-200 bg-[#edf5f1] px-5 py-3.5">
+            <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-slate-800">
               Plan Identification & Classification
             </h2>
           </div>
@@ -504,47 +518,11 @@ export function CreateProcurementPlanView({
                 <input
                   className={compactFieldClasses}
                   id="budgetYear"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={4}
+                  onChange={(event) =>
+                    updateField("budgetYear", event.target.value)
+                  }
                   placeholder="e.g. 2017"
                   value={form.budgetYear}
-                  onKeyDown={(event) => {
-                    // Allow navigation and editing shortcuts
-                    if (
-                      event.key === "Backspace" ||
-                      event.key === "Delete" ||
-                      event.key === "Tab" ||
-                      event.key === "Escape" ||
-                      event.key === "Enter" ||
-                      event.key.startsWith("Arrow") ||
-                      event.key === "Home" ||
-                      event.key === "End" ||
-                      event.ctrlKey ||
-                      event.metaKey
-                    ) {
-                      return;
-                    }
-                    // Reject any non-digit character (letters, symbols, punctuation, spaces)
-                    if (!/^[0-9]$/.test(event.key)) {
-                      event.preventDefault();
-                    }
-                  }}
-                  onChange={(event) => {
-                    const digitsOnly = event.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 4);
-                    updateField("budgetYear", digitsOnly);
-                  }}
-                  onPaste={(event) => {
-                    event.preventDefault();
-                    const pasteText = event.clipboardData.getData("text");
-                    const digitsOnly = pasteText.replace(/\D/g, "").slice(0, 4);
-                    if (digitsOnly) {
-                      updateField("budgetYear", digitsOnly);
-                    }
-                  }}
                 />
               </CompactFormField>
 
@@ -579,9 +557,9 @@ export function CreateProcurementPlanView({
         </section>
 
         {/* Section 3: Plan Timeline & Notice Dates */}
-        <section className="overflow-hidden rounded border border-slate-300 bg-white shadow-xs">
-          <div className="border-b border-slate-200 bg-slate-50 px-5 py-3.5">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-800">
+        <section className="relative z-10 rounded border border-slate-300 bg-white shadow-xs">
+          <div className="rounded-t border-b border-slate-200 bg-[#edf5f1] px-5 py-3.5">
+            <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-slate-800">
               Plan Schedule &amp; Coverage Period
             </h2>
           </div>
@@ -640,7 +618,7 @@ export function CreateProcurementPlanView({
                   label="Description / Remarks"
                 >
                   <textarea
-                    className="min-h-24 w-full resize-y rounded-none border border-slate-400 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+                    className="min-h-24 w-full resize-y rounded-none border border-slate-400 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
                     id="remarks"
                     onChange={(event) =>
                       updateField("remarks", event.target.value)
@@ -656,15 +634,15 @@ export function CreateProcurementPlanView({
 
         {/* Section 4: Revision Justification (When in Returned / Revision status) */}
         {isPlanReturned && (
-          <section className="notice-card-clean space-y-2.5">
+          <section className="overflow-hidden rounded border border-amber-300 bg-amber-50/40 p-5 shadow-xs space-y-2.5">
             <div className="flex items-center gap-2">
-              <RotateCcw className="h-4 w-4 text-slate-600" />
-              <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-900">
+              <RotateCcw className="h-4 w-4 text-amber-700" />
+              <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-amber-900">
                 Revision Reason / Justification for Audit Trail
               </h2>
             </div>
             <textarea
-              className="min-h-20 w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
+              className="min-h-20 w-full resize-y rounded border border-amber-300 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
               onChange={(e) => setRevisionReason(e.target.value)}
               placeholder="Specify justification for this revision (e.g., Updated budget year and adjusted coverage schedule per Director feedback)..."
               value={revisionReason}
@@ -686,21 +664,41 @@ export function CreateProcurementPlanView({
 
           <div className="flex flex-wrap items-center gap-3">
             <button
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+              disabled={isSubmitting}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => handleSubmit(null, "draft")}
               type="button"
             >
-              {isEditing ? "Save Plan Changes" : "Save Draft"}
+              {isSubmitting && saveAction === "draft" ? (
+                <>
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
+                  Saving...
+                </>
+              ) : isEditing ? (
+                "Save Plan Changes"
+              ) : (
+                "Save Draft"
+              )}
             </button>
             <button
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm bg-[#006837] px-4 text-xs font-medium text-white hover:bg-[#00552c] cursor-pointer"
+              disabled={isSubmitting}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-[#125442] bg-[#176c55] px-4 text-xs font-medium text-white hover:bg-[#125f4c] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => handleSubmit(null, "activity")}
               type="button"
             >
-              <Save aria-hidden="true" className="h-3.5 w-3.5" />
-              {isEditing
-                ? "Save & Go to Activities"
-                : "Save & Add Procurement Activity"}
+              {isSubmitting && saveAction === "activity" ? (
+                <>
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Saving to Database...
+                </>
+              ) : (
+                <>
+                  <Save aria-hidden="true" className="h-3.5 w-3.5" />
+                  {isEditing
+                    ? "Save & Go to Activities"
+                    : "Save & Add Procurement Activity"}
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -722,19 +720,19 @@ function CreatePlanBreadcrumb({
     <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
       <ol className="flex flex-wrap items-center gap-2">
         <li>
-          <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+          <Link className="hover:text-[#176c55]" href="/dashboard/officer">
             Home
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#0A3C2F]" href="/workspace/projects">
+          <Link className="hover:text-[#176c55]" href="/workspace/projects">
             Projects
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#0A3C2F]" href={detailHref}>
+          <Link className="hover:text-[#176c55]" href={detailHref}>
             {project.shortName}
           </Link>
         </li>
@@ -743,7 +741,7 @@ function CreatePlanBreadcrumb({
           <>
             <li>
               <Link
-                className="hover:text-[#0A3C2F]"
+                className="hover:text-[#176c55]"
                 href={`/workspace/projects?project=${encodeURIComponent(
                   project.code,
                 )}&plan=${encodeURIComponent(initialPlan.reference)}`}

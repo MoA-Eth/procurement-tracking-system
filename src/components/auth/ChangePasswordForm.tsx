@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Lock } from "lucide-react";
+import { Check, Eye, EyeOff, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { changePassword } from "../../lib/authApi";
@@ -12,8 +12,15 @@ export function ChangePasswordForm() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPasswordMap, setShowPasswordMap] = useState<
+    Record<string, boolean>
+  >({});
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const toggleShow = (id: string) => {
+    setShowPasswordMap((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -113,17 +120,34 @@ export function ChangePasswordForm() {
               <label htmlFor={field.id} className="auth-label">
                 {field.label}
               </label>
-              <div className="auth-input-wrap">
+              <div className="auth-input-wrap relative">
                 <Lock className="auth-input-icon" aria-hidden="true" />
                 <input
                   id={field.id}
-                  type="password"
+                  type={showPasswordMap[field.id] ? "text" : "password"}
                   autoComplete={field.autoComplete}
                   required
                   value={field.value}
                   onChange={(event) => field.setter(event.target.value)}
-                  className="auth-input pl-12"
+                  className="auth-input auth-input-with-trailing-action pl-12 pr-12"
                 />
+                <button
+                  type="button"
+                  onClick={() => toggleShow(field.id)}
+                  aria-label={
+                    showPasswordMap[field.id]
+                      ? `Hide ${field.label.toLowerCase()}`
+                      : `Show ${field.label.toLowerCase()}`
+                  }
+                  aria-pressed={Boolean(showPasswordMap[field.id])}
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#064e3b] cursor-pointer"
+                >
+                  {showPasswordMap[field.id] ? (
+                    <EyeOff size={20} aria-hidden="true" />
+                  ) : (
+                    <Eye size={20} aria-hidden="true" />
+                  )}
+                </button>
               </div>
             </div>
           ))}

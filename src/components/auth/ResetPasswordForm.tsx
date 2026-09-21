@@ -1,6 +1,6 @@
 "use client";
 
-import { Lock } from "lucide-react";
+import { Eye, EyeOff, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { resetPassword } from "../../lib/authApi";
@@ -10,6 +10,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
   const router = useRouter();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,34 +80,66 @@ export function ResetPasswordForm({ token }: { token: string }) {
             <label htmlFor="new-password" className="auth-label">
               New password
             </label>
-            <div className="auth-input-wrap">
+            <div className="auth-input-wrap relative">
               <Lock className="auth-input-icon" aria-hidden="true" />
               <input
                 id="new-password"
-                type="password"
+                type={showNewPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
-                className="auth-input pl-12"
+                className="auth-input auth-input-with-trailing-action pl-12 pr-12"
               />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((visible) => !visible)}
+                aria-label={
+                  showNewPassword ? "Hide new password" : "Show new password"
+                }
+                aria-pressed={showNewPassword}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#064e3b] cursor-pointer"
+              >
+                {showNewPassword ? (
+                  <EyeOff size={20} aria-hidden="true" />
+                ) : (
+                  <Eye size={20} aria-hidden="true" />
+                )}
+              </button>
             </div>
           </div>
           <div>
             <label htmlFor="confirm-password" className="auth-label">
               Confirm new password
             </label>
-            <div className="auth-input-wrap">
+            <div className="auth-input-wrap relative">
               <Lock className="auth-input-icon" aria-hidden="true" />
               <input
                 id="confirm-password"
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                className="auth-input pl-12"
+                className="auth-input auth-input-with-trailing-action pl-12 pr-12"
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((visible) => !visible)}
+                aria-label={
+                  showConfirmPassword
+                    ? "Hide confirmation password"
+                    : "Show confirmation password"
+                }
+                aria-pressed={showConfirmPassword}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#064e3b] cursor-pointer"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff size={20} aria-hidden="true" />
+                ) : (
+                  <Eye size={20} aria-hidden="true" />
+                )}
+              </button>
             </div>
           </div>
           <button

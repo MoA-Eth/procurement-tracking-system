@@ -1,7 +1,16 @@
 import { authTokenManager } from "./authTokenManager";
 
-export const BACKEND_API_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
+export const BACKEND_API_URL = (() => {
+  const envUrl =
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ||
+    process.env.BACKEND_API_URL ||
+    "https://procurement-tracking-system-backend-3g8n.onrender.com/api";
+  let url = envUrl.trim().replace(/\/+$/, "");
+  if (!url.endsWith("/api")) {
+    url = `${url}/api`;
+  }
+  return url;
+})();
 
 export class ApiClientError extends Error {
   status?: number;
@@ -27,7 +36,10 @@ export async function directApiFetch<T>(
   const { params, skipAuth, headers: customHeaders, ...fetchOptions } = options;
 
   // Build full URL
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  let cleanPath = path.startsWith("/") ? path : `/${path}`;
+  if (cleanPath.startsWith("/api/")) {
+    cleanPath = cleanPath.slice(4);
+  }
   const url = new URL(`${BACKEND_API_URL}${cleanPath}`);
 
   if (params) {
@@ -105,7 +117,9 @@ export async function directApiFetch<T>(
       }
     }
     if (response.status === 401) {
-      if (typeof window !== "undefined") {
+      const isAuthAttempt =
+        cleanPath.includes("/auth/login") || Boolean(skipAuth);
+      if (!isAuthAttempt && typeof window !== "undefined") {
         authTokenManager.clearToken();
         try {
           window.sessionStorage.removeItem("pts_tab_session");
@@ -124,6 +138,8 @@ export async function directApiFetch<T>(
       }
     }
 
+    const formattedError = `[${fetchOptions.method || "GET"} ${cleanPath}]: ${errorMsg}`;
+    console.warn(`API Notice (${response.status}):`, formattedError);
     throw new ApiClientError(errorMsg, response.status, responseData);
   }
 

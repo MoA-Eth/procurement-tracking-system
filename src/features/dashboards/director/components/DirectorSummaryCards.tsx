@@ -22,39 +22,30 @@ export function DirectorSummaryCards({
   selectedSector,
   userRole = "DIRECTOR",
 }: DirectorSummaryCardsProps) {
-  const sectorSubtitle =
-    selectedSector === "All Sectors"
-      ? "all sectors"
-      : selectedSector.toLowerCase();
-
   return (
     <section
       aria-label="Director metrics summary"
       className="grid grid-cols-1 gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-[1.28fr_1fr_1fr_1fr]"
     >
       {/* CARD 1: TOTAL PROJECTS */}
-      <article className="flex flex-col justify-between rounded-2xl bg-white p-4 border border-slate-200/80 shadow-2xs transition-all duration-200 hover:shadow-md min-h-[136px]">
+      <article className="flex flex-col justify-between rounded-2xl bg-[#ecfdf5] p-4 border border-[#a7f3d0] border-t-4 border-t-[#006837] shadow-2xs transition-all duration-200 hover:shadow-md min-h-[136px]">
         <div>
           <div className="flex items-start justify-between">
-            <h3 className="text-xs font-semibold text-slate-800 tracking-tight">
+            <h3 className="text-xs font-bold text-[#064e3b] tracking-tight">
               Total Projects
             </h3>
-            <span className="h-2 w-2 rounded-full bg-emerald-600 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-semibold tabular-nums tracking-tight text-black leading-none">
+            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-[#0A3C2F] leading-none">
               {totalProjectsCount}
             </p>
-            <span className="text-xs font-semibold text-slate-500">active</span>
+            <span className="text-xs font-semibold text-[#047857]">active</span>
           </div>
         </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px] truncate">
-            {selectedFiscalYear}, {sectorSubtitle}
-          </span>
+        <div className="pt-2 border-t border-[#a7f3d0]/70 flex items-center justify-end text-xs">
           <Link
             href="/workspace/projects"
-            className="text-[#0A3C2F] hover:text-[#083025] font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="text-[#006837] hover:text-[#004f29] font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
           >
             <span>View All</span>
             <span aria-hidden="true">&rarr;</span>
@@ -66,29 +57,23 @@ export function DirectorSummaryCards({
       <article className="flex flex-col justify-between rounded-2xl bg-white p-4 border border-slate-200/80 shadow-2xs transition-all duration-200 hover:shadow-md min-h-[136px]">
         <div>
           <div className="flex items-start justify-between">
-            <h3 className="text-xs font-semibold text-slate-800 tracking-tight">
+            <h3 className="text-xs font-bold text-slate-800 tracking-tight">
               {userRole === "MANAGEMENT"
                 ? "Executive Authorization"
                 : "Awaiting Review"}
             </h3>
-            <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-semibold tabular-nums tracking-tight text-black leading-none">
+            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-black leading-none">
               {awaitingReviewCount}
             </p>
             <span className="text-xs font-semibold text-slate-500">plans</span>
           </div>
         </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
-            {userRole === "MANAGEMENT"
-              ? "Pending Decision"
-              : "Pending Director"}
-          </span>
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-end text-xs">
           <Link
             href="/workspace/plan-for-review"
-            className="text-amber-700 hover:text-amber-800 font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="text-amber-700 hover:text-amber-800 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
           >
             <span>Review Now</span>
             <span aria-hidden="true">&rarr;</span>
@@ -100,27 +85,23 @@ export function DirectorSummaryCards({
       <article className="flex flex-col justify-between rounded-2xl bg-white p-4 border border-slate-200/80 shadow-2xs transition-all duration-200 hover:shadow-md min-h-[136px]">
         <div>
           <div className="flex items-start justify-between">
-            <h3 className="text-xs font-semibold text-slate-800 tracking-tight">
+            <h3 className="text-xs font-bold text-slate-800 tracking-tight">
               {userRole === "MANAGEMENT"
                 ? "Committee Endorsed"
                 : "Committee Progress"}
             </h3>
-            <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-semibold tabular-nums tracking-tight text-black leading-none">
+            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-black leading-none">
               {committeePlansCount}
             </p>
             <span className="text-xs font-semibold text-slate-500">plans</span>
           </div>
         </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
-            {userRole === "MANAGEMENT" ? "Deliberations" : "Voting"}
-          </span>
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-end text-xs">
           <Link
             href="/workspace/vote-progress"
-            className="text-blue-600 hover:text-blue-700 font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="text-blue-600 hover:text-blue-700 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
           >
             <span>Check Votes</span>
             <span aria-hidden="true">&rarr;</span>
@@ -132,13 +113,12 @@ export function DirectorSummaryCards({
       <article className="flex flex-col justify-between rounded-2xl bg-white p-4 border border-slate-200/80 shadow-2xs transition-all duration-200 hover:shadow-md min-h-[136px]">
         <div>
           <div className="flex items-start justify-between">
-            <h3 className="text-xs font-semibold text-slate-800 tracking-tight">
+            <h3 className="text-xs font-bold text-slate-800 tracking-tight">
               Critical Delays
             </h3>
-            <span className="h-2 w-2 rounded-full bg-rose-600 shrink-0 mt-0.5" />
           </div>
           <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-semibold tabular-nums tracking-tight text-black leading-none">
+            <p className="text-3xl sm:text-4xl lg:text-[40px] font-sans font-bold tabular-nums tracking-tight text-black leading-none">
               {criticalDelaysCount}
             </p>
             <span className="text-xs font-semibold text-slate-600">
@@ -146,13 +126,10 @@ export function DirectorSummaryCards({
             </span>
           </div>
         </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
-            Requires action
-          </span>
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-end text-xs">
           <Link
             href="/workspace/activity-tracker"
-            className="text-rose-600 hover:text-rose-700 font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="text-rose-600 hover:text-rose-700 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
           >
             <span>Needs Action</span>
             <span aria-hidden="true">&rarr;</span>

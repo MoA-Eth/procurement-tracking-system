@@ -13,6 +13,7 @@ export interface SystemNotification {
   priority: NotificationPriority;
   timestamp: string;
   read: boolean;
+  readAt?: string | null;
   link?: string;
   actionLabel?: string;
   targetRole?: string;
@@ -92,6 +93,8 @@ export function mapBackendAlertToNotification(
     timestamp = `${diffMinutes} min${diffMinutes > 1 ? "s" : ""} ago`;
   }
 
+  const isRead = alert.readAt !== null && alert.readAt !== undefined;
+
   return {
     id: alert.id,
     title: alert.title,
@@ -99,7 +102,8 @@ export function mapBackendAlertToNotification(
     type: calculatedType,
     priority,
     timestamp,
-    read: Boolean(alert.readAt),
+    read: isRead,
+    readAt: alert.readAt,
     link: alert.link || getLinkForType(calculatedType, alert.targetRole),
     actionLabel: getActionLabel(calculatedType),
     targetRole: alert.targetRole,
@@ -145,29 +149,86 @@ function getActionLabel(type: SystemNotification["type"]): string {
   }
 }
 
-/**
- * Fetch notifications for the current user.
- * The backend already knows who the user is via the session cookie —
- * no role param is needed. It returns personal + role-based alerts.
- * Alerts with no targetRole are broadcast to ALL users.
- */
+export function createLocalAlert(alert: {
+  title: string;
+  message: string;
+  type?: string;
+  severity?: "HIGH" | "MEDIUM" | "LOW" | "INFO";
+  targetRole?: string;
+  link?: string;
+}): SystemNotification {
+  const newAlert: BackendAlert = {
+    id: `local-alert-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    title: alert.title,
+    message: alert.message,
+    type: alert.type || "DECISION",
+    severity: alert.severity || "MEDIUM",
+    createdAt: new Date().toISOString(),
+    link: alert.link,
+    targetRole: alert.targetRole || "OFFICER",
+  };
+
+  if (typeof window !== "undefined") {
+    try {
+      const stored = JSON.parse(
+        window.localStorage.getItem("pts_custom_alerts") || "[]",
+      );
+      stored.unshift(newAlert);
+      window.localStorage.setItem(
+        "pts_custom_alerts",
+        JSON.stringify(stored.slice(0, 50)),
+      );
+      window.dispatchEvent(
+        new CustomEvent("pts:new-alert", { detail: newAlert }),
+      );
+    } catch (e) {
+      console.warn("Could not write local alert:", e);
+    }
+  }
+
+  return mapBackendAlertToNotification(newAlert);
+}
+
 export async function fetchNotifications(
   userRole?: string,
+  unreadOnly = false,
 ): Promise<SystemNotification[]> {
+  let localCustomAlerts: BackendAlert[] = [];
+  if (typeof window !== "undefined") {
+    try {
+      localCustomAlerts = JSON.parse(
+        window.localStorage.getItem("pts_custom_alerts") || "[]",
+      );
+    } catch {
+      localCustomAlerts = [];
+    }
+  }
+
+  const combinedRaw: BackendAlert[] = [...localCustomAlerts];
+
   try {
-    // Backend uses session to determine user — no role param needed
-    const rawAlerts = await apiClient.get<BackendAlert[]>("/alerts");
+    const rawAlerts = await apiClient.get<BackendAlert[]>("/alerts", {
+      params: unreadOnly ? { unreadOnly: "true" } : undefined,
+    });
     if (Array.isArray(rawAlerts) && rawAlerts.length > 0) {
-      const mapped = rawAlerts.map(mapBackendAlertToNotification);
-      // Client-side guard: filter out alerts not intended for this role
-      // (null targetRole = all users, so they always pass)
-      if (userRole) {
-        return mapped.filter((n) => isNotificationForRole(n, userRole));
-      }
-      return mapped;
+      combinedRaw.push(...rawAlerts);
     }
   } catch (err) {
     console.warn("Could not fetch alerts from backend:", err);
+  }
+
+  if (combinedRaw.length > 0) {
+    const mapped = combinedRaw.map(mapBackendAlertToNotification);
+    if (unreadOnly) {
+      const unreadMapped = mapped.filter((n) => !n.read);
+      return userRole
+        ? unreadMapped.filter((n) => isNotificationForRole(n, userRole))
+        : unreadMapped;
+    }
+    if (userRole) {
+      return mapped.filter((n) => isNotificationForRole(n, userRole));
+    }
+    return mapped;
   }
 
   return [];

@@ -5,8 +5,19 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { type AuthSession, normalizeUserRole } from "./authTypes";
 
-const backendUrl = () =>
-  (process.env.BACKEND_API_URL ?? "http://localhost:5000").replace(/\/$/, "");
+const backendUrl = () => {
+  let url = (
+    process.env.BACKEND_API_URL ??
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ??
+    "https://procurement-tracking-system-backend-3g8n.onrender.com"
+  )
+    .trim()
+    .replace(/\/+$/, "");
+  if (url.endsWith("/api")) {
+    url = url.slice(0, -4);
+  }
+  return url;
+};
 
 function parseSessionPayload(val: string): AuthSession | null {
   if (!val || typeof val !== "string") return null;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   Check,
@@ -27,6 +28,7 @@ import {
 } from "@/lib/alertsApi";
 
 export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     if (user) return user;
@@ -122,6 +124,16 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
     markAlertAsRead(id);
   };
 
+  const handleItemClick = (n: SystemNotification) => {
+    if (!n.read) {
+      handleMarkAsRead(n.id);
+    }
+    if (n.link) {
+      setIsOpen(false);
+      router.push(n.link);
+    }
+  };
+
   const handleMarkAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     markAllAlertsAsRead();
@@ -158,7 +170,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
       >
         <Bell size={16} strokeWidth={1.8} className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white ring-2 ring-white animate-pulse">
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-white animate-pulse">
             {unreadCount}
           </span>
         )}
@@ -170,20 +182,20 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
           {/* Header */}
           <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-              <span className="text-xs font-semibold text-slate-900">
+              <span className="text-xs font-extrabold text-slate-900">
                 Notifications
               </span>
               {userRole && (
-                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-200/80 text-slate-700 border border-slate-300/60">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200/80 text-slate-700">
                   {ROLE_LABELS[userRole] || userRole}
                 </span>
               )}
               {unreadCount > 0 ? (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
                   {unreadCount} New
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
                   All Read
                 </span>
               )}
@@ -193,7 +205,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
               <button
                 type="button"
                 onClick={handleMarkAllAsRead}
-                className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
               >
                 <CheckCheck size={13} />
                 <span>Mark all read</span>
@@ -211,28 +223,33 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
               roleNotifications.slice(0, 5).map((n) => (
                 <div
                   key={n.id}
-                  onClick={() => handleMarkAsRead(n.id)}
-                  className={`p-3 sm:p-3.5 transition-colors flex items-start gap-3 cursor-pointer hover:bg-slate-50 ${
-                    n.read ? "bg-white" : "bg-emerald-50/40"
+                  onClick={() => handleItemClick(n)}
+                  className={`p-3 sm:p-3.5 transition-colors flex items-start gap-3 cursor-pointer hover:bg-slate-50 relative ${
+                    n.read ? "bg-white" : "bg-emerald-50/50"
                   }`}
                 >
+                  {/* Unread indicator dot */}
+                  {!n.read && (
+                    <span className="absolute top-3.5 right-3 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white" />
+                  )}
+
                   <div className="p-2 rounded-lg bg-slate-100 shrink-0 mt-0.5">
                     {getNotificationIcon(n.type)}
                   </div>
 
-                  <div className="flex-1 min-w-0 space-y-0.5">
+                  <div className="flex-1 min-w-0 space-y-0.5 pr-2">
                     <div className="flex items-center justify-between gap-1">
                       <h4
                         className={`text-xs truncate ${
                           n.read
                             ? "font-semibold text-slate-800"
-                            : "font-semibold text-slate-950"
+                            : "font-extrabold text-slate-950"
                         }`}
                       >
                         {n.title}
                       </h4>
                       {n.priority === "urgent" && (
-                        <span className="shrink-0 text-[9px] font-medium px-1.5 py-0.2 rounded-md bg-rose-50 text-rose-800 border border-rose-200">
+                        <span className="shrink-0 text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800">
                           Urgent
                         </span>
                       )}
@@ -245,14 +262,10 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
                         {n.timestamp}
                       </span>
                       {n.link && (
-                        <Link
-                          href={n.link}
-                          onClick={() => setIsOpen(false)}
-                          className="text-[11px] font-semibold text-[#0A3C2F] hover:underline inline-flex items-center gap-0.5"
-                        >
+                        <span className="text-[11px] font-bold text-[#0A3C2F] hover:underline inline-flex items-center gap-0.5">
                           <span>{n.actionLabel || "View"}</span>
                           <ExternalLink size={10} />
-                        </Link>
+                        </span>
                       )}
                     </div>
                   </div>
@@ -266,7 +279,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
             <Link
               href="/workspace/notifications"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-semibold text-[#0A3C2F] hover:underline inline-flex items-center gap-1"
+              className="text-xs font-bold text-[#0A3C2F] hover:underline inline-flex items-center gap-1"
             >
               <span>See All Notifications ({roleNotifications.length})</span>
               <span>→</span>

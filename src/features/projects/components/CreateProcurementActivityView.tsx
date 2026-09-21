@@ -154,7 +154,25 @@ export function CreateProcurementActivityView({
         existingActivityCount,
       );
 
-  const stepOneInvalid = !form.method;
+  const usesCompetition =
+    Boolean(form.method) &&
+    form.method !== "direct" &&
+    form.method !== "un-agency";
+  const usesRfb =
+    form.method === "rfb-international" || form.method === "rfb-national";
+  const consultancy = category === "Consultancy Services";
+  const preferenceApplies =
+    usesRfb && (category === "Goods" || category === "Works");
+
+  const stepOneInvalid =
+    !form.method ||
+    (usesCompetition && !form.marketApproach) ||
+    (usesRfb && !form.qualificationApproach) ||
+    (preferenceApplies && !form.domesticPreference) ||
+    (Boolean(form.method) && !form.reviewType) ||
+    (usesRfb && !form.procurementProcess) ||
+    (!consultancy && Boolean(form.method) && !form.procurementDocumentType) ||
+    (consultancy && Boolean(form.method) && !form.contractType);
   const stepTwoInvalid =
     !form.activityDescription.trim() ||
     !(Number(form.estimatedAmount) > 0) ||
@@ -177,7 +195,16 @@ export function CreateProcurementActivityView({
   );
   const roadmapOrderErrors = countRoadmapOrderErrors(roadmap);
   const issueCounts: Record<WizardStep, number> = {
-    1: stepOneInvalid ? 1 : 0,
+    1: [
+      !form.method,
+      usesCompetition && !form.marketApproach,
+      usesRfb && !form.qualificationApproach,
+      preferenceApplies && !form.domesticPreference,
+      Boolean(form.method) && !form.reviewType,
+      usesRfb && !form.procurementProcess,
+      !consultancy && Boolean(form.method) && !form.procurementDocumentType,
+      consultancy && Boolean(form.method) && !form.contractType,
+    ].filter(Boolean).length,
     2: [
       !form.activityDescription.trim(),
       !(Number(form.estimatedAmount) > 0),
@@ -556,7 +583,7 @@ function createInitialForm(
     classificationCode: "",
     comments: "",
     contractType: "",
-    currency: plan.currency || project.baseCurrency,
+    currency: "",
     domesticPreference: "",
     estimatedAmount: "",
     evaluationOptionCode: "",
@@ -1082,17 +1109,25 @@ function Field({
 
 function SelectControl({
   children,
+  hasError,
   onChange,
   value,
 }: {
   children: ReactNode;
+  hasError?: boolean;
   onChange: (value: string) => void;
   value: string;
 }) {
   return (
     <span className="relative block">
       <select
-        className={inputClasses + " appearance-none pr-9"}
+        className={
+          inputClasses +
+          " appearance-none pr-9" +
+          (hasError
+            ? " border-red-400 focus:border-red-500 focus:ring-red-500/15"
+            : "")
+        }
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
@@ -1333,7 +1368,11 @@ function KeyDetailsStep({
           label="Procurement Method"
           required
         >
-          <SelectControl onChange={onMethodChange} value={form.method}>
+          <SelectControl
+            hasError={attempted && !form.method}
+            onChange={onMethodChange}
+            value={form.method}
+          >
             <option value="">Select method</option>
             {methodOptions.map((method) => (
               <option key={method.key} value={method.key}>
@@ -1360,8 +1399,17 @@ function KeyDetailsStep({
         ) : null}
 
         {usesCompetition ? (
-          <Field label="Market Approach">
+          <Field
+            error={
+              attempted && !form.marketApproach
+                ? "Select a market approach."
+                : undefined
+            }
+            label="Market Approach"
+            required
+          >
             <SelectControl
+              hasError={attempted && !form.marketApproach}
               onChange={(value) => onChange("marketApproach", value)}
               value={form.marketApproach}
             >
@@ -1378,8 +1426,17 @@ function KeyDetailsStep({
         ) : null}
 
         {usesRfb ? (
-          <Field label="Qualification Approach">
+          <Field
+            error={
+              attempted && !form.qualificationApproach
+                ? "Select a qualification approach."
+                : undefined
+            }
+            label="Qualification Approach"
+            required
+          >
             <SelectControl
+              hasError={attempted && !form.qualificationApproach}
               onChange={(value) => onChange("qualificationApproach", value)}
               value={form.qualificationApproach}
             >
@@ -1392,8 +1449,17 @@ function KeyDetailsStep({
         ) : null}
 
         {preferenceApplies ? (
-          <Field label="Domestic / Regional Preference">
+          <Field
+            error={
+              attempted && !form.domesticPreference
+                ? "Select domestic/regional preference."
+                : undefined
+            }
+            label="Domestic / Regional Preference"
+            required
+          >
             <SelectControl
+              hasError={attempted && !form.domesticPreference}
               onChange={(value) => onChange("domesticPreference", value)}
               value={form.domesticPreference}
             >
@@ -1405,8 +1471,17 @@ function KeyDetailsStep({
         ) : null}
 
         {form.method ? (
-          <Field label="Review Type">
+          <Field
+            error={
+              attempted && !form.reviewType
+                ? "Select a review type."
+                : undefined
+            }
+            label="Review Type"
+            required
+          >
             <SelectControl
+              hasError={attempted && !form.reviewType}
               onChange={(value) => onChange("reviewType", value)}
               value={form.reviewType}
             >
@@ -1433,8 +1508,17 @@ function KeyDetailsStep({
         ) : null}
 
         {usesRfb ? (
-          <Field label="Procurement Process">
+          <Field
+            error={
+              attempted && !form.procurementProcess
+                ? "Select a procurement process."
+                : undefined
+            }
+            label="Procurement Process"
+            required
+          >
             <SelectControl
+              hasError={attempted && !form.procurementProcess}
               onChange={(value) => onChange("procurementProcess", value)}
               value={form.procurementProcess}
             >
@@ -1445,8 +1529,17 @@ function KeyDetailsStep({
         ) : null}
 
         {!consultancy && form.method ? (
-          <Field label="Procurement Document Type">
+          <Field
+            error={
+              attempted && !form.procurementDocumentType
+                ? "Select a procurement document type."
+                : undefined
+            }
+            label="Procurement Document Type"
+            required
+          >
             <SelectControl
+              hasError={attempted && !form.procurementDocumentType}
               onChange={(value) => onChange("procurementDocumentType", value)}
               value={form.procurementDocumentType}
             >
@@ -1459,8 +1552,17 @@ function KeyDetailsStep({
         ) : null}
 
         {consultancy && form.method ? (
-          <Field label="Contract Type">
+          <Field
+            error={
+              attempted && !form.contractType
+                ? "Select a contract type."
+                : undefined
+            }
+            label="Contract Type"
+            required
+          >
             <SelectControl
+              hasError={attempted && !form.contractType}
               onChange={(value) => onChange("contractType", value)}
               value={form.contractType}
             >
@@ -1633,7 +1735,13 @@ function RelatedInformationStep({
               required
             >
               <textarea
-                className={textareaClasses + " min-h-20"}
+                className={
+                  textareaClasses +
+                  " min-h-20" +
+                  (attempted && !form.activityDescription.trim()
+                    ? " border-red-400 focus:border-red-500 focus:ring-red-500/15"
+                    : "")
+                }
                 onChange={(event) =>
                   onChange("activityDescription", event.target.value)
                 }
@@ -1653,7 +1761,12 @@ function RelatedInformationStep({
             required
           >
             <input
-              className={inputClasses}
+              className={
+                inputClasses +
+                (attempted && !(Number(form.estimatedAmount) > 0)
+                  ? " border-red-400 focus:border-red-500 focus:ring-red-500/15"
+                  : "")
+              }
               min="0"
               onChange={(event) =>
                 onChange("estimatedAmount", event.target.value)
@@ -1671,8 +1784,17 @@ function RelatedInformationStep({
             />
           </Field>
 
-          <Field label="Currency" required>
+          <Field
+            error={
+              attempted && !form.currency
+                ? "Select a currency for this activity."
+                : undefined
+            }
+            label="Currency"
+            required
+          >
             <SelectControl
+              hasError={attempted && !form.currency}
               onChange={(value) => onChange("currency", value)}
               value={form.currency}
             >
@@ -1683,16 +1805,28 @@ function RelatedInformationStep({
             </SelectControl>
           </Field>
 
-          <Field label="Funding Source" required>
+          <Field
+            error={
+              attempted && !form.fundingSource
+                ? "Select a funding source for this activity."
+                : undefined
+            }
+            hint="Auto-inherited from project. Only change if this activity is funded by Government Treasury."
+            label="Funding Source"
+            required
+          >
             <SelectControl
+              hasError={attempted && !form.fundingSource}
               onChange={(value) => onChange("fundingSource", value)}
               value={form.fundingSource}
             >
               <option value={project.fundingSource}>
-                {project.fundingSource}
+                {project.fundingSource} (Project Donor)
               </option>
               {project.fundingSource !== "Treasury" ? (
-                <option value="Treasury">Treasury</option>
+                <option value="Treasury">
+                  Treasury (Government Counterpart)
+                </option>
               ) : null}
             </SelectControl>
           </Field>
@@ -1708,6 +1842,7 @@ function RelatedInformationStep({
               required
             >
               <SelectControl
+                hasError={attempted && !form.pricingBasis}
                 onChange={(value) => onChange("pricingBasis", value)}
                 value={form.pricingBasis}
               >
@@ -1814,7 +1949,16 @@ function RelatedInformationStep({
                     value={lot.description}
                   />
                 </Field>
-                <Field label="Estimated Lot Amount" required>
+                <Field
+                  error={
+                    attempted &&
+                    (!lot.amount.trim() || !(Number(lot.amount) >= 0))
+                      ? "Enter a valid lot amount."
+                      : undefined
+                  }
+                  label="Estimated Lot Amount"
+                  required
+                >
                   <input
                     className={inputClasses}
                     min="0"

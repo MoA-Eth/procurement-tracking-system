@@ -213,13 +213,35 @@ export interface UpdatePlanInput {
 
 import { apiClient } from "./apiClient";
 
+let _cachedPlans: BackendPlan[] | null = null;
+let _cachedPlansTimestamp = 0;
+
+export function getCachedPlans(): BackendPlan[] | null {
+  return _cachedPlans;
+}
+
+export function setCachedPlans(plans: BackendPlan[]) {
+  _cachedPlans = plans;
+  _cachedPlansTimestamp = Date.now();
+}
+
+export function invalidatePlansCache() {
+  _cachedPlans = null;
+  _cachedPlansTimestamp = 0;
+}
+
 export async function fetchPlans(): Promise<BackendPlan[]> {
   try {
     const res = await apiClient.get<any>("/plans");
-    return Array.isArray(res) ? res : res.data || [];
+    const data = Array.isArray(res) ? res : res.data || [];
+    if (Array.isArray(data) && data.length > 0) {
+      _cachedPlans = data;
+      _cachedPlansTimestamp = Date.now();
+    }
+    return data;
   } catch (err) {
-    console.error("fetchPlans error:", err);
-    return [];
+    console.warn("fetchPlans notice:", err);
+    return _cachedPlans || [];
   }
 }
 
@@ -229,6 +251,7 @@ export async function fetchPlanById(id: string): Promise<BackendPlan> {
 }
 
 export async function createPlan(data: CreatePlanInput): Promise<BackendPlan> {
+  invalidatePlansCache();
   const res = await apiClient.post<any>("/plans", data);
   return res.data || res;
 }
@@ -237,6 +260,7 @@ export async function updatePlan(
   id: string,
   data: UpdatePlanInput,
 ): Promise<BackendPlan> {
+  invalidatePlansCache();
   const res = await apiClient.patch<any>(
     `/plans/${encodeURIComponent(id)}`,
     data,
@@ -244,8 +268,20 @@ export async function updatePlan(
   return res.data || res;
 }
 
+export async function deletePlan(id: string): Promise<boolean> {
+  try {
+    invalidatePlansCache();
+    await apiClient.delete(`/plans/${encodeURIComponent(id)}`);
+    return true;
+  } catch (err) {
+    console.warn(`deletePlan notice for ${id}:`, err);
+    return false;
+  }
+}
+
 /** Officer submits draft plan to Director */
 export async function submitPlanForReview(id: string): Promise<BackendPlan> {
+  invalidatePlansCache();
   const res = await apiClient.post<any>(
     `/plans/${encodeURIComponent(id)}/submit`,
   );

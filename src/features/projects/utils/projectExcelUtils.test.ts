@@ -26,6 +26,17 @@ vi.mock("xlsx", async () => {
   };
 });
 
+vi.mock("@/lib/projectsApi", async () => {
+  const actual =
+    await vi.importActual<typeof import("@/lib/projectsApi")>(
+      "@/lib/projectsApi",
+    );
+  return {
+    ...actual,
+    downloadProjectsTemplate: vi.fn().mockImplementation(async () => {}),
+  };
+});
+
 describe("projectExcelUtils", () => {
   const mockPlan: ProcurementPlanSummary = {
     activities: 2,
