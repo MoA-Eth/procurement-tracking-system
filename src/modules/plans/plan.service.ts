@@ -401,9 +401,14 @@ export const submitPlanService = async (id: string, userId: string) => {
         throw new Error(`Plan not found with id: ${id}`);
       }
 
-      if (oldPlan.status !== PlanStatus.WITH_COMMITTEE) {
+      const submittableStatuses: PlanStatus[] = [
+        PlanStatus.DRAFT,
+        PlanStatus.RETURNED_FOR_REVISION,
+        PlanStatus.REJECTED,
+      ];
+      if (!submittableStatuses.includes(oldPlan.status)) {
         throw new Error(
-          `Voting is closed for this round because the plan is currently ${oldPlan.status}.`,
+          `Plan cannot be submitted because its current status is ${oldPlan.status}. Only plans in DRAFT, RETURNED_FOR_REVISION, or REJECTED status can be submitted.`,
         );
       }
 
@@ -711,6 +716,12 @@ export const submitCommitteeVoteService = async (
         }));
       if (!oldPlan) {
         throw new Error(`Plan not found with id: ${id}`);
+      }
+
+      if (oldPlan.status !== PlanStatus.WITH_COMMITTEE) {
+        throw new Error(
+          `Voting is closed for this round because the plan is currently ${oldPlan.status}.`,
+        );
       }
 
       const user = await tx.user.findUnique({
