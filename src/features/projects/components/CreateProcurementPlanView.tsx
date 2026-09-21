@@ -18,6 +18,7 @@ import {
 } from "../utils/ethiopianCalendar";
 import { DualCalendarField } from "./DualCalendarField";
 import {
+  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   ChevronDown,
@@ -95,7 +96,7 @@ export function CreateProcurementPlanView({
     input: ProcurementPlanDraftInput,
     action: Exclude<SaveAction, null>,
     revisionReason?: string,
-  ) => void;
+  ) => Promise<void> | void;
   project: OfficerProject;
 }) {
   const isEditing = Boolean(initialPlan);
@@ -106,6 +107,8 @@ export function CreateProcurementPlanView({
   );
   const [revisionReason, setRevisionReason] = useState("");
   const [saveAction, setSaveAction] = useState<SaveAction>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationAttempted, setValidationAttempted] = useState(false);
   const [form, setForm] = useState<PlanFormState>(() => ({
     budgetYear: initialPlan?.budgetYear?.replace(/ EFY/i, "").trim() || "2017",
@@ -224,12 +227,13 @@ export function CreateProcurementPlanView({
     });
   }
 
-  function handleSubmit(
+  async function handleSubmit(
     event: FormEvent<HTMLFormElement> | null,
     action: Exclude<SaveAction, null>,
   ) {
     if (event) event.preventDefault();
     setValidationAttempted(true);
+    setSubmitError(null);
 
     if (
       !selectedCategory ||
@@ -243,13 +247,23 @@ export function CreateProcurementPlanView({
       return;
     }
 
-    onSavePlan(
-      { ...form, category: selectedCategory },
-      action,
-      revisionReason.trim() ||
-        (isEditing ? "Updated plan parameters" : undefined),
-    );
-    setSaveAction(action);
+    try {
+      setIsSubmitting(true);
+      setSaveAction(action);
+      await onSavePlan(
+        { ...form, category: selectedCategory },
+        action,
+        revisionReason.trim() ||
+          (isEditing ? "Updated plan parameters" : undefined),
+      );
+    } catch (err: any) {
+      setSubmitError(
+        err?.message || "Failed to create or update plan in the server database.",
+      );
+      window.scrollTo({ behavior: "smooth", top: 0 });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const organizationRegions =
@@ -302,6 +316,17 @@ export function CreateProcurementPlanView({
             </p>
           </div>
         </div>
+
+        {/* Database Submission Error Alert Banner */}
+        {submitError && (
+          <div className="rounded border border-red-300 bg-red-50 p-4 text-xs text-red-800 flex items-start gap-3 shadow-xs">
+            <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-red-900">Database Action Failed</p>
+              <p className="mt-1 leading-relaxed text-red-800">{submitError}</p>
+            </div>
+          </div>
+        )}
 
         {/* Director / Management Feedback Banner if Returned */}
         {(initialPlan?.directorRevisionComment ||
@@ -531,8 +556,8 @@ export function CreateProcurementPlanView({
         </section>
 
         {/* Section 3: Plan Timeline & Notice Dates */}
-        <section className="overflow-hidden rounded border border-slate-300 bg-white shadow-xs">
-          <div className="border-b border-slate-200 bg-[#edf5f1] px-5 py-3.5">
+        <section className="relative z-10 rounded border border-slate-300 bg-white shadow-xs">
+          <div className="rounded-t border-b border-slate-200 bg-[#edf5f1] px-5 py-3.5">
             <h2 className="text-xs font-bold uppercase tracking-[0.06em] text-slate-800">
               Plan Schedule &amp; Coverage Period
             </h2>
@@ -638,21 +663,41 @@ export function CreateProcurementPlanView({
 
           <div className="flex flex-wrap items-center gap-3">
             <button
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+              disabled={isSubmitting}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-slate-300 bg-white px-4 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => handleSubmit(null, "draft")}
               type="button"
             >
-              {isEditing ? "Save Plan Changes" : "Save Draft"}
+              {isSubmitting && saveAction === "draft" ? (
+                <>
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
+                  Saving...
+                </>
+              ) : isEditing ? (
+                "Save Plan Changes"
+              ) : (
+                "Save Draft"
+              )}
             </button>
             <button
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-[#125442] bg-[#176c55] px-4 text-xs font-medium text-white hover:bg-[#125f4c] cursor-pointer"
+              disabled={isSubmitting}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-sm border border-[#125442] bg-[#176c55] px-4 text-xs font-medium text-white hover:bg-[#125f4c] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => handleSubmit(null, "activity")}
               type="button"
             >
-              <Save aria-hidden="true" className="h-3.5 w-3.5" />
-              {isEditing
-                ? "Save & Go to Activities"
-                : "Save & Add Procurement Activity"}
+              {isSubmitting && saveAction === "activity" ? (
+                <>
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Saving to Database...
+                </>
+              ) : (
+                <>
+                  <Save aria-hidden="true" className="h-3.5 w-3.5" />
+                  {isEditing
+                    ? "Save & Go to Activities"
+                    : "Save & Add Procurement Activity"}
+                </>
+              )}
             </button>
           </div>
         </div>

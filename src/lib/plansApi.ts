@@ -176,6 +176,15 @@ export interface BackendPlan {
     role?: string;
     authRole?: string;
   }[];
+  parentPlanId?: string | null;
+  parentPlan?: {
+    id: string;
+    title?: string;
+    reference?: string;
+    activities?: BackendPlanActivity[];
+  } | null;
+  planType?: "ANNUAL" | "ADDITIONAL" | string | null;
+  additionalPlanReason?: string | null;
 }
 
 export interface CreatePlanInput {
@@ -204,13 +213,35 @@ export interface UpdatePlanInput {
 
 import { apiClient } from "./apiClient";
 
+let _cachedPlans: BackendPlan[] | null = null;
+let _cachedPlansTimestamp = 0;
+
+export function getCachedPlans(): BackendPlan[] | null {
+  return _cachedPlans;
+}
+
+export function setCachedPlans(plans: BackendPlan[]) {
+  _cachedPlans = plans;
+  _cachedPlansTimestamp = Date.now();
+}
+
+export function invalidatePlansCache() {
+  _cachedPlans = null;
+  _cachedPlansTimestamp = 0;
+}
+
 export async function fetchPlans(): Promise<BackendPlan[]> {
   try {
     const res = await apiClient.get<any>("/plans");
-    return Array.isArray(res) ? res : res.data || [];
+    const data = Array.isArray(res) ? res : res.data || [];
+    if (Array.isArray(data) && data.length > 0) {
+      _cachedPlans = data;
+      _cachedPlansTimestamp = Date.now();
+    }
+    return data;
   } catch (err) {
     console.warn("fetchPlans notice:", err);
-    return [];
+    return _cachedPlans || [];
   }
 }
 
@@ -220,6 +251,7 @@ export async function fetchPlanById(id: string): Promise<BackendPlan> {
 }
 
 export async function createPlan(data: CreatePlanInput): Promise<BackendPlan> {
+  invalidatePlansCache();
   const res = await apiClient.post<any>("/plans", data);
   return res.data || res;
 }
@@ -228,6 +260,7 @@ export async function updatePlan(
   id: string,
   data: UpdatePlanInput,
 ): Promise<BackendPlan> {
+  invalidatePlansCache();
   const res = await apiClient.patch<any>(
     `/plans/${encodeURIComponent(id)}`,
     data,
@@ -237,6 +270,7 @@ export async function updatePlan(
 
 export async function deletePlan(id: string): Promise<boolean> {
   try {
+    invalidatePlansCache();
     await apiClient.delete(`/plans/${encodeURIComponent(id)}`);
     return true;
   } catch (err) {
@@ -247,6 +281,7 @@ export async function deletePlan(id: string): Promise<boolean> {
 
 /** Officer submits draft plan to Director */
 export async function submitPlanForReview(id: string): Promise<BackendPlan> {
+  invalidatePlansCache();
   const res = await apiClient.post<any>(
     `/plans/${encodeURIComponent(id)}/submit`,
   );
@@ -289,13 +324,17 @@ export async function submitVote(
   comment?: string,
   voterUserId?: string,
   voterEmail?: string,
-): Promise<void> {
-  await apiClient.post(`/plans/${encodeURIComponent(planId)}/vote`, {
-    decision,
-    comment,
-    voterUserId,
-    voterEmail,
-  });
+): Promise<BackendPlan> {
+  const res = await apiClient.post<any>(
+    `/plans/${encodeURIComponent(planId)}/vote`,
+    {
+      decision,
+      comment,
+      voterUserId,
+      voterEmail,
+    },
+  );
+  return res.data || res;
 }
 
 /** Management records approval or rejection */
@@ -318,11 +357,19 @@ export async function returnPlanForRevision(
   comment: string,
   userId?: string,
 ): Promise<BackendPlan> {
-  const res = await apiClient.post<any>(
-    `/plans/${encodeURIComponent(planId)}/return-to-officer`,
-    { comment, userId },
-  );
-  return res.data || res;
+  try {
+    const res = await apiClient.post<any>(
+      `/plans/${encodeURIComponent(planId)}/return-to-officer`,
+      { comment, reason: comment, userId },
+    );
+    return res.data || res;
+  } catch (err: any) {
+    const res = await apiClient.post<any>(
+      `/plans/${encodeURIComponent(planId)}/reject`,
+      { comment, reason: comment, userId },
+    );
+    return res.data || res;
+  }
 }
 
 /** Fetch comments for a plan and its activities */
@@ -372,13 +419,15 @@ export function mapBackendPlanToFrontend(
     status = "Awaiting Management Approval";
   else if (backendPlan.status === "COMMITTEE_REJECTED")
     status = "Committee Rejected";
-  else if (backendPlan.status === "MANAGEMENT_APPROVED")
-    status = "Management Approved";
+  else if (
+    backendPlan.status === "MANAGEMENT_APPROVED" ||
+    backendPlan.status === "APPROVED"
+  )
+    status = "Finally Approved";
   else if (backendPlan.status === "MANAGEMENT_REJECTED")
     status = "Management Rejected";
   else if (backendPlan.status === "RETURNED_FOR_REVISION")
     status = "Returned for Revision";
-  else if (backendPlan.status === "APPROVED") status = "Finally Approved";
   else if (backendPlan.status === "REJECTED") status = "Returned";
   else if (backendPlan.status === "SUBMITTED") status = "Submitted to Director";
   else if (backendPlan.status === "DRAFT") status = "Draft";
@@ -531,11 +580,25 @@ export function mapBackendPlanToFrontend(
       backendPlan.managementByUser?.name ||
       undefined,
     managementAt: backendPlan.managementAt || undefined,
-    directorRevisionComment: backendPlan.directorRevisionComment || undefined,
+    directorRevisionComment:
+      backendPlan.directorRevisionComment || rejectionReason || undefined,
     comments: backendPlan.comments || [],
     rejectionScope: effectiveRejectionScope,
     rejectedActivityRefs: allRejectedActivityRefs,
     activities: backendPlan.activities || [],
+    parentPlanId: backendPlan.parentPlanId || undefined,
+    parentPlanReference:
+      backendPlan.parentPlan?.reference ||
+      backendPlan.parentPlan?.title ||
+      backendPlan.parentPlanId ||
+      undefined,
+    parentPlanName: backendPlan.parentPlan?.title || undefined,
+    parentActivities: backendPlan.parentPlan?.activities || [],
+    planType:
+      backendPlan.planType === "ADDITIONAL" || Boolean(backendPlan.parentPlanId)
+        ? "ADDITIONAL"
+        : "ANNUAL",
+    additionalPlanReason: backendPlan.additionalPlanReason || undefined,
   };
 }
 

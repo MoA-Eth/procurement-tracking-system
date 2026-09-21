@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   CheckCircle2,
   RotateCcw,
@@ -17,6 +17,8 @@ import {
   Eye,
   ShieldAlert,
   Lock,
+  Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { type ProcurementPlan, parseRejectionDetails } from "../../plansData";
@@ -96,9 +98,32 @@ export function PlanFullScreenReviewView({
   isChairAuthorized = false,
   onChairAuthorize,
 }: PlanFullScreenReviewViewProps) {
+  // Effective activities to display (combines current plan's activities with any already approved parent activities)
+  const effectiveActivities: ProcurementActivity[] = useMemo(() => {
+    const base: ProcurementActivity[] =
+      reviewActivities && reviewActivities.length > 0
+        ? reviewActivities
+        : (plan.activities as any) || [];
+
+    if (plan.parentActivities && plan.parentActivities.length > 0) {
+      const parentActs = plan.parentActivities.map((pa: any) => ({
+        ...pa,
+        isParentApproved: true,
+      }));
+      const existingRefs = new Set(
+        base.map((b) => b.activityRefNo?.toLowerCase().trim()).filter(Boolean),
+      );
+      const filteredParentActs = parentActs.filter(
+        (pa: any) => !existingRefs.has(pa.activityRefNo?.toLowerCase().trim()),
+      );
+      return [...base, ...filteredParentActs];
+    }
+    return base;
+  }, [reviewActivities, plan.activities, plan.parentActivities]);
+
   // Auto-scroll to selected target activity if supplied
   useEffect(() => {
-    if (selectedActivityRef && reviewActivities.length > 0) {
+    if (selectedActivityRef && effectiveActivities.length > 0) {
       setTimeout(() => {
         const el = document.getElementById(
           `review-activity-row-${selectedActivityRef}`,
@@ -108,7 +133,7 @@ export function PlanFullScreenReviewView({
         }
       }, 150);
     }
-  }, [selectedActivityRef, reviewActivities]);
+  }, [selectedActivityRef, effectiveActivities]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200 pb-12">
@@ -221,10 +246,67 @@ export function PlanFullScreenReviewView({
         </div>
       </section>
 
+      {/* Additional Plan Justification Callout Banner */}
+      {(plan.planType === "ADDITIONAL" ||
+        Boolean(plan.additionalPlanReason)) && (
+        <section
+          aria-label="Additional plan justification"
+          className="rounded-2xl border-2 border-indigo-300 bg-gradient-to-r from-indigo-50/90 via-sky-50/50 to-white p-5 shadow-sm space-y-3 animate-in fade-in duration-200"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-800 border border-indigo-300">
+                <Sparkles className="h-5 w-5 text-indigo-700" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-extrabold text-indigo-950">
+                    Supplementary Procurement Plan Submission
+                  </h3>
+                  <span className="rounded-full bg-indigo-200/80 px-2.5 py-0.5 text-[11px] font-extrabold text-indigo-900 border border-indigo-300">
+                    Linked Parent Plan:{" "}
+                    {plan.parentPlanReference ||
+                      plan.parentPlanName ||
+                      "Original Approved Plan"}
+                  </span>
+                </div>
+                <p className="text-xs text-indigo-900/80 mt-1">
+                  This supplementary plan was submitted to add new procurement
+                  activities to an already approved procurement plan.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-indigo-200 bg-white/95 p-4 text-xs shadow-2xs space-y-1.5">
+            <p className="font-bold text-indigo-950 flex items-center gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5 text-indigo-700" />
+              Officer&apos;s Mandatory Justification (Why not submitted with the
+              original plan):
+            </p>
+            <p className="italic leading-relaxed text-slate-800 bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+              &ldquo;
+              {plan.additionalPlanReason ||
+                "Additional activity required for ongoing project requirements."}
+              &rdquo;
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* Rejection Alert Banner */}
       {userRole !== "ENDORSING_COMMITTEE" &&
         (() => {
           const parsed = parseRejectionDetails(plan.rejectionReason);
+          const rejectVotesCount =
+            (plan as any).committeeVotes?.filter(
+              (v: any) => v.decision === "REJECT",
+            ).length || 0;
+          const isMajorityRejected =
+            rejectVotesCount >= 3 ||
+            plan.status === "Returned" ||
+            plan.status === "Committee Rejected";
+
           if (parsed.scope === "SPECIFIC") {
             return (
               <section className="rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50/40 p-4 shadow-2xs space-y-2.5 animate-in fade-in">
@@ -235,20 +317,27 @@ export function PlanFullScreenReviewView({
                     </div>
                     <div>
                       <h3 className="text-xs font-extrabold text-amber-950 uppercase tracking-wider">
-                        Committee Objection: Specific Activities Flagged (
-                        {parsed.rejectedActivityRefs.length} item
-                        {parsed.rejectedActivityRefs.length > 1 ? "s" : ""})
+                        {isMajorityRejected
+                          ? `Plan Rejected: Specific Activities Flagged (${parsed.rejectedActivityRefs.length} item${parsed.rejectedActivityRefs.length > 1 ? "s" : ""})`
+                          : `Committee Objection Noted: Specific Activities Flagged (${parsed.rejectedActivityRefs.length} item${parsed.rejectedActivityRefs.length > 1 ? "s" : ""})`}
                       </h3>
                       <p className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
-                        The Endorsement Committee returned this plan due to
-                        objections on specific activities. Per regulations, the
-                        entire plan package is on hold until these specific
-                        activities are revised.
+                        {isMajorityRejected
+                          ? "The Endorsement Committee has officially rejected this plan by majority vote due to objections on specific activities. The plan is now returned for revision."
+                          : "A committee member has registered objections on specific activities. Per regulations, at least 3 rejection votes are required to completely reject the plan, but comments and flagged activities are immediately visible below for directorate review."}
                       </p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-200/70 text-amber-900 border border-amber-300 shrink-0">
-                    Specific Activity Rejection
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 ${
+                      isMajorityRejected
+                        ? "bg-rose-100 text-rose-800 border-rose-300"
+                        : "bg-amber-200/70 text-amber-900 border-amber-300"
+                    }`}
+                  >
+                    {isMajorityRejected
+                      ? "Majority Rejected (3+ Votes)"
+                      : "Objection in Progress"}
                   </span>
                 </div>
 
@@ -309,17 +398,21 @@ export function PlanFullScreenReviewView({
                     </div>
                     <div>
                       <h3 className="text-xs font-extrabold text-rose-950 uppercase tracking-wider">
-                        Plan Returned: Common / Entire Plan Package Rejection
+                        {isMajorityRejected
+                          ? "Plan Rejected: Common / Entire Plan Package Rejection"
+                          : "Committee Objection: Entire Plan Package (Deliberation in Progress)"}
                       </h3>
                       <p className="text-xs text-rose-900/90 mt-0.5">
-                        The Endorsement Committee returned the entire
-                        procurement plan package for general revisions across
-                        all activities.
+                        {isMajorityRejected
+                          ? "The Endorsement Committee returned the entire procurement plan package for general revisions across all activities."
+                          : "A committee member has registered objections on the plan package. At least 3 rejection votes are required to completely reject the plan, but remarks are immediately visible below."}
                       </p>
                     </div>
                   </div>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
-                    General Rejection (All Activities)
+                    {isMajorityRejected
+                      ? "Majority Rejected (3+ Votes)"
+                      : "Objection in Progress"}
                   </span>
                 </div>
 
@@ -380,7 +473,7 @@ export function PlanFullScreenReviewView({
                   Package Activities Directory
                 </h4>
                 <span className="text-xs font-semibold text-slate-500">
-                  ({reviewActivities.length} Items)
+                  ({effectiveActivities.length} Items)
                 </span>
 
                 {showSavedFeedback && (
@@ -429,8 +522,8 @@ export function PlanFullScreenReviewView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/80 bg-white">
-                {reviewActivities.length > 0 ? (
-                  reviewActivities.map((act, idx) => {
+                {effectiveActivities.length > 0 ? (
+                  effectiveActivities.map((act, idx) => {
                     const currentTargetDate =
                       act.roadmap.find(
                         (s: ActivityStage) =>
@@ -463,7 +556,7 @@ export function PlanFullScreenReviewView({
 
                         {/* Ref No & Method */}
                         <td className="py-3.5 px-3.5 align-top space-y-1.5 pt-3.5">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-mono font-extrabold text-[#0A3C2F] text-[11px] whitespace-nowrap block group-hover:text-emerald-800">
                               {act.activityRefNo}
                             </span>
@@ -472,6 +565,15 @@ export function PlanFullScreenReviewView({
                                 Targeted Activity
                               </span>
                             )}
+                            {(act as any).isParentApproved ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                ✓ Already Approved
+                              </span>
+                            ) : plan.planType === "ADDITIONAL" ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                ★ New Activity
+                              </span>
+                            ) : null}
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                             <span className="font-bold text-slate-700 whitespace-nowrap">

@@ -160,10 +160,7 @@ export const DICTIONARY: Translations = {
     en: "User Administration & Audit Logs",
     am: "የተጠቃሚዎች አስተዳደር እና ኦዲት",
   },
-  quickDemoUsers: {
-    en: "Quick Demo Sign-In Credentials",
-    am: "ፈጣን የማሳያ መግቢያ መለያዎች",
-  },
+
 };
 
 interface LanguageContextType {

@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  FileEdit,
   Loader2,
   Plus,
   Search,
@@ -23,6 +24,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { AddContractAmendmentView } from "./AddContractAmendmentView";
 import { AddContractPaymentView } from "./AddContractPaymentView";
 import { RegisterContractView } from "./RegisterContractView";
 import { ContractExcelImportModal } from "./ContractExcelImportModal";
@@ -44,6 +46,7 @@ import {
 } from "../data/officerPayments";
 import {
   createContract,
+  createContractAmendment,
   recordContractPayment,
   fetchContracts,
   mapBackendContractToOfficerContract,
@@ -73,7 +76,7 @@ export function OfficerContractsView({
   initialActivityReference?: string;
   initialPlanReference?: string;
   initialProjectCode?: string;
-  mode?: "add-payment" | "register";
+  mode?: "add-payment" | "register" | "add-amendment";
   selectedContractNumber?: string;
 }) {
   const router = useRouter();
@@ -249,6 +252,58 @@ export function OfficerContractsView({
     router.push("/workspace/contracts");
   }
 
+  async function saveAmendment(amendmentData: {
+    variationAmount: number;
+    reason: string;
+    effectiveDate?: string;
+    approvalRef?: string;
+    notes?: string;
+    newTotalAmount: number;
+    newRemainingBalance: number;
+  }) {
+    if (!selectedContract) return;
+
+    const updatedContract: OfficerContract = {
+      ...selectedContract,
+      currentAmount: amendmentData.newTotalAmount,
+      remainingBalance: amendmentData.newRemainingBalance,
+      details: selectedContract.details
+        ? {
+            ...selectedContract.details,
+            amountWithVat: amendmentData.newTotalAmount,
+            amendments: [
+              ...(selectedContract.details.amendments || []),
+              {
+                id: (selectedContract.details.amendments?.length || 0) + 1,
+                amount: amendmentData.variationAmount,
+              },
+            ],
+          }
+        : undefined,
+    };
+
+    const nextContracts = addSavedContract(savedContracts, updatedContract);
+    setSavedContracts(nextContracts);
+    window.localStorage.setItem(
+      OFFICER_CONTRACTS_STORAGE_KEY,
+      JSON.stringify(nextContracts),
+    );
+
+    try {
+      await createContractAmendment(selectedContract.id, {
+        variationAmount: amendmentData.variationAmount,
+        reason: amendmentData.reason,
+        effectiveDate: amendmentData.effectiveDate,
+        approvalRef: amendmentData.approvalRef,
+        notes: amendmentData.notes,
+      });
+    } catch (err) {
+      console.warn("Backend createContractAmendment note:", err);
+    }
+
+    router.push("/workspace/contracts");
+  }
+
   const allVisibleSelected =
     filteredContracts.length > 0 &&
     filteredContracts.every((contract) => selectedIds.has(contract.id));
@@ -347,6 +402,16 @@ export function OfficerContractsView({
         contract={selectedContract}
         fromTracker={fromTracker}
         onSave={savePayment}
+      />
+    );
+  }
+
+  if (mode === "add-amendment" && selectedContract) {
+    return (
+      <AddContractAmendmentView
+        contract={selectedContract}
+        fromTracker={fromTracker}
+        onSave={saveAmendment}
       />
     );
   }
@@ -606,7 +671,7 @@ export function OfficerContractsView({
                   Status
                 </th>
                 <th
-                  className="w-32 min-w-[128px] px-3 py-3 text-center"
+                  className="w-56 min-w-[200px] px-3 py-3 text-center"
                   scope="col"
                 >
                   Actions
@@ -678,17 +743,30 @@ export function OfficerContractsView({
                         />
                       </td>
                       <td className="px-3 py-2.5 text-center align-top">
-                        <Link
-                          aria-label={`Add payment to contract ${contract.contractNumber}`}
-                          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-[#a9cbbd] bg-white px-3 text-[11px] font-bold whitespace-nowrap text-[#07523f] shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
-                          href={`/workspace/contracts?mode=add-payment&contract=${encodeURIComponent(contract.contractNumber)}`}
-                        >
-                          <Banknote
-                            aria-hidden="true"
-                            className="h-3.5 w-3.5"
-                          />
-                          Add Payment
-                        </Link>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Link
+                            aria-label={`Amend contract ${contract.contractNumber}`}
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 text-[11px] font-bold whitespace-nowrap text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                            href={`/workspace/contracts?mode=add-amendment&contract=${encodeURIComponent(contract.contractNumber)}`}
+                          >
+                            <FileEdit
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5 text-slate-500"
+                            />
+                            Amend
+                          </Link>
+                          <Link
+                            aria-label={`Add payment to contract ${contract.contractNumber}`}
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-[#a9cbbd] bg-white px-2.5 text-[11px] font-bold whitespace-nowrap text-[#07523f] shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                            href={`/workspace/contracts?mode=add-payment&contract=${encodeURIComponent(contract.contractNumber)}`}
+                          >
+                            <Banknote
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5"
+                            />
+                            Add Payment
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );

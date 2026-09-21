@@ -113,13 +113,35 @@ export interface UpdateProjectInput {
   projectEndDate?: string;
 }
 
+let _cachedProjects: BackendProject[] | null = null;
+let _cachedProjectsTimestamp = 0;
+
+export function getCachedProjects(): BackendProject[] | null {
+  return _cachedProjects;
+}
+
+export function setCachedProjects(projects: BackendProject[]) {
+  _cachedProjects = projects;
+  _cachedProjectsTimestamp = Date.now();
+}
+
+export function invalidateProjectsCache() {
+  _cachedProjects = null;
+  _cachedProjectsTimestamp = 0;
+}
+
 export async function fetchProjects(): Promise<BackendProject[]> {
   try {
     const res = await apiClient.get<any>("/projects");
-    return Array.isArray(res) ? res : res.data || [];
+    const data = Array.isArray(res) ? res : res.data || [];
+    if (Array.isArray(data) && data.length > 0) {
+      _cachedProjects = data;
+      _cachedProjectsTimestamp = Date.now();
+    }
+    return data;
   } catch (err) {
     console.warn("fetchProjects notice:", err);
-    return [];
+    return _cachedProjects || [];
   }
 }
 
@@ -131,6 +153,7 @@ export async function fetchProjectById(id: string): Promise<BackendProject> {
 export async function createProject(
   data: CreateProjectInput,
 ): Promise<BackendProject> {
+  invalidateProjectsCache();
   const res = await apiClient.post<any>("/projects", data);
   return res.data || res;
 }
@@ -139,6 +162,7 @@ export async function updateProject(
   id: string,
   data: UpdateProjectInput,
 ): Promise<BackendProject> {
+  invalidateProjectsCache();
   const res = await apiClient.patch<any>(
     `/projects/${encodeURIComponent(id)}`,
     data,

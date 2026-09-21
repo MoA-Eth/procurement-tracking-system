@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { parseRejectionDetails } from "./plansData";
+import { renderToStaticMarkup } from "react-dom/server";
+import { parseRejectionDetails, isAdditionalPlan } from "./plansData";
 
 describe("parseRejectionDetails", () => {
   it("defaults to ALL when rejectionReason is undefined or empty", () => {
@@ -328,5 +329,88 @@ describe("Management Role Authorization Card Visibility", () => {
     );
     expect(markup).toContain("Authorize &amp; Approve Plan");
     expect(markup).toContain("Reject Plan");
+  });
+
+  it("identifies additional plans via isAdditionalPlan helper", () => {
+    expect(isAdditionalPlan({ planType: "ADDITIONAL" } as any)).toBe(true);
+    expect(isAdditionalPlan({ parentPlanId: "plan-parent-123" } as any)).toBe(
+      true,
+    );
+    expect(isAdditionalPlan({ planType: "ANNUAL" } as any)).toBe(false);
+    expect(isAdditionalPlan(null as any)).toBe(false);
+    expect(isAdditionalPlan(undefined as any)).toBe(false);
+  });
+
+  it("renders Additional Plan Justification Callout Banner and badges in DirectorActivitiesListView", async () => {
+    const { DirectorActivitiesListView } =
+      await import("../activities/components/DirectorActivitiesListView");
+    const React = await import("react");
+
+    const additionalPlan: any = {
+      id: "plan-additional-1",
+      planName: "BREFONS Supplementary Tractors Plan",
+      budgetYear: "2018 EFY",
+      category: "Goods",
+      status: "Submitted to Director",
+      projectCode: "BREFONS",
+      organizationRegion: "Federal",
+      planType: "ADDITIONAL",
+      parentPlanId: "plan-original-1",
+      parentPlanReference: "MoA/BREFONS/2018/PLAN-001",
+      additionalPlanReason:
+        "Emergency drought intervention funding secured after annual plan approval.",
+      activities: [
+        {
+          id: "act-new-1",
+          activityRefNo: "BREFONS-G-NEW-01",
+          description: "Procurement of 10 Additional Water Delivery Trucks",
+          method: "RFB",
+          marketApproach: "National",
+          reviewType: "Prior",
+          currency: "ETB",
+          estimatedAmount: 15000000,
+          stages: [],
+          roadmap: [],
+        },
+      ],
+      parentActivities: [
+        {
+          id: "act-orig-1",
+          activityRefNo: "BREFONS-G-01",
+          description: "Procurement of Agricultural Tractors",
+          method: "RFB",
+          marketApproach: "National",
+          reviewType: "Prior",
+          currency: "ETB",
+          estimatedAmount: 25000000,
+          stages: [],
+          roadmap: [],
+        },
+      ],
+    };
+
+    const markup = renderToStaticMarkup(
+      React.createElement(DirectorActivitiesListView, {
+        plan: additionalPlan,
+        parentSection: "plan-for-review",
+        userRole: "DIRECTOR",
+        onBackClick: () => {},
+      }),
+    );
+
+    // 1. Banner with officer's justification
+    expect(markup).toContain("Additional Plan Package");
+    expect(markup).toContain("Officer Justification for Late Addition");
+    expect(markup).toContain("Supplement to Approved Plan");
+    expect(markup).toContain("MoA/BREFONS/2018/PLAN-001");
+    expect(markup).toContain(
+      "Emergency drought intervention funding secured after annual plan approval.",
+    );
+
+    // 2. Activity badges: New Activity vs Already Approved
+    expect(markup).toContain("BREFONS-G-NEW-01");
+    expect(markup).toContain("★ New Activity");
+    expect(markup).toContain("BREFONS-G-01");
+    expect(markup).toContain("✓ Already Approved");
   });
 });

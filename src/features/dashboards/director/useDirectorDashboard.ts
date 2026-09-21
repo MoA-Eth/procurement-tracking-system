@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { fetchProjects, type BackendProject } from "@/lib/projectsApi";
-import { fetchPlans, type BackendPlan } from "@/lib/plansApi";
+import { fetchProjects, getCachedProjects, type BackendProject } from "@/lib/projectsApi";
+import { fetchPlans, getCachedPlans, type BackendPlan } from "@/lib/plansApi";
 import { fetchContracts, type BackendContract } from "@/lib/contractsApi";
 import {
   filterPlans,
@@ -30,19 +30,23 @@ interface DashboardCache {
   timestamp: number;
 }
 let _dashboardCache: DashboardCache | null = null;
-const DASHBOARD_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const DASHBOARD_CACHE_TTL_MS = 10 * 1000; // 10 seconds
 
 export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
-  const [projects, setProjects] = useState<BackendProject[]>([]);
-  const [plans, setPlans] = useState<BackendPlan[]>([]);
-  const [contracts, setContracts] = useState<BackendContract[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initialProjects = _dashboardCache?.projects || getCachedProjects() || [];
+  const initialPlans = _dashboardCache?.plans || getCachedPlans() || [];
 
-  // Dynamic default Ethiopian Fiscal Year based on current date
-  const defaultFiscalYear = useMemo(
-    () => `${getCurrentEthiopianYear()} EFY`,
-    [],
+  const [projects, setProjects] = useState<BackendProject[]>(initialProjects);
+  const [plans, setPlans] = useState<BackendPlan[]>(initialPlans);
+  const [contracts, setContracts] = useState<BackendContract[]>(
+    () => _dashboardCache?.contracts || [],
   );
+  const [loading, setLoading] = useState(
+    () => initialProjects.length === 0 && initialPlans.length === 0,
+  );
+
+  // Default Ethiopian Fiscal Year is All Fiscal Years
+  const defaultFiscalYear = "All Fiscal Years";
 
   // Filter States matching mockup
   const [selectedFiscalYear, setSelectedFiscalYear] =

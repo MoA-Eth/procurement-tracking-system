@@ -200,11 +200,19 @@ export function filterAssignedProjects(
   projects: BackendProject[],
   user: AuthUser,
 ): BackendProject[] {
-  return projects.filter((p) => isProjectAssignedToOfficer(p, user));
+  const filtered = projects.filter((p) => isProjectAssignedToOfficer(p, user));
+  const seen = new Set<string>();
+  return filtered.filter((p) => {
+    const key = (p.code || p.id || "").toLowerCase().trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export function mapOfficerProjectsList(assignedProjects: BackendProject[]) {
   return assignedProjects.map((p) => ({
+    id: p.id,
     code: p.code,
     name: p.name,
     fundingSource: p.fundingSource?.label || p.fundingSource?.code || "—",
