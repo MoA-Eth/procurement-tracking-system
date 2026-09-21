@@ -1595,7 +1595,7 @@ export function OfficerProjectsView({
     ) {
       return (
         <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-2xs">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#176c55] border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#0A3C2F] border-t-transparent" />
           <p className="text-xs font-semibold text-slate-700">
             Loading activity details...
           </p>
@@ -1672,7 +1672,7 @@ export function OfficerProjectsView({
             <ol className="flex items-center gap-2">
               <li>
                 <Link
-                  className="hover:text-[#176c55] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                  className="hover:text-[#0A3C2F] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                   href="/dashboard/officer"
                 >
                   Home
@@ -1683,7 +1683,7 @@ export function OfficerProjectsView({
               </li>
               <li>
                 <Link
-                  className="hover:text-[#176c55] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                  className="hover:text-[#0A3C2F] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                   href="/workspace/projects"
                 >
                   Projects
@@ -1699,11 +1699,11 @@ export function OfficerProjectsView({
           </nav>
         </header>
 
-        <section className="rounded-2xl border border-amber-200 bg-white p-10 text-center shadow-xs">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+        <section className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-10 text-center shadow-xs">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
             <ShieldAlert aria-hidden="true" className="h-6 w-6" />
           </div>
-          <h1 className="mt-4 text-xl font-bold text-slate-900">
+          <h1 className="mt-4 text-xl font-semibold text-slate-900">
             Project Not Assigned
           </h1>
           <p className="mx-auto mt-2 max-w-lg text-sm text-slate-600">
@@ -1717,7 +1717,7 @@ export function OfficerProjectsView({
           </p>
           <div className="mt-6 flex justify-center">
             <Link
-              className="inline-flex items-center gap-2 rounded-lg bg-[#176c55] px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#125845] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#006837] px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006837]"
               href="/workspace/projects"
             >
               View My Assigned Projects
@@ -1779,7 +1779,7 @@ function OfficerProjectsList({
           <ol className="flex items-center gap-2">
             <li>
               <Link
-                className="hover:text-[#176c55] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                className="hover:text-[#0A3C2F] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                 href="/dashboard/officer"
               >
                 Home
@@ -1796,7 +1796,7 @@ function OfficerProjectsList({
 
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-[#10243f]">
+            <h1 className="text-3xl font-semibold tracking-tight text-[#10243f]">
               My Projects
             </h1>
             <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
@@ -1809,10 +1809,10 @@ function OfficerProjectsList({
 
       {projects.length === 0 ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e6f4ef] text-[#0A3C2F]">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-[#0A3C2F]">
             <FolderLock aria-hidden="true" className="h-7 w-7" />
           </div>
-          <h2 className="mt-4 text-xl font-bold text-slate-900">
+          <h2 className="mt-4 text-xl font-semibold text-slate-900">
             No Projects Assigned
           </h2>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-slate-600">
@@ -1822,7 +1822,7 @@ function OfficerProjectsList({
           </p>
           <div className="mt-6 flex justify-center">
             <Link
-              className="inline-flex items-center gap-2 rounded-lg bg-[#176c55] px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#125845] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#006837] px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
               href="/dashboard/officer"
             >
               Return to Dashboard
@@ -1839,7 +1839,7 @@ function OfficerProjectsList({
               <label className="block md:min-w-0 md:max-w-100 md:flex-1">
                 <span className="sr-only">Search projects</span>
                 <span
-                  className="flex h-11 cursor-text items-center gap-3 rounded-lg border border-slate-300 bg-[#fbfcfd] px-3.5 focus-within:border-[#348267] focus-within:bg-white focus-within:ring-3 focus-within:ring-[#348267]/15"
+                  className="flex h-11 cursor-text items-center gap-3 rounded-lg border border-slate-300 bg-[#fbfcfd] px-3.5 focus-within:border-[#0A3C2F] focus-within:bg-white focus-within:ring-3 focus-within:ring-[#0A3C2F]/15"
                   onClick={() => searchInputRef.current?.focus()}
                 >
                   <Search
@@ -1873,7 +1873,7 @@ function OfficerProjectsList({
               <label className="relative block md:w-52 md:shrink-0">
                 <span className="sr-only">Filter by funding source</span>
                 <select
-                  className="h-11 w-full appearance-none rounded-lg border border-slate-300 bg-[#fbfcfd] px-3 pr-9 text-sm font-medium text-slate-700 outline-none focus:border-[#348267] focus:bg-white focus:ring-3 focus:ring-[#348267]/15"
+                  className="h-11 w-full appearance-none rounded-lg border border-slate-300 bg-[#fbfcfd] px-3 pr-9 text-sm font-medium text-slate-700 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-3 focus:ring-[#0A3C2F]/15"
                   onChange={(event) => setFundingSource(event.target.value)}
                   style={{
                     appearance: "none",
@@ -1904,7 +1904,7 @@ function OfficerProjectsList({
               <label className="relative block md:w-40 md:shrink-0">
                 <span className="sr-only">Filter by project status</span>
                 <select
-                  className="h-11 w-full appearance-none rounded-lg border border-slate-300 bg-[#fbfcfd] px-3 pr-9 text-sm font-medium text-slate-700 outline-none focus:border-[#348267] focus:bg-white focus:ring-3 focus:ring-[#348267]/15"
+                  className="h-11 w-full appearance-none rounded-lg border border-slate-300 bg-[#fbfcfd] px-3 pr-9 text-sm font-medium text-slate-700 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-3 focus:ring-[#0A3C2F]/15"
                   onChange={(event) =>
                     setStatus(event.target.value as "all" | ProjectStatus)
                   }
@@ -1942,13 +1942,13 @@ function OfficerProjectsList({
             </h2>
             <div
               aria-label="Assigned projects table"
-              className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#176c55]"
+              className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0A3C2F]"
               role="region"
               tabIndex={0}
             >
               <table className="w-full min-w-[880px] border-collapse text-left">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th
                       className="w-[24%] max-w-[280px] px-4 py-3.5"
                       scope="col"
@@ -1981,11 +1981,11 @@ function OfficerProjectsList({
                 <tbody className="divide-y divide-slate-200">
                   {filteredProjects.length > 0 ? (
                     filteredProjects.map((project) => (
-                      <tr key={project.code} className="hover:bg-[#f8fbf9]">
+                      <tr key={project.code} className="hover:bg-slate-50">
                         <td className="max-w-[280px] px-4 py-3.5 align-middle">
                           <Link
                             title={project.name}
-                            className="line-clamp-2 break-words font-semibold leading-snug text-slate-900 underline-offset-4 hover:text-[#176c55] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                            className="line-clamp-2 break-words font-semibold leading-snug text-slate-900 underline-offset-4 hover:text-[#0A3C2F] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                             href={`/workspace/projects?project=${encodeURIComponent(
                               project.code,
                             )}`}
@@ -2013,7 +2013,7 @@ function OfficerProjectsList({
                             {project.assignmentStart?.ethiopian}
                           </p>
                         </td>
-                        <td className="px-4 py-4 text-center text-sm font-bold text-slate-800">
+                        <td className="px-4 py-4 text-center text-sm font-semibold text-slate-800">
                           {project.activePlans}
                         </td>
                         <td className="px-4 py-4">
@@ -2025,7 +2025,7 @@ function OfficerProjectsList({
                         <td className="px-4 py-4 text-right">
                           <Link
                             aria-label={`Open ${project.name}`}
-                            className="text-sm font-semibold text-[#1261a8] underline-offset-4 hover:text-[#07523f] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#07523f]"
+                            className="text-sm font-semibold text-[#1261a8] underline-offset-4 hover:text-[#0A3C2F] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                             href={`/workspace/projects?project=${encodeURIComponent(
                               project.code,
                             )}`}

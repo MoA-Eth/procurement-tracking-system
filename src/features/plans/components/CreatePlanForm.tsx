@@ -200,7 +200,7 @@ export function CreatePlanForm({
           {project.code} Plans
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-bold text-[#0A3C2F]">
+        <span className="font-semibold text-[#0A3C2F]">
           {isManagement
             ? "Executive Plan Overview"
             : isDirector
@@ -216,10 +216,10 @@ export function CreatePlanForm({
         <div className="flex items-start gap-3">
           <Info className="h-5 w-5 text-[#0A3C2F] shrink-0 mt-0.5" />
           <div className="flex-1">
-            <span className="text-[11px] font-extrabold text-[#0A3C2F] uppercase tracking-wider block mb-0.5">
+            <span className="text-[11px] font-semibold text-[#0A3C2F] uppercase tracking-wider block mb-0.5">
               Inherited Project Context (Locked)
             </span>
-            <h2 className="text-base sm:text-lg font-extrabold text-slate-950 tracking-tight">
+            <h2 className="text-base sm:text-lg font-semibold text-slate-950 tracking-tight">
               {project.code} — {project.name}
             </h2>
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600">
@@ -255,16 +255,16 @@ export function CreatePlanForm({
         {/* RETURNED PLAN REVISION ALERT BANNER */}
         {!isReviewer &&
           (status === "Returned" || initialData?.status === "Returned") && (
-            <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 space-y-2 animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 text-amber-900 font-extrabold text-sm">
-                <RotateCcw className="h-4.5 w-4.5 text-amber-700" />
+            <div className="notice-card-clean space-y-2 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 text-slate-900 font-semibold text-sm">
+                <RotateCcw className="h-4 w-4 text-slate-600" />
                 <span>Plan Returned for Revision</span>
               </div>
-              <p className="text-xs text-amber-800 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed font-normal">
                 This procurement plan was returned by the Director or Management
                 Committee for revision. Make your updates below, add your
                 revision comments, and click{" "}
-                <strong className="text-amber-950">
+                <strong className="text-slate-900 font-semibold">
                   Resend to Director for Approval
                 </strong>
                 .
@@ -276,7 +276,7 @@ export function CreatePlanForm({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-[#0A3C2F]" />
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-semibold text-slate-900">
                 Plan Identity & Scope
               </h3>
             </div>
@@ -479,7 +479,7 @@ export function CreatePlanForm({
                 disabled={readOnly || isReviewer || isDraftPlanForDirector}
                 className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors ${
                   readOnly || isReviewer
-                    ? "bg-slate-100 text-slate-800 font-bold border-slate-200 cursor-not-allowed"
+                    ? "bg-slate-100 text-slate-800 font-semibold border-slate-200 cursor-not-allowed"
                     : "bg-white text-slate-900 border-slate-300 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
                 }`}
               >
@@ -517,7 +517,7 @@ export function CreatePlanForm({
           {!isReviewer &&
             (status === "Returned" || initialData?.status === "Returned") && (
               <div className="space-y-1.5 pt-1">
-                <label className="block text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                <label className="block text-xs sm:text-sm font-semibold text-slate-800 flex items-center gap-1.5">
                   <MessageSquare className="h-4 w-4 text-[#0A3C2F]" />
                   <span>
                     Officer Revision Comment / Justification for Director{" "}
@@ -529,7 +529,7 @@ export function CreatePlanForm({
                   value={revisionComment}
                   onChange={(e) => setRevisionComment(e.target.value)}
                   placeholder="Explain the revisions made to address feedback before resending to the Director..."
-                  className="w-full rounded-xl border border-amber-300 px-4 py-2.5 text-sm text-slate-900 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] outline-none transition-colors bg-white"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] outline-none transition-colors bg-white"
                 />
               </div>
             )}
@@ -548,7 +548,7 @@ export function CreatePlanForm({
               <div className="flex items-center gap-2.5">
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs sm:text-sm font-bold text-slate-800 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-800 transition-colors cursor-pointer"
                 >
                   <Save className="h-4 w-4" />
                   <span>
@@ -569,7 +569,7 @@ export function CreatePlanForm({
                       onClick={() =>
                         handleSaveWithStatus("Submitted to Director")
                       }
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0A3C2F] hover:bg-[#072b22] text-xs sm:text-sm font-bold text-white shadow-xs transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0A3C2F] hover:bg-[#072F25] text-xs sm:text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer"
                     >
                       <Send className="h-4 w-4" />
                       <span>

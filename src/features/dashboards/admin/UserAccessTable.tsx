@@ -105,14 +105,14 @@ export function UserAccessTable({
       <div className="bg-[#ecfdf5]/70 p-4 sm:px-6 sm:py-4.5 border-b border-[#a7f3d0]/60 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="min-w-0">
-            <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-tight truncate">
+            <h3 className="font-semibold text-slate-900 text-sm sm:text-base leading-tight truncate">
               User Access & Accounts Overview
             </h3>
           </div>
         </div>
         <Link
           href="/admin/users"
-          className="text-[#047857] hover:text-[#065f46] font-bold text-xs flex items-center gap-1 shrink-0 transition-colors"
+          className="text-[#006837] hover:text-[#00552c] font-semibold text-xs flex items-center gap-1 shrink-0 transition-colors"
         >
           <span>Full Directory</span>
           <ChevronRight className="h-4 w-4" />
@@ -132,20 +132,20 @@ export function UserAccessTable({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[650px]">
               <thead>
-                <tr className="bg-[#f8fafc] text-[#334155] text-xs font-bold border-b border-slate-200/80">
-                  <th className="py-3.5 px-4 font-bold tracking-wide">
+                <tr className="bg-[#0A3C2F] text-white text-xs font-semibold uppercase tracking-wider">
+                  <th className="py-3.5 px-4 font-semibold tracking-wide">
                     User Name & Details
                   </th>
-                  <th className="py-3.5 px-4 font-bold tracking-wide">
+                  <th className="py-3.5 px-4 font-semibold tracking-wide">
                     Email Address
                   </th>
-                  <th className="py-3.5 px-4 font-bold tracking-wide">
+                  <th className="py-3.5 px-4 font-semibold tracking-wide">
                     Assigned Role
                   </th>
-                  <th className="py-3.5 px-4 font-bold tracking-wide">
+                  <th className="py-3.5 px-4 font-semibold tracking-wide">
                     Account Status
                   </th>
-                  <th className="py-3.5 px-4 font-bold text-center tracking-wide">
+                  <th className="py-3.5 px-4 font-semibold text-center tracking-wide">
                     Actions
                   </th>
                 </tr>
@@ -168,10 +168,10 @@ export function UserAccessTable({
                       }`}
                     >
                       <td className="py-3.5 px-4 align-middle">
-                        <div className="font-bold text-[#0f172a] text-xs flex items-center gap-1.5">
+                        <div className="font-semibold text-[#0f172a] text-xs flex items-center gap-1.5">
                           <span>{user.displayName || user.name}</span>
                           {isSelf && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">
                               You
                             </span>
                           )}
@@ -187,18 +187,18 @@ export function UserAccessTable({
                         {user.email}
                       </td>
 
-                      <td className="py-3.5 px-4 align-middle font-bold text-[#0f172a]">
+                      <td className="py-3.5 px-4 align-middle font-semibold text-[#0f172a]">
                         {displayRole(user)}
                       </td>
 
-                      <td className="py-3.5 px-4 align-middle">
+                      <td className="py-3.5 px-4 align-middle whitespace-nowrap">
                         <span
-                          className={`text-xs font-bold ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium border whitespace-nowrap ${
                             isPending
-                              ? "text-[#b06000]"
+                              ? "bg-blue-50 text-blue-800 border-blue-200"
                               : isActive
-                                ? "text-[#137333]"
-                                : "text-[#c5221f]"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                : "bg-rose-50 text-rose-800 border-rose-200"
                           }`}
                         >
                           {status}
@@ -211,12 +211,12 @@ export function UserAccessTable({
                             type="button"
                             disabled={isWorking}
                             onClick={() => handleResend(user)}
-                            className="px-3.5 py-1 text-xs font-bold rounded-full border border-[#047857] bg-[#ecfdf5] text-[#044e3a] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                            className="px-3 py-1 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-[#0A3C2F] hover:border-slate-300 transition-all cursor-pointer shadow-2xs disabled:opacity-50 inline-flex items-center gap-1.5"
                           >
                             {isWorking ? (
                               <Loader2 className="w-3 h-3 animate-spin inline" />
                             ) : (
-                              <RefreshCw className="w-3 h-3 inline" />
+                              <RefreshCw className="w-3 h-3 text-slate-500 inline" />
                             )}
                             <span>
                               {isWorking ? "Resending…" : "Resend Invitation"}
@@ -227,7 +227,7 @@ export function UserAccessTable({
                             type="button"
                             disabled={true}
                             title="You cannot deactivate your own administrator account."
-                            className="px-3.5 py-1 text-xs font-bold rounded-full border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 shadow-none inline-flex items-center gap-1"
+                            className="px-3 py-1 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed shadow-none inline-flex items-center gap-1"
                           >
                             Deactivate
                           </button>
@@ -236,10 +236,10 @@ export function UserAccessTable({
                             type="button"
                             disabled={isWorking}
                             onClick={() => onToggleStatus?.(user)}
-                            className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
+                            className={`px-3 py-1 text-xs font-medium rounded-lg border transition-all cursor-pointer shadow-2xs disabled:opacity-50 ${
                               isActive
-                                ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
-                                : "border-blue-200/90 bg-blue-50/90 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800"
+                                ? "border-slate-200 bg-white text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
                             }`}
                           >
                             {isWorking ? (

@@ -293,7 +293,7 @@ export function SettingsManagementView({
       {/* Toast */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#0A3C2F] text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 text-xs font-semibold border border-emerald-400/30">
-          <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
+          <CheckCircle2 className="h-4 w-4 text-emerald-300" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -305,7 +305,7 @@ export function SettingsManagementView({
             <Settings className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
               Settings & Lookup Configurations
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -320,7 +320,7 @@ export function SettingsManagementView({
             setShowAddForm((prev) => !prev);
             setFormError(null);
           }}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#006837] hover:bg-[#004f29] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           <span>
@@ -341,20 +341,20 @@ export function SettingsManagementView({
             <button
               key={tab.type}
               onClick={() => setActiveTab(tab.type)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                 isActive
                   ? "bg-[#0A3C2F] text-white shadow-sm"
                   : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80"
               }`}
             >
               <Icon
-                className={`h-4 w-4 ${isActive ? "text-[#A3E635]" : "text-slate-400"}`}
+                className={`h-4 w-4 ${isActive ? "text-emerald-300" : "text-slate-400"}`}
               />
               <span>{tab.label}</span>
               <span
-                className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
                   isActive
-                    ? "bg-[#145241] text-[#A3E635]"
+                    ? "bg-[#072F25] text-emerald-300"
                     : "bg-slate-100 text-slate-500"
                 }`}
               >
@@ -372,7 +372,7 @@ export function SettingsManagementView({
           className="bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 p-5 shadow-sm space-y-4 animate-in fade-in duration-150"
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black text-[#0A3C2F] uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
               Add New {currentTabConfig.label.slice(0, -1)}
             </h3>
             <span className="text-[11px] text-slate-400 font-medium">
@@ -389,7 +389,7 @@ export function SettingsManagementView({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-bold text-slate-800 block mb-1">
+              <label className="text-xs font-semibold text-slate-800 block mb-1">
                 {activeTab === "PROJECT_CODE"
                   ? "Project Short Code / Acronym *"
                   : "Code *"}
@@ -403,12 +403,12 @@ export function SettingsManagementView({
                     ? "e.g. DRIVE, CALM, BREFONS"
                     : "e.g. SEC_AGRI"
                 }
-                className="w-full rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-900 uppercase placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                className="w-full rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-xs font-bold text-slate-800 block mb-1">
+              <label className="text-xs font-semibold text-slate-800 block mb-1">
                 {activeTab === "PROJECT_CODE"
                   ? "Full Official Project Title *"
                   : "Display Label / Description *"}
@@ -438,7 +438,7 @@ export function SettingsManagementView({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#004f29] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+              className="px-4 py-1.5 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
             >
               {isSubmitting ? "Saving..." : "Save Value"}
             </button>
@@ -451,7 +451,7 @@ export function SettingsManagementView({
         {/* Table Toolbar */}
         <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+            <h2 className="text-xs font-semibold text-slate-800 uppercase tracking-wider">
               {currentTabConfig.label} ({filteredLookups.length})
             </h2>
             <p className="text-[11px] text-slate-400 mt-0.5">
@@ -475,7 +475,7 @@ export function SettingsManagementView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[650px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-4 w-12 text-center">#</th>
                 <th className="py-3 px-4 w-44">
                   {activeTab === "PROJECT_CODE" ? "Project Short Code" : "Code"}
@@ -506,7 +506,7 @@ export function SettingsManagementView({
                         )}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-900">
+                        <p className="text-xs font-semibold text-slate-900">
                           {searchQuery
                             ? "No matching results"
                             : `No ${currentTabConfig.label.toLowerCase()} configured yet`}
@@ -524,7 +524,7 @@ export function SettingsManagementView({
                             setShowAddForm(true);
                             setFormError(null);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#006837] hover:bg-[#004f29] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
                         >
                           <Plus className="h-3.5 w-3.5" />
                           <span>Add {currentTabConfig.label.slice(0, -1)}</span>
@@ -542,7 +542,7 @@ export function SettingsManagementView({
                     <td className="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">
                       {idx + 1}
                     </td>
-                    <td className="py-3 px-4 font-bold text-slate-900 font-mono">
+                    <td className="py-3 px-4 font-semibold text-slate-900 font-mono">
                       <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
                         {item.code}
                       </span>
@@ -553,7 +553,7 @@ export function SettingsManagementView({
                     <td className="py-3 px-4 text-center">
                       <button
                         onClick={() => handleToggleActive(item)}
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide transition-colors cursor-pointer ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide transition-colors cursor-pointer ${
                           item.isActive
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
                             : "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200"
@@ -598,7 +598,7 @@ export function SettingsManagementView({
                   <Pencil className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-semibold text-slate-900">
                     Edit {currentTabConfig.label.slice(0, -1)}
                   </h3>
                   <p className="text-[11px] text-slate-500">
@@ -624,19 +624,19 @@ export function SettingsManagementView({
 
             <form onSubmit={handleSaveEdit} className="space-y-3.5">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-800 block">
+                <label className="text-xs font-semibold text-slate-800 block">
                   Code / Acronym *
                 </label>
                 <input
                   type="text"
                   value={editCode}
                   onChange={(e) => setEditCode(e.target.value)}
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-900 uppercase focus:bg-white focus:border-emerald-500 outline-none"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase focus:bg-white focus:border-emerald-500 outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-800 block">
+                <label className="text-xs font-semibold text-slate-800 block">
                   {activeTab === "PROJECT_CODE"
                     ? "Full Official Project Title *"
                     : "Display Label *"}
@@ -651,7 +651,7 @@ export function SettingsManagementView({
 
               <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
                 <div>
-                  <p className="text-xs font-bold text-slate-800">Status</p>
+                  <p className="text-xs font-semibold text-slate-800">Status</p>
                   <p className="text-[10px] text-slate-500">
                     Enable or disable for project creation
                   </p>
@@ -659,7 +659,7 @@ export function SettingsManagementView({
                 <button
                   type="button"
                   onClick={() => setEditIsActive(!editIsActive)}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
                     editIsActive
                       ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                       : "bg-slate-200 text-slate-600 border border-slate-300"
@@ -680,7 +680,7 @@ export function SettingsManagementView({
                 <button
                   type="submit"
                   disabled={isEditSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#004f29] text-white text-xs font-bold cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isEditSubmitting ? "Saving..." : "Save Changes"}
                 </button>
@@ -699,7 +699,7 @@ export function SettingsManagementView({
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900">
                   Remove &ldquo;{deleteItemModal.code}&rdquo;?
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">
@@ -708,11 +708,11 @@ export function SettingsManagementView({
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 text-amber-900 text-xs space-y-1">
-              <p className="font-bold flex items-center gap-1.5">
+            <div className="notice-card-clean text-xs space-y-1">
+              <p className="font-semibold text-slate-800 flex items-center gap-1.5">
                 <span>Data Integrity Recommendation</span>
               </p>
-              <p className="text-[11px] text-amber-800 leading-relaxed">
+              <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
                 If existing projects or procurement activities reference this
                 code, permanently deleting it may cause reporting
                 inconsistencies. Deactivating it is recommended instead.
@@ -733,7 +733,7 @@ export function SettingsManagementView({
                   await handleToggleActive(deleteItemModal);
                   setDeleteItemModal(null);
                 }}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+                className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
               >
                 Deactivate Instead
               </button>
@@ -748,7 +748,7 @@ export function SettingsManagementView({
                   loadAllCounts();
                   showToast(`Removed "${deleteItemModal.code}".`);
                 }}
-                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold cursor-pointer shadow-xs"
+                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-xs"
               >
                 Delete Permanently
               </button>

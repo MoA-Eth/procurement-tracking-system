@@ -101,9 +101,10 @@ export function DualCalendarInput({
     <div className="w-full">
       <label
         htmlFor={`${id}-gregorian`}
-        className="mb-1.5 block text-xs font-bold text-slate-800"
+        className="mb-1.5 block text-xs font-semibold text-slate-800"
       >
-        {label} {required && <span className="text-red-600 font-bold">*</span>}
+        {label}{" "}
+        {required && <span className="text-red-600 font-semibold">*</span>}
       </label>
 
       <div
@@ -115,7 +116,7 @@ export function DualCalendarInput({
       >
         {/* Gregorian Side */}
         <div className="min-w-0 flex-1">
-          <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
             Gregorian
           </span>
           <input
@@ -127,7 +128,7 @@ export function DualCalendarInput({
             className={`h-9 w-full rounded-lg border bg-white px-2.5 text-xs text-slate-900 font-semibold outline-none transition-colors ${
               errorMessage
                 ? "border-red-400 focus:border-red-600"
-                : "border-slate-400 focus:border-[#176c55]"
+                : "border-slate-400 focus:border-[#0A3C2F]"
             }`}
           />
         </div>
@@ -136,7 +137,7 @@ export function DualCalendarInput({
 
         {/* Ethiopian Side */}
         <div className="relative min-w-0 flex-1" ref={containerRef}>
-          <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
             Ethiopian
           </span>
           <button
@@ -147,7 +148,7 @@ export function DualCalendarInput({
               setVisibleYear(current.year);
               setOpen((p) => !p);
             }}
-            className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-slate-400 bg-white px-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-[#176c55] cursor-pointer"
+            className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-slate-400 bg-white px-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-[#0A3C2F] cursor-pointer"
           >
             <span
               className={
@@ -172,7 +173,7 @@ export function DualCalendarInput({
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <p className="text-xs font-bold text-slate-900">
+                <p className="text-xs font-semibold text-slate-900">
                   {ETHIOPIAN_MONTHS[visibleMonth - 1]} {visibleYear}
                 </p>
                 <button
@@ -184,7 +185,7 @@ export function DualCalendarInput({
                 </button>
               </div>
 
-              <div className="mt-2 grid grid-cols-7 text-center text-[9px] font-extrabold text-slate-400 uppercase">
+              <div className="mt-2 grid grid-cols-7 text-center text-[9px] font-semibold text-slate-400 uppercase">
                 {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
                   <span key={d} className="py-1">
                     {d}
@@ -213,7 +214,7 @@ export function DualCalendarInput({
                             year: visibleYear,
                           })
                         }
-                        className={`h-7 rounded-lg transition-colors cursor-pointer ${selected ? "bg-[#176c55] font-bold text-white" : "hover:bg-emerald-50 hover:text-[#176c55] font-semibold text-slate-700"}`}
+                        className={`h-7 rounded-lg transition-colors cursor-pointer ${selected ? "bg-[#0A3C2F] font-semibold text-white" : "hover:bg-emerald-50 hover:text-[#0A3C2F] font-semibold text-slate-700"}`}
                       >
                         {day}
                       </button>

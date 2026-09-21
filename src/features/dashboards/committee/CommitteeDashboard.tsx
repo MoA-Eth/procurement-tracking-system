@@ -32,7 +32,7 @@ export function CommitteeDashboard({ user }: { user: AuthUser }) {
       {/* Subheader and Info Pill */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
             Overview
           </h1>
           <p className="text-sm text-slate-500 mt-1">

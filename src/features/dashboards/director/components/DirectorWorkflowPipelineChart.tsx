@@ -73,7 +73,7 @@ export function DirectorWorkflowPipelineChart({
         {/* Header */}
         <div className="pb-3 border-b border-slate-100">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg sm:text-xl font-serif font-bold text-slate-900 tracking-tight">
+            <h3 className="text-lg sm:text-xl font-serif font-semibold text-slate-900 tracking-tight">
               Workflow Pipeline
             </h3>
             <span className="text-xs font-semibold text-slate-500">
@@ -113,7 +113,7 @@ export function DirectorWorkflowPipelineChart({
                 >
                   {/* Stage Count on top of bar */}
                   <span
-                    className={`text-xs sm:text-sm font-bold tabular-nums mb-1 transition-transform group-hover:scale-110 ${text}`}
+                    className={`text-xs sm:text-sm font-semibold tabular-nums mb-1 transition-transform group-hover:scale-110 ${text}`}
                   >
                     {stage.count}
                   </span>

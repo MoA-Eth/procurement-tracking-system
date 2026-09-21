@@ -125,4 +125,18 @@ describe("CreateProcurementPlanView", () => {
     expect(markup).toContain("Construction of regional irrigation canals");
     expect(markup).toContain("2017");
   });
+
+  it("configures Budget Year (EFY) input with strict numeric constraints", () => {
+    const markup = renderToStaticMarkup(
+      <CreateProcurementPlanView
+        onSavePlan={() => undefined}
+        project={mockProject1}
+      />,
+    );
+
+    expect(markup).toContain('id="budgetYear"');
+    expect(markup).toContain('inputMode="numeric"');
+    expect(markup).toContain('pattern="[0-9]*"');
+    expect(markup).toContain('maxLength="4"');
+  });
 });

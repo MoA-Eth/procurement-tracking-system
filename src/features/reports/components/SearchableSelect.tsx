@@ -93,13 +93,13 @@ export function SearchableSelect({
                   }}
                   className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer flex items-center justify-between ${
                     opt.value === value
-                      ? "bg-slate-100 text-slate-900 font-bold"
+                      ? "bg-slate-100 text-slate-900 font-semibold"
                       : "hover:bg-slate-50 text-slate-700 font-medium"
                   }`}
                 >
                   <span className="truncate">{opt.label}</span>
                   {opt.value === value && (
-                    <span className="text-[11px] text-slate-700 ml-1 font-bold">
+                    <span className="text-[11px] text-slate-700 ml-1 font-semibold">
                       ✓
                     </span>
                   )}

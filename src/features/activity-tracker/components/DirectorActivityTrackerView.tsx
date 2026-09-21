@@ -853,20 +853,20 @@ function DirectorActivityTrackerList({
           <Home className="h-4 w-4" />
         </Link>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-bold text-[#0A3C2F]">Activity Tracker</span>
+        <span className="font-semibold text-[#0A3C2F]">Activity Tracker</span>
       </nav>
 
       {/* 2. Page Header & Description */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-950 tracking-tight">
               {userRole === "MANAGEMENT"
                 ? "Management Activity Tracker"
                 : "Director Activity Tracker"}
             </h1>
             {userRole === "MANAGEMENT" && (
-              <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+              <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                 View-Only Oversight
               </span>
             )}
@@ -936,7 +936,7 @@ function DirectorActivityTrackerList({
             <select
               value={projectCode}
               onChange={(e) => setProjectCode(e.target.value)}
-              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
             >
               <option value="all">All Projects</option>
               {projectOptions.map(([val, name]) => (
@@ -953,7 +953,7 @@ function DirectorActivityTrackerList({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
             >
               <option value="all">All Categories</option>
               {categoryOptions.map((c) => (
@@ -970,7 +970,7 @@ function DirectorActivityTrackerList({
             <select
               value={method}
               onChange={(e) => setMethod(e.target.value)}
-              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
             >
               <option value="all">All Methods</option>
               {methodOptions.map((m) => (
@@ -986,16 +986,16 @@ function DirectorActivityTrackerList({
           <button
             type="button"
             onClick={() => setShowMoreFilters((prev) => !prev)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all cursor-pointer shadow-2xs shrink-0 ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-semibold transition-all cursor-pointer shadow-2xs shrink-0 ${
               showMoreFilters || activeFilterCount > 0
-                ? "bg-[#E6F4EA] text-[#0D6E53] border-[#A8E6CF]"
-                : "bg-[#E6F4EA]/80 hover:bg-[#E6F4EA] border-[#A8E6CF] text-[#0D6E53]"
+                ? "bg-emerald-50 text-[#0A3C2F] border-emerald-300"
+                : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700"
             }`}
           >
-            <Filter className="h-4 w-4 text-[#0D6E53]" />
+            <Filter className="h-4 w-4 text-[#0A3C2F]" />
             <span>More Filters</span>
             {activeFilterCount > 0 ? (
-              <span className="bg-[#0D6E53] text-white px-1.5 py-0.5 rounded-full text-[10px] font-extrabold">
+              <span className="bg-[#0A3C2F] text-white px-1.5 py-0.5 rounded-md text-[10px] font-medium">
                 {activeFilterCount}
               </span>
             ) : null}
@@ -1013,7 +1013,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={planReference}
                     onChange={(e) => setPlanReference(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Procurement Plans</option>
                     {planOptions.map(([val, label]) => (
@@ -1030,7 +1030,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={delayStatus}
                     onChange={(e) => setDelayStatus(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Delay Statuses</option>
                     <option value="delayed">Delayed</option>
@@ -1045,7 +1045,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={organization}
                     onChange={(e) => setOrganization(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Organizations</option>
                     {organizationOptions.map((org) => (
@@ -1065,7 +1065,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={fiscalYear}
                     onChange={(e) => setFiscalYear(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Fiscal Years</option>
                     {fiscalYearOptions.map((fy) => (
@@ -1082,7 +1082,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={currentStage}
                     onChange={(e) => setCurrentStage(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Current Stages</option>
                     {currentStageOptions.map((stg) => (
@@ -1100,7 +1100,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as TrackerSort)}
-                    className="w-full appearance-none pl-10 pr-9 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none pl-10 pr-9 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="attention">Attention Priority</option>
                     <option value="target-asc">Target Date</option>
@@ -1120,7 +1120,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={displayStatus}
                     onChange={(e) => setDisplayStatus(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-bold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Statuses</option>
                     <option value="In Progress">In Progress</option>
@@ -1135,7 +1135,7 @@ function DirectorActivityTrackerList({
                 {/* Target Date From */}
                 <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-slate-500 shadow-2xs focus-within:border-[#0A3C2F] focus-within:ring-1 focus-within:ring-[#0A3C2F] hover:border-slate-300 transition-all">
                   <CalendarDays className="h-4 w-4 text-slate-400 shrink-0 mr-2" />
-                  <span className="text-slate-500 font-bold text-xs mr-2 shrink-0">
+                  <span className="text-slate-500 font-semibold text-xs mr-2 shrink-0">
                     Target From:
                   </span>
                   <input
@@ -1149,7 +1149,7 @@ function DirectorActivityTrackerList({
                 {/* Target Date To */}
                 <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-slate-500 shadow-2xs focus-within:border-[#0A3C2F] focus-within:ring-1 focus-within:ring-[#0A3C2F] hover:border-slate-300 transition-all">
                   <CalendarDays className="h-4 w-4 text-slate-400 shrink-0 mr-2" />
-                  <span className="text-slate-500 font-bold text-xs mr-2 shrink-0">
+                  <span className="text-slate-500 font-semibold text-xs mr-2 shrink-0">
                     Target To:
                   </span>
                   <input
@@ -1182,7 +1182,7 @@ function DirectorActivityTrackerList({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1240px]">
             <thead className="bg-[#0A3C2F]">
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3.5 px-4 text-center w-12">#</th>
                 <th className="py-3.5 px-4 min-w-[130px] whitespace-nowrap">
                   Reference No
@@ -1223,12 +1223,12 @@ function DirectorActivityTrackerList({
                       onClick={() => onViewActivity(item)}
                       className="hover:bg-slate-50/80 transition-colors cursor-pointer"
                     >
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                      <td className="py-3.5 px-4 text-center font-semibold text-slate-400">
                         {firstVisibleIndex + idx + 1}
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className="font-mono font-bold text-[#0A3C2F] px-2 py-1 rounded inline-block truncate max-w-[130px]"
+                          className="font-mono text-xs font-medium text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded-md border border-slate-200/80 inline-block truncate max-w-[140px]"
                           title={item.activity.reference}
                         >
                           {item.activity.reference}
@@ -1241,7 +1241,7 @@ function DirectorActivityTrackerList({
                             e.stopPropagation();
                             onViewActivity(item);
                           }}
-                          className="font-bold text-slate-900 hover:text-[#0A3C2F] text-left transition-colors cursor-pointer line-clamp-2 leading-snug break-words break-all [overflow-wrap:anywhere]"
+                          className="font-semibold text-slate-900 hover:text-[#0A3C2F] text-left transition-colors cursor-pointer line-clamp-2 leading-snug break-words break-all [overflow-wrap:anywhere]"
                           title={item.activity.description}
                         >
                           {item.activity.description}
@@ -1254,7 +1254,7 @@ function DirectorActivityTrackerList({
                       <td className="py-3.5 px-4 max-w-[200px]">
                         <p
                           title={item.project.shortName}
-                          className="font-bold text-slate-800 leading-snug line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
+                          className="font-semibold text-slate-800 leading-snug line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
                         >
                           {item.project.shortName}
                         </p>
@@ -1275,7 +1275,7 @@ function DirectorActivityTrackerList({
                       </td>
                       <td className="py-3.5 px-4 max-w-[200px]">
                         <p
-                          className="font-bold text-slate-900 leading-snug line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
+                          className="font-semibold text-slate-900 leading-snug line-clamp-2 break-words break-all [overflow-wrap:anywhere]"
                           title={stage.name}
                         >
                           {stage.name}
@@ -1285,7 +1285,7 @@ function DirectorActivityTrackerList({
                         </p>
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <p className="font-bold text-slate-800">
+                        <p className="font-semibold text-slate-800">
                           {stage.targetDate.gregorian || "—"}
                         </p>
                         {stage.targetDate.ethiopian && (
@@ -1296,11 +1296,11 @@ function DirectorActivityTrackerList({
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         {stage.delayDays && stage.delayDays > 0 ? (
-                          <span className="font-bold text-[#b91c1c] text-xs">
-                            {stage.delayDays} days delayed
+                          <span className="inline-block px-2.5 py-0.5 rounded-md text-[11px] font-medium border bg-rose-50 text-rose-800 border-rose-200">
+                            {stage.delayDays}d delayed
                           </span>
                         ) : (
-                          <span className="font-semibold text-[#166534] text-xs">
+                          <span className="inline-block px-2.5 py-0.5 rounded-md text-[11px] font-medium border bg-emerald-50 text-emerald-800 border-emerald-200">
                             On schedule
                           </span>
                         )}
@@ -1330,7 +1330,7 @@ function DirectorActivityTrackerList({
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-slate-500">
                     <Search className="mx-auto h-8 w-8 text-slate-300 mb-2" />
-                    <p className="font-bold text-slate-700">
+                    <p className="font-semibold text-slate-700">
                       No tracked activities found
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -1399,7 +1399,7 @@ function QuickTabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2.5 font-bold text-xs transition-all flex items-center gap-2 border-b-2 cursor-pointer shrink-0 ${
+      className={`px-4 py-2.5 font-semibold text-xs transition-all flex items-center gap-2 border-b-2 cursor-pointer shrink-0 ${
         active
           ? "border-[#0A3C2F] text-[#0A3C2F]"
           : "border-transparent text-slate-500 hover:text-slate-900"
@@ -1407,7 +1407,7 @@ function QuickTabButton({
     >
       <span>{label}</span>
       <span
-        className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${badgeColor}`}
+        className={`px-2 py-0.5 rounded-md text-[10px] font-medium border ${badgeColor}`}
       >
         {count}
       </span>
@@ -1460,7 +1460,7 @@ function DirectorActivityDetailView({
           Activity Tracker
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-bold text-[#0A3C2F]">
+        <span className="font-semibold text-[#0A3C2F]">
           Activity: {item.activity.reference}
         </span>
       </nav>
@@ -1471,28 +1471,28 @@ function DirectorActivityDetailView({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Activity Tracker List
           </button>
           <div className="flex items-center gap-2">
             {userRole === "MANAGEMENT" && (
-              <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+              <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                 View-Only
               </span>
             )}
-            <span className="font-mono text-xs font-bold text-[#0A3C2F] bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+            <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
               {item.project.code}
             </span>
           </div>
         </div>
 
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-950 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-950 tracking-tight">
             {item.activity.description}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-            <span className="font-mono font-bold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+            <span className="font-mono font-semibold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
               {item.activity.reference}
             </span>
             <span>•</span>
@@ -1511,7 +1511,7 @@ function DirectorActivityDetailView({
           <button
             type="button"
             onClick={() => setActiveTab("overview")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-all border-b-2 cursor-pointer ${
               activeTab === "overview"
                 ? "border-[#0A3C2F] text-[#0A3C2F] bg-emerald-50/50 rounded-t-lg"
                 : "border-transparent text-slate-500 hover:text-slate-900"
@@ -1523,7 +1523,7 @@ function DirectorActivityDetailView({
           <button
             type="button"
             onClick={() => setActiveTab("roadmap")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-all border-b-2 cursor-pointer ${
               activeTab === "roadmap"
                 ? "border-[#0A3C2F] text-[#0A3C2F] bg-emerald-50/50 rounded-t-lg"
                 : "border-transparent text-slate-500 hover:text-slate-900"
@@ -1535,7 +1535,7 @@ function DirectorActivityDetailView({
           <button
             type="button"
             onClick={() => setActiveTab("contract")}
-            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-all border-b-2 cursor-pointer ${
               activeTab === "contract"
                 ? "border-[#0A3C2F] text-[#0A3C2F] bg-emerald-50/50 rounded-t-lg"
                 : "border-transparent text-slate-500 hover:text-slate-900"
@@ -1552,7 +1552,7 @@ function DirectorActivityDetailView({
           {/* Main Grid: Approved Overview Details */}
           <div className="p-6 sm:p-7 space-y-6">
             <div>
-              <h3 className="font-extrabold text-slate-950 text-base flex items-center gap-2">
+              <h3 className="font-semibold text-slate-950 text-base flex items-center gap-2">
                 <UserCheck className="h-4.5 w-4.5 text-[#0A3C2F]" />
                 Approved Activity & Baseline Information
               </h3>
@@ -1564,80 +1564,80 @@ function DirectorActivityDetailView({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-5 text-xs border-t border-slate-100 pt-5">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Reference No.
                 </p>
-                <p className="font-mono font-bold text-[#0A3C2F] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block">
+                <p className="font-mono font-semibold text-[#0A3C2F] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block">
                   {item.activity.reference}
                 </p>
               </div>
 
               <div className="space-y-1 sm:col-span-3">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Activity Description
                 </p>
-                <p className="font-extrabold text-slate-900 text-sm leading-snug">
+                <p className="font-semibold text-slate-900 text-sm leading-snug">
                   {item.activity.description}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Project
                 </p>
-                <p className="font-bold text-slate-800 text-xs">
+                <p className="font-semibold text-slate-800 text-xs">
                   {item.project.shortName} ({item.project.code})
                 </p>
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Procurement Plan
                 </p>
-                <p className="font-bold text-slate-800 text-xs">
+                <p className="font-semibold text-slate-800 text-xs">
                   {item.plan.name}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Fiscal Year
                 </p>
-                <p className="font-bold text-slate-800 text-xs">
+                <p className="font-semibold text-slate-800 text-xs">
                   {item.plan.budgetYear}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Category & Method
                 </p>
-                <p className="font-bold text-slate-800 text-xs">
+                <p className="font-semibold text-slate-800 text-xs">
                   {item.activity.category} • {item.activity.method}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Estimated Amount
                 </p>
-                <p className="font-extrabold text-slate-900 text-xs">
+                <p className="font-semibold text-slate-900 text-xs">
                   {formatAmount(item.activity.estimatedAmount)}{" "}
                   {form?.currency || item.plan.currency}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Funding Source
                 </p>
-                <p className="font-bold text-slate-800 text-xs">
+                <p className="font-semibold text-slate-800 text-xs">
                   {form?.fundingSource || item.project.fundingSource}
                 </p>
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Market Approach & Review
                 </p>
                 <p className="font-semibold text-slate-700 text-xs">
@@ -1647,10 +1647,10 @@ function DirectorActivityDetailView({
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Assigned Officer(s)
                 </p>
-                <p className="font-extrabold text-[#0A3C2F] text-xs">
+                <p className="font-semibold text-[#0A3C2F] text-xs">
                   {officerNames}
                 </p>
               </div>
@@ -1660,7 +1660,7 @@ function DirectorActivityDetailView({
           {/* Integrated Execution Status Bar */}
           <div className="bg-slate-50 border-t border-slate-200/80 p-6 sm:p-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-xs">
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Overall Status
               </p>
               <div className="pt-1">
@@ -1669,20 +1669,20 @@ function DirectorActivityDetailView({
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Current Stage
               </p>
-              <p className="font-extrabold text-slate-900 text-xs pt-0.5">
+              <p className="font-semibold text-slate-900 text-xs pt-0.5">
                 {stage.name}
               </p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Roadmap Progress
               </p>
               <div className="pt-0.5 space-y-1.5">
-                <p className="font-extrabold text-slate-900 text-xs">
+                <p className="font-semibold text-slate-900 text-xs">
                   {progress.completed} of {progress.total} Stages (
                   {progress.percent}%)
                 </p>
@@ -1696,7 +1696,7 @@ function DirectorActivityDetailView({
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 General Execution Note
               </p>
               <p className="font-medium text-slate-700 text-xs leading-relaxed pt-0.5">
@@ -1713,7 +1713,7 @@ function DirectorActivityDetailView({
         <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-4 p-5 sm:p-6 animate-in fade-in duration-150">
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
-              <h3 className="font-extrabold text-slate-950 text-base flex items-center gap-2">
+              <h3 className="font-semibold text-slate-950 text-base flex items-center gap-2">
                 <Route className="h-4.5 w-4.5 text-[#0A3C2F]" />
                 Stage Lifecycle & Milestone Tracking Roadmap
               </h3>
@@ -1727,7 +1727,7 @@ function DirectorActivityDetailView({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[850px]">
               <thead>
-                <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+                <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                   <th className="py-3.5 px-4 text-center w-12">#</th>
                   <th className="py-3.5 px-4 min-w-55">Stage Name</th>
                   <th className="py-3.5 px-4 min-w-35">
@@ -1756,15 +1756,15 @@ function DirectorActivityDetailView({
 
                   return (
                     <tr key={stg.name} className="hover:bg-slate-50/70">
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
+                      <td className="py-3.5 px-4 text-center font-semibold text-slate-400">
                         {i + 1}
                       </td>
                       <td className="py-3.5 px-4 min-w-44 max-w-xs break-words">
-                        <p className="font-bold text-slate-900 break-words">
+                        <p className="font-semibold text-slate-900 break-words">
                           {stg.name}
                         </p>
                         {tracking.revisions.length > 0 && (
-                          <span className="mt-0.5 inline-block text-[10px] font-extrabold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                          <span className="mt-0.5 inline-block text-[11px] font-medium text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200">
                             R{tracking.revisions.length} Revised
                           </span>
                         )}
@@ -1793,7 +1793,7 @@ function DirectorActivityDetailView({
                             N/A
                           </span>
                         ) : (
-                          <p className="font-bold text-slate-900">
+                          <p className="font-semibold text-slate-900">
                             {effectiveTargetDate(
                               {
                                 ethiopian: stg.ethiopianDate || "",
@@ -1822,12 +1822,12 @@ function DirectorActivityDetailView({
                         {delay === null || isComp || isNotApp ? (
                           <span className="text-slate-400">—</span>
                         ) : delay > 0 ? (
-                          <span className="font-bold text-[#b91c1c]">
+                          <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-medium border bg-rose-50 text-rose-800 border-rose-200">
                             {delay}d delayed
                           </span>
                         ) : (
-                          <span className="font-semibold text-[#166534]">
-                            0d
+                          <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-medium border bg-emerald-50 text-emerald-800 border-emerald-200">
+                            On schedule
                           </span>
                         )}
                       </td>
@@ -1848,14 +1848,14 @@ function DirectorActivityDetailView({
       {/* TAB 3: CONTRACT */}
       {activeTab === "contract" && (
         <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs p-6 space-y-6 animate-in fade-in duration-150">
-          <h3 className="font-extrabold text-slate-950 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
+          <h3 className="font-semibold text-slate-950 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
             <BriefcaseBusiness className="h-4.5 w-4.5 text-[#0A3C2F]" />
             Contract & Award Oversight Information
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-xs">
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Contract Process Status
               </p>
               <div className="pt-1">
@@ -1867,44 +1867,44 @@ function DirectorActivityDetailView({
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Activity Reference
               </p>
-              <p className="font-mono font-bold text-[#0A3C2F] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block">
+              <p className="font-mono font-semibold text-[#0A3C2F] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block">
                 {item.activity.reference}
               </p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Base Currency
               </p>
-              <p className="font-extrabold text-slate-900 text-xs pt-0.5">
+              <p className="font-semibold text-slate-900 text-xs pt-0.5">
                 {form?.currency || item.plan.currency}
               </p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Executing Agency
               </p>
-              <p className="font-extrabold text-slate-900 text-xs pt-0.5">
+              <p className="font-semibold text-slate-900 text-xs pt-0.5">
                 {item.project.executingAgency} (
                 {item.project.countryOrganisation})
               </p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Funding Source
               </p>
-              <p className="font-extrabold text-slate-900 text-xs pt-0.5">
+              <p className="font-semibold text-slate-900 text-xs pt-0.5">
                 {form?.fundingSource || item.project.fundingSource}
               </p>
             </div>
 
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Record Updated
               </p>
               <p className="font-semibold text-slate-700 text-xs pt-0.5">

@@ -50,7 +50,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         <div className="mt-3 text-center">
           <h1
             id="new-password-title"
-            className="auth-flow-title text-3xl font-extrabold text-[#064e3b]"
+            className="auth-flow-title text-3xl font-semibold text-[#0A3C2F]"
           >
             Choose a New Password
           </h1>

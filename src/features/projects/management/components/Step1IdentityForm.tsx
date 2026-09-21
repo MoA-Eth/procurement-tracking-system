@@ -182,18 +182,18 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
           <Building2 className="h-5 w-5 text-[#0A3C2F]" />
-          <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-base font-semibold text-slate-900 tracking-tight">
             Step 1: Project Identity & Regional Scope
           </h2>
         </div>
-        <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+        <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
           Core Metadata
         </span>
       </div>
 
       {/* Subsection A: Project Identity */}
       <div className="space-y-4">
-        <h3 className="text-xs font-extrabold text-[#0A3C2F] uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
           A. Project Classification
         </h3>
 
@@ -201,7 +201,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
           {/* Project Code */}
           <div className="space-y-1.5" ref={dropdownRef}>
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-800 block">
+              <label className="text-xs font-semibold text-slate-800 block">
                 Project Code / Acronym *
               </label>
               <div className="flex items-center gap-2">
@@ -213,7 +213,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                     setQuickLabel("");
                     setShowQuickAddModal(true);
                   }}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#006837] hover:text-[#004f29] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
                   title="Quick-add a new code without leaving this wizard"
                 >
                   <Plus className="h-3 w-3" />
@@ -238,7 +238,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                   value={data.code}
                   onChange={(e) => onChange({ code: e.target.value })}
                   placeholder="Enter custom project code (e.g. DRIVE, CALM)..."
-                  className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
                 />
                 <button
                   type="button"
@@ -261,7 +261,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                 >
                   {selectedMatched ? (
                     <span className="flex items-center gap-2 truncate">
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono font-bold text-[11px] shrink-0">
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 font-mono font-semibold text-[11px] shrink-0">
                         {selectedMatched.code}
                       </span>
                       <span className="font-semibold text-slate-800 truncate">
@@ -269,7 +269,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                       </span>
                     </span>
                   ) : data.code ? (
-                    <span className="font-mono font-bold text-slate-900">
+                    <span className="font-mono font-semibold text-slate-900">
                       {data.code}
                     </span>
                   ) : (
@@ -310,12 +310,12 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                               onClick={() => handleSelectCode(opt.code)}
                               className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-colors cursor-pointer flex items-center justify-between gap-2 ${
                                 isSelected
-                                  ? "bg-emerald-50 text-emerald-900 font-bold"
+                                  ? "bg-emerald-50 text-emerald-900 font-semibold"
                                   : "hover:bg-slate-50 text-slate-800"
                               }`}
                             >
                               <div className="min-w-0 flex items-center gap-2">
-                                <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono font-bold text-[10px] shrink-0 border border-slate-200">
+                                <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono font-semibold text-[10px] shrink-0 border border-slate-200">
                                   {opt.code}
                                 </span>
                                 <span className="truncate text-[11px] text-slate-700">
@@ -349,7 +349,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                           setQuickLabel("");
                           setShowQuickAddModal(true);
                         }}
-                        className="text-emerald-700 hover:text-emerald-900 hover:underline cursor-pointer font-bold"
+                        className="text-emerald-700 hover:text-emerald-900 hover:underline cursor-pointer font-semibold"
                       >
                         + Add New Code
                       </button>
@@ -362,7 +362,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
           {/* Project Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-800 block">
+            <label className="text-xs font-semibold text-slate-800 block">
               Full Official Project Name *
             </label>
             <input
@@ -378,7 +378,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* SAP Number */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-800 block">
+            <label className="text-xs font-semibold text-slate-800 block">
               Project SAP Identification No. (Optional)
             </label>
             <input
@@ -394,14 +394,14 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
       {/* Subsection B: Governance & Scope */}
       <div className="space-y-4 pt-4 border-t border-slate-100">
-        <h3 className="text-xs font-extrabold text-[#0A3C2F] uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
           B. Governance & Operational Scope
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Country / Organisation */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-800 block">
+            <label className="text-xs font-semibold text-slate-800 block">
               Country / Organisation Scope *
             </label>
             <select
@@ -418,7 +418,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
             {data.countryOrg === "Other (Specify Custom Organisation)" && (
               <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-200 space-y-1 animate-in fade-in mt-2">
-                <label className="text-[11px] font-bold text-blue-900 block">
+                <label className="text-[11px] font-semibold text-blue-900 block">
                   Specify Custom Organisation Name *
                 </label>
                 <input
@@ -436,7 +436,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
           {/* Executing Agency */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-800 block">
+            <label className="text-xs font-semibold text-slate-800 block">
               Executing Agency *
             </label>
             <select
@@ -453,7 +453,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
             {data.executingAgency === "Other (Specify Custom Agency)" && (
               <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-200 space-y-1 animate-in fade-in mt-2">
-                <label className="text-[11px] font-bold text-blue-900 block">
+                <label className="text-[11px] font-semibold text-blue-900 block">
                   Specify Custom Agency Name *
                 </label>
                 <input
@@ -471,7 +471,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
           {/* Organization / Region */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-800 block">
+            <label className="text-xs font-semibold text-slate-800 block">
               Organization / Region *
             </label>
             <select
@@ -489,7 +489,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
           {/* Sector */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-800 block">
+            <label className="text-xs font-semibold text-slate-800 block">
               Sector / Directorate *
             </label>
             <select
@@ -517,7 +517,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                   <Plus className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-semibold text-slate-900">
                     Quick-Add Project Code
                   </h3>
                   <p className="text-[11px] text-slate-500">
@@ -543,7 +543,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
             <form onSubmit={handleQuickAddSubmit} className="space-y-3.5">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-800 block">
+                <label className="text-xs font-semibold text-slate-800 block">
                   Project Code / Acronym *
                 </label>
                 <input
@@ -552,12 +552,12 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                   onChange={(e) => setQuickCode(e.target.value)}
                   placeholder="e.g. DRIVE, BREFONS, CALM"
                   autoFocus
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-800 block">
+                <label className="text-xs font-semibold text-slate-800 block">
                   Full Official Project Title *
                 </label>
                 <textarea
@@ -580,7 +580,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                 <button
                   type="submit"
                   disabled={isQuickSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#004f29] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isQuickSubmitting ? "Saving..." : "Save & Select"}
                 </button>

@@ -158,7 +158,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
       >
         <Bell size={16} strokeWidth={1.8} className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white ring-2 ring-white animate-pulse">
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white ring-2 ring-white animate-pulse">
             {unreadCount}
           </span>
         )}
@@ -170,20 +170,20 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
           {/* Header */}
           <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-              <span className="text-xs font-extrabold text-slate-900">
+              <span className="text-xs font-semibold text-slate-900">
                 Notifications
               </span>
               {userRole && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200/80 text-slate-700">
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-slate-200/80 text-slate-700 border border-slate-300/60">
                   {ROLE_LABELS[userRole] || userRole}
                 </span>
               )}
               {unreadCount > 0 ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-rose-50 text-rose-800 border border-rose-200">
                   {unreadCount} New
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
                   All Read
                 </span>
               )}
@@ -193,7 +193,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
               <button
                 type="button"
                 onClick={handleMarkAllAsRead}
-                className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
               >
                 <CheckCheck size={13} />
                 <span>Mark all read</span>
@@ -226,13 +226,13 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
                         className={`text-xs truncate ${
                           n.read
                             ? "font-semibold text-slate-800"
-                            : "font-extrabold text-slate-950"
+                            : "font-semibold text-slate-950"
                         }`}
                       >
                         {n.title}
                       </h4>
                       {n.priority === "urgent" && (
-                        <span className="shrink-0 text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800">
+                        <span className="shrink-0 text-[9px] font-medium px-1.5 py-0.2 rounded-md bg-rose-50 text-rose-800 border border-rose-200">
                           Urgent
                         </span>
                       )}
@@ -248,7 +248,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
                         <Link
                           href={n.link}
                           onClick={() => setIsOpen(false)}
-                          className="text-[11px] font-bold text-[#0A3C2F] hover:underline inline-flex items-center gap-0.5"
+                          className="text-[11px] font-semibold text-[#0A3C2F] hover:underline inline-flex items-center gap-0.5"
                         >
                           <span>{n.actionLabel || "View"}</span>
                           <ExternalLink size={10} />
@@ -266,7 +266,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
             <Link
               href="/workspace/notifications"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-bold text-[#0A3C2F] hover:underline inline-flex items-center gap-1"
+              className="text-xs font-semibold text-[#0A3C2F] hover:underline inline-flex items-center gap-1"
             >
               <span>See All Notifications ({roleNotifications.length})</span>
               <span>→</span>

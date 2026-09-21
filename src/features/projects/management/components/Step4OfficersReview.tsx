@@ -96,7 +96,7 @@ export function Step4OfficersReview({
               <div className="h-7 w-7 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center">
                 <UserCheck className="h-4 w-4 text-[#0A3C2F]" />
               </div>
-              <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">
+              <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
                 Assign Procurement Officers (Optional)
               </h2>
             </div>
@@ -110,14 +110,14 @@ export function Step4OfficersReview({
             <button
               type="button"
               onClick={onSelectAllOfficers}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               Select All ({officersList.length})
             </button>
             <button
               type="button"
               onClick={onClearAllOfficers}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               Clear Selection
             </button>
@@ -157,7 +157,7 @@ export function Step4OfficersReview({
                 <div className="flex items-start justify-between gap-2.5">
                   <div className="flex items-start gap-2.5 min-w-0">
                     <div
-                      className={`h-8 w-8 rounded-lg flex items-center justify-center text-xs font-extrabold shrink-0 ${
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center text-xs font-semibold shrink-0 ${
                         isSelected
                           ? "bg-[#0A3C2F] text-white"
                           : "bg-slate-100 text-slate-700 border border-slate-200"
@@ -167,11 +167,11 @@ export function Step4OfficersReview({
                     </div>
                     <div className="min-w-0 space-y-0.5">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-xs font-extrabold text-slate-900 truncate">
+                        <p className="text-xs font-semibold text-slate-900 truncate">
                           {off.name}
                         </p>
                         {off.status === "PENDING_INVITATION" && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
                             Invited
                           </span>
                         )}
@@ -209,7 +209,7 @@ export function Step4OfficersReview({
                       </span>
                     ) : (
                       <span
-                        className="text-[11px] font-bold text-slate-700"
+                        className="text-[11px] font-semibold text-slate-700"
                         title={wl.projects
                           .map((p) => `${p.code}: ${p.name}`)
                           .join("\n")}
@@ -230,7 +230,7 @@ export function Step4OfficersReview({
           {filteredOfficers.length === 0 && (
             <div className="col-span-full py-8 text-center bg-slate-50/70 rounded-xl border border-dashed border-slate-200">
               <Users className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-xs font-bold text-slate-700">
+              <p className="text-xs font-semibold text-slate-700">
                 {officersList.length === 0
                   ? "No procurement officers found in the system."
                   : "No procurement officers match your search."}
@@ -253,7 +253,7 @@ export function Step4OfficersReview({
               <ShieldCheck className="h-4 w-4 text-[#0A3C2F]" />
             </div>
             <div>
-              <h3 className="text-xs font-extrabold text-slate-900 tracking-tight">
+              <h3 className="text-xs font-semibold text-slate-900 tracking-tight">
                 Project Registration Summary
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
@@ -262,17 +262,17 @@ export function Step4OfficersReview({
             </div>
           </div>
           <span
-            className={`text-[11px] font-bold px-3 py-1 rounded-full border inline-flex items-center gap-1.5 self-start sm:self-auto ${
+            className={`text-xs font-medium px-2.5 py-1 rounded-md border inline-flex items-center gap-1.5 self-start sm:self-auto ${
               selectedOfficerIds.length > 0
-                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                : "bg-amber-50 text-amber-800 border-amber-200"
+                ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
+                : "bg-slate-100 text-slate-700 border-slate-200"
             }`}
           >
             <span
               className={`h-1.5 w-1.5 rounded-full ${
                 selectedOfficerIds.length > 0
                   ? "bg-emerald-600 animate-pulse"
-                  : "bg-amber-500"
+                  : "bg-slate-400"
               }`}
             />
             {selectedOfficerIds.length > 0
@@ -283,20 +283,20 @@ export function Step4OfficersReview({
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-2xs">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">
+            <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 block mb-1">
               Project Code
             </span>
-            <span className="font-extrabold text-xs text-[#0A3C2F] tracking-tight font-mono">
+            <span className="font-semibold text-xs text-[#0A3C2F] tracking-tight font-mono">
               {code || "N/A"}
             </span>
           </div>
 
           <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-2xs">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">
+            <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 block mb-1">
               Sector
             </span>
             <span
-              className="font-bold text-xs text-slate-800 truncate block"
+              className="font-semibold text-xs text-slate-800 truncate block"
               title={sector}
             >
               {sector || "N/A"}
@@ -304,11 +304,11 @@ export function Step4OfficersReview({
           </div>
 
           <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-2xs">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">
+            <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 block mb-1">
               Funding / Donor
             </span>
             <span
-              className="font-bold text-xs text-slate-800 truncate block"
+              className="font-semibold text-xs text-slate-800 truncate block"
               title={displayDonor}
             >
               {displayDonor || "N/A"}
@@ -316,11 +316,11 @@ export function Step4OfficersReview({
           </div>
 
           <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-2xs">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block mb-1">
+            <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 block mb-1">
               Assigned Officers
             </span>
             <span
-              className={`font-extrabold text-xs block ${
+              className={`font-semibold text-xs block ${
                 selectedOfficerIds.length > 0
                   ? "text-emerald-700"
                   : "text-amber-700"
@@ -336,28 +336,28 @@ export function Step4OfficersReview({
         <div className="pt-3 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
           <span className="truncate max-w-sm">
             Name:{" "}
-            <strong className="font-bold text-slate-900">
+            <strong className="font-semibold text-slate-900">
               {name || "N/A"}
             </strong>
           </span>
           <div className="flex items-center gap-3.5 text-slate-600 font-medium">
             <span>
               Components:{" "}
-              <strong className="font-bold text-slate-900">
+              <strong className="font-semibold text-slate-900">
                 {componentsCount} Major
               </strong>
             </span>
             <span className="text-slate-300">•</span>
             <span>
               Timeline:{" "}
-              <strong className="font-bold text-slate-900 font-mono">
+              <strong className="font-semibold text-slate-900 font-mono">
                 {startDate && endDate ? `${startDate} → ${endDate}` : "N/A"}
               </strong>
             </span>
             <span className="text-slate-300">•</span>
             <span>
               Currency:{" "}
-              <strong className="font-bold text-slate-900 font-mono">
+              <strong className="font-semibold text-slate-900 font-mono">
                 {currency}
               </strong>
             </span>

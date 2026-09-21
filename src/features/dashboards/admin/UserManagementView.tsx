@@ -433,25 +433,25 @@ export function UserManagementView({
       {/* Premium Dismissable Success Notification Banner with Auto-Dismiss */}
       {invitedInfo && (
         <div className="animate-in fade-in slide-in-from-top-2">
-          <div className="relative overflow-hidden bg-linear-to-r from-[#ecfdf5] via-[#f0fdf4] to-[#e6f4ea] border border-[#a7f3d0] rounded-2xl p-5 sm:p-6 text-xs sm:text-sm shadow-xs">
+          <div className="relative overflow-hidden bg-emerald-50/80 border border-emerald-200 rounded-2xl p-5 sm:p-6 text-xs sm:text-sm shadow-xs">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3.5 min-w-0">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#044e3a] text-white shrink-0 shadow-2xs mt-0.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A3C2F] text-white shrink-0 shadow-2xs mt-0.5">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <h3 className="text-base font-extrabold text-[#044e3a] tracking-tight">
+                  <h3 className="text-base font-semibold text-[#0A3C2F] tracking-tight">
                     {invitedInfo.isResend
                       ? "Invitation Email Resent Successfully"
                       : "Invitation Email Sent Successfully"}
                   </h3>
-                  <p className="text-[#046c50] font-medium leading-relaxed">
+                  <p className="text-[#0A3C2F] font-medium leading-relaxed">
                     An official registration email has been delivered to{" "}
-                    <strong className="font-bold text-[#04382c] underline decoration-emerald-300">
+                    <strong className="font-semibold text-[#0A3C2F] underline decoration-emerald-300">
                       {invitedInfo.email}
                     </strong>{" "}
                     for the role of{" "}
-                    <strong className="font-bold text-[#04382c]">
+                    <strong className="font-semibold text-[#0A3C2F]">
                       {ROLE_LABELS[
                         invitedInfo.role as keyof typeof ROLE_LABELS
                       ] || invitedInfo.role}
@@ -466,7 +466,7 @@ export function UserManagementView({
               <button
                 type="button"
                 onClick={() => setInvitedInfo(null)}
-                className="text-[#046c50] hover:text-[#04382c] hover:bg-[#d1fae5] p-1.5 rounded-full transition-colors shrink-0 cursor-pointer"
+                className="text-[#0A3C2F] hover:text-[#072F25] hover:bg-emerald-100 p-1.5 rounded-full transition-colors shrink-0 cursor-pointer"
                 title="Dismiss banner"
               >
                 <X className="w-4 h-4" />
@@ -477,7 +477,7 @@ export function UserManagementView({
       )}
 
       {errorMessage && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-xs font-bold shadow-sm animate-in fade-in slide-in-from-top-2">
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-xs font-semibold shadow-sm animate-in fade-in slide-in-from-top-2">
           <AlertCircle size={16} className="shrink-0 text-red-600" />
           <span>{errorMessage}</span>
         </div>
@@ -486,7 +486,7 @@ export function UserManagementView({
       {/* VIEW MODE 1: INVITE NEW USER FORM */}
       {viewMode === "invite" ? (
         <div className="space-y-6">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500 px-0.5">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 px-0.5">
             <button
               type="button"
               onClick={() => setViewMode("list")}
@@ -495,7 +495,7 @@ export function UserManagementView({
               User Management
             </button>
             <ChevronRight size={13} className="text-slate-400" />
-            <span className="text-[#0f172a] font-bold flex items-center gap-1.5">
+            <span className="text-[#0f172a] font-semibold flex items-center gap-1.5">
               Invite New User
             </span>
           </div>
@@ -503,8 +503,8 @@ export function UserManagementView({
           <section className="rounded-2xl border border-[#e2e8f0] bg-white p-6 sm:p-8 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
-                <h1 className="text-xl font-extrabold text-[#0f172a] tracking-tight flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-[#04382c] stroke-[2.5]" />
+                <h1 className="text-xl font-semibold text-[#0f172a] tracking-tight flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-[#0A3C2F] stroke-[2.5]" />
                   Invite New User
                 </h1>
                 <p className="mt-1 text-xs text-[#64748b] font-medium">
@@ -519,7 +519,7 @@ export function UserManagementView({
               className="space-y-5 max-w-3xl"
             >
               <div>
-                <label className="text-xs font-bold text-[#0f172a] mb-1.5 block">
+                <label className="text-xs font-semibold text-[#0f172a] mb-1.5 block">
                   Full Name
                 </label>
                 <input
@@ -533,7 +533,7 @@ export function UserManagementView({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[#0f172a] mb-1.5 block">
+                <label className="text-xs font-semibold text-[#0f172a] mb-1.5 block">
                   Email Address
                 </label>
                 <input
@@ -547,7 +547,7 @@ export function UserManagementView({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[#0f172a] mb-1.5 block">
+                <label className="text-xs font-semibold text-[#0f172a] mb-1.5 block">
                   PTS Role Assignment
                 </label>
                 <select
@@ -575,7 +575,7 @@ export function UserManagementView({
                 </select>
 
                 <p className="text-xs text-[#64748b] font-medium mt-2 flex items-center gap-1.5">
-                  <Info className="w-4 h-4 text-[#047857] shrink-0" />
+                  <Info className="w-4 h-4 text-[#006837] shrink-0" />
                   Select the appropriate PTS role and operational permissions
                   for this account.
                 </p>
@@ -585,14 +585,14 @@ export function UserManagementView({
                 <button
                   type="button"
                   onClick={() => setViewMode("list")}
-                  className="px-5 py-2.5 rounded-full border border-[#e2e8f0] bg-white hover:bg-slate-50 text-[#334155] text-xs font-bold transition-colors cursor-pointer"
+                  className="px-5 py-2.5 rounded-full border border-[#e2e8f0] bg-white hover:bg-slate-50 text-[#334155] text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isInviting}
-                  className="px-6 py-2.5 rounded-full bg-[#04382c] hover:bg-[#032e25] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                  className="px-6 py-2.5 rounded-full bg-[#006837] hover:bg-[#00552c] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                   {isInviting ? "Sending Invitation…" : "Send Invitation"}
@@ -607,7 +607,7 @@ export function UserManagementView({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold tracking-tight text-[#0f172a]">
+                <h1 className="text-2xl font-semibold tracking-tight text-[#0f172a]">
                   User Management
                 </h1>
               </div>
@@ -621,7 +621,7 @@ export function UserManagementView({
           <section className="rounded-2xl border border-[#e2e8f0] bg-white p-6 sm:p-8 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-[#0f172a] tracking-tight">
+                <h2 className="text-lg font-semibold text-[#0f172a] tracking-tight">
                   User Management Directory
                 </h2>
                 <p className="mt-0.5 text-xs text-[#64748b] font-medium">
@@ -633,7 +633,7 @@ export function UserManagementView({
               <button
                 type="button"
                 onClick={() => setViewMode("invite")}
-                className="shrink-0 bg-[#04382c] hover:bg-[#032e25] text-white text-xs font-bold px-4 py-2.5 rounded-full flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                className="shrink-0 bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold px-4 py-2.5 rounded-full flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Invite User</span>
@@ -657,7 +657,7 @@ export function UserManagementView({
                 <select
                   value={selectedRole}
                   onChange={(e) => handleRoleChange(e.target.value)}
-                  className="bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-4 py-2 text-xs font-bold text-[#334155] focus:outline-none cursor-pointer"
+                  className="bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-4 py-2 text-xs font-semibold text-[#334155] focus:outline-none cursor-pointer"
                 >
                   <option value="ALL">All Roles</option>
                   <option value="OFFICER">Officer</option>
@@ -672,7 +672,7 @@ export function UserManagementView({
                 <select
                   value={selectedStatus}
                   onChange={(e) => handleStatusChange(e.target.value)}
-                  className="bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-4 py-2 text-xs font-bold text-[#334155] focus:outline-none cursor-pointer"
+                  className="bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-4 py-2 text-xs font-semibold text-[#334155] focus:outline-none cursor-pointer"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="Active">Active</option>
@@ -699,7 +699,7 @@ export function UserManagementView({
                 <button
                   type="button"
                   onClick={loadUsers}
-                  className="px-4 py-2 text-xs font-bold rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
                 >
                   Try Again
                 </button>
@@ -713,23 +713,23 @@ export function UserManagementView({
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-187.5">
                       <thead>
-                        <tr className="bg-[#04382c] text-white text-xs font-bold">
-                          <th className="py-3.5 px-4 font-bold tracking-wide">
+                        <tr className="bg-[#0A3C2F] text-white text-xs font-semibold">
+                          <th className="py-3.5 px-4 font-semibold tracking-wide">
                             User Name & Details
                           </th>
-                          <th className="py-3.5 px-4 font-bold tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold tracking-wide">
                             Email Address
                           </th>
-                          <th className="py-3.5 px-4 font-bold tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold tracking-wide">
                             Assigned Role
                           </th>
-                          <th className="py-3.5 px-4 font-bold tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold tracking-wide">
                             Account Status
                           </th>
-                          <th className="py-3.5 px-4 font-bold tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold tracking-wide">
                             Last Login
                           </th>
-                          <th className="py-3.5 px-4 font-bold text-center tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold text-center tracking-wide">
                             Actions
                           </th>
                         </tr>
@@ -750,10 +750,10 @@ export function UserManagementView({
                               }`}
                             >
                               <td className="py-4 px-4 align-middle max-w-xs wrap-break-word">
-                                <div className="font-bold text-[#0f172a] text-xs wrap-break-word line-clamp-2 flex items-center gap-1.5">
+                                <div className="font-semibold text-[#0f172a] text-xs wrap-break-word line-clamp-2 flex items-center gap-1.5">
                                   <span>{user.displayName || user.name}</span>
                                   {isSelf && (
-                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">
                                       You
                                     </span>
                                   )}
@@ -769,18 +769,18 @@ export function UserManagementView({
                                 {user.email}
                               </td>
 
-                              <td className="py-4 px-4 align-middle font-bold text-[#0f172a]">
+                              <td className="py-4 px-4 align-middle font-semibold text-[#0f172a]">
                                 {displayRole(user)}
                               </td>
 
-                              <td className="py-4 px-4 align-middle">
+                              <td className="py-4 px-4 align-middle whitespace-nowrap">
                                 <span
-                                  className={`text-xs font-bold ${
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium border whitespace-nowrap ${
                                     isPending
-                                      ? "text-[#b06000]"
+                                      ? "bg-blue-50 text-blue-800 border-blue-200"
                                       : isActive
-                                        ? "text-[#137333]"
-                                        : "text-[#c5221f]"
+                                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                        : "bg-rose-50 text-rose-800 border-rose-200"
                                   }`}
                                 >
                                   {status}
@@ -798,12 +798,12 @@ export function UserManagementView({
                                     type="button"
                                     disabled={actionUserId === user.id}
                                     onClick={() => handleResendInvitation(user)}
-                                    className="px-3.5 py-1 text-xs font-bold rounded-full border border-[#047857] bg-[#ecfdf5] text-[#044e3a] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                                    className="px-3 py-1 text-xs font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-[#0A3C2F] hover:border-slate-300 transition-all cursor-pointer shadow-2xs disabled:opacity-50 inline-flex items-center gap-1.5"
                                   >
                                     {actionUserId === user.id ? (
                                       <Loader2 className="w-3 h-3 animate-spin inline" />
                                     ) : (
-                                      <RefreshCw className="w-3 h-3 inline" />
+                                      <RefreshCw className="w-3 h-3 text-slate-500 inline" />
                                     )}
                                     <span>
                                       {actionUserId === user.id
@@ -816,7 +816,7 @@ export function UserManagementView({
                                     type="button"
                                     disabled={true}
                                     title="You cannot deactivate your own administrator account."
-                                    className="px-3.5 py-1 text-xs font-bold rounded-full border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 shadow-none inline-flex items-center gap-1"
+                                    className="px-3 py-1 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 text-slate-400 cursor-not-allowed shadow-none inline-flex items-center gap-1"
                                   >
                                     Deactivate
                                   </button>
@@ -825,10 +825,10 @@ export function UserManagementView({
                                     type="button"
                                     disabled={actionUserId === user.id}
                                     onClick={() => handleToggleStatus(user)}
-                                    className={`px-3.5 py-1 text-xs font-bold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
+                                    className={`px-3 py-1 text-xs font-medium rounded-lg border transition-all cursor-pointer shadow-2xs disabled:opacity-50 ${
                                       isActive
-                                        ? "border-rose-200/90 bg-rose-50/90 text-rose-700 hover:bg-rose-100 hover:border-rose-300 hover:text-rose-800"
-                                        : "border-blue-200/90 bg-blue-50/90 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800"
+                                        ? "border-slate-200 bg-white text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                                        : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
                                     }`}
                                   >
                                     {actionUserId === user.id ? (
@@ -866,14 +866,14 @@ export function UserManagementView({
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                     <p className="text-xs text-slate-500 font-medium">
                       Showing{" "}
-                      <span className="font-bold text-slate-700">
+                      <span className="font-semibold text-slate-700">
                         {meta.total === 0
                           ? 0
                           : (meta.page - 1) * meta.pageSize + 1}
                         –{Math.min(meta.page * meta.pageSize, meta.total)}
                       </span>{" "}
                       of{" "}
-                      <span className="font-bold text-slate-700">
+                      <span className="font-semibold text-slate-700">
                         {meta.total}
                       </span>{" "}
                       users
@@ -890,7 +890,7 @@ export function UserManagementView({
                         >
                           <ChevronLeft className="w-4 h-4 text-slate-600" />
                         </button>
-                        <span className="text-xs font-bold text-slate-600 min-w-15 text-center">
+                        <span className="text-xs font-semibold text-slate-600 min-w-15 text-center">
                           Page {meta.page} of {meta.totalPages}
                         </span>
                         <button

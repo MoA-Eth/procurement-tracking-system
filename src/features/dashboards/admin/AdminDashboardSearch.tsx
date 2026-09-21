@@ -139,7 +139,7 @@ export function AdminDashboardSearch({
             {/* 1. Matched User Accounts */}
             {matchedUsers.length > 0 && (
               <div className="p-2">
-                <div className="px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <div className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                   <User size={12} />
                   <span>Accounts ({matchedUsers.length})</span>
                 </div>
@@ -179,7 +179,7 @@ export function AdminDashboardSearch({
             {/* 2. Matched System Logs */}
             {matchedLogs.length > 0 && (
               <div className="p-2">
-                <div className="px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <div className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                   <History size={12} />
                   <span>Audit Logs ({matchedLogs.length})</span>
                 </div>

@@ -153,7 +153,7 @@ export function PlanFullScreenReviewView({
           Plan for Review
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-bold text-[#0A3C2F]">
+        <span className="font-semibold text-[#0A3C2F]">
           Review: {plan.planName}
         </span>
       </nav>
@@ -165,19 +165,19 @@ export function PlanFullScreenReviewView({
             <div className="flex items-center gap-2">
               <button
                 onClick={onBackClick}
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back to Plans List
               </button>
               <span className="text-slate-300">•</span>
-              <span className="font-mono text-xs font-extrabold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-200">
+              <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-200">
                 {plan.projectCode}
               </span>
             </div>
 
             {/* Plan Name */}
             <div className="space-y-1">
-              <label className="block text-[11px] font-extrabold text-[#0A3C2F] uppercase tracking-wider">
+              <label className="block text-[11px] font-semibold text-[#0A3C2F] uppercase tracking-wider">
                 Plan Title
               </label>
               {userRole === "DIRECTOR" ? (
@@ -185,10 +185,10 @@ export function PlanFullScreenReviewView({
                   type="text"
                   value={plan.planName}
                   onChange={(e) => onUpdatePlanName(e.target.value)}
-                  className="w-full text-lg sm:text-xl font-extrabold text-slate-950 tracking-tight rounded-xl border border-emerald-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] outline-none"
+                  className="w-full text-lg sm:text-xl font-semibold text-slate-950 tracking-tight rounded-xl border border-emerald-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] outline-none"
                 />
               ) : (
-                <h2 className="text-lg sm:text-xl font-extrabold text-slate-950 tracking-tight pt-0.5">
+                <h2 className="text-lg sm:text-xl font-semibold text-slate-950 tracking-tight pt-0.5">
                   {plan.planName}
                 </h2>
               )}
@@ -224,14 +224,14 @@ export function PlanFullScreenReviewView({
 
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-[#edf5f1] hover:text-[#0A3C2F] transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
               onClick={() => onOpenHistoryModal(plan)}
               type="button"
             >
               <History className="h-3.5 w-3.5 text-[#0A3C2F]" />
               Version History (v{getCurrentPlanVersionNumber(plan.id)})
             </button>
-            <span className="text-xs font-extrabold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+            <span className="badge-status-base badge-status-under-review font-medium">
               {plan.status}
             </span>
           </div>
@@ -252,10 +252,10 @@ export function PlanFullScreenReviewView({
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-sm font-extrabold text-indigo-950">
+                  <h3 className="text-sm font-semibold text-indigo-950">
                     Supplementary Procurement Plan Submission
                   </h3>
-                  <span className="rounded-full bg-indigo-200/80 px-2.5 py-0.5 text-[11px] font-extrabold text-indigo-900 border border-indigo-300">
+                  <span className="rounded-md bg-indigo-200/80 px-2.5 py-0.5 text-[11px] font-medium text-indigo-900 border border-indigo-300">
                     Linked Parent Plan:{" "}
                     {plan.parentPlanReference ||
                       plan.parentPlanName ||
@@ -271,7 +271,7 @@ export function PlanFullScreenReviewView({
           </div>
 
           <div className="rounded-xl border border-indigo-200 bg-white/95 p-4 text-xs shadow-2xs space-y-1.5">
-            <p className="font-bold text-indigo-950 flex items-center gap-1.5">
+            <p className="font-semibold text-indigo-950 flex items-center gap-1.5">
               <MessageSquare className="h-3.5 w-3.5 text-indigo-700" />
               Officer&apos;s Mandatory Justification (Why not submitted with the
               original plan):
@@ -301,19 +301,19 @@ export function PlanFullScreenReviewView({
 
           if (parsed.scope === "SPECIFIC") {
             return (
-              <section className="rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50/40 p-4 shadow-2xs space-y-2.5 animate-in fade-in">
-                <div className="flex flex-wrap items-start justify-between gap-2">
+              <section className="notice-card-clean space-y-3 animate-in fade-in">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-start gap-2.5">
-                    <div className="p-1 rounded-lg bg-amber-100 border border-amber-200 shrink-0 mt-0.5">
-                      <AlertTriangle className="h-4 w-4 text-amber-700" />
+                    <div className="p-1.5 rounded-lg bg-slate-100 border border-slate-200 shrink-0 mt-0.5">
+                      <AlertTriangle className="h-4 w-4 text-slate-700" />
                     </div>
                     <div>
-                      <h3 className="text-xs font-extrabold text-amber-950 uppercase tracking-wider">
+                      <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                         {isMajorityRejected
                           ? `Plan Rejected: Specific Activities Flagged (${parsed.rejectedActivityRefs.length} item${parsed.rejectedActivityRefs.length > 1 ? "s" : ""})`
                           : `Committee Objection Noted: Specific Activities Flagged (${parsed.rejectedActivityRefs.length} item${parsed.rejectedActivityRefs.length > 1 ? "s" : ""})`}
                       </h3>
-                      <p className="text-xs text-amber-900/90 mt-0.5 leading-relaxed">
+                      <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
                         {isMajorityRejected
                           ? "The Endorsement Committee has officially rejected this plan by majority vote due to objections on specific activities. The plan is now returned for revision."
                           : "A committee member has registered objections on specific activities. Per regulations, at least 3 rejection votes are required to completely reject the plan, but comments and flagged activities are immediately visible below for directorate review."}
@@ -321,10 +321,10 @@ export function PlanFullScreenReviewView({
                     </div>
                   </div>
                   <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 ${
+                    className={`badge-status-base ${
                       isMajorityRejected
-                        ? "bg-rose-100 text-rose-800 border-rose-300"
-                        : "bg-amber-200/70 text-amber-900 border-amber-300"
+                        ? "badge-status-delayed font-semibold"
+                        : "badge-status-under-review font-medium"
                     }`}
                   >
                     {isMajorityRejected
@@ -333,8 +333,8 @@ export function PlanFullScreenReviewView({
                   </span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-amber-200/60 text-xs">
-                  <span className="font-bold text-amber-950 text-[11px]">
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 text-xs">
+                  <span className="font-medium text-slate-600 text-xs">
                     Flagged Activities:
                   </span>
                   {parsed.rejectedActivityRefs.map((ref) => (
@@ -352,12 +352,12 @@ export function PlanFullScreenReviewView({
                           });
                         }
                       }}
-                      className="inline-flex items-center gap-1.5 font-mono font-bold text-rose-900 bg-rose-100 hover:bg-rose-200 border border-rose-300 hover:border-rose-400 px-2.5 py-1 rounded-md text-[11px] transition-all cursor-pointer shadow-2xs group"
+                      className="inline-flex items-center gap-1.5 font-mono text-xs font-medium text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-md transition-all cursor-pointer group"
                       title={`Click to jump to activity ${ref}`}
                     >
                       <AlertCircle className="h-3 w-3 text-rose-600" />
                       <span>{ref}</span>
-                      <span className="font-sans text-[10px] text-rose-700 group-hover:underline">
+                      <span className="font-sans text-[11px] text-rose-700 group-hover:underline">
                         ↓ Jump to Activity
                       </span>
                     </button>
@@ -365,11 +365,11 @@ export function PlanFullScreenReviewView({
                 </div>
 
                 {parsed.cleanRemarks && (
-                  <div className="text-xs bg-white/90 rounded-lg p-3 border border-amber-200/80 shadow-2xs text-amber-950">
-                    <span className="font-bold text-slate-800">
+                  <div className="notice-quote-clean">
+                    <span className="font-semibold text-slate-800 text-xs">
                       Committee Feedback &amp; Deliberation Notes:{" "}
                     </span>
-                    <span className="italic text-slate-700 font-medium">
+                    <span className="italic text-slate-700 font-normal text-xs">
                       &ldquo;{parsed.cleanRemarks}&rdquo;
                     </span>
                   </div>
@@ -389,7 +389,7 @@ export function PlanFullScreenReviewView({
                       <RotateCcw className="h-4 w-4 text-rose-700" />
                     </div>
                     <div>
-                      <h3 className="text-xs font-extrabold text-rose-950 uppercase tracking-wider">
+                      <h3 className="text-xs font-semibold text-rose-950 uppercase tracking-wider">
                         {isMajorityRejected
                           ? "Plan Rejected: Common / Entire Plan Package Rejection"
                           : "Committee Objection: Entire Plan Package (Deliberation in Progress)"}
@@ -401,7 +401,7 @@ export function PlanFullScreenReviewView({
                       </p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
                     {isMajorityRejected
                       ? "Majority Rejected (3+ Votes)"
                       : "Objection in Progress"}
@@ -410,7 +410,7 @@ export function PlanFullScreenReviewView({
 
                 {parsed.cleanRemarks && (
                   <div className="text-xs bg-white/90 rounded-lg p-3 border border-rose-200/80 shadow-2xs text-rose-950">
-                    <span className="font-bold text-slate-800">
+                    <span className="font-semibold text-slate-800">
                       Revision Notes:{" "}
                     </span>
                     <span className="italic text-slate-700 font-medium">
@@ -429,7 +429,7 @@ export function PlanFullScreenReviewView({
         {/* Plan Justification Notes */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-bold text-slate-900">
+            <label className="block text-xs font-semibold text-slate-900">
               Procurement Plan Justification &amp; Directorate Notes
             </label>
             {userRole === "DIRECTOR" && (
@@ -461,7 +461,7 @@ export function PlanFullScreenReviewView({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <h4 className="text-sm font-bold text-slate-900">
+                <h4 className="text-sm font-semibold text-slate-900">
                   Package Activities Directory
                 </h4>
                 <span className="text-xs font-semibold text-slate-500">
@@ -484,9 +484,9 @@ export function PlanFullScreenReviewView({
             <button
               type="button"
               onClick={() => onOpenActivitiesPlan(plan)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
             >
-              <ListChecks className="h-4 w-4 text-[#A3E635]" />
+              <ListChecks className="h-4 w-4 text-emerald-200" />
               <span>Inspect Package Activities</span>
             </button>
           </div>
@@ -494,7 +494,7 @@ export function PlanFullScreenReviewView({
           {/* Clean View-First Package Activities Table */}
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
             <table className="w-full text-left text-xs border-collapse min-w-[840px]">
-              <thead className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+              <thead className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-3.5 w-8 text-center">#</th>
                   <th className="py-3 px-3.5 min-w-[170px] w-44">
@@ -542,37 +542,37 @@ export function PlanFullScreenReviewView({
                             : "hover:bg-emerald-50/40"
                         }`}
                       >
-                        <td className="py-3.5 px-3.5 text-center font-bold text-slate-400 align-top pt-4">
+                        <td className="py-3.5 px-3.5 text-center font-semibold text-slate-400 align-top pt-4">
                           {idx + 1}
                         </td>
 
                         {/* Ref No & Method */}
                         <td className="py-3.5 px-3.5 align-top space-y-1.5 pt-3.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono font-extrabold text-[#0A3C2F] text-[11px] whitespace-nowrap block group-hover:text-emerald-800">
+                            <span className="font-mono font-semibold text-[#0A3C2F] text-[11px] whitespace-nowrap block group-hover:text-emerald-800">
                               {act.activityRefNo}
                             </span>
                             {isTargeted && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-rose-600 text-white animate-pulse">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-rose-600 text-white animate-pulse">
                                 Targeted Activity
                               </span>
                             )}
                             {(act as any).isParentApproved ? (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
                                 ✓ Already Approved
                               </span>
                             ) : plan.planType === "ADDITIONAL" ? (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                              <span className="badge-status-base badge-status-in-progress">
                                 ★ New Activity
                               </span>
                             ) : null}
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                            <span className="font-bold text-slate-700 whitespace-nowrap">
+                            <span className="font-semibold text-slate-700 whitespace-nowrap">
                               {act.method}
                             </span>
                             <span className="text-slate-300">•</span>
-                            <span className="font-extrabold text-amber-800 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 whitespace-nowrap">
                               {act.reviewType}
                             </span>
                           </div>
@@ -587,7 +587,7 @@ export function PlanFullScreenReviewView({
 
                         {/* Target Date */}
                         <td className="py-3.5 px-3.5 align-top whitespace-nowrap">
-                          <span className="font-mono font-bold text-slate-800 text-xs bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg inline-block">
+                          <span className="font-mono font-semibold text-slate-800 text-xs bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg inline-block">
                             {currentTargetDate}
                           </span>
                         </td>
@@ -623,7 +623,7 @@ export function PlanFullScreenReviewView({
                                 e.stopPropagation();
                                 setEditingActivity(act);
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200 hover:bg-[#0A3C2F] hover:text-white text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200 hover:bg-[#0A3C2F] hover:text-white text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                             >
                               <Edit className="h-3.5 w-3.5" />
                               <span>Edit</span>
@@ -635,7 +635,7 @@ export function PlanFullScreenReviewView({
                                 e.stopPropagation();
                                 setEditingActivity(act);
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                             >
                               <Eye className="h-3.5 w-3.5" />
                               <span>View</span>
@@ -670,7 +670,7 @@ export function PlanFullScreenReviewView({
         <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-sm font-semibold text-slate-900">
               {userRole === "ENDORSING_COMMITTEE"
                 ? "Endorsement Committee Decision & Voting"
                 : userRole === "MANAGEMENT"
@@ -680,7 +680,7 @@ export function PlanFullScreenReviewView({
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-800">
+            <label className="block text-xs font-semibold text-slate-800">
               {userRole === "ENDORSING_COMMITTEE" ? (
                 <>
                   Committee Feedback / Deliberation Notes
@@ -758,16 +758,16 @@ export function PlanFullScreenReviewView({
                 onClick={() =>
                   onCommitteeVote && onCommitteeVote(plan, "APPROVE")
                 }
-                className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
-                <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-200" />
                 <span>Vote: Endorse &amp; Approve Plan</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsCommitteeRejectionModalOpen(true)}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer shadow-2xs"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-semibold transition-colors bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer shadow-2xs"
               >
                 <RotateCcw className="h-4 w-4" />
                 <span>Vote: Reject / Return Plan</span>
@@ -781,7 +781,7 @@ export function PlanFullScreenReviewView({
                   onManagementDecision &&
                   onManagementDecision(plan, "APPROVE", returnRemarks)
                 }
-                className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-700 text-white hover:bg-indigo-800 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 <ShieldCheck className="h-4 w-4 text-indigo-200" />
                 <span>Grant Executive Authorization</span>
@@ -794,7 +794,7 @@ export function PlanFullScreenReviewView({
                   onManagementDecision &&
                   onManagementDecision(plan, "REJECT", returnRemarks)
                 }
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors ${
+                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-semibold transition-colors ${
                   returnRemarks.trim()
                     ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
                     : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
@@ -807,7 +807,7 @@ export function PlanFullScreenReviewView({
           ) : userRole === "DIRECTOR" ? (
             <div className="space-y-4 pt-2 border-t border-slate-100">
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800">
+                <label className="block text-xs font-semibold text-slate-800">
                   Committee Voting Deadline
                   <span className="ml-1 text-slate-500 font-normal">
                     (Used for backend automated email reminders)
@@ -847,9 +847,9 @@ export function PlanFullScreenReviewView({
                   onClick={() =>
                     onApprovePlan && onApprovePlan(plan, committeeDeadlineDate)
                   }
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
-                  <Send className="h-4 w-4 text-[#A3E635]" />
+                  <Send className="h-4 w-4 text-emerald-200" />
                   <span>Approve &amp; Send to Committee</span>
                 </button>
 
@@ -857,7 +857,7 @@ export function PlanFullScreenReviewView({
                   type="button"
                   disabled={!returnRemarks.trim()}
                   onClick={() => onReturnPlan && onReturnPlan(plan)}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-colors ${
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-semibold transition-colors ${
                     returnRemarks.trim()
                       ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
                       : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"

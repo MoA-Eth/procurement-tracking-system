@@ -194,15 +194,15 @@ export function EditActivityModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#176c55] text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0A3C2F] text-white">
               <Edit3 className="h-4.5 w-4.5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900">
                   Revise Procurement Activity
                 </h3>
-                <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700">
+                <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
                   {activity.reference}
                 </span>
               </div>
@@ -230,11 +230,11 @@ export function EditActivityModal({
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Activity Description <span className="text-rose-500">*</span>
             </label>
             <textarea
-              className="w-full rounded-lg border border-slate-300 p-3 text-xs leading-5 text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+              className="w-full rounded-lg border border-slate-300 p-3 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -243,28 +243,28 @@ export function EditActivityModal({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Estimated Budget <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <input
                   type="number"
-                  className="w-full h-10 rounded-lg border border-slate-300 px-3 pl-8 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15 font-semibold"
+                  className="w-full h-10 rounded-lg border border-slate-300 px-3 pl-8 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 font-semibold"
                   value={estimatedAmount}
                   onChange={(e) => setEstimatedAmount(e.target.value)}
                 />
-                <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 font-bold">
+                <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 font-semibold">
                   {currency === "USD" ? "$" : "Br"}
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Currency
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
               >
@@ -277,11 +277,11 @@ export function EditActivityModal({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Procurement Method
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
               >
@@ -300,12 +300,12 @@ export function EditActivityModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Funding Source
               </label>
               <input
                 type="text"
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
                 value={fundingSource}
                 onChange={(e) => setFundingSource(e.target.value)}
               />
@@ -314,11 +314,11 @@ export function EditActivityModal({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Market Approach
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
                 value={marketApproach}
                 onChange={(e) => setMarketApproach(e.target.value)}
               >
@@ -332,11 +332,11 @@ export function EditActivityModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Review Type
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
                 value={reviewType}
                 onChange={(e) => setReviewType(e.target.value)}
               >
@@ -346,11 +346,11 @@ export function EditActivityModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Contract Type
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
                 value={contractType}
                 onChange={(e) => setContractType(e.target.value)}
               >
@@ -361,16 +361,16 @@ export function EditActivityModal({
           </div>
 
           {/* Revision Reason / Justification */}
-          <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 p-4 space-y-2">
-            <label className="block text-xs font-bold text-amber-950">
+          <div className="notice-card-clean space-y-2">
+            <label className="block text-xs font-semibold text-slate-800">
               Revision Reason / Comment (Recorded in Audit Trail){" "}
-              <span className="text-amber-700 font-normal">
+              <span className="text-slate-500 font-normal">
                 e.g. &quot;Updated market estimate&quot;
               </span>
             </label>
             <input
               type="text"
-              className="w-full h-9 rounded-lg border border-amber-300 bg-white px-3 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+              className="w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
               placeholder="e.g., Updated market estimate, adjusted scope per Director request..."
               value={revisionReason}
               onChange={(e) => setRevisionReason(e.target.value)}
@@ -388,7 +388,7 @@ export function EditActivityModal({
             Cancel
           </button>
           <button
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#176c55] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#125f4c] transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition cursor-pointer disabled:opacity-50"
             disabled={saving}
             onClick={handleSave}
             type="button"

@@ -32,11 +32,11 @@ export function CommitteeAwaitingTable({
       <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-2 flex-wrap">
           <ClipboardCheck className="h-5 w-5 text-emerald-700 shrink-0" />
-          <h2 className="text-sm font-bold text-slate-900">
+          <h2 className="text-sm font-semibold text-slate-900">
             Plans Awaiting My Vote
           </h2>
           {filter === "delayed" && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-150 animate-fade-in select-none">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-150 animate-fade-in select-none">
               <span>Delayed Only</span>
               <button
                 type="button"
@@ -105,7 +105,7 @@ export function CommitteeAwaitingTable({
                     plan.isPriority ? "bg-rose-50/10" : ""
                   }`}
                 >
-                  <td className="py-3.5 px-4 font-bold text-slate-900">
+                  <td className="py-3.5 px-4 font-semibold text-slate-900">
                     <Link
                       href={`/workspace/plan-for-review?planId=${plan.id}`}
                       className="hover:underline hover:text-emerald-800 transition-colors"
@@ -116,7 +116,7 @@ export function CommitteeAwaitingTable({
                       <span
                         className={
                           plan.isPriority
-                            ? "text-rose-600 font-bold"
+                            ? "text-rose-600 font-semibold"
                             : "text-slate-400 font-medium"
                         }
                       >
@@ -127,7 +127,7 @@ export function CommitteeAwaitingTable({
                       {plan.deadlineText && (
                         <>
                           <span className="text-slate-300">•</span>
-                          <span className="text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-150 font-bold select-none whitespace-nowrap">
+                          <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 text-xs font-medium select-none whitespace-nowrap">
                             Deadline: {plan.deadlineText}
                           </span>
                         </>
@@ -139,12 +139,12 @@ export function CommitteeAwaitingTable({
                   </td>
                   <td className="py-3.5 px-4">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
+                      className={`px-2 py-0.5 rounded-md text-xs font-medium border ${
                         plan.category === "Goods"
-                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
                           : plan.category === "Works"
-                            ? "bg-amber-50 text-amber-700 border-amber-100"
-                            : "bg-purple-50 text-purple-700 border-purple-100"
+                            ? "bg-blue-50/60 text-blue-800 border-blue-200/80"
+                            : "bg-purple-50 text-purple-800 border-purple-200"
                       }`}
                     >
                       {plan.category}
@@ -157,7 +157,7 @@ export function CommitteeAwaitingTable({
                       year: "numeric",
                     })}
                   </td>
-                  <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono">
+                  <td className="py-3.5 px-4 text-right font-semibold text-slate-900 font-mono">
                     {plan.estimatedTotal}
                   </td>
                   <td className="py-3.5 px-4">

@@ -197,18 +197,18 @@ export function OfficerProcurementActivityDetailView({
         />
         <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#176c55]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#0A3C2F]">
               Procurement Activity
             </p>
-            <h1 className="mt-1 max-w-4xl text-2xl font-extrabold tracking-tight text-[#10243f]">
+            <h1 className="mt-1 max-w-4xl text-2xl font-semibold tracking-tight text-[#10243f]">
               {activity.description}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-              <span>
-                Reference:{" "}
-                <strong className="font-semibold text-[#1261a8]">
+              <span className="inline-flex items-center gap-1.5">
+                <span>Reference:</span>
+                <span className="rounded-md bg-slate-100/90 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-800 border border-slate-200/80">
                   {activity.reference}
-                </strong>
+                </span>
               </span>
               <span aria-hidden="true" className="text-slate-300">
                 •
@@ -245,12 +245,12 @@ export function OfficerProcurementActivityDetailView({
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {isActivityRevised && (
               <button
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition cursor-pointer"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
                 onClick={() => setIsHistoryModalOpen(true)}
                 title="View Activity Version History"
                 type="button"
               >
-                <History className="h-3.5 w-3.5 text-[#176c55]" />
+                <History className="h-3.5 w-3.5 text-[#0A3C2F]" />
                 Version History
               </button>
             )}
@@ -259,7 +259,7 @@ export function OfficerProcurementActivityDetailView({
               plan.status === "Returned" ||
               plan.status === "Returned for Revision") && (
               <Link
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition"
                 href={
                   "/workspace/projects?project=" +
                   encodeURIComponent(project.code) +
@@ -276,7 +276,7 @@ export function OfficerProcurementActivityDetailView({
             )}
 
             <Link
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#176c55] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#0A3C2F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
               href={backHref}
             >
               <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
@@ -300,7 +300,7 @@ export function OfficerProcurementActivityDetailView({
         title="Related Information"
       >
         <section className="rounded-md border border-[#cfd8e8] bg-[#f2f5ff] p-3">
-          <h3 className="flex items-center gap-1.5 text-[10px] font-extrabold text-[#07523f]">
+          <h3 className="flex items-center gap-1.5 text-[10px] font-semibold text-[#0A3C2F]">
             <FolderOpen aria-hidden="true" className="h-3.5 w-3.5" />
             Inherited Project &amp; Plan Context
           </h3>
@@ -472,14 +472,14 @@ function ActivityBreadcrumb({
       <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
         <ol className="flex flex-wrap items-center gap-2">
           <li>
-            <Link className="hover:text-[#176c55]" href="/dashboard/officer">
+            <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
               Home
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
             <Link
-              className="hover:text-[#176c55]"
+              className="hover:text-[#0A3C2F]"
               href="/workspace/activity-tracker"
             >
               Activity Tracker
@@ -487,7 +487,7 @@ function ActivityBreadcrumb({
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link className="hover:text-[#176c55]" href={trackerHref}>
+            <Link className="hover:text-[#0A3C2F]" href={trackerHref}>
               {activity.reference}
             </Link>
           </li>
@@ -504,20 +504,20 @@ function ActivityBreadcrumb({
     <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
       <ol className="flex flex-wrap items-center gap-2">
         <li>
-          <Link className="hover:text-[#176c55]" href="/dashboard/officer">
+          <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
             Home
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#176c55]" href="/workspace/projects">
+          <Link className="hover:text-[#0A3C2F]" href="/workspace/projects">
             Projects
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
           <Link
-            className="hover:text-[#176c55]"
+            className="hover:text-[#0A3C2F]"
             href={`/workspace/projects?project=${encodeURIComponent(project.code)}`}
           >
             {project.shortName}
@@ -526,7 +526,7 @@ function ActivityBreadcrumb({
         <li aria-hidden="true">/</li>
         <li>
           <Link
-            className="max-w-60 truncate hover:text-[#176c55]"
+            className="max-w-60 truncate hover:text-[#0A3C2F]"
             href={planHref}
           >
             {plan.name}
@@ -554,12 +554,12 @@ function DetailCard({
 }) {
   return (
     <section className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
-      <header className="flex items-center gap-2 border-b border-[#c7d8d1] bg-[#edf5f1] px-4 py-3">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#176c55] text-[10px] font-extrabold text-white">
+      <header className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0A3C2F] text-[10px] font-semibold text-white">
           {number}
         </span>
-        <span className="text-[#176c55]">{icon}</span>
-        <h2 className="text-sm font-extrabold text-[#10243f]">{title}</h2>
+        <span className="text-[#0A3C2F]">{icon}</span>
+        <h2 className="text-sm font-semibold text-[#10243f]">{title}</h2>
       </header>
       <div className="p-4 sm:p-5">{children}</div>
     </section>
@@ -579,7 +579,7 @@ function DetailGrid({ values }: { values: DetailValue[] }) {
 function DetailItem({ label, value }: DetailValue) {
   return (
     <div className="min-w-0">
-      <dt className="text-[9px] font-bold uppercase tracking-[0.07em] text-slate-500">
+      <dt className="text-[9px] font-semibold uppercase tracking-[0.07em] text-slate-500">
         {label}
       </dt>
       <dd className="mt-1 wrap-break-word text-xs font-semibold leading-5 text-slate-800">
@@ -598,7 +598,7 @@ function AllocationList({
 }) {
   return (
     <section className="mb-4 last:mb-0">
-      <h3 className="text-[10px] font-extrabold text-slate-700">{title}</h3>
+      <h3 className="text-[10px] font-semibold text-slate-700">{title}</h3>
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
         {allocations.map((allocation) => (
           <div
@@ -608,7 +608,7 @@ function AllocationList({
             <span className="min-w-0 wrap-break-word text-[10px] font-semibold text-slate-700">
               {allocation.id}
             </span>
-            <span className="shrink-0 rounded bg-[#e8f5ef] px-2 py-0.5 text-[10px] font-bold text-[#047857]">
+            <span className="shrink-0 rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
               {allocation.percent}%
             </span>
           </div>
@@ -629,13 +629,13 @@ function CompactTable({
 }) {
   return (
     <section className="mt-5 overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-2xs">
-      <h3 className="border-b border-slate-200 bg-[#edf5f1] px-3.5 py-2.5 text-[11px] font-extrabold text-[#16253d]">
+      <h3 className="border-b border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[11px] font-semibold text-[#16253d]">
         {title}
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-136 border-collapse text-left">
           <thead>
-            <tr className="bg-[#0A3C2F] text-white text-[10px] font-extrabold uppercase tracking-wider">
+            <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
               {columns.map((column) => (
                 <th className="px-3 py-2.5" key={column} scope="col">
                   {column}
@@ -674,13 +674,13 @@ function RoadmapTable({
 }) {
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-2xs">
-      <h3 className="border-b border-slate-200 bg-[#edf5f1] px-3.5 py-2.5 text-[11px] font-extrabold text-[#16253d]">
+      <h3 className="border-b border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[11px] font-semibold text-[#16253d]">
         {title}
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-184 border-collapse text-left">
           <thead>
-            <tr className="bg-[#0A3C2F] text-white text-[10px] font-extrabold uppercase tracking-wider">
+            <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
               <th className="w-[34%] px-3 py-2.5" scope="col">
                 Stage
               </th>

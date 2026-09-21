@@ -520,7 +520,7 @@ export function CreateProjectView({
 
       {/* Error Alert */}
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
@@ -570,7 +570,7 @@ export function CreateProjectView({
           <button
             type="button"
             onClick={currentStep === 1 ? onBackClick : handlePrev}
-            className="px-5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="px-5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             {currentStep === 1 ? "Cancel" : "← Previous Step"}
           </button>
@@ -580,7 +580,7 @@ export function CreateProjectView({
               <button
                 type="button"
                 onClick={handleNext}
-                className="px-6 py-2.5 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                className="px-6 py-2.5 rounded-xl bg-[#0A3C2F] hover:bg-[#072F25] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
               >
                 <span>Continue to Step 0{currentStep + 1}</span>
                 <span>→</span>
@@ -589,7 +589,7 @@ export function CreateProjectView({
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="px-7 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2"
+                className="px-7 py-2.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-all shadow-md cursor-pointer flex items-center gap-2"
               >
                 <Save className="h-4 w-4" />
                 <span>

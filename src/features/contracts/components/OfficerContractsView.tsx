@@ -422,7 +422,7 @@ export function OfficerContractsView({
             <ol className="flex items-center gap-2">
               <li>
                 <Link
-                  className="hover:text-[#176c55] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                  className="hover:text-[#0A3C2F] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                   href="/dashboard/officer"
                 >
                   Home
@@ -431,7 +431,7 @@ export function OfficerContractsView({
               <li aria-hidden="true" className="text-slate-300">
                 /
               </li>
-              <li aria-current="page" className="font-bold text-[#176c55]">
+              <li aria-current="page" className="font-semibold text-[#0A3C2F]">
                 Contracts
               </li>
             </ol>
@@ -441,7 +441,7 @@ export function OfficerContractsView({
 
         <div className="flex w-full sm:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
           <button
-            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] cursor-pointer"
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] cursor-pointer"
             onClick={() => handleExportContracts(selectedIds.size > 0)}
             type="button"
           >
@@ -451,7 +451,7 @@ export function OfficerContractsView({
               : "Export Contracts"}
           </button>
           <button
-            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-bold text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] cursor-pointer"
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] cursor-pointer"
             onClick={handleImportClick}
             type="button"
           >
@@ -459,9 +459,9 @@ export function OfficerContractsView({
             Import Contracts
           </button>
           <Link
-            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-sm font-bold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] transition"
+            className="inline-flex h-10 w-full sm:w-auto shrink-0 items-center justify-center gap-2 rounded-md border border-[#00552c] bg-[#006837] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006837] transition"
             href="/workspace/contracts?mode=register"
-            style={{ backgroundColor: "#176c55", color: "#ffffff" }}
+            style={{ backgroundColor: "#006837", color: "#ffffff" }}
           >
             <Plus aria-hidden="true" className="h-4 w-4" />
             Register Contract
@@ -479,7 +479,7 @@ export function OfficerContractsView({
         >
           <span>{importNotification.message}</span>
           <button
-            className="font-bold underline cursor-pointer"
+            className="font-semibold underline cursor-pointer"
             onClick={() => setImportNotification(null)}
             type="button"
           >
@@ -503,7 +503,7 @@ export function OfficerContractsView({
               className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-500"
             />
             <input
-              className="h-10 w-full rounded-sm border border-slate-300 bg-[#fbfcfd] pr-3 pl-10 text-xs text-slate-800 outline-none transition placeholder:text-slate-500 hover:border-[#9fb8ad] focus:border-[#176c55] focus:bg-white focus:ring-2 focus:ring-[#176c55]/15"
+              className="h-10 w-full rounded-sm border border-slate-300 bg-[#fbfcfd] pr-3 pl-10 text-xs text-slate-800 outline-none transition placeholder:text-slate-500 hover:border-[#0A3C2F] focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/15"
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search Contract #, Ref, or Supplier..."
               type="search"
@@ -559,7 +559,7 @@ export function OfficerContractsView({
       {selectedIds.size > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/90 px-4 py-2.5 text-xs font-semibold text-emerald-900 shadow-2xs">
           <div className="flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#176c55] text-white text-[10px] font-bold">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0A3C2F] text-white text-[10px] font-semibold">
               {selectedIds.size}
             </span>
             <span>
@@ -569,7 +569,7 @@ export function OfficerContractsView({
           </div>
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#176c55] px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#125442] transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#006837] px-3 py-1.5 text-xs font-semibold text-white shadow-2xs hover:bg-[#00552c] transition cursor-pointer"
               onClick={() => handleExportContracts(true)}
               type="button"
             >
@@ -584,7 +584,7 @@ export function OfficerContractsView({
               Export All ({filteredContracts.length})
             </button>
             <button
-              className="rounded-md px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-950 transition cursor-pointer underline"
+              className="rounded-md px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-950 transition cursor-pointer underline"
               onClick={() => setSelectedIds(new Set())}
               type="button"
             >
@@ -601,13 +601,13 @@ export function OfficerContractsView({
         <h2 className="sr-only">Contract register</h2>
         <div
           aria-label="Contract register table"
-          className="max-w-full min-w-0 flex-1 overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#176c55]"
+          className="max-w-full min-w-0 flex-1 overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0A3C2F]"
           role="region"
           tabIndex={0}
         >
           <table className="w-full min-w-[2200px] table-fixed border-collapse text-left">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="w-12 px-3 py-3 text-center" scope="col">
                   <input
                     aria-label="Select all visible contracts"
@@ -684,18 +684,18 @@ export function OfficerContractsView({
                   return (
                     <tr
                       key={contract.id}
-                      className="even:bg-[#fbfcff] hover:bg-[#f7fbf9]"
+                      className="even:bg-[#fbfcff] hover:bg-slate-50"
                     >
                       <td className="px-3 py-2.5 text-center align-top">
                         <input
                           aria-label={`Select contract ${contract.contractNumber}`}
                           checked={selectedIds.has(contract.id)}
-                          className="h-4 w-4 accent-[#176c55]"
+                          className="h-4 w-4 accent-[#006837]"
                           onChange={() => toggleContract(contract.id)}
                           type="checkbox"
                         />
                       </td>
-                      <td className="w-72 min-w-[280px] whitespace-nowrap px-3.5 py-2.5 align-top font-mono text-xs font-bold text-slate-800">
+                      <td className="w-72 min-w-[280px] whitespace-nowrap px-3.5 py-2.5 align-top font-mono text-xs font-semibold text-slate-800">
                         {contract.contractNumber}
                       </td>
                       <td className="w-80 min-w-[320px] px-3.5 py-2.5 align-top text-xs leading-5 text-slate-700 wrap-break-word">
@@ -744,7 +744,7 @@ export function OfficerContractsView({
                         <div className="flex items-center justify-center gap-1.5">
                           <Link
                             aria-label={`Amend contract ${contract.contractNumber}`}
-                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 text-[11px] font-bold whitespace-nowrap text-slate-700 shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] hover:text-[#176c55] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 text-[11px] font-semibold whitespace-nowrap text-slate-700 shadow-xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                             href={`/workspace/contracts?mode=add-amendment&contract=${encodeURIComponent(contract.contractNumber)}`}
                           >
                             <FileEdit
@@ -755,7 +755,7 @@ export function OfficerContractsView({
                           </Link>
                           <Link
                             aria-label={`Add payment to contract ${contract.contractNumber}`}
-                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-[#a9cbbd] bg-white px-2.5 text-[11px] font-bold whitespace-nowrap text-[#07523f] shadow-xs hover:border-[#176c55] hover:bg-[#edf5f1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+                            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-emerald-200 bg-white px-2.5 text-[11px] font-semibold whitespace-nowrap text-[#0A3C2F] shadow-xs hover:border-[#0A3C2F] hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                             href={`/workspace/contracts?mode=add-payment&contract=${encodeURIComponent(contract.contractNumber)}`}
                           >
                             <Banknote
@@ -790,7 +790,7 @@ export function OfficerContractsView({
               Rows per page:
               <select
                 aria-label="Rows per page"
-                className="h-8 rounded-md border border-slate-300 bg-white px-2 text-xs outline-none focus:border-[#348267] focus:ring-2 focus:ring-[#348267]/15"
+                className="h-8 rounded-md border border-slate-300 bg-white px-2 text-xs outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
                 defaultValue="50"
               >
                 <option value="25">25</option>
@@ -917,7 +917,7 @@ function LabeledSelect({
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-labelledby={`${listboxId}-label ${listboxId}-value`}
-          className={`relative inline-flex cursor-pointer items-center border border-slate-300 text-left font-medium text-slate-700 shadow-xs hover:border-[#8db7a6] focus-visible:border-[#348267] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#348267]/15 ${
+          className={`relative inline-flex cursor-pointer items-center border border-slate-300 text-left font-medium text-slate-700 shadow-xs hover:border-[#0A3C2F] focus-visible:border-[#0A3C2F] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#0A3C2F]/15 ${
             compact
               ? "h-10 w-full rounded-sm bg-[#fbfcfd] py-2 pr-9 pl-3 text-xs"
               : "h-11 rounded-md bg-white py-2.5 pr-11 pl-4 text-sm"
@@ -979,7 +979,7 @@ function LabeledSelect({
                   aria-selected={isSelected}
                   className={`flex w-full items-center justify-between gap-6 rounded px-3 py-2.5 text-left text-sm font-medium whitespace-nowrap outline-none ${
                     isSelected
-                      ? "bg-[#edf5f1] text-[#07523f]"
+                      ? "bg-emerald-50 text-emerald-900"
                       : "text-slate-700 hover:bg-slate-50 focus-visible:bg-slate-50"
                   }`}
                   key={option.value}
@@ -1042,7 +1042,7 @@ function AmountCell({
     <td
       className={`px-3 py-2.5 text-right align-top font-mono text-sm tabular-nums ${
         emphasized
-          ? "font-bold text-slate-800"
+          ? "font-semibold text-slate-800"
           : muted
             ? "text-slate-500"
             : "text-slate-700"

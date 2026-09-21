@@ -187,7 +187,7 @@ export function ActivityTrackingDetailView({
         <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
-              <Link className="hover:text-[#176c55]" href="/dashboard/officer">
+              <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
                 Home
               </Link>
             </li>
@@ -196,7 +196,7 @@ export function ActivityTrackingDetailView({
             </li>
             <li>
               <Link
-                className="hover:text-[#176c55]"
+                className="hover:text-[#0A3C2F]"
                 href="/workspace/activity-tracker"
               >
                 Activity Tracker
@@ -205,7 +205,7 @@ export function ActivityTrackingDetailView({
             <li aria-hidden="true" className="text-slate-300">
               /
             </li>
-            <li aria-current="page" className="font-bold text-[#176c55]">
+            <li aria-current="page" className="font-semibold text-[#0A3C2F]">
               {item.activity.reference}
             </li>
           </ol>
@@ -213,10 +213,10 @@ export function ActivityTrackingDetailView({
 
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-[#176c55]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#0A3C2F]">
               Execution Tracking
             </p>
-            <h1 className="mt-1 max-w-5xl text-2xl font-extrabold tracking-tight text-[#10243f]">
+            <h1 className="mt-1 max-w-5xl text-2xl font-semibold tracking-tight text-[#10243f]">
               {item.activity.description}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
@@ -232,7 +232,7 @@ export function ActivityTrackingDetailView({
               <StatusText className="text-xs" label={overallStatus} />
               <span className="text-xs text-slate-500">
                 Current stage:{" "}
-                <strong className="font-bold text-slate-700">
+                <strong className="font-semibold text-slate-700">
                   {activeStageName}
                 </strong>
               </span>
@@ -240,14 +240,14 @@ export function ActivityTrackingDetailView({
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             <Link
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-bold text-slate-600 hover:border-[#8db7a6] hover:text-[#176c55]"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-600 hover:border-[#0A3C2F] hover:text-[#0A3C2F]"
               href={projectActivityHref}
             >
               Full activity details{" "}
               <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
             </Link>
             <Link
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-bold text-slate-600 hover:border-[#8db7a6] hover:text-[#176c55]"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-600 hover:border-[#0A3C2F] hover:text-[#0A3C2F]"
               href="/workspace/activity-tracker"
             >
               <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" /> Back to
@@ -260,7 +260,7 @@ export function ActivityTrackingDetailView({
       {savedMessage ? (
         <div
           aria-live="polite"
-          className="flex items-center gap-2 rounded-md border border-[#b8dfcf] bg-[#edf7f2] px-4 py-3 text-xs font-bold text-[#07523f]"
+          className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-900"
         >
           <CheckCircle2 aria-hidden="true" className="h-4 w-4" /> {savedMessage}
         </div>
@@ -277,9 +277,9 @@ export function ActivityTrackingDetailView({
             <button
               aria-controls={tab.id}
               aria-selected={selected}
-              className={`shrink-0 border-b-2 px-0.5 pb-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#176c55]/30 ${
+              className={`shrink-0 border-b-2 px-0.5 pb-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A3C2F]/20 ${
                 selected
-                  ? "border-[#176c55] text-[#07523f]"
+                  ? "border-[#0A3C2F] text-[#0A3C2F]"
                   : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
               id={`${tab.id}-tab`}
@@ -375,23 +375,23 @@ export function ActivityTrackingDetailView({
             title="Execution Summary"
           />
           <div className="grid gap-5 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(18rem,2fr)]">
-            <div className="border-l-2 border-[#8db7a6] pl-3">
-              <p className="text-[9px] font-extrabold uppercase tracking-[0.06em] text-slate-500">
+            <div className="border-l-2 border-[#0A3C2F] pl-3">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
                 Overall Status
               </p>
               <StatusText className="mt-2 text-xs" label={overallStatus} />
             </div>
             <div className="border-l-2 border-slate-200 pl-3">
-              <p className="text-[9px] font-extrabold uppercase tracking-[0.06em] text-slate-500">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
                 Current Stage
               </p>
-              <p className="mt-2 text-xs font-bold leading-5 text-[#10243f]">
+              <p className="mt-2 text-xs font-semibold leading-5 text-[#10243f]">
                 {activeStageName}
               </p>
             </div>
             <div className="border-l-2 border-slate-200 pl-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[9px] font-extrabold uppercase tracking-[0.06em] text-slate-500">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
                   Roadmap Progress
                 </p>
                 {roadmap.length > 0 ? (
@@ -404,7 +404,7 @@ export function ActivityTrackingDetailView({
                 <>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
                     <div
-                      className="h-full rounded-full bg-[#176c55]"
+                      className="h-full rounded-full bg-[#0A3C2F]"
                       style={{ width: `${progress.percent}%` }}
                     />
                   </div>
@@ -414,18 +414,18 @@ export function ActivityTrackingDetailView({
                   </p>
                 </>
               ) : (
-                <p className="mt-2 text-xs font-bold text-slate-500">
+                <p className="mt-2 text-xs font-semibold text-slate-500">
                   Schedule not recorded
                 </p>
               )}
             </div>
             <label className="block">
-              <span className="mb-2 block text-[10px] font-bold text-slate-600">
+              <span className="mb-2 block text-[10px] font-semibold text-slate-600">
                 General Execution Note
               </span>
               <div className="flex min-w-0 gap-2">
                 <input
-                  className="h-9 min-w-0 flex-1 rounded border border-slate-300 px-3 text-xs text-slate-700 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+                  className="h-9 min-w-0 flex-1 rounded border border-slate-300 px-3 text-xs text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
                   onChange={(event) =>
                     updateRecord({ generalRemarks: event.target.value })
                   }
@@ -433,7 +433,7 @@ export function ActivityTrackingDetailView({
                   value={record.generalRemarks}
                 />
                 <button
-                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md bg-[#176c55] px-3 text-xs font-bold text-white hover:bg-[#125442]"
+                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md bg-[#0A3C2F] px-3 text-xs font-semibold text-white hover:bg-[#083025] transition cursor-pointer"
                   onClick={() => persist(record, "Execution note saved.")}
                   type="button"
                 >
@@ -510,7 +510,7 @@ export function ActivityTrackingDetailView({
                 value={`${formatAmount(registeredContract.currentAmount)} ${registeredContract.currency}`}
               />
               <div>
-                <p className="text-[9px] font-extrabold uppercase tracking-[0.06em] text-slate-500">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
                   Contract Status
                 </p>
                 <StatusText
@@ -525,7 +525,7 @@ export function ActivityTrackingDetailView({
                 only shows the execution handoff.
               </p>
               <Link
-                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#176c55] px-4 text-xs font-bold text-white hover:bg-[#125442]"
+                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] transition cursor-pointer"
                 href={contractHref}
               >
                 View Contract
@@ -536,7 +536,7 @@ export function ActivityTrackingDetailView({
         ) : contractReady ? (
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-extrabold text-[#10243f]">
+              <p className="text-sm font-semibold text-[#10243f]">
                 Signed contract milestone completed
               </p>
               <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
@@ -545,7 +545,7 @@ export function ActivityTrackingDetailView({
               </p>
             </div>
             <Link
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#176c55] px-4 text-xs font-bold text-white hover:bg-[#125442]"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] transition cursor-pointer"
               href={contractHref}
             >
               Register Contract
@@ -559,7 +559,7 @@ export function ActivityTrackingDetailView({
               className="mt-0.5 h-4 w-4 shrink-0 text-slate-400"
             />
             <div>
-              <p className="text-xs font-bold text-slate-700">
+              <p className="text-xs font-semibold text-slate-700">
                 Contract registration is not available yet.
               </p>
               <p className="mt-1 text-[10px] leading-5 text-slate-500">
@@ -594,7 +594,7 @@ function MissingRoadmapState({
             className="mt-0.5 h-5 w-5 shrink-0 text-slate-400"
           />
           <div className="min-w-0">
-            <p className="text-sm font-extrabold text-[#10243f]">
+            <p className="text-sm font-semibold text-[#10243f]">
               Approved roadmap schedule not recorded
             </p>
             <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
@@ -606,15 +606,15 @@ function MissingRoadmapState({
         </div>
         <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[9px] font-extrabold uppercase tracking-[0.06em] text-slate-500">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
               Summary Current Stage
             </p>
-            <p className="mt-1 text-xs font-bold text-[#10243f]">
+            <p className="mt-1 text-xs font-semibold text-[#10243f]">
               {currentStage || "Not recorded"}
             </p>
           </div>
           <Link
-            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-bold text-slate-600 hover:border-[#8db7a6] hover:text-[#176c55]"
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600 hover:border-[#0A3C2F] hover:text-[#0A3C2F]"
             href={projectActivityHref}
           >
             Open full activity details
@@ -660,10 +660,10 @@ function RoadmapTrackingSection({
 
   return (
     <section className="scroll-mt-24 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="flex flex-col gap-2 border-b border-[#c7d8cf] bg-[#edf5f1] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Route aria-hidden="true" className="h-4 w-4 text-[#176c55]" />
-          <h2 className="text-sm font-extrabold text-[#10243f]">
+          <Route aria-hidden="true" className="h-4 w-4 text-[#0A3C2F]" />
+          <h2 className="text-sm font-semibold text-[#10243f]">
             Procurement Roadmap Tracking
           </h2>
         </div>
@@ -682,7 +682,7 @@ function RoadmapTrackingSection({
         >
           <table className="w-304 min-w-304 table-fixed border-collapse text-left">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="w-64 px-4 py-3.5" scope="col">
                   Stage
                 </th>
@@ -719,17 +719,17 @@ function RoadmapTrackingSection({
                   <tr
                     className={
                       selected
-                        ? "bg-[#f2f8f5] text-xs text-slate-700"
+                        ? "bg-emerald-50 text-xs text-slate-700"
                         : "text-xs text-slate-700 hover:bg-slate-50"
                     }
                     key={stage.name}
                   >
                     <td className="px-4 py-3">
-                      <p className="font-bold leading-5 text-[#10243f]">
+                      <p className="font-semibold leading-5 text-[#10243f]">
                         {stage.name}
                       </p>
                       {tracking.revisions.length > 0 && !isNotApplicable ? (
-                        <span className="mt-1 inline-flex rounded bg-[#eef2ff] px-1.5 py-0.5 text-[9px] font-bold text-[#475569]">
+                        <span className="mt-1 inline-flex rounded bg-[#eef2ff] px-1.5 py-0.5 text-[9px] font-semibold text-[#475569]">
                           R{tracking.revisions.length}
                         </span>
                       ) : null}
@@ -772,16 +772,18 @@ function RoadmapTrackingSection({
                       {isNotApplicable || delay === null ? (
                         <span className="text-slate-400">—</span>
                       ) : delay > 0 ? (
-                        <span className="font-extrabold text-[#b42318]">
+                        <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-medium bg-rose-50 text-rose-800 border border-rose-200">
                           {delay}d
                         </span>
                       ) : (
-                        <span className="font-bold text-[#047857]">0d</span>
+                        <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          0d
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
-                        className="font-bold text-[#1261a8] hover:text-[#07523f] hover:underline"
+                        className="font-semibold text-[#1261a8] hover:text-[#0A3C2F] hover:underline"
                         onClick={() => setSelectedStageName(stage.name)}
                         type="button"
                       >
@@ -1117,10 +1119,10 @@ function StageEditor({
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-[9px] font-extrabold uppercase tracking-[0.08em] text-[#176c55]">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#0A3C2F]">
           Selected Stage
         </p>
-        <h3 className="mt-1 text-sm font-extrabold leading-5 text-[#10243f]">
+        <h3 className="mt-1 text-sm font-semibold leading-5 text-[#10243f]">
           {stage.name}
         </h3>
         <div className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-slate-200 bg-white p-3">
@@ -1128,7 +1130,7 @@ function StageEditor({
           <MiniDate label="Current Target" value={targetDate} />
         </div>
         <p
-          className={`mt-2 text-[10px] font-bold ${delay && delay > 0 ? "text-[#b42318]" : "text-[#047857]"}`}
+          className={`mt-2 text-[10px] font-semibold ${delay && delay > 0 ? "text-rose-700" : "text-emerald-700"}`}
         >
           {delay === null
             ? "Delay unavailable"
@@ -1140,8 +1142,8 @@ function StageEditor({
 
       <div className="space-y-4 border-t border-slate-200 pt-4">
         <div className="flex items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-[#176c55]" />
-          <h4 className="text-xs font-extrabold text-[#10243f]">
+          <CalendarClock className="h-4 w-4 text-[#0A3C2F]" />
+          <h4 className="text-xs font-semibold text-[#10243f]">
             Record Stage Progress
           </h4>
         </div>
@@ -1172,11 +1174,11 @@ function StageEditor({
           required={tracking.status === "Completed"}
         />
         <label className="block">
-          <span className="mb-2 block text-[11px] font-bold text-slate-600">
+          <span className="mb-2 block text-[11px] font-semibold text-slate-600">
             Stage Remarks
           </span>
           <textarea
-            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
             onChange={(event) => onUpdate({ remarks: event.target.value })}
             placeholder="Delay, rebid, issue, or completion note..."
             value={tracking.remarks}
@@ -1184,7 +1186,7 @@ function StageEditor({
         </label>
         {stageError ? <ErrorMessage>{stageError}</ErrorMessage> : null}
         <button
-          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#176c55] px-4 text-xs font-bold text-white hover:bg-[#125442]"
+          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] transition cursor-pointer"
           onClick={saveStage}
           type="button"
         >
@@ -1194,8 +1196,8 @@ function StageEditor({
 
       <div className="space-y-4 border-t border-slate-200 pt-4">
         <div className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4 text-[#176c55]" />
-          <h4 className="text-xs font-extrabold text-[#10243f]">
+          <RefreshCw className="h-4 w-4 text-[#0A3C2F]" />
+          <h4 className="text-xs font-semibold text-[#10243f]">
             Controlled Replanning
           </h4>
         </div>
@@ -1215,11 +1217,11 @@ function StageEditor({
           required
         />
         <label className="block">
-          <span className="mb-2 block text-[11px] font-bold text-slate-600">
+          <span className="mb-2 block text-[11px] font-semibold text-slate-600">
             Replanning Reason <span className="text-red-600">*</span>
           </span>
           <textarea
-            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
             onChange={(event) => {
               setRevisionError("");
               setRevisionReason(event.target.value);
@@ -1230,7 +1232,7 @@ function StageEditor({
         </label>
         {revisionError ? <ErrorMessage>{revisionError}</ErrorMessage> : null}
         <button
-          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-[#176c55] bg-white px-4 text-xs font-bold text-[#176c55] hover:bg-[#edf5f1] disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-[#0A3C2F] bg-white px-4 text-xs font-semibold text-[#0A3C2F] hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
           disabled={!originalDate.gregorian}
           onClick={addRevision}
           type="button"
@@ -1240,7 +1242,7 @@ function StageEditor({
 
         {tracking.revisions.length > 0 ? (
           <div className="space-y-2 border-t border-slate-200 pt-4">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-slate-500">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-500">
               Revision History
             </p>
             {[...tracking.revisions].reverse().map((revision) => (
@@ -1249,14 +1251,14 @@ function StageEditor({
                 key={revision.revisionNumber}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-[10px] font-bold text-[#176c55]">
+                  <span className="font-mono text-[10px] font-semibold text-[#0A3C2F]">
                     R{revision.revisionNumber}
                   </span>
                   <span className="text-[9px] text-slate-400">
                     {formatDateTime(revision.createdAt)}
                   </span>
                 </div>
-                <p className="mt-1 text-[10px] font-bold text-slate-700">
+                <p className="mt-1 text-[10px] font-semibold text-slate-700">
                   {formatGregorianDate(revision.targetDate.gregorian)}
                 </p>
                 <p className="mt-1 text-[10px] leading-4 text-slate-500">
@@ -1313,11 +1315,11 @@ function OverviewValue({
   if (!value?.trim()) return null;
   return (
     <div className="min-w-0">
-      <p className="text-[9px] font-extrabold uppercase tracking-[0.06em] text-slate-500">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
         {label}
       </p>
       <p
-        className={`mt-1.5 text-xs font-bold leading-5 text-[#10243f] break-words [overflow-wrap:anywhere] ${
+        className={`mt-1.5 text-xs font-semibold leading-5 text-[#10243f] break-words [overflow-wrap:anywhere] ${
           mono ? "font-mono" : ""
         }`}
         title={value}
@@ -1336,9 +1338,9 @@ function SectionHeading({
   title: string;
 }) {
   return (
-    <div className="flex items-center gap-2 border-b border-[#c7d8cf] bg-[#edf5f1] px-4 py-3 text-[#176c55]">
+    <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[#0A3C2F]">
       {icon}
-      <h2 className="text-sm font-extrabold text-[#10243f]">{title}</h2>
+      <h2 className="text-sm font-semibold text-[#10243f]">{title}</h2>
     </div>
   );
 }
@@ -1356,11 +1358,11 @@ function FieldSelect({
 }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-2 block text-[11px] font-bold text-slate-600">
+      <span className="mb-2 block text-[11px] font-semibold text-slate-600">
         {label}
       </span>
       <select
-        className="h-10 w-full cursor-pointer rounded border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+        className="h-10 w-full cursor-pointer rounded border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
@@ -1403,7 +1405,7 @@ function DateValue({
         <p className="mt-1 text-[9px] text-slate-500">{date.ethiopian}</p>
       ) : null}
       {revised ? (
-        <p className="mt-1 text-[9px] font-bold text-[#7c3aed]">Revised</p>
+        <p className="mt-1 text-[9px] font-semibold text-[#7c3aed]">Revised</p>
       ) : null}
     </div>
   );
@@ -1418,10 +1420,10 @@ function MiniDate({
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-[8px] font-extrabold uppercase tracking-[0.06em] text-slate-400">
+      <p className="text-[8px] font-semibold uppercase tracking-[0.06em] text-slate-400">
         {label}
       </p>
-      <p className="mt-1 truncate text-[10px] font-bold text-slate-700">
+      <p className="mt-1 truncate text-[10px] font-semibold text-slate-700">
         {value.gregorian
           ? formatGregorianDate(value.gregorian)
           : "Not recorded"}

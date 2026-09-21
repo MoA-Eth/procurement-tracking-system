@@ -55,7 +55,7 @@ export function LoginCard({ onOpenTechSupport }: LoginCardProps) {
         <div className="mt-3 text-center">
           <h1
             id="sign-in-title"
-            className="auth-page-title font-extrabold tracking-tight text-[#064e3b]"
+            className="auth-page-title font-semibold tracking-tight text-[#0A3C2F]"
           >
             MoA Procurement Tracking System
           </h1>
@@ -117,7 +117,7 @@ export function LoginCard({ onOpenTechSupport }: LoginCardProps) {
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#064e3b]"
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#0A3C2F]"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -137,7 +137,7 @@ export function LoginCard({ onOpenTechSupport }: LoginCardProps) {
             <button
               type="button"
               onClick={() => setViewState("FORGOT_PASSWORD")}
-              className="font-semibold text-[#064e3b] hover:underline"
+              className="font-semibold text-[#0A3C2F] hover:underline"
             >
               Forgot Password?
             </button>
@@ -155,7 +155,7 @@ export function LoginCard({ onOpenTechSupport }: LoginCardProps) {
         <button
           type="button"
           onClick={onOpenTechSupport}
-          className="auth-support-link mx-auto flex items-center gap-2 font-medium text-[#58709a] hover:text-[#064e3b]"
+          className="auth-support-link mx-auto flex items-center gap-2 font-medium text-[#58709a] hover:text-[#0A3C2F]"
         >
           <Headphones size={20} className="text-emerald-700" />
           Technical Support

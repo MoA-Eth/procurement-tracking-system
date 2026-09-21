@@ -95,7 +95,7 @@ export function DirectorFinancialPositionChart({
       {/* Header & Legend */}
       <div className="pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 className="text-lg sm:text-xl font-serif font-bold text-slate-900 tracking-tight">
+          <h3 className="text-lg sm:text-xl font-serif font-semibold text-slate-900 tracking-tight">
             Financial Position (Plan vs Actual)
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">

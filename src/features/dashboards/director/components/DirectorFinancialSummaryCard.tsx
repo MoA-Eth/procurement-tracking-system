@@ -30,7 +30,7 @@ export function DirectorFinancialSummaryCard({
       <div className="pb-3 border-b border-slate-100">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-slate-900 tracking-tight leading-tight">
+            <h2 className="text-xl sm:text-2xl font-serif font-semibold text-slate-900 tracking-tight leading-tight">
               Financial Capital &amp; Contracts
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
@@ -39,7 +39,7 @@ export function DirectorFinancialSummaryCard({
             </p>
           </div>
           <div className="self-start sm:self-auto shrink-0">
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#ecfdf5] text-[#065f46] border border-[#a7f3d0] font-semibold text-xs tracking-wide">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-medium text-xs tracking-wide">
               {financialSummary.disbursedOfContractedPct}% disbursed
               <span className="sr-only">Executed Disbursed</span>
             </span>
@@ -55,10 +55,10 @@ export function DirectorFinancialSummaryCard({
             Planned Value
           </p>
           <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-bold tabular-nums text-black tracking-tight leading-none">
+            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
               {formatMValue(financialSummary.planEstimatedValueETB)}
             </span>
-            <span className="text-xs sm:text-sm font-bold text-slate-500">
+            <span className="text-xs sm:text-sm font-semibold text-slate-500">
               M ETB
             </span>
           </div>
@@ -73,14 +73,14 @@ export function DirectorFinancialSummaryCard({
             Signed Contracts
           </p>
           <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-bold tabular-nums text-black tracking-tight leading-none">
+            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
               {formatMValue(financialSummary.signedContractsCommittedETB)}
             </span>
-            <span className="text-xs sm:text-sm font-bold text-slate-500">
+            <span className="text-xs sm:text-sm font-semibold text-slate-500">
               M ETB
             </span>
           </div>
-          <p className="text-xs font-bold text-[#006837] truncate">
+          <p className="text-xs font-semibold text-emerald-700 truncate">
             {financialSummary.contractExecutionRatePct}% execution rate
           </p>
         </div>
@@ -91,14 +91,14 @@ export function DirectorFinancialSummaryCard({
             Actual Disbursed
           </p>
           <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-bold tabular-nums text-black tracking-tight leading-none">
+            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
               {formatMValue(financialSummary.actualDisbursedETB)}
             </span>
-            <span className="text-xs sm:text-sm font-bold text-slate-500">
+            <span className="text-xs sm:text-sm font-semibold text-slate-500">
               M ETB
             </span>
           </div>
-          <p className="text-xs font-bold text-[#006837] truncate">
+          <p className="text-xs font-semibold text-emerald-700 truncate">
             {financialSummary.disbursedOfContractedPct}% of contracts
           </p>
         </div>
@@ -109,10 +109,10 @@ export function DirectorFinancialSummaryCard({
             Remaining Balance
           </p>
           <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-bold tabular-nums text-black tracking-tight leading-none">
+            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
               {formatMValue(financialSummary.remainingUncommittedETB)}
             </span>
-            <span className="text-xs sm:text-sm font-bold text-slate-500">
+            <span className="text-xs sm:text-sm font-semibold text-slate-500">
               M ETB
             </span>
           </div>

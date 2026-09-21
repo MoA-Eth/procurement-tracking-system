@@ -112,7 +112,8 @@ export function DirectorDashboard({ user }: { user: AuthUser }) {
           </span>
           <span>•</span>
           <span>
-            Baseline Lock: <strong className="text-slate-700">Active</strong>
+            Baseline Lock:{" "}
+            <span className="font-semibold text-slate-700">Active</span>
           </span>
         </div>
         <div>Ministry of Agriculture • {selectedFiscalYear}</div>

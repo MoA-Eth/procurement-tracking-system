@@ -36,9 +36,9 @@ interface AmendmentFormState {
 }
 
 const inputClasses =
-  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15";
+  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
 const textareaClasses =
-  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15";
+  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
 
 function formatAmount(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -174,14 +174,14 @@ export function AddContractAmendmentView({
         <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
-              <Link className="hover:text-[#176c55]" href="/dashboard/officer">
+              <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
                 Home
               </Link>
             </li>
             <li aria-hidden="true">/</li>
             <li>
               <Link
-                className="hover:text-[#176c55]"
+                className="hover:text-[#0A3C2F]"
                 href={
                   fromTracker
                     ? "/workspace/activity-tracker"
@@ -199,19 +199,19 @@ export function AddContractAmendmentView({
         </nav>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-950">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
               Contract Amendment / Variation
             </h1>
             <p className="mt-1 text-xs leading-5 text-slate-500">
               Record an approved cost addition (+) or reduction (-) for contract{" "}
-              <span className="font-mono font-bold text-slate-700">
+              <span className="font-mono font-semibold text-slate-700">
                 {contract.contractNumber}
               </span>
               .
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-md bg-[#edf5f1] px-2.5 py-1 text-xs font-bold text-[#176c55] border border-[#a9cbbd]">
+            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 border border-emerald-200">
               Amendment #{nextAmendmentNo}
             </span>
           </div>
@@ -222,12 +222,12 @@ export function AddContractAmendmentView({
         <main className="min-w-0 space-y-4">
           {/* Baseline Contract Overview */}
           <section className="overflow-visible rounded-md border border-slate-300 bg-white shadow-sm">
-            <div className="border-b border-slate-200 bg-[#f8faf9] px-4 py-3">
+            <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <FileEdit
                     aria-hidden="true"
-                    className="h-4 w-4 text-[#176c55]"
+                    className="h-4 w-4 text-[#0A3C2F]"
                   />
                   <h2>Contract Baseline & Context</h2>
                 </div>
@@ -240,15 +240,15 @@ export function AddContractAmendmentView({
             <div className="p-4 space-y-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded border border-slate-200 bg-slate-50/60 p-2.5">
-                  <span className="text-[10px] font-bold uppercase text-slate-500">
+                  <span className="text-[10px] font-semibold uppercase text-slate-500">
                     Contract Number
                   </span>
-                  <p className="mt-0.5 font-mono text-xs font-bold text-slate-900 truncate">
+                  <p className="mt-0.5 font-mono text-xs font-semibold text-slate-900 truncate">
                     {contract.contractNumber}
                   </p>
                 </div>
                 <div className="rounded border border-slate-200 bg-slate-50/60 p-2.5 sm:col-span-2">
-                  <span className="text-[10px] font-bold uppercase text-slate-500">
+                  <span className="text-[10px] font-semibold uppercase text-slate-500">
                     Procurement Activity
                   </span>
                   <p
@@ -259,7 +259,7 @@ export function AddContractAmendmentView({
                   </p>
                 </div>
                 <div className="rounded border border-slate-200 bg-slate-50/60 p-2.5">
-                  <span className="text-[10px] font-bold uppercase text-slate-500">
+                  <span className="text-[10px] font-semibold uppercase text-slate-500">
                     Supplier / Contractor
                   </span>
                   <p
@@ -273,7 +273,7 @@ export function AddContractAmendmentView({
 
               {/* Baseline Financial Indicators */}
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
                   Current Financial Baseline
                 </p>
                 <div className="grid gap-px overflow-hidden rounded-md border border-slate-200 bg-slate-200 sm:grid-cols-4">
@@ -308,8 +308,8 @@ export function AddContractAmendmentView({
             (contract.details?.amendments &&
               contract.details.amendments.length > 0)) && (
             <section className="overflow-visible rounded-md border border-slate-300 bg-white shadow-sm">
-              <div className="border-b border-slate-200 bg-[#f8faf9] px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-extrabold text-slate-900">
+              <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-900">
                   <History
                     aria-hidden="true"
                     className="h-3.5 w-3.5 text-slate-600"
@@ -337,11 +337,11 @@ export function AddContractAmendmentView({
                       >
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900">
+                            <span className="font-semibold text-slate-900">
                               Amendment #{amend.amendmentNo}
                             </span>
                             {amend.variationAmount >= 0 ? (
-                              <span className="inline-flex items-center gap-0.5 rounded bg-[#edf5f1] px-1.5 py-0.5 text-[10px] font-semibold text-[#176c55] border border-[#a9cbbd]">
+                              <span className="inline-flex items-center gap-0.5 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 border border-emerald-200">
                                 <TrendingUp className="h-2.5 w-2.5" /> +
                                 {formatAmount(amend.variationAmount)}{" "}
                                 {contract.currency}
@@ -388,7 +388,7 @@ export function AddContractAmendmentView({
                         key={amend.id}
                         className="p-3 text-xs flex items-center justify-between gap-2 hover:bg-slate-50"
                       >
-                        <span className="font-bold text-slate-800">
+                        <span className="font-semibold text-slate-800">
                           Amendment #{amend.id}
                         </span>
                         <span className="font-mono font-semibold text-slate-700">
@@ -403,11 +403,11 @@ export function AddContractAmendmentView({
 
           {/* Amendment Form */}
           <section className="overflow-visible rounded-md border border-slate-300 bg-white shadow-sm">
-            <div className="border-b border-slate-200 bg-[#f8faf9] px-4 py-3">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900">
+            <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <FileEdit
                   aria-hidden="true"
-                  className="h-4 w-4 text-[#176c55]"
+                  className="h-4 w-4 text-[#0A3C2F]"
                 />
                 <h2>Amendment Details</h2>
               </div>
@@ -420,23 +420,23 @@ export function AddContractAmendmentView({
             <div className="p-4 space-y-5">
               {/* Variation Type Toggle */}
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-2">
+                <label className="block text-xs font-semibold text-slate-800 mb-2">
                   Variation Type <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-3 max-w-md">
                   <button
                     type="button"
                     onClick={() => updateField("variationType", "ADDITION")}
-                    className={`flex items-center justify-center gap-2 rounded-md border p-3 text-xs font-bold transition cursor-pointer ${
+                    className={`flex items-center justify-center gap-2 rounded-md border p-3 text-xs font-semibold transition cursor-pointer ${
                       form.variationType === "ADDITION"
-                        ? "border-[#176c55] bg-[#edf5f1] text-[#07523f] ring-1 ring-[#176c55]/20 shadow-xs"
+                        ? "border-[#0A3C2F] bg-emerald-50 text-emerald-900 ring-1 ring-[#0A3C2F]/20 shadow-xs"
                         : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
                     }`}
                   >
                     <Plus
                       className={`h-4 w-4 ${
                         form.variationType === "ADDITION"
-                          ? "text-[#176c55]"
+                          ? "text-[#0A3C2F]"
                           : "text-slate-500"
                       }`}
                     />
@@ -445,16 +445,16 @@ export function AddContractAmendmentView({
                   <button
                     type="button"
                     onClick={() => updateField("variationType", "REDUCTION")}
-                    className={`flex items-center justify-center gap-2 rounded-md border p-3 text-xs font-bold transition cursor-pointer ${
+                    className={`flex items-center justify-center gap-2 rounded-md border p-3 text-xs font-semibold transition cursor-pointer ${
                       form.variationType === "REDUCTION"
-                        ? "border-[#176c55] bg-[#edf5f1] text-[#07523f] ring-1 ring-[#176c55]/20 shadow-xs"
+                        ? "border-[#0A3C2F] bg-emerald-50 text-emerald-900 ring-1 ring-[#0A3C2F]/20 shadow-xs"
                         : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
                     }`}
                   >
                     <Minus
                       className={`h-4 w-4 ${
                         form.variationType === "REDUCTION"
-                          ? "text-[#176c55]"
+                          ? "text-[#0A3C2F]"
                           : "text-slate-500"
                       }`}
                     />
@@ -596,7 +596,7 @@ export function AddContractAmendmentView({
 
               {/* Calculated Impact Preview */}
               <div className="border-t border-slate-200 pt-4">
-                <h3 className="text-xs font-bold text-slate-800">
+                <h3 className="text-xs font-semibold text-slate-800">
                   Calculated Amendment Impact
                 </h3>
                 <p className="mt-0.5 text-[10px] text-slate-500">
@@ -640,10 +640,10 @@ export function AddContractAmendmentView({
 
         {/* Sidebar Verification & Save */}
         <aside className="sticky top-4 overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm space-y-0">
-          <div className="flex items-center gap-2 border-b border-slate-200 bg-[#edf5f1] px-3 py-3 text-xs font-extrabold text-slate-900">
+          <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-900">
             <ClipboardCheck
               aria-hidden="true"
-              className="h-4 w-4 text-[#176c55]"
+              className="h-4 w-4 text-[#0A3C2F]"
             />
             Amendment Checklist
           </div>
@@ -668,10 +668,10 @@ export function AddContractAmendmentView({
           </div>
 
           <div className="border-t border-slate-200 p-3 bg-slate-50/50">
-            <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-slate-500">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               New Total Contract Value
             </p>
-            <p className="mt-1 font-mono text-base font-bold tabular-nums text-slate-900">
+            <p className="mt-1 font-mono text-base font-semibold tabular-nums text-slate-900">
               {formatAmount(newTotalAmount)}{" "}
               <span className="text-xs font-normal text-slate-500">
                 {contract.currency}
@@ -680,7 +680,7 @@ export function AddContractAmendmentView({
             <div className="mt-2 pt-2 border-t border-slate-200 flex justify-between items-center text-xs">
               <span className="text-slate-500 text-[11px]">New Balance:</span>
               <span
-                className={`font-mono font-bold ${newRemainingBalance < 0 ? "text-red-600" : "text-slate-800"}`}
+                className={`font-mono font-semibold ${newRemainingBalance < 0 ? "text-red-600" : "text-slate-800"}`}
               >
                 {formatAmount(newRemainingBalance)} {contract.currency}
               </span>
@@ -691,7 +691,7 @@ export function AddContractAmendmentView({
             <div
               className={`flex items-start gap-2 rounded px-2.5 py-2 text-[10px] leading-4 ${
                 canSave
-                  ? "bg-[#e5f3ee] text-[#07523f]"
+                  ? "bg-emerald-50 text-emerald-900"
                   : attempted
                     ? "bg-red-50 text-red-700"
                     : "bg-slate-50 text-slate-600"
@@ -721,7 +721,7 @@ export function AddContractAmendmentView({
               type="button"
               disabled={isSubmitting}
               onClick={handleSave}
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-4 text-xs font-bold text-white shadow-sm hover:opacity-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55] transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-[#00552c] bg-[#006837] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006837] transition disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -766,13 +766,13 @@ function BaselineCard({
   value: number;
 }) {
   return (
-    <div className={`p-3 ${emphasized ? "bg-[#f2f8f5]" : "bg-white"}`}>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+    <div className={`p-3 ${emphasized ? "bg-emerald-50" : "bg-white"}`}>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
         {label}
       </p>
       <p
-        className={`mt-1 font-mono text-sm font-bold tabular-nums ${
-          emphasized ? "text-[#176c55]" : "text-slate-900"
+        className={`mt-1 font-mono text-sm font-semibold tabular-nums ${
+          emphasized ? "text-[#0A3C2F]" : "text-slate-900"
         }`}
       >
         {formatAmount(value)}{" "}
@@ -801,22 +801,22 @@ function SummaryValue({
   return (
     <div
       className={`p-3 ${
-        error ? "bg-red-50" : emphasized ? "bg-[#edf5f1]" : "bg-white"
+        error ? "bg-red-50" : emphasized ? "bg-emerald-50" : "bg-white"
       }`}
     >
       <p
-        className={`text-[10px] font-bold uppercase tracking-wider ${
+        className={`text-[10px] font-semibold uppercase tracking-wider ${
           error ? "text-red-700" : "text-slate-500"
         }`}
       >
         {label}
       </p>
       <p
-        className={`mt-1 font-mono text-xs font-bold tabular-nums ${
+        className={`mt-1 font-mono text-xs font-semibold tabular-nums ${
           error
             ? "text-red-700"
             : emphasized
-              ? "text-[#125442] text-sm"
+              ? "text-[#0A3C2F] text-sm"
               : "text-slate-900"
         }`}
       >
@@ -842,7 +842,7 @@ function ChecklistItem({
       {complete ? (
         <CheckCircle2
           aria-hidden="true"
-          className="h-3.5 w-3.5 shrink-0 text-[#176c55]"
+          className="h-3.5 w-3.5 shrink-0 text-[#006837]"
         />
       ) : (
         <div
@@ -874,7 +874,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-1">
-      <span className="block text-xs font-bold text-slate-800">
+      <span className="block text-xs font-semibold text-slate-800">
         {label} {required && <span className="text-red-500">*</span>}
       </span>
       {children}

@@ -84,7 +84,7 @@ export function DualCalendarField({
       {label && (
         <label
           htmlFor={`${id}-gregorian`}
-          className={`block text-xs font-bold flex items-center gap-1.5 ${
+          className={`block text-xs font-semibold flex items-center gap-1.5 ${
             error ? "text-red-600" : "text-slate-800"
           }`}
         >
@@ -101,7 +101,7 @@ export function DualCalendarField({
             : "border-slate-300 bg-[#f0f3ff]"
         }`}
       >
-        <div className="flex items-center justify-between text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-1">
+        <div className="flex items-center justify-between text-[10px] font-semibold tracking-wider text-slate-500 uppercase px-1">
           <span>GREGORIAN</span>
           <span>ETHIOPIAN</span>
         </div>
@@ -281,7 +281,7 @@ function EthiopianCalendarPicker({
                 aria-label="Select Ethiopian month"
                 value={visibleMonth}
                 onChange={(e) => setVisibleMonth(Number(e.target.value))}
-                className="text-xs font-bold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
+                className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
               >
                 {ETHIOPIAN_MONTHS.map((monthName, idx) => (
                   <option key={monthName} value={idx + 1}>
@@ -294,7 +294,7 @@ function EthiopianCalendarPicker({
                 aria-label="Select Ethiopian year"
                 value={visibleYear}
                 onChange={(e) => setVisibleYear(Number(e.target.value))}
-                className="text-xs font-bold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
+                className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
               >
                 {ETHIOPIAN_YEARS.map((yr) => (
                   <option key={yr} value={yr}>
@@ -315,7 +315,7 @@ function EthiopianCalendarPicker({
           </div>
 
           {/* Weekday labels */}
-          <div className="mt-2 grid grid-cols-7 text-center text-[10px] font-bold text-slate-400">
+          <div className="mt-2 grid grid-cols-7 text-center text-[10px] font-semibold text-slate-400">
             {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
               <span key={day} className="py-1">
                 {day}
@@ -351,9 +351,9 @@ function EthiopianCalendarPicker({
                     }}
                     className={`flex h-7 w-full items-center justify-center rounded-lg text-xs transition-colors cursor-pointer ${
                       isSelected
-                        ? "bg-[#0A3C2F] font-bold text-white shadow-xs"
+                        ? "bg-[#0A3C2F] font-semibold text-white shadow-xs"
                         : isToday
-                          ? "border border-[#0A3C2F] font-bold text-[#0A3C2F] hover:bg-emerald-50"
+                          ? "border border-[#0A3C2F] font-semibold text-[#0A3C2F] hover:bg-emerald-50"
                           : "hover:bg-slate-100 text-slate-700 font-medium"
                     }`}
                   >
@@ -382,7 +382,7 @@ function EthiopianCalendarPicker({
                 onSelect(today);
                 setOpen(false);
               }}
-              className="text-[11px] font-bold text-[#0A3C2F] hover:text-emerald-800 transition-colors cursor-pointer"
+              className="text-[11px] font-semibold text-[#0A3C2F] hover:text-emerald-800 transition-colors cursor-pointer"
             >
               Today
             </button>
