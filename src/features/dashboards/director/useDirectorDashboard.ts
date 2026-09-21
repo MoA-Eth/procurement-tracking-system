@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { fetchProjects, getCachedProjects, type BackendProject } from "@/lib/projectsApi";
+import {
+  fetchProjects,
+  getCachedProjects,
+  type BackendProject,
+} from "@/lib/projectsApi";
 import { fetchPlans, getCachedPlans, type BackendPlan } from "@/lib/plansApi";
 import { fetchContracts, type BackendContract } from "@/lib/contractsApi";
 import {
@@ -33,7 +37,8 @@ let _dashboardCache: DashboardCache | null = null;
 const DASHBOARD_CACHE_TTL_MS = 10 * 1000; // 10 seconds
 
 export function useDirectorDashboard(userRole: UserRole = "DIRECTOR") {
-  const initialProjects = _dashboardCache?.projects || getCachedProjects() || [];
+  const initialProjects =
+    _dashboardCache?.projects || getCachedProjects() || [];
   const initialPlans = _dashboardCache?.plans || getCachedPlans() || [];
 
   const [projects, setProjects] = useState<BackendProject[]>(initialProjects);

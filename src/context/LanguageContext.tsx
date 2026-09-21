@@ -160,7 +160,6 @@ export const DICTIONARY: Translations = {
     en: "User Administration & Audit Logs",
     am: "የተጠቃሚዎች አስተዳደር እና ኦዲት",
   },
-
 };
 
 interface LanguageContextType {

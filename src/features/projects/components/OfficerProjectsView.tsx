@@ -153,36 +153,43 @@ export function OfficerProjectsView({
   const [savedActivityRecords, setSavedActivityRecords] = useState<
     SavedOfficerActivityRecord[]
   >([]);
-  const [backendProjects, setBackendProjects] = useState<OfficerProject[]>(() => {
-    const cachedProjs = getCachedProjects();
-    if (cachedProjs && cachedProjs.length > 0) {
-      const filteredProjects = effectiveUser
-        ? cachedProjs.filter((bp) =>
-            isProjectAssignedToOfficer(bp, effectiveUser),
-          )
-        : cachedProjs;
-      const effectiveProjectList =
-        filteredProjects.length > 0 ? filteredProjects : cachedProjs;
-      const uniqueProjectMap = new Map<string, (typeof effectiveProjectList)[0]>();
-      for (const p of effectiveProjectList) {
-        const key = (p.id || p.code || "").toLowerCase().trim();
-        if (key && !uniqueProjectMap.has(key)) {
-          uniqueProjectMap.set(key, p);
+  const [backendProjects, setBackendProjects] = useState<OfficerProject[]>(
+    () => {
+      const cachedProjs = getCachedProjects();
+      if (cachedProjs && cachedProjs.length > 0) {
+        const filteredProjects = effectiveUser
+          ? cachedProjs.filter((bp) =>
+              isProjectAssignedToOfficer(bp, effectiveUser),
+            )
+          : cachedProjs;
+        const effectiveProjectList =
+          filteredProjects.length > 0 ? filteredProjects : cachedProjs;
+        const uniqueProjectMap = new Map<
+          string,
+          (typeof effectiveProjectList)[0]
+        >();
+        for (const p of effectiveProjectList) {
+          const key = (p.id || p.code || "").toLowerCase().trim();
+          if (key && !uniqueProjectMap.has(key)) {
+            uniqueProjectMap.set(key, p);
+          }
         }
+        return Array.from(uniqueProjectMap.values()).map(
+          mapBackendProjectToOfficerProject,
+        );
       }
-      return Array.from(uniqueProjectMap.values()).map(
-        mapBackendProjectToOfficerProject,
-      );
-    }
-    return [];
-  });
+      return [];
+    },
+  );
   const [backendPlans, setBackendPlans] = useState<BackendPlan[]>(
     () => getCachedPlans() || [],
   );
   const [backendActivities, setBackendActivities] = useState<
     SavedOfficerActivityRecord[]
   >([]);
-  const [isLoadingData, setIsLoadingData] = useState(() => !getCachedProjects());
+  const [isLoadingData, setIsLoadingData] = useState(
+    () => !getCachedProjects(),
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -207,7 +214,10 @@ export function OfficerProjectsView({
           : projData.value;
         const effectiveProjectList =
           filteredProjects.length > 0 ? filteredProjects : projData.value;
-        const uniqueProjectMap = new Map<string, (typeof effectiveProjectList)[0]>();
+        const uniqueProjectMap = new Map<
+          string,
+          (typeof effectiveProjectList)[0]
+        >();
         for (const p of effectiveProjectList) {
           const key = (p.id || p.code || "").toLowerCase().trim();
           if (key && !uniqueProjectMap.has(key)) {
@@ -603,7 +613,8 @@ export function OfficerProjectsView({
     let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" = "GOODS";
     if (input.category === "Works") catEnum = "WORKS";
     else if (input.category === "Consultancy Services") catEnum = "CONSULTANCY";
-    else if (input.category === "Non-Consulting Services") catEnum = "NON_CONSULTING";
+    else if (input.category === "Non-Consulting Services")
+      catEnum = "NON_CONSULTING";
 
     const periodStart = safeIsoDate(input.periodFrom, "2025-07-08");
     const periodEnd = safeIsoDate(input.periodTo, "2026-07-07");
@@ -712,13 +723,18 @@ export function OfficerProjectsView({
       });
 
       // Update backend if valid UUID id exists, or create if missing
-      if (selectedPlan.id && selectedPlan.id.includes("-") && selectedPlan.id.length > 20) {
+      if (
+        selectedPlan.id &&
+        selectedPlan.id.includes("-") &&
+        selectedPlan.id.length > 20
+      ) {
         try {
           const updated = await updatePlan(selectedPlan.id, {
             title: input.planName.trim(),
             budgetYear: `${input.budgetYear} EFY`,
             procurementCategory: catEnum,
-            organization: input.organizationRegion || selectedProject.organizationRegion,
+            organization:
+              input.organizationRegion || selectedProject.organizationRegion,
             description: input.remarks || undefined,
             periodStart,
             periodEnd,
@@ -736,7 +752,10 @@ export function OfficerProjectsView({
           title: input.planName.trim(),
           budgetYear: `${input.budgetYear} EFY`,
           procurementCategory: catEnum,
-          organization: input.organizationRegion || selectedProject.organizationRegion || "Federal / FPCU",
+          organization:
+            input.organizationRegion ||
+            selectedProject.organizationRegion ||
+            "Federal / FPCU",
           description: input.remarks || undefined,
           periodStart,
           periodEnd,
@@ -783,7 +802,8 @@ export function OfficerProjectsView({
     // MODE: CREATE NEW PLAN
     const existingPlan = selectedProject.plans.find(
       (plan) =>
-        plan.name.trim().toLowerCase() === input.planName.trim().toLowerCase() &&
+        plan.name.trim().toLowerCase() ===
+          input.planName.trim().toLowerCase() &&
         plan.budgetYear === `${input.budgetYear} EFY` &&
         plan.category === input.category,
     );
@@ -793,10 +813,12 @@ export function OfficerProjectsView({
       (bp) =>
         bp.id === existingPlan?.id ||
         bp.id === existingPlan?.reference ||
-        (bp.title.toLowerCase().trim() === input.planName.trim().toLowerCase() &&
+        (bp.title.toLowerCase().trim() ===
+          input.planName.trim().toLowerCase() &&
           (bp.projectId === targetProjectId ||
             bp.project?.id === targetProjectId ||
-            bp.project?.code?.toLowerCase() === selectedProject.code.toLowerCase())),
+            bp.project?.code?.toLowerCase() ===
+              selectedProject.code.toLowerCase())),
     );
 
     let dbPlan: BackendPlan;
@@ -807,7 +829,10 @@ export function OfficerProjectsView({
           title: input.planName.trim(),
           budgetYear: `${input.budgetYear} EFY`,
           procurementCategory: catEnum,
-          organization: input.organizationRegion || selectedProject.organizationRegion || "Federal / FPCU",
+          organization:
+            input.organizationRegion ||
+            selectedProject.organizationRegion ||
+            "Federal / FPCU",
           description: input.remarks || undefined,
           periodStart,
           periodEnd,
@@ -822,14 +847,19 @@ export function OfficerProjectsView({
         title: input.planName.trim(),
         budgetYear: `${input.budgetYear} EFY`,
         procurementCategory: catEnum,
-        organization: input.organizationRegion || selectedProject.organizationRegion || "Federal / FPCU",
+        organization:
+          input.organizationRegion ||
+          selectedProject.organizationRegion ||
+          "Federal / FPCU",
         description: input.remarks || undefined,
         periodStart,
         periodEnd,
       });
 
       if (!dbPlan || !dbPlan.id) {
-        throw new Error("Server failed to create the plan in the database. Please try again.");
+        throw new Error(
+          "Server failed to create the plan in the database. Please try again.",
+        );
       }
     }
 
@@ -840,7 +870,8 @@ export function OfficerProjectsView({
       name: dbPlan.title || input.planName.trim(),
       budgetYear: `${input.budgetYear} EFY`,
       category: input.category,
-      organizationRegion: input.organizationRegion || selectedProject.organizationRegion,
+      organizationRegion:
+        input.organizationRegion || selectedProject.organizationRegion,
       createdById: dbPlan.createdBy,
       createdByName:
         dbPlan.creator?.displayName ||
@@ -1048,8 +1079,11 @@ export function OfficerProjectsView({
           });
           if (created && created.id) {
             targetBackendPlanId = created.id;
-            selectedPlan.id = created.id;
-            selectedPlan.reference = created.id;
+            handlePlanUpdated({
+              ...selectedPlan,
+              id: created.id,
+              reference: created.id,
+            });
           }
         } catch (err) {
           console.warn("Backend createPlan in saveActivity note:", err);
@@ -1374,8 +1408,7 @@ export function OfficerProjectsView({
         }
 
         const methodLabel = act.method || "RFB - National";
-        const resolvedMethodId =
-          await resolveProcurementMethodId(methodLabel);
+        const resolvedMethodId = await resolveProcurementMethodId(methodLabel);
 
         const customStages = (
           act.details?.roadmap ||
@@ -1422,7 +1455,10 @@ export function OfficerProjectsView({
     try {
       submitResult = await updatePlan(planIdToSubmit, { status: "SUBMITTED" });
     } catch (patchErr: any) {
-      console.warn("updatePlan SUBMITTED notice, falling back to /submit:", patchErr);
+      console.warn(
+        "updatePlan SUBMITTED notice, falling back to /submit:",
+        patchErr,
+      );
     }
     if (!submitResult || !submitResult.id) {
       // Fallback to the dedicated submit endpoint
@@ -1878,12 +1914,14 @@ export function OfficerProjectsView({
     );
   }
 
-  return <OfficerProjectsList projects={projects} />;
+  return <OfficerProjectsList isLoading={isLoadingData} projects={projects} />;
 }
 
 function OfficerProjectsList({
+  isLoading,
   projects,
 }: {
+  isLoading?: boolean;
   projects: readonly OfficerProject[];
 }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -2188,7 +2226,7 @@ function OfficerProjectsList({
                         </td>
                       </tr>
                     ))
-                  ) : isLoadingData ? (
+                  ) : isLoading ? (
                     <tr>
                       <td
                         className="px-4 py-12 text-center text-sm text-slate-500"

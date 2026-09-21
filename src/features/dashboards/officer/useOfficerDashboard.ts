@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { AuthUser } from "@/lib/authTypes";
-import { fetchProjects, getCachedProjects, type BackendProject } from "@/lib/projectsApi";
+import {
+  fetchProjects,
+  getCachedProjects,
+  type BackendProject,
+} from "@/lib/projectsApi";
 import { fetchPlans, getCachedPlans, type BackendPlan } from "@/lib/plansApi";
 import {
   filterAssignedProjects,
@@ -18,7 +22,8 @@ export function useOfficerDashboard(user: AuthUser) {
   const initialProjects = getCachedProjects() || [];
   const initialPlans = getCachedPlans() || [];
 
-  const [backendProjects, setBackendProjects] = useState<BackendProject[]>(initialProjects);
+  const [backendProjects, setBackendProjects] =
+    useState<BackendProject[]>(initialProjects);
   const [backendPlans, setBackendPlans] = useState<BackendPlan[]>(initialPlans);
   const [loading, setLoading] = useState(
     () => initialProjects.length === 0 && initialPlans.length === 0,

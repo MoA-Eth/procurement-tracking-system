@@ -69,11 +69,13 @@ export function DirectorTopFilterBar({
           aria-label="Filter by Fiscal Year"
         >
           <option value="All Fiscal Years">All Fiscal Years</option>
-          {fiscalYearOptions.filter((y) => y !== "All Fiscal Years").map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
+          {fiscalYearOptions
+            .filter((y) => y !== "All Fiscal Years")
+            .map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
         </select>
       </div>
 

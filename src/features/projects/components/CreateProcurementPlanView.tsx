@@ -258,7 +258,8 @@ export function CreateProcurementPlanView({
       );
     } catch (err: any) {
       setSubmitError(
-        err?.message || "Failed to create or update plan in the server database.",
+        err?.message ||
+          "Failed to create or update plan in the server database.",
       );
       window.scrollTo({ behavior: "smooth", top: 0 });
     } finally {

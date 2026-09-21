@@ -756,7 +756,10 @@ export function OfficerProcurementPlanDetailView({
                 </span>
               </div>
               <p className="mt-1 text-xs text-amber-800 leading-relaxed">
-                This plan is marked as submitted in your local browser cache, but the backend server database has no confirmed record of it. The Director cannot see this plan in &ldquo;Plan for Review&rdquo; until it is successfully recorded in the database.
+                This plan is marked as submitted in your local browser cache,
+                but the backend server database has no confirmed record of it.
+                The Director cannot see this plan in &ldquo;Plan for
+                Review&rdquo; until it is successfully recorded in the database.
               </p>
             </div>
           </div>

@@ -1822,7 +1822,9 @@ function RelatedInformationStep({
                 {project.fundingSource} (Project Donor)
               </option>
               {project.fundingSource !== "Treasury" ? (
-                <option value="Treasury">Treasury (Government Counterpart)</option>
+                <option value="Treasury">
+                  Treasury (Government Counterpart)
+                </option>
               ) : null}
             </SelectControl>
           </Field>
