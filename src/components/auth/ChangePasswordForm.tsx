@@ -57,7 +57,7 @@ export function ChangePasswordForm() {
         <div className="mt-3 text-center">
           <h1
             id="change-password-title"
-            className="auth-flow-title text-3xl font-extrabold text-[#064e3b]"
+            className="auth-flow-title text-3xl font-semibold text-[#0A3C2F]"
           >
             Create a New Password
           </h1>
@@ -140,7 +140,7 @@ export function ChangePasswordForm() {
                       : `Show ${field.label.toLowerCase()}`
                   }
                   aria-pressed={Boolean(showPasswordMap[field.id])}
-                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#064e3b] cursor-pointer"
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#0A3C2F] cursor-pointer"
                 >
                   {showPasswordMap[field.id] ? (
                     <EyeOff size={20} aria-hidden="true" />

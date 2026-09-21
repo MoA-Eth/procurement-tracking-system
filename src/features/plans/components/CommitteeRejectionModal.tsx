@@ -103,7 +103,7 @@ export function CommitteeRejectionModal({
               <RotateCcw className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-slate-900">
+              <h3 className="text-sm font-semibold text-slate-900">
                 Committee Rejection / Return for Revision
               </h3>
               <p className="text-xs text-slate-500">
@@ -125,7 +125,7 @@ export function CommitteeRejectionModal({
         <div className="p-6 overflow-y-auto space-y-5">
           {/* Question: Scope Selection */}
           <div className="space-y-2">
-            <label className="block text-xs font-extrabold text-slate-900">
+            <label className="block text-xs font-semibold text-slate-900">
               Which activities do you want to reject?
             </label>
             <p className="text-xs text-slate-500">
@@ -142,14 +142,14 @@ export function CommitteeRejectionModal({
                 onClick={() => setScope("SPECIFIC")}
                 className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                   scope === "SPECIFIC"
-                    ? "border-amber-600 bg-amber-50/80 ring-2 ring-amber-500/10 shadow-xs"
+                    ? "border-slate-800 bg-slate-100 ring-2 ring-slate-400/20 shadow-xs"
                     : "border-slate-200 bg-slate-50/60 hover:bg-slate-100"
                 }`}
               >
                 <div
                   className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
                     scope === "SPECIFIC"
-                      ? "border-amber-600 bg-amber-600"
+                      ? "border-slate-800 bg-slate-800"
                       : "border-slate-300 bg-white"
                   }`}
                 >
@@ -158,7 +158,7 @@ export function CommitteeRejectionModal({
                   )}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">
+                  <p className="text-xs font-semibold text-slate-900">
                     Specific Activities
                   </p>
                   <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
@@ -189,7 +189,7 @@ export function CommitteeRejectionModal({
                   )}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">
+                  <p className="text-xs font-semibold text-slate-900">
                     All Activities (Entire Plan)
                   </p>
                   <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
@@ -203,11 +203,11 @@ export function CommitteeRejectionModal({
 
           {/* If Specific Activities: Interactive Checklist */}
           {scope === "SPECIFIC" && (
-            <div className="rounded-xl border border-amber-300 bg-amber-50/40 p-4 space-y-3 animate-in fade-in">
+            <div className="notice-card-clean space-y-3 animate-in fade-in">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4 text-amber-700 shrink-0" />
-                  <span className="text-xs font-extrabold text-amber-950">
+                  <AlertTriangle className="h-4 w-4 text-slate-700 shrink-0" />
+                  <span className="text-xs font-semibold text-slate-900">
                     Select activities to flag ({selectedIds.size} of{" "}
                     {activities.length} selected):
                   </span>
@@ -216,7 +216,7 @@ export function CommitteeRejectionModal({
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    className="text-[11px] font-bold text-emerald-800 hover:underline cursor-pointer"
+                    className="text-[11px] font-semibold text-[#006837] hover:underline cursor-pointer"
                   >
                     Select All
                   </button>
@@ -224,7 +224,7 @@ export function CommitteeRejectionModal({
                   <button
                     type="button"
                     onClick={handleClearAll}
-                    className="text-[11px] font-bold text-rose-700 hover:underline cursor-pointer"
+                    className="text-[11px] font-semibold text-rose-700 hover:underline cursor-pointer"
                   >
                     Clear All
                   </button>
@@ -232,7 +232,7 @@ export function CommitteeRejectionModal({
               </div>
 
               {/* Activities List */}
-              <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1 divide-y divide-amber-100/70">
+              <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-100">
                 {activities.map((act) => {
                   const isChecked = selectedIds.has(act.id);
                   return (
@@ -252,7 +252,7 @@ export function CommitteeRejectionModal({
                       />
                       <div className="flex-1 min-w-0 text-xs">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-mono font-extrabold text-slate-900">
+                          <span className="font-mono font-semibold text-slate-900">
                             {act.activityRefNo || act.id}
                           </span>
                           {act.method && (
@@ -266,14 +266,14 @@ export function CommitteeRejectionModal({
                           {act.estimatedAmount !== undefined && (
                             <>
                               <span className="text-slate-300">•</span>
-                              <span className="text-[11px] font-mono font-bold text-slate-700">
+                              <span className="text-[11px] font-mono font-semibold text-slate-700">
                                 {act.currency || "ETB"}{" "}
                                 {act.estimatedAmount.toLocaleString()}
                               </span>
                             </>
                           )}
                           {isChecked && (
-                            <span className="ml-auto text-[10px] font-extrabold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                            <span className="ml-auto text-[10px] font-medium text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded-md border border-rose-200">
                               Flagged for Rejection
                             </span>
                           )}
@@ -290,7 +290,7 @@ export function CommitteeRejectionModal({
               </div>
 
               {selectedIds.size === 0 && (
-                <p className="text-[11px] font-bold text-rose-600">
+                <p className="text-[11px] font-semibold text-rose-600">
                   ⚠️ Please select at least one activity to reject.
                 </p>
               )}
@@ -299,7 +299,7 @@ export function CommitteeRejectionModal({
 
           {/* Feedback Textarea */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-extrabold text-slate-900">
+            <label className="block text-xs font-semibold text-slate-900">
               Committee Feedback &amp; Deliberation Notes
               <span className="ml-1 text-rose-500 font-semibold">
                 (Required)
@@ -322,7 +322,7 @@ export function CommitteeRejectionModal({
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-xs font-bold text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-200">
+            <div className="flex items-center gap-2 text-xs font-semibold text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-200">
               <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
               <span>{error}</span>
             </div>
@@ -341,7 +341,7 @@ export function CommitteeRejectionModal({
           <button
             type="button"
             onClick={handleSubmit}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-bold shadow-xs transition cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-semibold shadow-xs transition cursor-pointer"
           >
             <RotateCcw className="h-4 w-4" />
             <span>

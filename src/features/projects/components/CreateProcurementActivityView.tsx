@@ -56,10 +56,12 @@ type UpdateActivityField = <K extends keyof ActivityFormState>(
   value: ActivityFormState[K],
 ) => void;
 
-const inputClasses =
-  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15";
-const textareaClasses =
-  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15";
+const compactFieldClasses =
+  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
+const compactTextareaClasses =
+  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
+const inputClasses = compactFieldClasses;
+const textareaClasses = compactTextareaClasses;
 
 const steps = [
   { label: "Key Details", number: 1 },
@@ -358,15 +360,15 @@ export function CreateProcurementActivityView({
       {isEditing && (
         <div className="mt-3 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-white p-4 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#176c55] text-white shadow-2xs">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0A3C2F] text-white shadow-2xs">
               <Edit3 className="h-4.5 w-4.5" />
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-xs font-bold text-slate-900">
+                <p className="text-xs font-semibold text-slate-900">
                   Editing Activity:
                 </p>
-                <span className="font-mono text-xs font-bold text-[#176c55] bg-white px-2 py-0.5 rounded border border-emerald-300">
+                <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-300">
                   {activityReference}
                 </span>
               </div>
@@ -377,7 +379,7 @@ export function CreateProcurementActivityView({
             </div>
           </div>
           <button
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#125442] bg-[#176c55] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#125f4c] transition cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition cursor-pointer shrink-0"
             onClick={handleSave}
             type="button"
           >
@@ -389,13 +391,13 @@ export function CreateProcurementActivityView({
 
       <header className="mt-3 rounded-lg border border-slate-300 bg-white px-5 py-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-extrabold tracking-tight text-[#16243a]">
+          <h1 className="text-xl font-semibold tracking-tight text-[#16243a]">
             {isEditing
               ? "Revise Procurement Activity"
               : "Add Procurement Activity"}
           </h1>
           {isEditing && (
-            <span className="font-mono text-xs font-bold text-[#176c55] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
               {activityReference}
             </span>
           )}
@@ -748,20 +750,20 @@ function ActivityBreadcrumb({
     <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
       <ol className="flex flex-wrap items-center gap-2">
         <li>
-          <Link className="hover:text-[#176c55]" href="/dashboard/officer">
+          <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
             Home
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#176c55]" href="/workspace/projects">
+          <Link className="hover:text-[#0A3C2F]" href="/workspace/projects">
             Projects
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
           <Link
-            className="hover:text-[#176c55]"
+            className="hover:text-[#0A3C2F]"
             href={
               "/workspace/projects?project=" + encodeURIComponent(project.code)
             }
@@ -772,7 +774,7 @@ function ActivityBreadcrumb({
         <li aria-hidden="true">/</li>
         <li>
           <Link
-            className="max-w-52 truncate hover:text-[#176c55]"
+            className="max-w-52 truncate hover:text-[#0A3C2F]"
             href={planHref}
           >
             {plan.name}
@@ -817,7 +819,7 @@ function WizardProgress({
                 aria-hidden="true"
                 className={
                   "absolute top-3 left-[calc(50%+1.25rem)] h-px w-[calc(100%-2.5rem)] " +
-                  (complete ? "bg-[#176c55]" : "bg-slate-300")
+                  (complete ? "bg-[#0A3C2F]" : "bg-slate-300")
                 }
               />
             ) : null}
@@ -832,16 +834,16 @@ function WizardProgress({
                   : undefined
               }
               className={
-                "relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[10px] font-extrabold transition-all " +
+                "relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold transition-all " +
                 (canClick
                   ? "cursor-pointer hover:scale-110 "
                   : "cursor-default ") +
                 (complete
-                  ? "border-[#176c55] bg-[#176c55] text-white hover:bg-[#125f4c]"
+                  ? "border-[#0A3C2F] bg-[#0A3C2F] text-white hover:bg-[#00552c]"
                   : current
-                    ? "border-2 border-[#176c55] bg-white text-[#07523f] shadow-xs"
+                    ? "border-2 border-[#0A3C2F] bg-white text-[#0A3C2F] shadow-xs"
                     : isEditing
-                      ? "border-slate-300 bg-white text-slate-700 hover:border-[#176c55] hover:text-[#176c55]"
+                      ? "border-slate-300 bg-white text-slate-700 hover:border-[#0A3C2F] hover:text-[#0A3C2F]"
                       : "border-slate-300 bg-[#f8fafc] text-slate-400")
               }
             >
@@ -858,10 +860,10 @@ function WizardProgress({
               className={
                 "mt-2 max-w-full truncate text-center text-[10px] font-semibold transition-colors " +
                 (canClick
-                  ? "cursor-pointer hover:text-[#176c55] "
+                  ? "cursor-pointer hover:text-[#0A3C2F] "
                   : "cursor-default ") +
                 (current
-                  ? "text-[#07523f] font-bold"
+                  ? "text-[#0A3C2F] font-semibold"
                   : complete
                     ? "text-slate-700"
                     : isEditing
@@ -891,7 +893,7 @@ function CheckEntriesPanel({
 }) {
   return (
     <aside className="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm lg:sticky lg:top-4">
-      <h2 className="border-b border-slate-300 bg-[#dfe8fb] px-3 py-2.5 text-[10px] font-extrabold text-slate-800">
+      <h2 className="border-b border-slate-300 bg-[#dfe8fb] px-3 py-2.5 text-[10px] font-semibold text-slate-800">
         Check Entries
       </h2>
       <ol className="space-y-1.5 p-3">
@@ -923,7 +925,7 @@ function CheckEntriesPanel({
                 {complete || (current && ready) ? (
                   <CheckCircle2
                     aria-hidden="true"
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#176c55]"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0A3C2F]"
                   />
                 ) : current ? (
                   <CircleAlert
@@ -999,7 +1001,7 @@ function ActivityContext({
 }) {
   return (
     <section className="mb-5 rounded-md border border-[#cbd7ee] bg-[#f1f4ff] p-3">
-      <h3 className="flex items-center gap-2 border-b border-[#ccd6e8] pb-2 text-[10px] font-extrabold text-[#07523f]">
+      <h3 className="flex items-center gap-2 border-b border-[#ccd6e8] pb-2 text-[10px] font-semibold text-[#0A3C2F]">
         <LockKeyhole aria-hidden="true" className="h-3.5 w-3.5" />
         Inherited Project &amp; Plan Context
       </h3>
@@ -1051,9 +1053,9 @@ function FormSection({
   return (
     <section className="overflow-visible rounded-lg border border-slate-300 bg-white shadow-sm">
       <header className="flex items-start gap-2 border-b border-slate-300 bg-[#f6f7fb] px-4 py-3">
-        <span className="mt-0.5 text-[#176c55]">{icon}</span>
+        <span className="mt-0.5 text-[#0A3C2F]">{icon}</span>
         <div>
-          <h2 className="text-[11px] font-extrabold text-[#16243a]">{title}</h2>
+          <h2 className="text-[11px] font-semibold text-[#16243a]">{title}</h2>
           {description ? (
             <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
               {description}
@@ -1158,10 +1160,10 @@ function YesNoChoice({
           <button
             aria-pressed={value === option}
             className={
-              "flex h-full min-w-0 items-center justify-center border-r border-slate-200 px-3 text-xs font-semibold transition-colors last:border-r-0 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#176c55] " +
+              "flex h-full min-w-0 items-center justify-center border-r border-slate-200 px-3 text-xs font-semibold transition-colors last:border-r-0 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#0A3C2F] " +
               (value === option
-                ? "bg-[#176c55] text-white shadow-sm"
-                : "bg-white text-slate-600 hover:bg-[#f6f7fb] hover:text-[#07523f]")
+                ? "bg-[#0A3C2F] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-[#f6f7fb] hover:text-[#0A3C2F]")
             }
             key={String(option)}
             onClick={() => onChange(option)}
@@ -1194,7 +1196,7 @@ function WizardFooter({
     <footer className="mt-5 flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
       {step === 1 ? (
         <Link
-          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#176c55]"
+          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0A3C2F]"
           href={planHref}
         >
           <ArrowLeft aria-hidden="true" className="h-4 w-4" />
@@ -1202,7 +1204,7 @@ function WizardFooter({
         </Link>
       ) : (
         <button
-          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#176c55] cursor-pointer"
+          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0A3C2F] cursor-pointer"
           onClick={onBack}
           type="button"
         >
@@ -1214,7 +1216,7 @@ function WizardFooter({
       <div className="flex items-center gap-2.5">
         {isEditing && step < 4 && (
           <button
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#125442] bg-[#176c55] px-5 text-xs font-bold text-white shadow-sm hover:bg-[#125f4c] transition cursor-pointer"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#006837] px-5 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] transition cursor-pointer"
             onClick={onSave}
             type="button"
           >
@@ -1225,12 +1227,12 @@ function WizardFooter({
 
         <button
           className={
-            "inline-flex h-10 items-center justify-center gap-2 rounded-md px-5 text-xs font-bold shadow-sm transition cursor-pointer " +
+            "inline-flex h-10 items-center justify-center gap-2 rounded-md px-5 text-xs font-semibold shadow-sm transition cursor-pointer " +
             (step === 4
-              ? "border border-[#125442] bg-[#176c55] text-white hover:bg-[#125f4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
+              ? "bg-[#006837] text-white hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
               : isEditing
-                ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]"
-                : "border border-[#125442] bg-[#176c55] text-white hover:bg-[#125f4c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176c55]")
+                ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
+                : "bg-[#006837] text-white hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]")
           }
           onClick={step === 4 ? onSave : onContinue}
           type="button"
@@ -1265,9 +1267,9 @@ function SavedPanel({
     <section className="mt-5 rounded-lg border border-emerald-200 bg-white p-8 text-center shadow-sm">
       <CheckCircle2
         aria-hidden="true"
-        className="mx-auto h-10 w-10 text-[#176c55]"
+        className="mx-auto h-10 w-10 text-[#0A3C2F]"
       />
-      <h2 className="mt-3 text-lg font-extrabold text-[#10243f]">
+      <h2 className="mt-3 text-lg font-semibold text-[#10243f]">
         Procurement activity saved
       </h2>
       <p className="mx-auto mt-2 max-w-lg text-xs leading-5 text-slate-600">
@@ -1275,7 +1277,7 @@ function SavedPanel({
         roadmap and is ready for the next workflow action.
       </p>
       <Link
-        className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#176c55] px-5 text-xs font-bold text-white hover:bg-[#125f4c]"
+        className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#006837] px-5 text-xs font-semibold text-white hover:bg-[#00552c]"
         href={planHref}
       >
         Return to procurement plan
@@ -1618,12 +1620,12 @@ function KeyDetailsStep({
           <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-md border border-slate-300 bg-[#fbfcfd] px-3">
             <input
               checked={form.inProcess}
-              className="h-4 w-4 accent-[#176c55]"
+              className="h-4 w-4 accent-[#0A3C2F]"
               onChange={(event) => onChange("inProcess", event.target.checked)}
               type="checkbox"
             />
             <span>
-              <span className="block text-[10px] font-bold text-slate-700">
+              <span className="block text-[10px] font-semibold text-slate-700">
                 Activity already in process
               </span>
               <span className="block text-[9px] text-slate-500">
@@ -1635,7 +1637,7 @@ function KeyDetailsStep({
       ) : null}
 
       {selectedMethod ? (
-        <div className="mt-4 flex items-start gap-2 rounded-md border border-[#c8ded5] bg-[#f2f8f5] px-3 py-2.5 text-[10px] leading-4 text-[#07523f]">
+        <div className="mt-4 flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[10px] leading-4 text-[#0A3C2F]">
           <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           The {selectedMethod.label} roadmap template will be generated in Step
           4.
@@ -1876,7 +1878,7 @@ function RelatedInformationStep({
         </div>
 
         <div className="mt-5 border-t border-slate-200 pt-4">
-          <h3 className="text-[10px] font-extrabold uppercase tracking-[0.08em] text-slate-600">
+          <h3 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-600">
             Loan / Credit / Grant Number
           </h3>
           <p className="mt-1 text-[9px] leading-4 text-slate-500">
@@ -1992,7 +1994,7 @@ function RelatedInformationStep({
               </div>
             ))}
             <button
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-[#8db9a8] bg-white px-3 text-[10px] font-bold text-[#176c55] hover:bg-[#edf5f1]"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-[10px] font-semibold text-[#0A3C2F] hover:border-[#0A3C2F] hover:bg-emerald-50 transition"
               onClick={addLot}
               type="button"
             >
@@ -2215,17 +2217,17 @@ function AllocationBlock({
   return (
     <section>
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
-        <h3 className="flex items-center gap-2 text-[10px] font-extrabold text-[#10243f]">
-          <span className="text-[#176c55]">{icon}</span>
+        <h3 className="flex items-center gap-2 text-[10px] font-semibold text-[#10243f]">
+          <span className="text-[#0A3C2F]">{icon}</span>
           {title}
         </h3>
         {allocations.length > 0 ? (
           <span
             className={
-              "rounded px-2 py-1 text-[9px] font-extrabold " +
+              "rounded-md border px-2 py-0.5 text-[9px] font-medium " +
               (total === 100
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-red-50 text-red-700")
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-red-50 text-red-700 border-red-200")
             }
           >
             Total {total}%
@@ -2302,7 +2304,7 @@ function AllocationSelector({
           <input
             aria-label={"Select " + allocation.id}
             checked={allocation.selected}
-            className="h-4 w-4 shrink-0 accent-[#176c55]"
+            className="h-4 w-4 shrink-0 accent-[#0A3C2F]"
             onChange={() => toggle(allocation.id)}
             type="checkbox"
           />
@@ -2315,7 +2317,7 @@ function AllocationSelector({
                 {allocation.id} allocation percentage
               </span>
               <input
-                className="h-8 w-20 rounded border border-slate-300 px-2 text-right text-[10px] outline-none focus:border-[#176c55] focus:ring-2 focus:ring-[#176c55]/15"
+                className="h-8 w-20 rounded border border-slate-300 px-2 text-right text-[10px] outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
                 max="100"
                 min="0.01"
                 onChange={(event) =>
@@ -2337,7 +2339,9 @@ function AllocationSelector({
                 type="number"
                 value={allocation.percent}
               />
-              <span className="text-[10px] font-bold text-slate-500">%</span>
+              <span className="text-[10px] font-semibold text-slate-500">
+                %
+              </span>
             </label>
           ) : null}
         </div>

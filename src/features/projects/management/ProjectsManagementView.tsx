@@ -661,7 +661,7 @@ export function ProjectsManagementView({
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-5 right-5 z-50 flex items-center gap-3 rounded-xl bg-slate-900 text-white px-4 py-3 shadow-xl border border-slate-700 animate-in slide-in-from-top-3 max-w-md">
-          <BellRing className="h-4 w-4 text-[#A3E635] shrink-0" />
+          <BellRing className="h-4 w-4 text-emerald-400 shrink-0" />
           <p className="text-xs font-medium leading-relaxed">{toastMessage}</p>
         </div>
       )}

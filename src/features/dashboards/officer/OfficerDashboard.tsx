@@ -42,8 +42,8 @@ export function OfficerDashboard({ user }: { user: AuthUser }) {
     <div className="space-y-5 pb-6">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold text-[#3f6f60]">Dashboard</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-[#10243f]">
+          <p className="text-xs font-semibold text-[#0A3C2F]">Dashboard</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#10243f]">
             Overview
           </h1>
           <p className="mt-2 text-sm text-slate-600">

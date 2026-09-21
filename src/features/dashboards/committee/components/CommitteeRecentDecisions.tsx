@@ -15,7 +15,7 @@ export function CommitteeRecentDecisions({
 }: CommitteeRecentDecisionsProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 select-none">
+      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 select-none">
         <History className="h-4 w-4 text-slate-400" /> My Recent Decisions
       </h3>
 
@@ -37,12 +37,12 @@ export function CommitteeRecentDecisions({
               <div className="flex items-start justify-between gap-2">
                 <Link
                   href={`/workspace/committee-progress?planId=${plan.id}`}
-                  className="font-bold text-slate-900 text-xs leading-tight hover:text-[#0A3C2F] transition-colors"
+                  className="font-semibold text-slate-900 text-xs leading-tight hover:text-[#0A3C2F] transition-colors"
                 >
                   {plan.planName}
                 </Link>
                 <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap ${
                     plan.committeeDecision === "Approved"
                       ? " text-emerald-700 "
                       : " text-rose-700 "
@@ -60,7 +60,7 @@ export function CommitteeRecentDecisions({
               <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
                 <span>Plan Status</span>
                 <span
-                  className={`font-bold ${
+                  className={`font-semibold ${
                     plan.status === "Finally Approved"
                       ? "text-emerald-600"
                       : "text-amber-600"
@@ -81,7 +81,7 @@ export function CommitteeRecentDecisions({
 
               <Link
                 href={`/workspace/my-decisions?planId=${plan.id}`}
-                className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-0.5 transition-colors cursor-pointer"
+                className="text-[10px] font-semibold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-0.5 transition-colors cursor-pointer"
               >
                 View Read-only Details ↗
               </Link>
@@ -93,7 +93,7 @@ export function CommitteeRecentDecisions({
         <div className="p-3.5 bg-slate-50/50 border-t border-slate-100 text-center">
           <Link
             href="/workspace/my-decisions"
-            className="inline-flex items-center justify-center w-full py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-3xs transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center w-full py-2 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 shadow-3xs transition-colors cursor-pointer"
           >
             View All Past Decisions
           </Link>

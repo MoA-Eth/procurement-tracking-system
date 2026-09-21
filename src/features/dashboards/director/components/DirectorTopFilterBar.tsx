@@ -58,8 +58,8 @@ export function DirectorTopFilterBar({
     <div className="flex items-center gap-2.5 sm:gap-3 flex-nowrap w-full py-0.5 overflow-x-auto no-scrollbar">
       {/* 1. Fiscal Year Pill: Light mint background, green border, calendar icon, no chevron */}
       <div className="relative inline-flex items-center shrink-0">
-        <div className="flex items-center gap-2 bg-[#e2ede7] hover:bg-[#d6e7dd] border border-[#2d6a4f] rounded-lg px-3 py-1.5 text-xs sm:text-[13px] font-semibold text-[#1b4332] shadow-2xs transition-colors pointer-events-none">
-          <Calendar className="h-3.5 w-3.5 text-[#2d6a4f] shrink-0" />
+        <div className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-200 rounded-lg px-3 py-1.5 text-xs sm:text-[13px] font-semibold text-[#0A3C2F] shadow-2xs transition-colors pointer-events-none">
+          <Calendar className="h-3.5 w-3.5 text-[#0A3C2F] shrink-0" />
           <span className="whitespace-nowrap">{selectedFiscalYear}</span>
         </div>
         <select

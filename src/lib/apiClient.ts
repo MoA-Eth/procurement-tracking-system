@@ -132,9 +132,6 @@ export async function directApiFetch<T>(
           document.cookie = `${cookieName}=; path=/; max-age=0; SameSite=Lax`;
           document.cookie = "moa_session=; path=/; max-age=0; SameSite=Lax";
         }
-        if (window.location.pathname !== "/") {
-          window.location.href = "/";
-        }
       }
     }
 

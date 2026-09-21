@@ -23,16 +23,16 @@ export function OfficerOverviewStatusBarChart({
   return (
     <section
       aria-label="Procurement overview"
-      className="overflow-hidden rounded-xl border border-[#bdd0c8] bg-white shadow-sm"
+      className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
     >
-      <div className="flex items-center justify-between border-b border-[#c7d7d0] bg-[#edf5f1] px-5 py-4">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
         <div className="flex items-center gap-2.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#006837]" />
-          <h2 className="text-lg font-extrabold text-[#16253d]">
+          <h2 className="text-lg font-semibold text-[#16253d]">
             Procurement Overview
           </h2>
         </div>
-        <span className="rounded-full bg-emerald-100 border border-emerald-300 px-3 py-0.5 text-xs font-bold text-[#006837]">
+        <span className="rounded-md bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
           {loading ? "Loading..." : `Total: ${total.toLocaleString()}`}
         </span>
       </div>
@@ -46,7 +46,7 @@ export function OfficerOverviewStatusBarChart({
             <Link
               key={item.label}
               href={item.href}
-              className="group flex items-center gap-3 sm:gap-4 -mx-2 px-2 py-1.5 rounded-lg transition-colors hover:bg-[#f7fbf9]"
+              className="group flex items-center gap-3 sm:gap-4 -mx-2 px-2 py-1.5 rounded-lg transition-colors hover:bg-slate-50"
             >
               {/* Status Label (Right aligned towards bar) */}
               <div className="w-36 sm:w-44 text-right shrink-0">
@@ -76,7 +76,7 @@ export function OfficerOverviewStatusBarChart({
                     ...
                   </span>
                 ) : (
-                  <span className="text-sm sm:text-base font-bold text-[#006837] tabular-nums">
+                  <span className="text-sm sm:text-base font-semibold text-[#006837] tabular-nums">
                     {item.value}
                   </span>
                 )}

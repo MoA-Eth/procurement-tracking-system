@@ -51,7 +51,9 @@ export function CreateUserForm() {
           <UserPlus aria-hidden="true" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Create a user</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            Create a user
+          </h1>
           <p className="mt-1 text-sm text-slate-600">
             Enter the user’s details. We will email them a one-time link to
             create their password.

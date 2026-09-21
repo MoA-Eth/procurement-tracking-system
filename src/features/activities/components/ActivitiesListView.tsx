@@ -201,7 +201,7 @@ export function ActivitiesListView({
           className={`transition-colors cursor-pointer truncate max-w-[260px] ${
             selectedActivity
               ? "text-slate-500 hover:text-slate-900"
-              : "font-bold text-[#0A3C2F]"
+              : "font-semibold text-[#0A3C2F]"
           }`}
         >
           {currentPlanName}
@@ -209,7 +209,7 @@ export function ActivitiesListView({
         {selectedActivity && (
           <>
             <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
-            <span className="font-bold text-[#0A3C2F] font-mono truncate max-w-[180px]">
+            <span className="font-semibold text-[#0A3C2F] font-mono truncate max-w-[180px]">
               {selectedActivity.activityRefNo}
             </span>
           </>
@@ -226,18 +226,18 @@ export function ActivitiesListView({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setSelectedActivity(null)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" /> Back to Activities
                     Table
                   </button>
                   <span className="text-slate-300">•</span>
-                  <span className="font-mono text-xs font-extrabold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-200">
+                  <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-200">
                     {selectedActivity.activityRefNo}
                   </span>
                 </div>
 
-                <h1 className="text-base sm:text-lg font-bold text-slate-950 tracking-tight leading-snug">
+                <h1 className="text-base sm:text-lg font-semibold text-slate-950 tracking-tight leading-snug">
                   {selectedActivity.description}
                 </h1>
 
@@ -266,14 +266,14 @@ export function ActivitiesListView({
                   <span>•</span>
                   <span>
                     Review Type:{" "}
-                    <strong className="text-amber-800 font-bold">
+                    <strong className="text-amber-800 font-semibold">
                       {selectedActivity.reviewType}
                     </strong>
                   </span>
                 </div>
               </div>
 
-              <span className="px-3 py-1 rounded-lg text-xs font-extrabold bg-[#0A3C2F] text-white shadow-2xs">
+              <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-[#0A3C2F] text-white shadow-2xs">
                 {selectedActivity.status}
               </span>
             </div>
@@ -300,7 +300,7 @@ export function ActivitiesListView({
                   >
                     {/* Circle Number Badge */}
                     <div
-                      className={`h-9 w-9 rounded-full flex items-center justify-center font-bold text-sm transition-all bg-white ${
+                      className={`h-9 w-9 rounded-full flex items-center justify-center font-semibold text-sm transition-all bg-white ${
                         isActive
                           ? "border-2 border-[#0A3C2F] text-[#0A3C2F] ring-4 ring-[#0A3C2F]/10 shadow-xs"
                           : "border border-slate-300 text-slate-500 group-hover:border-slate-400 group-hover:text-slate-700"
@@ -313,7 +313,7 @@ export function ActivitiesListView({
                     <span
                       className={`mt-2 text-xs transition-colors whitespace-nowrap ${
                         isActive
-                          ? "font-bold text-[#0A3C2F]"
+                          ? "font-semibold text-[#0A3C2F]"
                           : "font-medium text-slate-500 group-hover:text-slate-800"
                       }`}
                     >
@@ -329,7 +329,7 @@ export function ActivitiesListView({
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4 animate-in fade-in duration-150">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
                 <FileText className="h-4 w-4 text-[#0A3C2F]" />
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900">
                   4.1 Step 1 — Key Details & Procurement Framework
                 </h3>
               </div>
@@ -365,7 +365,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Procurement Category
                   </span>
-                  <span className="font-extrabold text-slate-900 w-2/3 flex items-center gap-1">
+                  <span className="font-semibold text-slate-900 w-2/3 flex items-center gap-1">
                     <Lock className="h-3.5 w-3.5 text-slate-400" />
                     {selectedActivity.category} (Inherited from Plan)
                   </span>
@@ -375,7 +375,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Procurement Method
                   </span>
-                  <span className="font-extrabold text-[#0A3C2F] w-2/3">
+                  <span className="font-semibold text-[#0A3C2F] w-2/3">
                     {selectedActivity.method}
                     {selectedActivity.specificMethod &&
                       ` (${selectedActivity.specificMethod})`}
@@ -386,7 +386,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Market Approach
                   </span>
-                  <span className="font-bold text-slate-900 w-2/3">
+                  <span className="font-semibold text-slate-900 w-2/3">
                     {selectedActivity.marketApproach}
                   </span>
                 </div>
@@ -395,7 +395,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Qualification Approach
                   </span>
-                  <span className="font-bold text-slate-900 w-2/3">
+                  <span className="font-semibold text-slate-900 w-2/3">
                     {selectedActivity.qualificationApproach}
                   </span>
                 </div>
@@ -404,7 +404,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Review Type / Oversight
                   </span>
-                  <span className="font-extrabold text-amber-800 w-2/3">
+                  <span className="font-semibold text-amber-800 w-2/3">
                     {selectedActivity.reviewType} Review
                   </span>
                 </div>
@@ -413,7 +413,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Domestic / Regional Preference
                   </span>
-                  <span className="font-bold text-slate-900 w-2/3">
+                  <span className="font-semibold text-slate-900 w-2/3">
                     {selectedActivity.domesticPreference
                       ? "Yes (Applied)"
                       : "No"}
@@ -424,7 +424,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Procurement Process
                   </span>
-                  <span className="font-bold text-slate-900 w-2/3">
+                  <span className="font-semibold text-slate-900 w-2/3">
                     {selectedActivity.procurementProcess ||
                       "Single Stage One Envelope"}
                   </span>
@@ -434,7 +434,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Procurement Document Type
                   </span>
-                  <span className="font-bold text-slate-900 w-2/3">
+                  <span className="font-semibold text-slate-900 w-2/3">
                     {selectedActivity.procurementDocumentType ||
                       "Standard Bidding Document (SPD)"}
                   </span>
@@ -474,7 +474,7 @@ export function ActivitiesListView({
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4 animate-in fade-in duration-150">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
                 <DollarSign className="h-4 w-4 text-[#0A3C2F]" />
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900">
                   4.2 Step 2 — Scope, Budget, Lot Packaging & Financing
                 </h3>
               </div>
@@ -485,7 +485,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Activity Reference No.
                   </span>
-                  <span className="font-mono font-extrabold text-[#0A3C2F] w-2/3">
+                  <span className="font-mono font-semibold text-[#0A3C2F] w-2/3">
                     {selectedActivity.activityRefNo}
                   </span>
                 </div>
@@ -497,7 +497,7 @@ export function ActivitiesListView({
                   </span>
                   {isDirectorReview ? (
                     <div className="w-2/3 flex items-center gap-2">
-                      <span className="font-mono font-bold text-slate-500">
+                      <span className="font-mono font-semibold text-slate-500">
                         {selectedActivity.currency}
                       </span>
                       <input
@@ -510,11 +510,11 @@ export function ActivitiesListView({
                             Number(e.target.value),
                           )
                         }
-                        className="w-48 rounded-xl border border-emerald-300 bg-white px-3 py-1.5 font-mono font-bold text-xs text-slate-900 focus:border-[#0A3C2F] outline-none"
+                        className="w-48 rounded-xl border border-emerald-300 bg-white px-3 py-1.5 font-mono font-semibold text-xs text-slate-900 focus:border-[#0A3C2F] outline-none"
                       />
                     </div>
                   ) : (
-                    <span className="font-mono font-extrabold text-slate-950 w-2/3">
+                    <span className="font-mono font-semibold text-slate-950 w-2/3">
                       {selectedActivity.currency}{" "}
                       {selectedActivity.estimatedAmount.toLocaleString()}
                     </span>
@@ -551,7 +551,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Funding Source & Instrument
                   </span>
-                  <div className="w-2/3 font-bold text-slate-900">
+                  <div className="w-2/3 font-semibold text-slate-900">
                     {selectedActivity.fundingSource}
                     {selectedActivity.loanGrantNo && (
                       <span className="font-mono text-[11px] text-slate-500 ml-2 font-normal">
@@ -565,7 +565,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Project Component
                   </span>
-                  <div className="w-2/3 font-bold text-slate-900">
+                  <div className="w-2/3 font-semibold text-slate-900">
                     {selectedActivity.component || "N/A"}
                     {selectedActivity.subcomponent && (
                       <span className="text-[11px] text-slate-600 ml-2 font-normal">
@@ -580,7 +580,7 @@ export function ActivitiesListView({
                     <span className="font-semibold text-slate-500 w-1/3">
                       Invitation / Bid Ref No.
                     </span>
-                    <span className="font-mono font-bold text-slate-900 w-2/3">
+                    <span className="font-mono font-semibold text-slate-900 w-2/3">
                       {selectedActivity.invitationRefNo}
                     </span>
                   </div>
@@ -591,7 +591,7 @@ export function ActivitiesListView({
                     Lot Packaging Requirements
                   </span>
                   <div className="w-2/3 space-y-1.5">
-                    <div className="font-bold text-slate-900">
+                    <div className="font-semibold text-slate-900">
                       {selectedActivity.isLotRequired
                         ? `${selectedActivity.lots?.length || 0} Repeatable Lots Configured`
                         : "Single Package (No Split Lots)"}
@@ -608,7 +608,7 @@ export function ActivitiesListView({
                                 <strong>{lot.lotNumber}:</strong>{" "}
                                 {lot.lotDescription}
                               </span>
-                              <span className="font-mono font-bold text-[#0A3C2F] ml-3">
+                              <span className="font-mono font-semibold text-[#0A3C2F] ml-3">
                                 {selectedActivity.currency}{" "}
                                 {lot.estimatedAmount.toLocaleString()}
                               </span>
@@ -627,7 +627,7 @@ export function ActivitiesListView({
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4 animate-in fade-in duration-150">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
                 <MapPin className="h-4 w-4 text-[#0A3C2F]" />
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900">
                   4.3 Step 3 — Classification & Regional Location
                 </h3>
               </div>
@@ -638,7 +638,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Classification Code
                   </span>
-                  <span className="font-mono font-extrabold text-slate-900 w-2/3">
+                  <span className="font-mono font-semibold text-slate-900 w-2/3">
                     {selectedActivity.classificationCode || "42100000"} —{" "}
                     {selectedActivity.classificationDescription ||
                       "Agricultural Machinery & Equipment"}
@@ -649,7 +649,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Implementation Location / Region
                   </span>
-                  <span className="font-bold text-slate-900 w-2/3">
+                  <span className="font-semibold text-slate-900 w-2/3">
                     {selectedActivity.locationRegion || plan.organizationRegion}
                   </span>
                 </div>
@@ -658,7 +658,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Location Coordinates
                   </span>
-                  <span className="font-mono font-bold text-slate-900 w-2/3">
+                  <span className="font-mono font-semibold text-slate-900 w-2/3">
                     Latitude: {selectedActivity.latitude || "9.0192"} |
                     Longitude: {selectedActivity.longitude || "38.7525"}
                   </span>
@@ -699,11 +699,11 @@ export function ActivitiesListView({
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-[#0A3C2F]" />
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-semibold text-slate-900">
                     4.4 Step 4 — Activity Roadmap & Stage Milestones
                   </h3>
                 </div>
-                <span className="text-xs text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold flex items-center gap-1">
+                <span className="text-xs text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold flex items-center gap-1">
                   <Sparkles className="h-3 w-3 text-emerald-600" />
                   Method: {selectedActivity.method}
                 </span>
@@ -712,7 +712,7 @@ export function ActivitiesListView({
               <div className="rounded-lg border border-slate-200 overflow-hidden text-xs">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[650px]">
-                    <thead className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase">
+                    <thead className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase">
                       <tr>
                         <th className="py-2.5 px-3 w-8 text-center">#</th>
                         <th className="py-2.5 px-3 min-w-[180px]">
@@ -733,7 +733,7 @@ export function ActivitiesListView({
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {selectedActivity.roadmap.map((stage, idx) => (
                         <tr key={stage.id} className="hover:bg-slate-50">
-                          <td className="py-2 px-3 text-center font-bold text-slate-400">
+                          <td className="py-2 px-3 text-center font-semibold text-slate-400">
                             {idx + 1}
                           </td>
                           <td className="py-2 px-3 font-semibold text-slate-900 max-w-xs wrap-break-word">
@@ -768,7 +768,7 @@ export function ActivitiesListView({
                                     e.target.value,
                                   )
                                 }
-                                className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-xs font-mono font-bold text-slate-900 focus:border-[#0A3C2F] outline-none cursor-pointer"
+                                className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-xs font-mono font-semibold text-slate-900 focus:border-[#0A3C2F] outline-none cursor-pointer"
                               />
                             ) : (
                               stage.revisedTargetDate ||
@@ -776,12 +776,12 @@ export function ActivitiesListView({
                               "—"
                             )}
                           </td>
-                          <td className="py-2 px-3 font-mono font-bold text-emerald-700">
+                          <td className="py-2 px-3 font-mono font-semibold text-emerald-700">
                             {stage.actualDate || "—"}
                           </td>
                           <td className="py-2 px-3 text-center">
                             <span
-                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                              className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-medium border ${
                                 stage.notApplicable ||
                                 stage.stageStatus === "Not Applicable"
                                   ? "bg-slate-100 text-slate-500 border border-slate-200"
@@ -815,19 +815,19 @@ export function ActivitiesListView({
             <div className="flex items-center gap-2">
               <button
                 onClick={onBackClick}
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back
               </button>
               <span className="text-slate-300">•</span>
-              <span className="font-mono text-xs font-extrabold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                 {project.code}
               </span>
             </div>
 
             {isDirectorReview ? (
               <div className="space-y-1">
-                <label className="block text-[10px] font-bold text-[#0A3C2F] uppercase tracking-wider">
+                <label className="block text-[10px] font-semibold text-[#0A3C2F] uppercase tracking-wider">
                   Plan Name (Editable for Minor Corrections / Typo Fixes)
                 </label>
                 <input
@@ -835,11 +835,11 @@ export function ActivitiesListView({
                   value={currentPlanName}
                   onChange={(e) => setCurrentPlanName(e.target.value)}
                   placeholder="Enter plan name..."
-                  className="w-full text-base sm:text-lg font-extrabold text-slate-950 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10 outline-none transition-all"
+                  className="w-full text-base sm:text-lg font-semibold text-slate-950 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10 outline-none transition-all"
                 />
               </div>
             ) : (
-              <h1 className="text-base sm:text-lg font-extrabold text-slate-950 tracking-tight leading-snug">
+              <h1 className="text-base sm:text-lg font-semibold text-slate-950 tracking-tight leading-snug">
                 {currentPlanName}
               </h1>
             )}
@@ -847,21 +847,21 @@ export function ActivitiesListView({
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
               <span>
                 Category:{" "}
-                <strong className="text-slate-900 font-bold">
+                <strong className="text-slate-900 font-semibold">
                   {plan.category}
                 </strong>
               </span>
               <span>•</span>
               <span>
                 Fiscal Year:{" "}
-                <strong className="text-slate-900 font-bold">
+                <strong className="text-slate-900 font-semibold">
                   {plan.budgetYear}
                 </strong>
               </span>
               <span>•</span>
               <span>
                 Region:{" "}
-                <strong className="text-slate-900 font-bold">
+                <strong className="text-slate-900 font-semibold">
                   {plan.organizationRegion}
                 </strong>
               </span>
@@ -934,7 +934,7 @@ export function ActivitiesListView({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[920px]">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-2.5 px-3 text-center w-10">#</th>
                     <th className="py-2.5 px-3 min-w-[140px]">
                       Activity Ref No
@@ -1008,11 +1008,11 @@ export function ActivitiesListView({
 
                       const statusColorStyle =
                         computedStatus === "Completed"
-                          ? "text-[#166534] font-bold"
+                          ? "text-[#166534] font-semibold"
                           : computedStatus === "Delayed"
-                            ? "text-[#b91c1c] font-extrabold"
+                            ? "text-[#b91c1c] font-semibold"
                             : computedStatus === "In Progress"
-                              ? "text-blue-700 font-bold"
+                              ? "text-blue-700 font-semibold"
                               : "text-slate-500 font-semibold";
 
                       return (
@@ -1025,18 +1025,20 @@ export function ActivitiesListView({
                             {index + 1}
                           </td>
 
-                          <td className="py-2 px-3 font-mono font-bold text-slate-900 text-xs">
-                            {act.activityRefNo}
+                          <td className="py-2 px-3 text-xs">
+                            <span className="inline-block rounded-md bg-slate-100/90 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-800 border border-slate-200/80">
+                              {act.activityRefNo}
+                            </span>
                           </td>
 
                           <td className="py-2 px-3 max-w-xs wrap-break-word">
-                            <p className="font-bold text-slate-900 text-xs leading-snug wrap-break-word line-clamp-2">
+                            <p className="font-semibold text-slate-900 text-xs leading-snug wrap-break-word line-clamp-2">
                               {act.description}
                             </p>
                           </td>
 
                           <td className="py-2 px-3 text-xs">
-                            <div className="font-bold text-[#0A3C2F]">
+                            <div className="font-semibold text-[#0A3C2F]">
                               {act.method}
                             </div>
                             <div className="text-[10px] text-slate-500">
@@ -1046,7 +1048,7 @@ export function ActivitiesListView({
 
                           <td className="py-2 px-3">
                             <span
-                              className={`text-xs font-extrabold ${
+                              className={`text-xs font-semibold ${
                                 act.reviewType === "Prior"
                                   ? "text-amber-800"
                                   : "text-slate-700"
@@ -1056,9 +1058,13 @@ export function ActivitiesListView({
                             </span>
                           </td>
 
-                          <td className="py-2 px-3 font-mono font-bold text-slate-900 text-xs">
-                            {act.currency}{" "}
-                            {act.estimatedAmount.toLocaleString()}
+                          <td className="py-2 px-3 font-sans font-semibold text-slate-900 text-xs tabular-nums whitespace-nowrap">
+                            <span className="text-[11px] font-medium text-slate-500 mr-1">
+                              {act.currency}
+                            </span>
+                            {act.estimatedAmount.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                            })}
                           </td>
 
                           <td className="py-2 px-3 text-center whitespace-nowrap">
@@ -1093,14 +1099,14 @@ export function ActivitiesListView({
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5 mt-6">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-semibold text-slate-900">
                   Director Decision & Workflow Actions
                 </h3>
               </div>
 
               {/* Revision Remarks Textarea */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800">
+                <label className="block text-xs font-semibold text-slate-800">
                   Revision Notes (If returning to Officer)
                 </label>
                 <textarea
@@ -1117,16 +1123,16 @@ export function ActivitiesListView({
                 <button
                   type="button"
                   onClick={() => onApprovePlan(plan)}
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
-                  <Send className="h-4 w-4 text-[#A3E635]" />
+                  <Send className="h-4 w-4 text-emerald-200" />
                   <span>Approve & Send to Committee</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => onReturnPlan(plan, directorReturnRemarks)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 text-xs font-bold transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   <RotateCcw className="h-4 w-4 text-rose-600" />
                   <span>Return to Officer for Revision</span>

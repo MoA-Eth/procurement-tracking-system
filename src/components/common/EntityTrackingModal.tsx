@@ -223,11 +223,11 @@ export function EntityTrackingModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100/80 text-[#0A3C2F] font-bold">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100/80 text-[#0A3C2F] font-semibold">
               <Layers className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-slate-900">
+              <h2 className="text-base font-semibold text-slate-900">
                 Procurement Entity Lifecycle Tracker
               </h2>
               <p className="text-xs text-slate-500 font-medium">
@@ -263,7 +263,7 @@ export function EntityTrackingModal({
                   key={type}
                   type="button"
                   onClick={() => setSelectedType(type)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer border ${
                     active
                       ? "bg-[#0A3C2F] text-white border-[#0A3C2F] shadow-xs"
                       : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
@@ -316,7 +316,7 @@ export function EntityTrackingModal({
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wide border ${
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide border ${
                         entity.type === "PROJECT"
                           ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                           : entity.type === "PLAN"
@@ -329,7 +329,7 @@ export function EntityTrackingModal({
                       {entity.type}
                     </span>
 
-                    <span className="font-mono font-bold text-xs text-slate-900">
+                    <span className="font-mono font-semibold text-xs text-slate-900">
                       {entity.reference}
                     </span>
 
@@ -343,7 +343,7 @@ export function EntityTrackingModal({
                     )}
 
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${entity.statusColor}`}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${entity.statusColor}`}
                     >
                       {entity.status}
                     </span>
@@ -379,7 +379,7 @@ export function EntityTrackingModal({
                   <Link
                     href={entity.link}
                     onClick={onClose}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-[#0A3C2F] bg-white hover:bg-emerald-50 hover:border-emerald-300 transition"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-[#0A3C2F] bg-white hover:bg-emerald-50 hover:border-emerald-300 transition"
                   >
                     <span>View</span>
                     <ExternalLink className="h-3 w-3" />
@@ -398,7 +398,7 @@ export function EntityTrackingModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 text-xs font-bold transition cursor-pointer"
+            className="px-4 py-1.5 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 text-xs font-semibold transition cursor-pointer"
           >
             Close
           </button>

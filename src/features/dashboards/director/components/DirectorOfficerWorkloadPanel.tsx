@@ -210,7 +210,7 @@ export function DirectorOfficerWorkloadPanel() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200">
               <Users className="h-4 w-4" />
             </div>
-            <h3 className="text-sm font-bold text-slate-900">
+            <h3 className="text-sm font-semibold text-slate-900">
               Procurement Officer Workload & Delay Breakdown
             </h3>
           </div>
@@ -233,7 +233,7 @@ export function DirectorOfficerWorkloadPanel() {
       <div className="overflow-x-auto rounded-xl border border-slate-200">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+            <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
               <th className="py-3 px-4">Procurement Officer</th>
               <th className="py-3 px-4 text-center">Projects Assigned</th>
               <th className="py-3 px-4 text-center">Delayed Activities</th>
@@ -256,7 +256,7 @@ export function DirectorOfficerWorkloadPanel() {
                   {/* Officer Info */}
                   <td className="py-3.5 px-4 min-w-[180px]">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100/70 text-[#0A3C2F] font-bold text-xs shrink-0">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100/70 text-[#0A3C2F] font-semibold text-xs shrink-0">
                         {officer.officerName
                           .split(" ")
                           .map((n) => n[0])
@@ -265,7 +265,7 @@ export function DirectorOfficerWorkloadPanel() {
                           .toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900 text-xs">
+                        <p className="font-semibold text-slate-900 text-xs">
                           {officer.officerName}
                         </p>
                         <p className="text-[10px] text-slate-500">
@@ -277,7 +277,7 @@ export function DirectorOfficerWorkloadPanel() {
 
                   {/* Project Count */}
                   <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                    <span className="font-bold text-xs text-slate-800 tabular-nums">
+                    <span className="font-semibold text-xs text-slate-800 tabular-nums">
                       {officer.projectCount}
                     </span>
                   </td>
@@ -286,16 +286,16 @@ export function DirectorOfficerWorkloadPanel() {
                   <td className="py-3.5 px-4 text-center whitespace-nowrap">
                     {officer.delayedActivitiesCount > 0 ? (
                       <div className="inline-flex flex-col items-center gap-0.5">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                           <AlertTriangle className="h-3 w-3 text-rose-600" />
                           {officer.delayedActivitiesCount} Delayed
                         </span>
-                        <span className="text-[10px] font-bold text-rose-600">
+                        <span className="text-[10px] font-semibold text-rose-600">
                           +{officer.totalDelayDays} days total
                         </span>
                       </div>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         On Schedule
                       </span>
                     )}
@@ -311,14 +311,14 @@ export function DirectorOfficerWorkloadPanel() {
                             className="rounded-lg bg-rose-50/60 p-2 text-[10px] border border-rose-200/60"
                           >
                             <div className="flex items-center justify-between gap-1">
-                              <span className="font-mono font-bold text-rose-900">
+                              <span className="font-mono font-semibold text-rose-900">
                                 {d.activityRef}
                               </span>
-                              <span className="font-bold text-rose-700">
+                              <span className="font-semibold text-rose-700">
                                 +{d.delayDays}d
                               </span>
                             </div>
-                            <p className="font-bold text-slate-800 mt-0.5">
+                            <p className="font-semibold text-slate-800 mt-0.5">
                               Where:{" "}
                               <span className="font-semibold text-rose-800">
                                 {d.stageName}
@@ -341,7 +341,7 @@ export function DirectorOfficerWorkloadPanel() {
                                   reason: d.delayReason,
                                 })
                               }
-                              className="mt-1 inline-flex items-center gap-1 text-[9px] font-bold text-rose-700 hover:underline cursor-pointer"
+                              className="mt-1 inline-flex items-center gap-1 text-[9px] font-semibold text-rose-700 hover:underline cursor-pointer"
                             >
                               <Clock className="h-2.5 w-2.5" />
                               View Phase Delay Breakdown

@@ -77,7 +77,7 @@ export function PlanReviewDirectoryTable({
           <Home className="h-4 w-4" />
         </Link>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-bold text-[#0A3C2F]">
+        <span className="font-semibold text-[#0A3C2F]">
           {userRole === "ENDORSING_COMMITTEE"
             ? "Committee Plan for Review"
             : userRole === "MANAGEMENT"
@@ -89,7 +89,7 @@ export function PlanReviewDirectoryTable({
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
             {userRole === "ENDORSING_COMMITTEE"
               ? "Endorsement Committee — Plans for Review"
               : userRole === "MANAGEMENT"
@@ -169,7 +169,7 @@ export function PlanReviewDirectoryTable({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1080px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3.5 px-3.5 text-center w-12">#</th>
                 <th className="py-3.5 px-3.5 w-36">Project Code</th>
                 <th className="py-3.5 px-3.5 min-w-[256px] max-w-[320px]">
@@ -218,13 +218,13 @@ export function PlanReviewDirectoryTable({
                     </td>
 
                     <td className="py-3 px-3.5">
-                      <span className="font-mono font-extrabold text-[#0A3C2F] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded text-xs inline-block max-w-[128px] truncate">
+                      <span className="font-mono font-medium text-[#0A3C2F] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-xs inline-block max-w-[128px] truncate">
                         {plan.projectCode}
                       </span>
                     </td>
 
                     <td className="py-3 px-3.5 min-w-[256px] max-w-[320px] break-words">
-                      <p className="font-bold text-slate-900 text-xs leading-snug group-hover:text-[#0A3C2F] break-words">
+                      <p className="font-semibold text-slate-900 text-xs leading-snug group-hover:text-[#0A3C2F] break-words">
                         {plan.planName}
                       </p>
                       {plan.description && (
@@ -234,7 +234,7 @@ export function PlanReviewDirectoryTable({
                       )}
                     </td>
 
-                    <td className="py-3 px-3.5 font-bold text-slate-800">
+                    <td className="py-3 px-3.5 font-medium text-slate-800">
                       {plan.category}
                     </td>
 
@@ -275,22 +275,22 @@ export function PlanReviewDirectoryTable({
 
                     <td className="py-3 px-3.5 text-center whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${
                           plan.status === "Submitted to Director"
-                            ? "bg-amber-50 text-amber-800 border border-amber-200"
+                            ? "bg-slate-100 text-slate-800 border-slate-200"
                             : plan.status === "Committee Review"
-                              ? "bg-blue-50 text-blue-800 border border-blue-200"
+                              ? "bg-blue-50/60 text-blue-800 border-blue-200/80"
                               : (plan as any).status ===
                                     "AWAITING_MANAGEMENT_APPROVAL" ||
                                   plan.status ===
                                     "Awaiting Management Approval" ||
                                   plan.status === "Committee Endorsed"
-                                ? "bg-indigo-50 text-indigo-800 border border-indigo-200"
+                                ? "bg-indigo-50 text-indigo-800 border-indigo-200"
                                 : plan.status === "Returned" ||
                                     plan.status === "Returned for Revision" ||
                                     plan.status === "Committee Rejected"
-                                  ? "bg-rose-50 text-rose-800 border border-rose-200"
-                                  : "bg-slate-100 text-slate-700"
+                                  ? "bg-rose-50 text-rose-800 border-rose-200/80"
+                                  : "bg-slate-100 text-slate-700 border-slate-200"
                         }`}
                       >
                         {plan.status}

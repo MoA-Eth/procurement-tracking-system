@@ -54,7 +54,7 @@ export function DirectorSpendCompositionChart({
       <div>
         {/* Header */}
         <div className="pb-3 border-b border-slate-100">
-          <h3 className="text-lg sm:text-xl font-serif font-bold text-slate-900 tracking-tight">
+          <h3 className="text-lg sm:text-xl font-serif font-semibold text-slate-900 tracking-tight">
             Spend Composition
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
@@ -122,7 +122,7 @@ export function DirectorSpendCompositionChart({
 
             {/* Centered Donut Value */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-              <span className="text-2xl sm:text-3xl font-sans font-bold tabular-nums text-slate-900 tracking-tight leading-none">
+              <span className="text-2xl sm:text-3xl font-sans font-semibold tabular-nums text-slate-900 tracking-tight leading-none">
                 {spendPercentages.disbursed}%
               </span>
               <span className="text-xs text-slate-500 font-medium mt-0.5">

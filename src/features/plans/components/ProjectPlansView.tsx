@@ -46,9 +46,9 @@ const CATEGORY_BADGES: Record<
     border: "border-blue-200",
   },
   "Non-Consulting Services": {
-    bg: "bg-amber-50",
-    text: "text-amber-800",
-    border: "border-amber-200",
+    bg: "bg-teal-50",
+    text: "text-teal-800",
+    border: "border-teal-200",
   },
   "Consultancy Services": {
     bg: "bg-purple-50",
@@ -157,16 +157,18 @@ export function ProjectPlansView({
             {project.code} Plans
           </button>
           <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-          <span className="font-bold text-[#0A3C2F]">Director Plan Review</span>
+          <span className="font-semibold text-[#0A3C2F]">
+            Director Plan Review
+          </span>
         </nav>
 
         {/* 2. Top Inherited Project Context Banner (Locked) */}
-        <div className="rounded-2xl border border-[#BCE3D6] bg-[#EAF5F1] p-5 shadow-2xs space-y-2">
-          <div className="flex items-center gap-2 text-[#0B5C43] font-bold text-xs uppercase tracking-wider">
-            <Info className="h-4 w-4 text-[#0B5C43]" />
+        <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-5 shadow-2xs space-y-2">
+          <div className="flex items-center gap-2 text-[#0A3C2F] font-semibold text-xs uppercase tracking-wider">
+            <Info className="h-4 w-4 text-[#0A3C2F]" />
             <span>INHERITED PROJECT CONTEXT (LOCKED)</span>
           </div>
-          <h1 className="text-base sm:text-lg font-extrabold text-slate-950 tracking-tight leading-snug">
+          <h1 className="text-base sm:text-lg font-semibold text-slate-950 tracking-tight leading-snug">
             {project.code} — {project.name}
           </h1>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-xs text-slate-600">
@@ -195,8 +197,8 @@ export function ProjectPlansView({
         <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-2xs space-y-6">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-[#0B5C43]" />
-              <h2 className="text-base font-extrabold text-slate-900">
+              <FileText className="h-4 w-4 text-[#0A3C2F]" />
+              <h2 className="text-base font-semibold text-slate-900">
                 Plan Identity & Scope
               </h2>
             </div>
@@ -210,14 +212,14 @@ export function ProjectPlansView({
             {/* Procurement Category */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="font-bold text-slate-700">
+                <label className="font-semibold text-slate-700">
                   Procurement Category <span className="text-rose-500">*</span>
                 </label>
                 <span className="text-[11px] text-slate-400 font-semibold flex items-center gap-1">
                   <Lock className="h-3 w-3" /> Locked for Director
                 </span>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-100/70 p-3 text-xs font-bold text-slate-800 flex items-center justify-between">
+              <div className="rounded-xl border border-slate-200 bg-slate-100/70 p-3 text-xs font-semibold text-slate-800 flex items-center justify-between">
                 <span>
                   {readOnlyPlan.category} (Physical items and supplies)
                 </span>
@@ -226,14 +228,14 @@ export function ProjectPlansView({
 
               {/* Category Examples Note Box */}
               <div className="rounded-xl border border-slate-200/90 bg-slate-50/80 p-3.5 space-y-1.5 text-slate-600">
-                <p className="font-bold text-slate-700">
+                <p className="font-semibold text-slate-700">
                   Goods Category Examples:
                 </p>
                 <p>
                   Uniform, stationery, toners, vehicles, ICT equipment,
                   laboratory equipment
                 </p>
-                <div className="flex items-center gap-1 text-emerald-800 font-bold pt-1">
+                <div className="flex items-center gap-1 text-emerald-800 font-semibold pt-1">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                   <span>
                     Activities created inside this Plan strictly inherit this
@@ -245,14 +247,14 @@ export function ProjectPlansView({
 
             {/* Plan Name (Strictly Readonly) */}
             <div className="space-y-1.5">
-              <label className="font-bold text-slate-700">
+              <label className="font-semibold text-slate-700">
                 Plan Name <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 readOnly
                 value={readOnlyPlan.planName}
-                className="w-full rounded-xl border border-slate-200 bg-slate-100/80 px-3.5 py-2.5 text-xs font-extrabold text-slate-900 outline-none"
+                className="w-full rounded-xl border border-slate-200 bg-slate-100/80 px-3.5 py-2.5 text-xs font-semibold text-slate-900 outline-none"
               />
             </div>
 
@@ -260,7 +262,7 @@ export function ProjectPlansView({
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700">
+                  <label className="font-semibold text-slate-700">
                     Budget / Fiscal Year{" "}
                     <span className="text-rose-500">*</span>
                   </label>
@@ -275,7 +277,7 @@ export function ProjectPlansView({
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-700">
+                <label className="font-semibold text-slate-700">
                   Organization / Region <span className="text-rose-500">*</span>
                 </label>
                 <div className="rounded-xl border border-slate-200 bg-slate-100/70 p-3 font-semibold text-slate-800 flex items-center justify-between">
@@ -287,7 +289,7 @@ export function ProjectPlansView({
 
             {/* Plan Coverage Period */}
             <div className="space-y-1.5">
-              <label className="font-bold text-slate-700 flex items-center gap-1.5">
+              <label className="font-semibold text-slate-700 flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5 text-slate-400" />
                 Plan Coverage Period <span className="text-rose-500">*</span>
               </label>
@@ -321,7 +323,7 @@ export function ProjectPlansView({
             {/* General Procurement Notice Date & Current Workflow Status */}
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-700">
+                <label className="font-semibold text-slate-700">
                   General Procurement Notice Date (Optional)
                 </label>
                 <input
@@ -333,10 +335,10 @@ export function ProjectPlansView({
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-700">
+                <label className="font-semibold text-slate-700">
                   Current Workflow Status
                 </label>
-                <div className="rounded-xl border border-slate-200 bg-slate-100/80 p-3 font-extrabold text-[#0B5C43] flex items-center justify-between">
+                <div className="rounded-xl border border-slate-200 bg-slate-100/80 p-3 font-semibold text-[#0A3C2F] flex items-center justify-between">
                   <span>{readOnlyPlan.status}</span>
                   <ChevronRight className="h-4 w-4 text-slate-400 rotate-90" />
                 </div>
@@ -345,7 +347,7 @@ export function ProjectPlansView({
 
             {/* Description / Remarks (Optional) */}
             <div className="space-y-1.5">
-              <label className="font-bold text-slate-700">
+              <label className="font-semibold text-slate-700">
                 Description / Remarks (Optional)
               </label>
               <div className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs font-semibold text-slate-800 leading-relaxed">
@@ -360,7 +362,7 @@ export function ProjectPlansView({
             <button
               type="button"
               onClick={() => setReadOnlyPlan(null)}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Back to Plans List
             </button>
@@ -388,7 +390,7 @@ export function ProjectPlansView({
           Projects Directory
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-        <span className="font-bold text-[#0A3C2F] max-w-xs truncate">
+        <span className="font-semibold text-[#0A3C2F] max-w-xs truncate">
           {project.code} Plans
         </span>
       </nav>
@@ -396,7 +398,7 @@ export function ProjectPlansView({
       <div>
         <button
           onClick={onBackToProjects}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0A3C2F] hover:underline cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
         >
           <ArrowLeft className="h-4 w-4" /> Back to Projects Directory
         </button>
@@ -405,8 +407,7 @@ export function ProjectPlansView({
       {/* 2. Page Title Header Section */}
       <div className="space-y-3 pb-2 border-b border-slate-200/60">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 font-mono font-extrabold text-xs px-3 py-1 rounded-lg bg-[#0A3C2F] text-[#A3E635] border border-[#125241] shadow-2xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#A3E635]" />
+          <span className="inline-flex items-center gap-1.5 font-mono text-xs font-medium px-2.5 py-1 rounded-md bg-slate-100/90 text-slate-800 border border-slate-200/80">
             {project.code}
           </span>
           {project.sapNumber && (
@@ -416,7 +417,7 @@ export function ProjectPlansView({
           )}
         </div>
 
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-950 tracking-tight leading-tight wrap-break-word">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-950 tracking-tight leading-tight wrap-break-word">
           {project.name}
         </h1>
 
@@ -492,7 +493,7 @@ export function ProjectPlansView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1080px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-extrabold uppercase tracking-wider">
+              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3.5 px-3.5 text-center w-12">#</th>
                 <th className="py-3.5 px-3.5 min-w-64 max-w-80">Plan Name</th>
                 <th className="py-3.5 px-3.5 w-36">Category</th>
@@ -538,7 +539,7 @@ export function ProjectPlansView({
 
                       {/* Plan Name */}
                       <td className="py-3 px-3.5 min-w-64 max-w-80 wrap-break-word">
-                        <p className="font-bold text-slate-900 text-xs leading-snug group-hover:text-[#0A3C2F] wrap-break-word">
+                        <p className="font-semibold text-slate-900 text-xs leading-snug group-hover:text-[#0A3C2F] wrap-break-word">
                           {plan.planName}
                         </p>
                         {plan.description && (
@@ -551,7 +552,7 @@ export function ProjectPlansView({
                       {/* Category Badge */}
                       <td className="py-3 px-3.5">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-extrabold ${catStyle.bg} ${catStyle.text} border ${catStyle.border}`}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${catStyle.bg} ${catStyle.text} border ${catStyle.border}`}
                         >
                           {plan.category}
                         </span>
@@ -584,19 +585,22 @@ export function ProjectPlansView({
                         </div>
                       </td>
 
-                      {/* Organization / Region */}
-                      <td className="py-3 px-3.5 font-semibold text-slate-800 text-xs">
-                        {plan.organizationRegion}
+                      {/* Region / Unit */}
+                      <td className="py-3 px-3.5 text-slate-600 text-xs">
+                        <span className="bg-slate-100 px-2 py-0.5 rounded text-[11px] font-medium text-slate-700">
+                          {plan.organizationRegion || "Federal"}
+                        </span>
                       </td>
 
-                      {/* Notice / Approval Dates */}
-                      <td className="py-3 px-3.5 text-slate-500 text-xs whitespace-nowrap">
+                      {/* Notice / Approval */}
+                      <td className="py-3 px-3.5 text-slate-600 text-xs">
                         {plan.approvalDate ? (
-                          <p className="text-emerald-700 font-semibold text-[11px]">
+                          <span className="inline-flex items-center gap-1 text-emerald-800 font-medium text-[11px]">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                             Approved: {plan.approvalDate}
-                          </p>
+                          </span>
                         ) : (
-                          <p className="text-slate-400 text-[11px]">
+                          <p className="text-[11px] text-slate-400 font-medium italic">
                             Pending Approval
                           </p>
                         )}
@@ -610,16 +614,16 @@ export function ProjectPlansView({
                       {/* Status */}
                       <td className="py-3 px-3.5 text-center whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-extrabold ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${
                             plan.status === "Submitted to Director"
-                              ? "bg-amber-50 text-amber-800 border border-amber-200"
+                              ? "bg-slate-100 text-slate-800 border-slate-200"
                               : plan.status === "Committee Review"
-                                ? "bg-blue-50 text-blue-800 border border-blue-200"
+                                ? "bg-blue-50/60 text-blue-800 border-blue-200/80"
                                 : plan.status === "Returned"
-                                  ? "bg-rose-50 text-rose-800 border border-rose-200"
+                                  ? "bg-rose-50 text-rose-800 border-rose-200/80"
                                   : plan.status === "Finally Approved"
-                                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                    : "bg-slate-100 text-slate-700"
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
+                                    : "bg-slate-50 text-slate-700 border-slate-200/80"
                           }`}
                         >
                           {plan.status}

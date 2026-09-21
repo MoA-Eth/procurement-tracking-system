@@ -69,14 +69,14 @@ export function RecentAuditTrailTable({
       <div className="bg-[#f8fafc] p-4 sm:px-6 sm:py-4.5 border-b border-slate-200/70 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="min-w-0">
-            <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-tight truncate">
+            <h3 className="font-semibold text-slate-900 text-sm sm:text-base leading-tight truncate">
               System Audit Log Trail
             </h3>
           </div>
         </div>
         <Link
           href="/workspace/system-logs"
-          className="text-[#047857] hover:text-[#065f46] font-bold text-xs flex items-center gap-1 shrink-0 transition-colors"
+          className="text-[#006837] hover:text-[#00552c] font-semibold text-xs flex items-center gap-1 shrink-0 transition-colors"
         >
           <span>Full Audit Logs</span>
           <ChevronRight className="h-4 w-4" />
@@ -96,17 +96,17 @@ export function RecentAuditTrailTable({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
-                <tr className="bg-[#f8fafc] text-[#334155] text-xs font-bold border-b border-slate-200/80">
-                  <th className="py-3.5 px-4 font-bold tracking-wide w-[200px]">
+                <tr className="bg-[#0A3C2F] text-white text-xs font-semibold uppercase tracking-wider">
+                  <th className="py-3.5 px-4 font-semibold tracking-wide w-[200px]">
                     Timestamp
                   </th>
-                  <th className="py-3.5 px-4 font-bold tracking-wide w-[170px]">
+                  <th className="py-3.5 px-4 font-semibold tracking-wide w-[170px]">
                     User & Details
                   </th>
-                  <th className="py-3.5 px-4 font-bold tracking-wide w-[170px]">
+                  <th className="py-3.5 px-4 font-semibold tracking-wide w-[170px]">
                     Action
                   </th>
-                  <th className="py-3.5 px-4 font-bold tracking-wide">
+                  <th className="py-3.5 px-4 font-semibold tracking-wide">
                     Details / Activity Description
                   </th>
                 </tr>
@@ -126,7 +126,7 @@ export function RecentAuditTrailTable({
                         {formatTimestamp(log.createdAt)}
                       </td>
 
-                      <td className="py-3.5 px-4 font-bold text-[#0f172a] align-middle max-w-xs wrap-break-word">
+                      <td className="py-3.5 px-4 font-semibold text-[#0f172a] align-middle max-w-xs wrap-break-word">
                         <div>
                           <span className="wrap-break-word line-clamp-2">
                             {log.user?.name ?? "System"}
@@ -135,7 +135,7 @@ export function RecentAuditTrailTable({
                       </td>
 
                       <td className="py-3.5 px-4 whitespace-nowrap align-middle">
-                        <span className="text-[#044e3a] text-xs font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border border-emerald-200 bg-emerald-50 text-[#0A3C2F] uppercase tracking-wider">
                           {log.action}
                         </span>
                       </td>

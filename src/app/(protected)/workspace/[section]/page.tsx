@@ -218,10 +218,10 @@ export default async function WorkspaceSectionPage({
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">
+            <p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">
               {ROLE_LABELS[session.user.role]}
             </p>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-slate-950">
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
               {definition.label}
             </h1>
             <p className="mt-3 max-w-2xl leading-7 text-slate-600">
@@ -236,7 +236,7 @@ export default async function WorkspaceSectionPage({
 
       <section className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
         <PanelsTopLeft className="mx-auto text-emerald-600" size={34} />
-        <h2 className="mt-4 text-lg font-extrabold text-slate-900">
+        <h2 className="mt-4 text-lg font-semibold text-slate-900">
           {definition.label} workspace
         </h2>
         <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
