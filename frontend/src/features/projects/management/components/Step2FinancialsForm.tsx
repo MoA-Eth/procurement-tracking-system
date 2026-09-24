@@ -1,6 +1,7 @@
 "use client";
 
-import { CircleDollarSign, Plus, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { CircleDollarSign, Plus, Trash2, X, ChevronDown, Check } from "lucide-react";
 import {
   FUNDING_SOURCE_OPTIONS,
   FUNDING_TYPE_OPTIONS,
@@ -8,7 +9,7 @@ import {
 } from "../projectsData";
 
 export interface Step2FinancialsFormData {
-  fundingSource: string;
+  fundingSources: string[];
   customFundingSource: string;
   fundingType: string;
   currency: string;
@@ -18,6 +19,206 @@ export interface Step2FinancialsFormData {
 interface Step2FinancialsFormProps {
   data: Step2FinancialsFormData;
   onChange: (fields: Partial<Step2FinancialsFormData>) => void;
+}
+
+function MultiSelectFundingSource({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (value: string[]) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+        setSearch("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const standardOptions = FUNDING_SOURCE_OPTIONS.filter(
+    (fs) => fs.category === "Standard"
+  );
+  const customOption = FUNDING_SOURCE_OPTIONS.find(
+    (fs) => fs.category === "Custom"
+  );
+
+  const filteredOptions = standardOptions.filter((fs) =>
+    fs.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  function toggleOption(label: string) {
+    if (selected.includes(label)) {
+      onChange(selected.filter((s) => s !== label));
+    } else {
+      onChange([...selected, label]);
+    }
+  }
+
+  function removeTag(label: string) {
+    onChange(selected.filter((s) => s !== label));
+  }
+
+  const hasCustom = selected.includes("Other (Specify Custom Donor)");
+
+  return (
+    <div ref={containerRef} className="relative">
+      {/* Trigger / display area */}
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full min-h-[42px] rounded-xl bg-slate-50/80 border px-3.5 py-2 text-xs font-semibold text-slate-900 cursor-pointer transition-all flex items-center justify-between gap-2 flex-wrap ${
+          isOpen
+            ? "border-emerald-500 bg-white ring-2 ring-emerald-500/20"
+            : "border-slate-200 hover:border-slate-300"
+        }`}
+      >
+        {selected.length === 0 ? (
+          <span className="text-slate-400 font-medium">
+            Select funding source(s)...
+          </span>
+        ) : (
+          <div className="flex flex-wrap gap-1.5 flex-1">
+            {selected
+              .filter((s) => s !== "Other (Specify Custom Donor)")
+              .map((label) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-emerald-200/80"
+                >
+                  <span className="truncate max-w-[180px]">{label}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeTag(label);
+                    }}
+                    className="hover:bg-emerald-200/60 rounded-full p-0.5 transition-colors cursor-pointer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            {hasCustom && (
+              <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-800 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-blue-200/80">
+                <span>Custom Donor</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeTag("Other (Specify Custom Donor)");
+                  }}
+                  className="hover:bg-blue-200/60 rounded-full p-0.5 transition-colors cursor-pointer"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+        <ChevronDown
+          className={`h-4 w-4 text-slate-400 shrink-0 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </div>
+
+      {/* Dropdown */}
+      {isOpen && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+          {/* Search */}
+          <div className="p-2 border-b border-slate-100">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search funding sources..."
+              className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-400 outline-none"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+
+          {/* Options */}
+          <div className="max-h-52 overflow-y-auto py-1">
+            {filteredOptions.map((fs) => {
+              const isSelected = selected.includes(fs.label);
+              return (
+                <button
+                  key={fs.label}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleOption(fs.label);
+                  }}
+                  className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer ${
+                    isSelected
+                      ? "bg-emerald-50 text-emerald-900"
+                      : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <div
+                    className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-all ${
+                      isSelected
+                        ? "bg-emerald-600 border-emerald-600"
+                        : "border-slate-300 bg-white"
+                    }`}
+                  >
+                    {isSelected && <Check className="h-3 w-3 text-white" />}
+                  </div>
+                  <span>{fs.label}</span>
+                </button>
+              );
+            })}
+
+            {filteredOptions.length === 0 && (
+              <div className="px-3 py-4 text-xs text-slate-400 text-center">
+                No funding sources match your search
+              </div>
+            )}
+          </div>
+
+          {/* Custom option separator */}
+          {customOption && (
+            <div className="border-t border-slate-100">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleOption(customOption.label);
+                }}
+                className={`w-full text-left px-3 py-2.5 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer ${
+                  hasCustom
+                    ? "bg-blue-50 text-blue-900"
+                    : "text-blue-700 hover:bg-blue-50/60"
+                }`}
+              >
+                <div
+                  className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-all ${
+                    hasCustom
+                      ? "bg-blue-600 border-blue-600"
+                      : "border-blue-300 bg-white"
+                  }`}
+                >
+                  {hasCustom && <Check className="h-3 w-3 text-white" />}
+                </div>
+                <span>{customOption.label}</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Step2FinancialsForm({
@@ -41,6 +242,10 @@ export function Step2FinancialsForm({
     });
   }
 
+  const hasCustomDonor = data.fundingSources.includes(
+    "Other (Specify Custom Donor)"
+  );
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -57,22 +262,24 @@ export function Step2FinancialsForm({
 
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {/* Funding Source / Donor */}
+          {/* Funding Source / Donor — Multi-Select */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-800 block">
               Funding Source / Donor *
             </label>
-            <select
-              value={data.fundingSource}
-              onChange={(e) => onChange({ fundingSource: e.target.value })}
-              className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 outline-none cursor-pointer transition-all"
-            >
-              {FUNDING_SOURCE_OPTIONS.map((fs) => (
-                <option key={fs.label} value={fs.label}>
-                  {fs.label}
-                </option>
-              ))}
-            </select>
+            <MultiSelectFundingSource
+              selected={data.fundingSources}
+              onChange={(val) => onChange({ fundingSources: val })}
+            />
+            {data.fundingSources.length > 1 && (
+              <p className="text-[11px] text-emerald-600 font-medium mt-1">
+                {data.fundingSources.filter(
+                  (s) => s !== "Other (Specify Custom Donor)"
+                ).length +
+                  (hasCustomDonor ? 1 : 0)}{" "}
+                funding source(s) selected
+              </p>
+            )}
           </div>
 
           {/* Funding Type */}
@@ -95,7 +302,7 @@ export function Step2FinancialsForm({
         </div>
 
         {/* Custom Donor Field */}
-        {data.fundingSource === "Other (Specify Custom Donor)" && (
+        {hasCustomDonor && (
           <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 space-y-1.5 animate-in fade-in">
             <label className="text-xs font-semibold text-blue-900 block">
               Specify Custom Funding Source / Donor Name *

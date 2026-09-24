@@ -115,11 +115,12 @@ export const BUDGET_YEAR_OPTIONS = [
 ];
 
 export const SECTOR_OPTIONS = [
-  "Livestock & Pastoral Development",
-  "Crops & Horticulture Directorate",
-  "Natural Resources & Climate Change",
-  "Agribusiness & Rural Finance",
-  "Agricultural Mechanization & Infrastructure",
+  "Agriculture and Horticulture Development Sector",
+  "Agricultural Investment and Input Sector",
+  "Livestock Resource Development Sector",
+  "Management Chief Executives",
+  "Minister Office",
+  "Natural Resource Development Sector",
 ];
 
 export const STATUS_OPTIONS: ("Active" | "Inactive")[] = ["Active", "Inactive"];

@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import Link from "next/link";
 import {
   Building2,
-  ExternalLink,
   Plus,
   Search,
   Check,
@@ -204,31 +202,20 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
               <label className="text-xs font-semibold text-slate-800 block">
                 Project Code / Acronym *
               </label>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuickError(null);
-                    setQuickCode("");
-                    setQuickLabel("");
-                    setShowQuickAddModal(true);
-                  }}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
-                  title="Quick-add a new code without leaving this wizard"
-                >
-                  <Plus className="h-3 w-3" />
-                  <span>Add Code</span>
-                </button>
-                <Link
-                  href="/workspace/settings"
-                  target="_blank"
-                  className="text-[11px] font-semibold text-slate-500 hover:text-[#006837] hover:underline inline-flex items-center gap-0.5 cursor-pointer"
-                  title="Configure project short codes in Settings"
-                >
-                  <span>Settings</span>
-                  <ExternalLink className="h-2.5 w-2.5" />
-                </Link>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuickError(null);
+                  setQuickCode("");
+                  setQuickLabel("");
+                  setShowQuickAddModal(true);
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                title="Quick-add a new code without leaving this wizard"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Add Code</span>
+              </button>
             </div>
 
             {isCustomCode ? (
@@ -329,30 +316,6 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                           );
                         })
                       )}
-                    </div>
-
-                    {/* Bottom Actions */}
-                    <div className="pt-1 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-600 px-1">
-                      <button
-                        type="button"
-                        onClick={() => handleSelectCode("CUSTOM")}
-                        className="hover:text-emerald-700 hover:underline cursor-pointer"
-                      >
-                        + Enter Custom Code
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsDropdownOpen(false);
-                          setQuickError(null);
-                          setQuickCode("");
-                          setQuickLabel("");
-                          setShowQuickAddModal(true);
-                        }}
-                        className="text-emerald-700 hover:text-emerald-900 hover:underline cursor-pointer font-semibold"
-                      >
-                        + Add New Code
-                      </button>
                     </div>
                   </div>
                 )}

@@ -36,7 +36,9 @@ export function DashboardOverview({
   const gridColsClass =
     metrics.length === 3
       ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
+      : metrics.length === 5
+        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+        : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
 
   return (
     <div className="space-y-4">
@@ -59,12 +61,16 @@ export function DashboardOverview({
             actionHref,
             detailLines,
             actionLines,
+            onClick,
+            isActive,
+            subItems,
           }) => {
             const numValue = Number(value);
             const isDeactivatedMetric =
               tone === "rose" ||
               label.toLowerCase().includes("deactivat") ||
-              label.toLowerCase().includes("suspended");
+              label.toLowerCase().includes("suspended") ||
+              label.toLowerCase().includes("deleted");
             const isActiveMetric =
               !isDeactivatedMetric &&
               (tone === "emerald" ||
@@ -99,7 +105,9 @@ export function DashboardOverview({
               iconColorClass = "text-violet-600";
             } else if (
               tone === "orange" ||
-              label.toLowerCase().includes("awaiting")
+              tone === "amber" ||
+              label.toLowerCase().includes("awaiting") ||
+              label.toLowerCase().includes("cancelled")
             ) {
               accentBarClass = "bg-amber-500";
               dotBgClass = "bg-amber-500";
@@ -115,7 +123,12 @@ export function DashboardOverview({
             return (
               <article
                 key={label}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-md min-h-[160px]"
+                onClick={onClick}
+                className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs transition-all duration-200 min-h-[160px] ${
+                  onClick
+                    ? "cursor-pointer hover:border-slate-400 hover:shadow-md active:scale-[0.99]"
+                    : "hover:border-slate-300 hover:shadow-md"
+                }`}
               >
                 {/* Left accent bar pill */}
                 <div
@@ -125,7 +138,7 @@ export function DashboardOverview({
 
                 {/* 1. TOP ROW: Title on Left, Icon Badge on Right */}
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-slate-600 leading-snug max-w-[160px]">
+                  <h3 className="text-sm font-semibold text-slate-600 leading-snug">
                     {label}
                   </h3>
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs group-hover:bg-slate-100/80 transition-colors">
@@ -138,12 +151,54 @@ export function DashboardOverview({
                   </div>
                 </div>
 
-                {/* 2. MIDDLE ROW: Clean, Prominent Metric Number */}
-                <div className="my-2.5">
-                  <p className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 leading-none">
-                    {value}
-                  </p>
-                </div>
+                {/* 2. MIDDLE ROW: Clean, Prominent Metric Number OR 3 Divided Sub-parts */}
+                {subItems && subItems.length > 0 ? (
+                  <div className="my-1.5 grid grid-cols-3 divide-x divide-slate-100">
+                    {subItems.map((item) => {
+                      const dotColor =
+                        item.tone === "rose"
+                          ? "bg-rose-500"
+                          : item.tone === "amber"
+                            ? "bg-amber-500"
+                            : item.tone === "emerald"
+                              ? "bg-emerald-500"
+                              : "bg-blue-500";
+
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            item.onClick?.();
+                          }}
+                          className={`flex flex-col items-center justify-center py-1 px-1 rounded-lg transition-all cursor-pointer ${
+                            item.isActive
+                              ? "bg-slate-100 font-bold text-slate-900 shadow-2xs"
+                              : "hover:bg-slate-50 text-slate-700"
+                          }`}
+                          title={`Click to view ${item.label.toLowerCase()} accounts`}
+                        >
+                          <span className="text-2xl sm:text-[26px] font-bold tracking-tight text-slate-900 leading-none">
+                            {item.value}
+                          </span>
+                          <span className="text-[11px] font-medium text-slate-500 mt-1.5 flex items-center justify-center gap-1 truncate max-w-full">
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotColor}`}
+                            />
+                            <span className="truncate">{item.label}</span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="my-2.5">
+                    <p className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-none">
+                      {value}
+                    </p>
+                  </div>
+                )}
 
                 {/* 3. BOTTOM ROW: Divider line + Subtext & Action link */}
                 <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
@@ -166,6 +221,7 @@ export function DashboardOverview({
                   {actionHref && (actionLabel || actionLines) ? (
                     <Link
                       href={actionHref}
+                      onClick={(e) => e.stopPropagation()}
                       className={`font-semibold hover:underline flex items-center gap-0.5 text-right leading-tight cursor-pointer transition-colors ${actionColorClass}`}
                     >
                       {actionLines && actionLines.length > 0 ? (

@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Loader2, RefreshCw } from "lucide-react";
+import {
+  ChevronRight,
+  Loader2,
+  RefreshCw,
+  Trash2,
+  Ban,
+  UserCheck,
+  UserX,
+} from "lucide-react";
 import { createInvitedUser, getCurrentUser } from "@/lib/authApi";
 import type { ApiUser } from "@/lib/adminApi";
 import {
@@ -12,6 +20,11 @@ import {
   ROLE_LABELS,
 } from "@/lib/authTypes";
 import { UserProfileModal } from "./components/UserProfileModal";
+import {
+  getDetailedAccountStatus,
+  removeCancelledUserId,
+  removeDeletedUserId,
+} from "@/lib/userAccountStatus";
 
 interface UserAccessTableProps {
   users: ApiUser[];
@@ -20,6 +33,7 @@ interface UserAccessTableProps {
   onToggleStatus?: (user: ApiUser) => void;
   togglingId?: string | null;
   onRefresh?: () => void;
+  statusFilter?: "ALL" | "ACTIVE" | "DEACTIVATED" | "DELETED" | "CANCELLED";
 }
 
 const PRISMA_ROLE_LABELS: Record<string, string> = {
@@ -40,13 +54,6 @@ function displayRole(user: ApiUser): string {
     user.role ??
     "Unknown"
   );
-}
-
-function displayStatus(
-  user: ApiUser,
-): "Active" | "Inactive" | "Pending Invitation" {
-  if (user.status === "PENDING_INVITATION") return "Pending Invitation";
-  return user.isActive ? "Active" : "Inactive";
 }
 
 function isCurrentUser(u: ApiUser, current?: AuthUser | null): boolean {
@@ -74,17 +81,19 @@ export function UserAccessTable({
   onToggleStatus,
   togglingId,
   onRefresh,
+  statusFilter = "ALL",
 }: UserAccessTableProps) {
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
   const [selectedModalUser, setSelectedModalUser] = useState<ApiUser | null>(
     null,
   );
   const effectiveCurrentUser = currentUser ?? getCurrentUser();
 
-  // Show recent 5 users on main dashboard
-  const recentUsers = users.slice(0, 5);
+  // Show all matching users if filtered by a specific status, otherwise show top 5
+  const displayedUsers = statusFilter !== "ALL" ? users : users.slice(0, 5);
 
-  const handleResend = async (user: ApiUser) => {
+  const handleResendOrReinvite = async (user: ApiUser) => {
     setResendingId(user.id);
     const role =
       (normalizeUserRole(user.authRole || user.role) as ProvisionableRole) ||
@@ -95,6 +104,8 @@ export function UserAccessTable({
         user.email,
         role,
       );
+      removeCancelledUserId(user.id);
+      removeDeletedUserId(user.id);
       onRefresh?.();
     } catch {
       // Handle error gracefully
@@ -103,6 +114,25 @@ export function UserAccessTable({
     }
   };
 
+  const handleRestore = async (user: ApiUser) => {
+    setRestoringId(user.id);
+    try {
+      removeDeletedUserId(user.id);
+      removeCancelledUserId(user.id);
+      await onToggleStatus?.(user);
+      onRefresh?.();
+    } catch {
+      // Handle error gracefully
+    } finally {
+      setRestoringId(null);
+    }
+  };
+
+  const directoryUrl =
+    statusFilter && statusFilter !== "ALL"
+      ? `/admin/users?status=${statusFilter}`
+      : "/admin/users";
+
   return (
     <div className="flex flex-col rounded-[20px] bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
       {/* Header */}
@@ -110,12 +140,12 @@ export function UserAccessTable({
         <div className="flex items-center gap-3 min-w-0">
           <div className="min-w-0">
             <h3 className="font-semibold text-slate-900 text-sm sm:text-base leading-tight truncate">
-              User Access & Accounts Overview
+              User Access &amp; Accounts Overview
             </h3>
           </div>
         </div>
         <Link
-          href="/admin/users"
+          href={directoryUrl}
           className="text-[#006837] hover:text-[#00552c] font-semibold text-xs flex items-center gap-1 shrink-0 transition-colors"
         >
           <span>Full Directory</span>
@@ -138,7 +168,7 @@ export function UserAccessTable({
               <thead>
                 <tr className="bg-[#f8fafc] text-[#334155] text-xs font-semibold border-b border-slate-200/80">
                   <th className="py-3.5 px-4 font-semibold tracking-wide">
-                    User Name & Details
+                    User Name &amp; Details
                   </th>
                   <th className="py-3.5 px-4 font-semibold tracking-wide">
                     Email Address
@@ -155,13 +185,19 @@ export function UserAccessTable({
                 </tr>
               </thead>
               <tbody className="text-xs">
-                {recentUsers.map((user, index) => {
-                  const status = displayStatus(user);
-                  const isActive = status === "Active";
-                  const isPending = status === "Pending Invitation";
+                {displayedUsers.map((user, index) => {
+                  const detailedStatus = getDetailedAccountStatus(user);
+                  const isActive = detailedStatus === "ACTIVE";
+                  const isPending = detailedStatus === "PENDING_INVITATION";
+                  const isCancelled = detailedStatus === "CANCELLED_INVITATION";
+                  const isDeleted = detailedStatus === "DELETED";
+                  const isDeactivated = detailedStatus === "DEACTIVATED";
+
                   const isOddRow = index % 2 === 0;
                   const isWorking =
-                    togglingId === user.id || resendingId === user.id;
+                    togglingId === user.id ||
+                    resendingId === user.id ||
+                    restoringId === user.id;
                   const isSelf = isCurrentUser(user, effectiveCurrentUser);
 
                   return (
@@ -174,11 +210,21 @@ export function UserAccessTable({
                       title={`Click to view profile & details for ${user.displayName || user.name}`}
                     >
                       <td className="py-3.5 px-4 align-middle">
-                        <div className="font-semibold text-[#0f172a] text-xs flex items-center gap-1.5">
+                        <div className="font-semibold text-[#0f172a] text-xs flex items-center gap-1.5 flex-wrap">
                           <span>{user.displayName || user.name}</span>
                           {isSelf && (
                             <span className="text-[10px] font-semibold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">
                               You
+                            </span>
+                          )}
+                          {isCancelled && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wider bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded border border-rose-200">
+                              Revoked
+                            </span>
+                          )}
+                          {isDeleted && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wider bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded border border-rose-200">
+                              Deleted
                             </span>
                           )}
                         </div>
@@ -190,7 +236,9 @@ export function UserAccessTable({
                       </td>
 
                       <td className="py-3.5 px-4 text-[#475569] font-normal align-middle">
-                        {user.email}
+                        <span className={isCancelled || isDeleted ? "text-slate-400" : ""}>
+                          {user.email}
+                        </span>
                       </td>
 
                       <td className="py-3.5 px-4 align-middle font-semibold text-[#0f172a]">
@@ -198,27 +246,86 @@ export function UserAccessTable({
                       </td>
 
                       <td className="py-3.5 px-4 align-middle">
-                        <span
-                          className={`text-xs font-semibold ${
-                            isPending
-                              ? "text-[#b06000]"
-                              : isActive
-                                ? "text-[#137333]"
-                                : "text-[#c5221f]"
-                          }`}
-                        >
-                          {status}
-                        </span>
+                        {isCancelled && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                            <Ban className="w-3 h-3 text-rose-500" />
+                            <span>Cancelled</span>
+                          </span>
+                        )}
+                        {isDeleted && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                            <Trash2 className="w-3 h-3 text-rose-500" />
+                            <span>Deleted</span>
+                          </span>
+                        )}
+                        {isDeactivated && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                            <UserX className="w-3 h-3 text-slate-500" />
+                            <span>Deactivated</span>
+                          </span>
+                        )}
+                        {isPending && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            <span>Pending Invitation</span>
+                          </span>
+                        )}
+                        {isActive && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span>Active</span>
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4 text-center align-middle whitespace-nowrap">
-                        {isPending ? (
+                        {isCancelled ? (
                           <button
                             type="button"
                             disabled={isWorking}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleResend(user);
+                              handleResendOrReinvite(user);
+                            }}
+                            className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                            title="Send a fresh invitation link to this email"
+                          >
+                            {isWorking ? (
+                              <Loader2 className="w-3 h-3 animate-spin inline" />
+                            ) : (
+                              <RefreshCw className="w-3 h-3 inline" />
+                            )}
+                            <span>
+                              {isWorking ? "Re-inviting…" : "Re-invite"}
+                            </span>
+                          </button>
+                        ) : isDeleted ? (
+                          <button
+                            type="button"
+                            disabled={isWorking}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRestore(user);
+                            }}
+                            className="px-3.5 py-1 text-xs font-semibold rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                            title="Restore this account to active status"
+                          >
+                            {isWorking ? (
+                              <Loader2 className="w-3 h-3 animate-spin inline" />
+                            ) : (
+                              <UserCheck className="w-3 h-3 inline" />
+                            )}
+                            <span>
+                              {isWorking ? "Restoring…" : "Restore Account"}
+                            </span>
+                          </button>
+                        ) : isPending ? (
+                          <button
+                            type="button"
+                            disabled={isWorking}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResendOrReinvite(user);
                             }}
                             className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
                           >
@@ -269,13 +376,13 @@ export function UserAccessTable({
                   );
                 })}
 
-                {users.length === 0 && (
+                {displayedUsers.length === 0 && (
                   <tr>
                     <td
                       colSpan={5}
                       className="py-8 text-center text-xs text-slate-500 font-medium"
                     >
-                      No user accounts found.
+                      No user accounts found matching this category.
                     </td>
                   </tr>
                 )}

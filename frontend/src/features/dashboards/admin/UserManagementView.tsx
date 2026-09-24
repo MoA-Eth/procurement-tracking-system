@@ -15,12 +15,20 @@ import {
   CheckCircle2,
   X,
   Shield,
+  Trash2,
+  Pencil,
+  XCircle,
+  AlertTriangle,
+  Ban,
+  UserX,
+  UserCheck,
 } from "lucide-react";
 import { createInvitedUser, getCurrentUser } from "@/lib/authApi";
 import { UserProfileModal } from "./components/UserProfileModal";
 import {
   fetchUsers,
   updateUser,
+  deleteUser,
   type ApiUser,
   type PaginatedResponse,
 } from "@/lib/adminApi";
@@ -30,6 +38,15 @@ import {
   normalizeUserRole,
   ROLE_LABELS,
 } from "@/lib/authTypes";
+import {
+  getDetailedAccountStatus,
+  getCancelledUserIds,
+  getDeletedUserIds,
+  addCancelledUserId,
+  removeCancelledUserId,
+  addDeletedUserId,
+  removeDeletedUserId,
+} from "@/lib/userAccountStatus";
 
 interface UserManagementViewProps {
   initialMode?: "list" | "invite";
@@ -58,9 +75,20 @@ function displayRole(user: ApiUser): string {
 
 function displayStatus(
   user: ApiUser,
-): "Active" | "Inactive" | "Pending Invitation" {
-  if (user.status === "PENDING_INVITATION") return "Pending Invitation";
-  return user.isActive ? "Active" : "Inactive";
+  cancelledIds?: Set<string>,
+  deletedIds?: Set<string>,
+):
+  | "Active"
+  | "Deactivated"
+  | "Deleted"
+  | "Pending Invitation"
+  | "Invitation Cancelled" {
+  const status = getDetailedAccountStatus(user, cancelledIds, deletedIds);
+  if (status === "CANCELLED_INVITATION") return "Invitation Cancelled";
+  if (status === "DELETED") return "Deleted";
+  if (status === "PENDING_INVITATION") return "Pending Invitation";
+  if (status === "ACTIVE") return "Active";
+  return "Deactivated";
 }
 
 function isCurrentUser(u: ApiUser, current?: AuthUser | null): boolean {
@@ -172,7 +200,7 @@ const DEFAULT_USERS_RESPONSE: PaginatedResponse<ApiUser> = {
       role: "ProcurementOfficer",
       authRole: "OFFICER",
       status: "PENDING_INVITATION",
-      isActive: false,
+      isActive: true,
       lastLoginAt: null,
       createdAt: "2026-08-24T00:00:00Z",
       updatedAt: "2026-08-24T00:00:00Z",
@@ -200,7 +228,15 @@ export function UserManagementView({
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("ALL");
-  const [selectedStatus, setSelectedStatus] = useState("ALL");
+  const [selectedStatus, setSelectedStatus] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const param = new URLSearchParams(window.location.search).get("status");
+        if (param) return param;
+      } catch {}
+    }
+    return "Active";
+  });
   const [currentPage, setCurrentPage] = useState(1);
 
   // Invite Form State
@@ -225,6 +261,60 @@ export function UserManagementView({
   const [roleSuccessMessage, setRoleSuccessMessage] = useState<string | null>(
     null,
   );
+
+  // Confirmation Modal state (Deactivate, Activate, Delete, Cancel Invitation)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: "deactivate" | "activate" | "delete" | "cancel_invitation";
+    user: ApiUser;
+  } | null>(null);
+  const [isConfirmingAction, setIsConfirmingAction] = useState(false);
+  const [confirmModalError, setConfirmModalError] = useState<string | null>(null);
+
+  // Change Email Modal state
+  const [changeEmailModal, setChangeEmailModal] = useState<{
+    isOpen: boolean;
+    user: ApiUser;
+    email: string;
+  } | null>(null);
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  const [changeEmailError, setChangeEmailError] = useState<string | null>(null);
+
+  // Action Success Banner
+  const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(
+    null,
+  );
+
+  // Cancelled and deleted user IDs tracked for active session & storage
+  const [cancelledUserIds, setCancelledUserIds] = useState<Set<string>>(() =>
+    getCancelledUserIds(),
+  );
+  const [deletedUserIds, setDeletedUserIds] = useState<Set<string>>(() =>
+    getDeletedUserIds(),
+  );
+
+  useEffect(() => {
+    const handleStatusChanged = () => {
+      setCancelledUserIds(getCancelledUserIds());
+      setDeletedUserIds(getDeletedUserIds());
+    };
+    window.addEventListener("pts:account-status-changed", handleStatusChanged);
+    return () =>
+      window.removeEventListener("pts:account-status-changed", handleStatusChanged);
+  }, []);
+
+  // Floating Toast Notification state
+  const [toastNotification, setToastNotification] = useState<{
+    id: string;
+    title: string;
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!toastNotification) return;
+    const t = setTimeout(() => setToastNotification(null), 8000);
+    return () => clearTimeout(t);
+  }, [toastNotification]);
 
   useEffect(() => {
     const handleReset = (event: Event) => {
@@ -261,19 +351,27 @@ export function UserManagementView({
         search: searchQuery || undefined,
         role: roleFilterMap[selectedRole],
         isActive:
-          selectedStatus === "ALL"
-            ? undefined
-            : selectedStatus === "Active"
-              ? true
-              : false,
+          selectedStatus === "Active"
+            ? true
+            : undefined,
       });
-      setUsersResponse(result);
+      setUsersResponse((prev) => {
+        if (!prev) return result;
+        // Keep any users from prev that are in cancelledUserIds so the user can immediately observe the "Invitation Cancelled" indication
+        const cancelledInPrev = prev.data.filter((u) => cancelledUserIds.has(u.id));
+        const newIds = new Set(result.data.map((u) => u.id));
+        const toKeep = cancelledInPrev.filter((u) => !newIds.has(u.id));
+        return {
+          ...result,
+          data: [...result.data, ...toKeep],
+        };
+      });
     } catch (err) {
       setLoadError(
         err instanceof Error ? err.message : "Failed to load users.",
       );
     }
-  }, [currentPage, searchQuery, selectedRole, selectedStatus]);
+  }, [currentPage, searchQuery, selectedRole, selectedStatus, cancelledUserIds, deletedUserIds]);
 
   useEffect(() => {
     let active = true;
@@ -293,16 +391,23 @@ export function UserManagementView({
       search: searchQuery || undefined,
       role: roleFilterMap[selectedRole],
       isActive:
-        selectedStatus === "ALL"
-          ? undefined
-          : selectedStatus === "Active"
-            ? true
-            : false,
+        selectedStatus === "Active"
+          ? true
+          : undefined,
     })
       .then((result) => {
         if (active) {
           if (result && Array.isArray(result.data)) {
-            setUsersResponse(result);
+            setUsersResponse((prev) => {
+              if (!prev) return result;
+              const cancelledInPrev = prev.data.filter((u) => cancelledUserIds.has(u.id));
+              const newIds = new Set(result.data.map((u) => u.id));
+              const toKeep = cancelledInPrev.filter((u) => !newIds.has(u.id));
+              return {
+                ...result,
+                data: [...result.data, ...toKeep],
+              };
+            });
           } else {
             setUsersResponse({
               data: [],
@@ -328,7 +433,7 @@ export function UserManagementView({
     return () => {
       active = false;
     };
-  }, [currentPage, searchQuery, selectedRole, selectedStatus]);
+  }, [currentPage, searchQuery, selectedRole, selectedStatus, cancelledUserIds]);
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
@@ -345,22 +450,163 @@ export function UserManagementView({
     setCurrentPage(1);
   };
 
-  // ─── Toggle Active/Inactive ─────────────────────────────────────────────
-  const handleToggleStatus = async (user: ApiUser) => {
-    if (user.isActive && isCurrentUser(user, activeUser)) {
+  // ─── Modal Actions Handlers ─────────────────────────────────────────────
+  const openConfirmModal = (
+    type: "deactivate" | "activate" | "delete" | "cancel_invitation",
+    user: ApiUser,
+  ) => {
+    if (type === "deactivate" && isCurrentUser(user, activeUser)) {
       setErrorMessage("You cannot deactivate your own administrator account.");
       return;
     }
-    setActionUserId(user.id);
+    if (type === "delete" && isCurrentUser(user, activeUser)) {
+      setErrorMessage("You cannot delete your own administrator account.");
+      return;
+    }
+    setErrorMessage(null);
+    setConfirmModalError(null);
+    setConfirmModal({ isOpen: true, type, user });
+  };
+
+  const handleExecuteConfirmAction = async () => {
+    if (!confirmModal) return;
+    const { type, user } = confirmModal;
+    setIsConfirmingAction(true);
+    setErrorMessage(null);
+    setConfirmModalError(null);
+
     try {
-      await updateUser(user.id, { isActive: !user.isActive });
+      if (type === "deactivate" || type === "activate") {
+        await updateUser(user.id, { isActive: !user.isActive });
+        if (type === "activate") {
+          removeDeletedUserId(user.id);
+          removeCancelledUserId(user.id);
+        }
+        setActionSuccessMessage(
+          type === "deactivate"
+            ? `Account for ${user.displayName || user.name} has been deactivated.`
+            : `Account for ${user.displayName || user.name} has been reactivated.`,
+        );
+      } else if (type === "delete") {
+        await deleteUser(user.id);
+        addDeletedUserId(user.id);
+        setActionSuccessMessage(
+          `Account for ${user.displayName || user.name} has been deleted and moved to Deleted accounts.`,
+        );
+      } else if (type === "cancel_invitation") {
+        await deleteUser(user.id);
+        addCancelledUserId(user.id);
+
+        setToastNotification({
+          id: Date.now().toString(),
+          title: "Account Invitation Cancelled",
+          message: `The pending invitation sent to ${user.email} has been cancelled and its link invalidated.`,
+        });
+
+        setActionSuccessMessage(
+          `Account invitation for ${user.email} was cancelled and the registration link has been invalidated.`,
+        );
+      }
+
+      // Optimistically update local directory table state immediately
+      setUsersResponse((prev) => {
+        if (!prev) return prev;
+        if (type === "cancel_invitation") {
+          return {
+            ...prev,
+            data: prev.data.map((u) =>
+              u.id === user.id
+                ? {
+                    ...u,
+                    isActive: false,
+                    status: "PENDING_INVITATION",
+                  }
+                : u,
+            ),
+          };
+        }
+        if (type === "delete" || type === "deactivate") {
+          return {
+            ...prev,
+            data: prev.data.map((u) =>
+              u.id === user.id ? { ...u, isActive: false, status: "INACTIVE" } : u,
+            ),
+          };
+        }
+        if (type === "activate") {
+          return {
+            ...prev,
+            data: prev.data.map((u) =>
+              u.id === user.id ? { ...u, isActive: true, status: "ACTIVE" } : u,
+            ),
+          };
+        }
+        return prev;
+      });
+
+      // Always close modal upon execution
+      setConfirmModal(null);
+      setConfirmModalError(null);
       await loadUsers();
     } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Failed to update user status.",
+      const errMsg =
+        err instanceof Error
+          ? err.message
+          : "Failed to complete the requested action.";
+      setConfirmModalError(errMsg);
+      setErrorMessage(errMsg);
+    } finally {
+      setIsConfirmingAction(false);
+    }
+  };
+
+  const openChangeEmailModal = (user: ApiUser) => {
+    setChangeEmailError(null);
+    setChangeEmailModal({
+      isOpen: true,
+      user,
+      email: user.email,
+    });
+  };
+
+  const handleSaveNewEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changeEmailModal) return;
+    const newEmail = changeEmailModal.email.trim().toLowerCase();
+    if (!newEmail || !newEmail.includes("@")) {
+      setChangeEmailError("Please provide a valid email address.");
+      return;
+    }
+    if (newEmail === changeEmailModal.user.email.toLowerCase()) {
+      setChangeEmailModal(null);
+      return;
+    }
+    setIsUpdatingEmail(true);
+    setChangeEmailError(null);
+
+    try {
+      await updateUser(changeEmailModal.user.id, { email: newEmail });
+      setActionSuccessMessage(
+        `Email address for ${changeEmailModal.user.displayName || changeEmailModal.user.name} was successfully changed to ${newEmail}.`,
+      );
+      // Optimistically update email in table state
+      setUsersResponse((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          data: prev.data.map((u) =>
+            u.id === changeEmailModal.user.id ? { ...u, email: newEmail } : u,
+          ),
+        };
+      });
+      setChangeEmailModal(null);
+      await loadUsers();
+    } catch (err) {
+      setChangeEmailError(
+        err instanceof Error ? err.message : "Failed to update email address.",
       );
     } finally {
-      setActionUserId(null);
+      setIsUpdatingEmail(false);
     }
   };
 
@@ -380,6 +626,10 @@ export function UserManagementView({
         user.email,
         role,
       );
+
+      // Remove from cancelled & deleted IDs if it was previously cancelled or deleted
+      removeCancelledUserId(user.id);
+      removeDeletedUserId(user.id);
 
       setInvitedInfo({ email: user.email, role, isResend: true });
       await loadUsers();
@@ -403,11 +653,19 @@ export function UserManagementView({
     setErrorMessage(null);
     setInvitedInfo(null);
 
-    const targetEmail = inviteEmail.trim();
+    const targetEmail = inviteEmail.trim().toLowerCase();
     const targetRole = inviteRole;
 
     try {
       await createInvitedUser(inviteFullName.trim(), targetEmail, targetRole);
+
+      // Remove matching user from cancelled and deleted sets if previously there
+      users.forEach((u) => {
+        if (u.email.toLowerCase() === targetEmail) {
+          removeCancelledUserId(u.id);
+          removeDeletedUserId(u.id);
+        }
+      });
 
       setInvitedInfo({ email: targetEmail, role: targetRole, isResend: false });
 
@@ -435,6 +693,15 @@ export function UserManagementView({
     return () => clearTimeout(timer);
   }, [roleSuccessMessage]);
 
+  // Auto-dismiss action success notification after 10 seconds
+  useEffect(() => {
+    if (!actionSuccessMessage) return;
+    const timer = setTimeout(() => {
+      setActionSuccessMessage(null);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [actionSuccessMessage]);
+
   // Auto-dismiss success notification after 15 seconds
   useEffect(() => {
     if (!invitedInfo) return;
@@ -444,7 +711,24 @@ export function UserManagementView({
     return () => clearTimeout(timer);
   }, [invitedInfo]);
 
-  const users = usersResponse?.data ?? [];
+  const rawUsers = usersResponse?.data ?? [];
+  const users = rawUsers.filter((u) => {
+    if (selectedStatus === "ALL") return true;
+    const detailed = getDetailedAccountStatus(u, cancelledUserIds, deletedUserIds);
+    if (selectedStatus === "Active")
+      return detailed === "ACTIVE" || detailed === "PENDING_INVITATION";
+    if (selectedStatus === "Deactivated") return detailed === "DEACTIVATED";
+    if (selectedStatus === "Deleted") return detailed === "DELETED";
+    if (selectedStatus === "Cancelled")
+      return detailed === "CANCELLED_INVITATION";
+    if (selectedStatus === "Inactive")
+      return (
+        detailed === "DEACTIVATED" ||
+        detailed === "DELETED" ||
+        detailed === "CANCELLED_INVITATION"
+      );
+    return true;
+  });
   const meta = usersResponse?.meta;
 
   return (
@@ -510,6 +794,30 @@ export function UserManagementView({
             <button
               type="button"
               onClick={() => setRoleSuccessMessage(null)}
+              className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer"
+              title="Dismiss banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* General Action Success Banner */}
+      {actionSuccessMessage && (
+        <div className="animate-in fade-in slide-in-from-top-2">
+          <div className="relative overflow-hidden bg-linear-to-r from-[#ecfdf5] via-[#f0fdf4] to-[#e6f4ea] border border-[#a7f3d0] rounded-2xl p-4 sm:p-5 text-xs sm:text-sm shadow-xs flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A3C2F] text-white shrink-0 shadow-2xs">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <p className="text-[#0A3C2F] font-semibold">
+                {actionSuccessMessage}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActionSuccessMessage(null)}
               className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer"
               title="Dismiss banner"
             >
@@ -717,9 +1025,11 @@ export function UserManagementView({
                   onChange={(e) => handleStatusChange(e.target.value)}
                   className="bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-4 py-2 text-xs font-semibold text-[#334155] focus:outline-none cursor-pointer"
                 >
-                  <option value="ALL">All Statuses</option>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
+                  <option value="ALL">All Accounts</option>
+                  <option value="Active">Active Accounts</option>
+                  <option value="Deactivated">Deactivated Accounts</option>
+                  <option value="Deleted">Deleted Accounts</option>
+                  <option value="Cancelled">Cancelled Invitations</option>
                 </select>
               </div>
             </div>
@@ -773,15 +1083,27 @@ export function UserManagementView({
                             Last Login
                           </th>
                           <th className="py-3.5 px-4 font-semibold text-center tracking-wide">
+                            Cancel Invitation
+                          </th>
+                          <th className="py-3.5 px-4 font-semibold text-center tracking-wide">
                             Actions
                           </th>
                         </tr>
                       </thead>
                       <tbody className="text-xs">
                         {users.map((user, index) => {
-                          const status = displayStatus(user);
-                          const isActive = status === "Active";
-                          const isPending = status === "Pending Invitation";
+                          const detailedStatus = getDetailedAccountStatus(
+                            user,
+                            cancelledUserIds,
+                            deletedUserIds,
+                          );
+                          const isCancelled =
+                            detailedStatus === "CANCELLED_INVITATION";
+                          const isDeleted = detailedStatus === "DELETED";
+                          const isDeactivated = detailedStatus === "DEACTIVATED";
+                          const isActive = detailedStatus === "ACTIVE";
+                          const isPending =
+                            detailedStatus === "PENDING_INVITATION";
                           const isOddRow = index % 2 === 0;
                           const isSelf = isCurrentUser(user, activeUser);
 
@@ -795,11 +1117,21 @@ export function UserManagementView({
                               title={`Click to view profile & details for ${user.displayName || user.name}`}
                             >
                               <td className="py-4 px-4 align-middle max-w-xs wrap-break-word">
-                                <div className="font-semibold text-[#0f172a] text-xs wrap-break-word line-clamp-2 flex items-center gap-1.5">
+                                <div className="font-semibold text-[#0f172a] text-xs wrap-break-word line-clamp-2 flex items-center gap-1.5 flex-wrap">
                                   <span>{user.displayName || user.name}</span>
                                   {isSelf && (
                                     <span className="text-[10px] font-semibold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300">
                                       You
+                                    </span>
+                                  )}
+                                  {isCancelled && (
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded border border-rose-200">
+                                      Revoked
+                                    </span>
+                                  )}
+                                  {isDeleted && (
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded border border-rose-200">
+                                      Deleted
                                     </span>
                                   )}
                                 </div>
@@ -810,8 +1142,23 @@ export function UserManagementView({
                                 )}
                               </td>
 
-                              <td className="py-4 px-4 text-[#475569] font-normal align-middle max-w-xs truncate">
-                                {user.email}
+                              <td className="py-4 px-4 text-[#475569] font-normal align-middle max-w-xs">
+                                <div className="flex items-center gap-2 group">
+                                  <span className={`truncate ${isCancelled || isDeleted ? "text-slate-400" : ""}`}>{user.email}</span>
+                                  {!isCancelled && !isDeleted && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openChangeEmailModal(user);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors opacity-70 group-hover:opacity-100 cursor-pointer"
+                                      title="Change user email"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </td>
 
                               <td className="py-4 px-4 align-middle font-semibold text-[#0f172a]">
@@ -819,27 +1166,133 @@ export function UserManagementView({
                               </td>
 
                               <td className="py-4 px-4 align-middle">
-                                <span
-                                  className={`text-xs font-semibold ${
-                                    isPending
-                                      ? "text-[#b06000]"
-                                      : isActive
-                                        ? "text-[#137333]"
-                                        : "text-[#c5221f]"
-                                  }`}
-                                >
-                                  {status}
-                                </span>
+                                {isCancelled ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
+                                    <Ban className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                    <span>Invitation Cancelled</span>
+                                  </span>
+                                ) : isDeleted ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                    <span>Deleted</span>
+                                  </span>
+                                ) : isDeactivated ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                    <UserX className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                    <span>Deactivated</span>
+                                  </span>
+                                ) : isPending ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                                    <span>Pending Invitation</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                    <span>Active</span>
+                                  </span>
+                                )}
                               </td>
 
                               <td className="py-4 px-4 align-middle">
-                                {renderLastLogin(user.lastLoginAt, user.status)}
+                                {isCancelled ? (
+                                  <div className="flex flex-col">
+                                    <span className="text-slate-400 font-medium line-through whitespace-nowrap text-xs">
+                                      Awaiting Registration
+                                    </span>
+                                    <span className="text-[10px] text-rose-600 font-semibold whitespace-nowrap">
+                                      Invitation Cancelled
+                                    </span>
+                                  </div>
+                                ) : (
+                                  renderLastLogin(user.lastLoginAt, user.status)
+                                )}
                               </td>
 
-                              {/* Actions Column: Resend Invitation / Activate / Deactivate */}
+                              {/* Cancel Invitation Column */}
+                              <td className="py-4 px-4 text-center align-middle whitespace-nowrap">
+                                {isCancelled ? (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
+                                    <XCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                    <span>Cancelled</span>
+                                  </span>
+                                ) : isPending ? (
+                                  <button
+                                    type="button"
+                                    disabled={actionUserId === user.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openConfirmModal("cancel_invitation", user);
+                                    }}
+                                    className="px-3 py-1 text-xs font-semibold rounded-full border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
+                                    title="Cancel and revoke invitation link"
+                                  >
+                                    <XCircle className="w-3.5 h-3.5 text-amber-600 inline" />
+                                    <span>Cancel Invitation</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-slate-300 font-medium">—</span>
+                                )}
+                              </td>
+
+                              {/* Actions Column: Resend Invitation / Activate / Deactivate + Delete */}
                               <td className="py-4 px-4 text-center align-middle whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-2">
-                                  {isPending ? (
+                                  {isCancelled ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        disabled={actionUserId === user.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleResendInvitation(user);
+                                        }}
+                                        className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                                        title="Send a fresh invitation email to this address"
+                                      >
+                                        {actionUserId === user.id ? (
+                                          <Loader2 className="w-3 h-3 animate-spin inline" />
+                                        ) : (
+                                          <RefreshCw className="w-3 h-3 inline" />
+                                        )}
+                                        <span>
+                                          {actionUserId === user.id
+                                            ? "Re-inviting…"
+                                            : "Re-invite"}
+                                        </span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={actionUserId === user.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openConfirmModal("delete", user);
+                                        }}
+                                        className="p-1.5 rounded-full border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-40"
+                                        title="Permanently remove cancelled record"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </>
+                                  ) : isDeleted ? (
+                                    <button
+                                      type="button"
+                                      disabled={actionUserId === user.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openConfirmModal("activate", user);
+                                      }}
+                                      className="px-3.5 py-1 text-xs font-semibold rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                                      title="Restore this account to active status"
+                                    >
+                                      {actionUserId === user.id ? (
+                                        <Loader2 className="w-3 h-3 animate-spin inline" />
+                                      ) : (
+                                        <UserCheck className="w-3.5 h-3.5 text-blue-600 inline" />
+                                      )}
+                                      <span>Restore</span>
+                                    </button>
+                                  ) : isPending ? (
                                     <button
                                       type="button"
                                       disabled={actionUserId === user.id}
@@ -876,7 +1329,7 @@ export function UserManagementView({
                                       disabled={actionUserId === user.id}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleToggleStatus(user);
+                                        openConfirmModal(isActive ? "deactivate" : "activate", user);
                                       }}
                                       className={`px-3.5 py-1 text-xs font-semibold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
                                         isActive
@@ -884,13 +1337,23 @@ export function UserManagementView({
                                           : "border-blue-200/90 bg-blue-50/90 text-blue-700 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800"
                                       }`}
                                     >
-                                      {actionUserId === user.id ? (
-                                        <Loader2 className="w-3 h-3 animate-spin inline" />
-                                      ) : isActive ? (
-                                        "Deactivate"
-                                      ) : (
-                                        "Activate"
-                                      )}
+                                      {isActive ? "Deactivate" : "Activate"}
+                                    </button>
+                                  )}
+
+                                  {/* Delete Account Icon Button */}
+                                  {!isSelf && !isCancelled && !isDeleted && (
+                                    <button
+                                      type="button"
+                                      disabled={actionUserId === user.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openConfirmModal("delete", user);
+                                      }}
+                                      className="p-1.5 rounded-full border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-40"
+                                      title="Delete account"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                   )}
                                 </div>
@@ -902,7 +1365,7 @@ export function UserManagementView({
                         {users.length === 0 && (
                           <tr>
                             <td
-                              colSpan={6}
+                              colSpan={7}
                               className="py-8 text-center text-xs text-slate-500 font-medium"
                             >
                               No user accounts match your search query or
@@ -979,6 +1442,275 @@ export function UserManagementView({
             await loadUsers();
           }}
         />
+      )}
+
+      {/* ─── Confirmation Modal for Deactivate / Activate / Delete / Cancel Invitation ─────────────── */}
+      {confirmModal && confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div
+                  className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${
+                    confirmModal.type === "activate"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : confirmModal.type === "cancel_invitation"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-rose-100 text-rose-700"
+                  }`}
+                >
+                  {confirmModal.type === "activate" ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : confirmModal.type === "cancel_invitation" ? (
+                    <XCircle className="w-5 h-5" />
+                  ) : confirmModal.type === "delete" ? (
+                    <Trash2 className="w-5 h-5" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5" />
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-slate-900">
+                    {confirmModal.type === "deactivate"
+                      ? "Deactivate User Account"
+                      : confirmModal.type === "activate"
+                        ? "Reactivate User Account"
+                        : confirmModal.type === "delete"
+                          ? "Delete User Account"
+                          : "Cancel Pending Invitation"}
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {confirmModal.type === "deactivate" && (
+                      <>
+                        Are you sure you want to deactivate the account for{" "}
+                        <strong className="text-slate-900">
+                          {confirmModal.user.displayName || confirmModal.user.name}
+                        </strong>{" "}
+                        (<span className="font-mono">{confirmModal.user.email}</span>)? The user will be immediately barred from signing into the system.
+                      </>
+                    )}
+                    {confirmModal.type === "activate" && (
+                      <>
+                        Are you sure you want to reactivate the account for{" "}
+                        <strong className="text-slate-900">
+                          {confirmModal.user.displayName || confirmModal.user.name}
+                        </strong>{" "}
+                        (<span className="font-mono">{confirmModal.user.email}</span>)? The user will be granted permission to sign in again.
+                      </>
+                    )}
+                    {confirmModal.type === "delete" && (
+                      <>
+                        Are you sure you want to delete the account for{" "}
+                        <strong className="text-slate-900">
+                          {confirmModal.user.displayName || confirmModal.user.name}
+                        </strong>{" "}
+                        (<span className="font-mono">{confirmModal.user.email}</span>)? This account will be removed from the active directory and visible under &quot;Deactivated or deleted accounts&quot;.
+                      </>
+                    )}
+                    {confirmModal.type === "cancel_invitation" && (
+                      <>
+                        Are you sure you want to cancel the invitation sent to{" "}
+                        <strong className="text-slate-900 font-mono">
+                          {confirmModal.user.email}
+                        </strong>
+                        ? The invitation link will be permanently revoked immediately to prevent anyone from registering.
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmModal(null);
+                  setConfirmModalError(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors cursor-pointer shrink-0"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {confirmModalError && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-3.5 py-2.5 rounded-xl text-xs font-semibold animate-in fade-in">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{confirmModalError}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isConfirmingAction}
+                onClick={() => {
+                  setConfirmModal(null);
+                  setConfirmModalError(null);
+                }}
+                className="px-4 py-2 text-xs font-semibold rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isConfirmingAction}
+                onClick={handleExecuteConfirmAction}
+                className={`px-5 py-2 text-xs font-semibold rounded-full text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                  confirmModal.type === "activate"
+                    ? "bg-emerald-700 hover:bg-emerald-800"
+                    : confirmModal.type === "cancel_invitation"
+                      ? "bg-amber-600 hover:bg-amber-700"
+                      : "bg-rose-600 hover:bg-rose-700"
+                }`}
+              >
+                {isConfirmingAction && (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                )}
+                <span>
+                  {confirmModal.type === "deactivate"
+                    ? "Confirm Deactivation"
+                    : confirmModal.type === "activate"
+                      ? "Confirm Activation"
+                      : confirmModal.type === "delete"
+                        ? "Delete Account"
+                        : "Cancel Invitation"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Change User Email Modal ─────────────── */}
+      {changeEmailModal && changeEmailModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Change User Email Address
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {changeEmailModal.user.displayName || changeEmailModal.user.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setChangeEmailModal(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewEmail} className="space-y-4">
+              {changeEmailError && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-xs font-medium">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{changeEmailError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Current Email
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value={changeEmailModal.user.email}
+                  className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-500 font-mono cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  New Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={changeEmailModal.email}
+                  onChange={(e) =>
+                    setChangeEmailModal((prev) =>
+                      prev ? { ...prev, email: e.target.value } : null,
+                    )
+                  }
+                  placeholder="e.g. user@moa.gov.et"
+                  className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium transition-all"
+                />
+                <p className="text-[11px] text-slate-500 mt-1.5 leading-normal">
+                  Updating this address will change where login credentials, verification codes, and official notifications are sent.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={isUpdatingEmail}
+                  onClick={() => setChangeEmailModal(null)}
+                  className="px-4 py-2 text-xs font-semibold rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingEmail || !changeEmailModal.email.trim()}
+                  className="px-5 py-2 text-xs font-semibold rounded-full bg-[#0A3C2F] hover:bg-[#083025] text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isUpdatingEmail ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving…</span>
+                    </>
+                  ) : (
+                    <span>Update Email</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Floating Toast Notification for Cancelled Invitation / Key Actions ─────────────── */}
+      {toastNotification && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300 max-w-sm w-full">
+          <div className="bg-slate-900 text-white rounded-2xl shadow-2xl p-4 border border-slate-800 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+              <Ban className="w-4 h-4" />
+            </div>
+            <div className="space-y-0.5 flex-1 pr-1">
+              <p className="text-xs font-bold text-white">
+                {toastNotification.title}
+              </p>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                {toastNotification.message}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToastNotification(null)}
+              className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer shrink-0"
+              title="Close notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -10,6 +10,11 @@ import {
   type ApiUser,
   type AuditLogEntry,
 } from "@/lib/adminApi";
+import {
+  getDetailedAccountStatus,
+  getCancelledUserIds,
+  getDeletedUserIds,
+} from "@/lib/userAccountStatus";
 
 export function useAdminDashboard(currentUser: AuthUser) {
   const [users, setUsers] = useState<ApiUser[]>([]);
@@ -101,12 +106,34 @@ export function useAdminDashboard(currentUser: AuthUser) {
     }
   };
 
+  const [statusVersion, setStatusVersion] = useState(0);
+
+  useEffect(() => {
+    const handleStatusChanged = () => {
+      setStatusVersion((v) => v + 1);
+    };
+    window.addEventListener("pts:account-status-changed", handleStatusChanged);
+    return () =>
+      window.removeEventListener("pts:account-status-changed", handleStatusChanged);
+  }, []);
+
   const metrics = useMemo(() => {
     const totalAccounts = totalUserCount || users.length;
-    const activeAccess = users.filter(
-      (u) => u.isActive && u.status !== "PENDING_INVITATION",
-    ).length;
-    const deactivatedAccounts = users.filter((u) => !u.isActive).length;
+    const cancelledIds = getCancelledUserIds();
+    const deletedIds = getDeletedUserIds();
+
+    let activeAccess = 0;
+    let deactivatedAccounts = 0;
+    let deletedAccounts = 0;
+    let cancelledInvitations = 0;
+
+    for (const u of users) {
+      const status = getDetailedAccountStatus(u, cancelledIds, deletedIds);
+      if (status === "ACTIVE") activeAccess++;
+      else if (status === "DEACTIVATED") deactivatedAccounts++;
+      else if (status === "DELETED") deletedAccounts++;
+      else if (status === "CANCELLED_INVITATION") cancelledInvitations++;
+    }
 
     let officersCount = 0;
     let directorsCount = 0;
@@ -128,13 +155,15 @@ export function useAdminDashboard(currentUser: AuthUser) {
       totalAccounts,
       activeAccess,
       deactivatedAccounts,
+      deletedAccounts,
+      cancelledInvitations,
       officersCount,
       directorsCount,
       committeeCount,
       managementTeamCount,
       adminsCount,
     };
-  }, [totalUserCount, users]);
+  }, [totalUserCount, users, statusVersion]);
 
   return {
     users,

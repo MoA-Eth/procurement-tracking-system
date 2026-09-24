@@ -373,15 +373,19 @@ export function ProjectsManagementView({
           }
 
           // Find real DB funding source lookup, or create one in the backend
+          // Use the first funding source as the primary DB reference
+          const primaryFundingSource =
+            savedProject.fundingSource.split(",")[0]?.trim() ||
+            savedProject.fundingSource;
           let targetFsId = fundLookupList.find(
             (f) =>
               isRealId(f.id) &&
               (f.label
                 .toLowerCase()
-                .includes(savedProject.fundingSource.toLowerCase()) ||
+                .includes(primaryFundingSource.toLowerCase()) ||
                 f.code
                   .toLowerCase()
-                  .includes(savedProject.fundingSource.toLowerCase())),
+                  .includes(primaryFundingSource.toLowerCase())),
           )?.id;
 
           if (!targetFsId) {
@@ -393,11 +397,11 @@ export function ProjectsManagementView({
                 const newFs = await createLookup({
                   type: "FUNDING_SOURCE",
                   code:
-                    savedProject.fundingSource
+                    primaryFundingSource
                       .replace(/[^A-Za-z0-9]/g, "_")
                       .toUpperCase()
                       .slice(0, 10) || "FS_GEN",
-                  label: savedProject.fundingSource || "General Funding",
+                  label: primaryFundingSource || "General Funding",
                 });
                 if (isRealId(newFs.id)) targetFsId = newFs.id;
               } catch {}

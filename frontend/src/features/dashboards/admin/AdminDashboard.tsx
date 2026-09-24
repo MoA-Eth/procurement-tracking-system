@@ -8,6 +8,8 @@ import {
   UserCheck,
   Users,
   UserX,
+  Trash2,
+  Ban,
 } from "lucide-react";
 import { type AuthUser, normalizeUserRole } from "@/lib/authTypes";
 import { getDashboardHeading } from "../dashboard.config";
@@ -16,10 +18,18 @@ import { AdminDashboardSearch } from "./AdminDashboardSearch";
 import { RecentAuditTrailTable } from "./RecentAuditTrailTable";
 import { UserAccessTable } from "./UserAccessTable";
 import { useAdminDashboard } from "./useAdminDashboard";
+import { RespectiveAccountsModal } from "./components/RespectiveAccountsModal";
+import { getDetailedAccountStatus } from "@/lib/userAccountStatus";
 
 export function AdminDashboard({ user }: { user: AuthUser }) {
   const heading = getDashboardHeading("ADMIN");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<
+    "ALL" | "ACTIVE" | "DEACTIVATED" | "DELETED" | "CANCELLED"
+  >("ALL");
+  const [modalStatusType, setModalStatusType] = useState<
+    "ALL" | "ACTIVE" | "DEACTIVATED" | "DELETED" | "CANCELLED" | null
+  >(null);
 
   const {
     users,
@@ -32,10 +42,40 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
     metrics,
   } = useAdminDashboard(user);
 
+  const handleMetricCardClick = (
+    statusType: "ALL" | "ACTIVE" | "DEACTIVATED" | "DELETED" | "CANCELLED",
+  ) => {
+    // Set active filter for the on-page table
+    setSelectedStatusFilter(statusType);
+    // Open dedicated respective accounts modal for instant inspection
+    setModalStatusType(statusType);
+
+    // Smooth scroll down towards UserAccessTable
+    const tableEl = document.getElementById("user-access-table-heading");
+    if (tableEl) {
+      tableEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   const filteredUsers = useMemo(() => {
-    if (!searchQuery.trim()) return users;
+    let result = users;
+
+    // Apply metric card status filter if not ALL
+    if (selectedStatusFilter !== "ALL") {
+      result = result.filter((u) => {
+        const s = getDetailedAccountStatus(u);
+        if (selectedStatusFilter === "ACTIVE") return s === "ACTIVE";
+        if (selectedStatusFilter === "DEACTIVATED") return s === "DEACTIVATED";
+        if (selectedStatusFilter === "DELETED") return s === "DELETED";
+        if (selectedStatusFilter === "CANCELLED")
+          return s === "CANCELLED_INVITATION";
+        return true;
+      });
+    }
+
+    if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
-    return users.filter((u) => {
+    return result.filter((u) => {
       const name = (u.name || u.displayName || "").toLowerCase();
       const email = (u.email || "").toLowerCase();
       const rawRole = (u.role || "").toLowerCase();
@@ -61,7 +101,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         (q === "admin" && normalized === "admin")
       );
     });
-  }, [users, searchQuery]);
+  }, [users, searchQuery, selectedStatusFilter]);
 
   const filteredLogs = useMemo(() => {
     if (!searchQuery.trim()) return logs;
@@ -106,6 +146,8 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             detail: "Registered user profiles",
             icon: Users,
             tone: "blue",
+            isActive: selectedStatusFilter === "ALL",
+            onClick: () => handleMetricCardClick("ALL"),
           },
           {
             label: "Active access",
@@ -113,16 +155,52 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             detail: "Permitted to sign in",
             icon: UserCheck,
             tone: "emerald",
+            isActive: selectedStatusFilter === "ACTIVE",
+            onClick: () => handleMetricCardClick("ACTIVE"),
           },
           {
             label: "Deactivated accounts",
-            value: String(metrics.deactivatedAccounts),
+            value: String(
+              metrics.deactivatedAccounts +
+                metrics.deletedAccounts +
+                metrics.cancelledInvitations,
+            ),
             detail:
-              metrics.deactivatedAccounts === 0
+              metrics.deactivatedAccounts +
+                metrics.deletedAccounts +
+                metrics.cancelledInvitations ===
+              0
                 ? "All registered users enabled"
-                : `${metrics.deactivatedAccounts} accounts currently restricted`,
+                : `${
+                    metrics.deactivatedAccounts +
+                    metrics.deletedAccounts +
+                    metrics.cancelledInvitations
+                  } accounts currently restricted`,
             icon: UserX,
             tone: "rose",
+            subItems: [
+              {
+                label: "Deactivated",
+                value: String(metrics.deactivatedAccounts),
+                tone: "rose",
+                isActive: selectedStatusFilter === "DEACTIVATED",
+                onClick: () => handleMetricCardClick("DEACTIVATED"),
+              },
+              {
+                label: "Deleted",
+                value: String(metrics.deletedAccounts),
+                tone: "rose",
+                isActive: selectedStatusFilter === "DELETED",
+                onClick: () => handleMetricCardClick("DELETED"),
+              },
+              {
+                label: "Cancelled",
+                value: String(metrics.cancelledInvitations),
+                tone: "amber",
+                isActive: selectedStatusFilter === "CANCELLED",
+                onClick: () => handleMetricCardClick("CANCELLED"),
+              },
+            ],
           },
         ]}
       />
@@ -391,6 +469,30 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         </div>
 
         <div className="mt-6">
+          {selectedStatusFilter !== "ALL" && (
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-slate-50 border border-slate-200/90 px-4 py-2.5 rounded-2xl text-xs shadow-2xs">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 font-medium">Filtering table by:</span>
+                <span className="font-semibold text-slate-800 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-2xs">
+                  {selectedStatusFilter === "ACTIVE" && "Active Accounts"}
+                  {selectedStatusFilter === "DEACTIVATED" && "Deactivated Accounts"}
+                  {selectedStatusFilter === "DELETED" && "Deleted Accounts"}
+                  {selectedStatusFilter === "CANCELLED" && "Cancelled Invitations"}
+                </span>
+                <span className="text-slate-400 font-medium">
+                  ({filteredUsers.length} account{filteredUsers.length === 1 ? "" : "s"})
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedStatusFilter("ALL")}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+              >
+                Clear filter (Show all)
+              </button>
+            </div>
+          )}
+
           <UserAccessTable
             users={filteredUsers}
             isLoading={isUsersLoading}
@@ -398,6 +500,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             onToggleStatus={handleToggleStatus}
             togglingId={togglingId}
             onRefresh={refreshData}
+            statusFilter={selectedStatusFilter}
           />
         </div>
       </section>
@@ -430,6 +533,16 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
           />
         </div>
       </section>
+
+      {/* Respective Accounts Modal when clicking Deactivated, Deleted, or Cancelled metric cards */}
+      <RespectiveAccountsModal
+        isOpen={Boolean(modalStatusType)}
+        onClose={() => setModalStatusType(null)}
+        statusType={modalStatusType}
+        users={users}
+        onToggleStatus={handleToggleStatus}
+        onRefresh={refreshData}
+      />
     </div>
   );
 }

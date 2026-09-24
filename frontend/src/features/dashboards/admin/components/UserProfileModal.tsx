@@ -453,20 +453,27 @@ export function UserProfileModal({
                   <h4 className="text-base font-semibold text-slate-900 truncate">
                     {user.displayName || user.name || "Unnamed User"}
                   </h4>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                      user.isActive
-                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                        : "bg-rose-50 text-rose-800 border-rose-200"
-                    }`}
-                  >
+                  {(!user.isActive && user.status === "PENDING_INVITATION") ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-rose-50 text-rose-800 border-rose-200">
+                      <span className="w-1.5 h-1.5 rounded-full mr-1 bg-rose-500" />
+                      Invitation Cancelled
+                    </span>
+                  ) : (
                     <span
-                      className={`w-1.5 h-1.5 rounded-full mr-1 ${
-                        user.isActive ? "bg-emerald-500" : "bg-rose-500"
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        user.isActive
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                          : "bg-rose-50 text-rose-800 border-rose-200"
                       }`}
-                    />
-                    {user.isActive ? "Active Account" : "Inactive"}
-                  </span>
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full mr-1 ${
+                          user.isActive ? "bg-emerald-500" : "bg-rose-500"
+                        }`}
+                      />
+                      {user.isActive ? "Active Account" : "Inactive"}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 font-mono">
                   <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -501,11 +508,13 @@ export function UserProfileModal({
                     <span>Account Status</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-800 mt-1">
-                    {user.status === "PENDING_INVITATION"
-                      ? "Pending Invitation"
-                      : user.isActive
-                        ? "Active & Verified"
-                        : "Deactivated"}
+                    {!user.isActive && user.status === "PENDING_INVITATION"
+                      ? "Invitation Cancelled (Revoked)"
+                      : user.status === "PENDING_INVITATION"
+                        ? "Pending Invitation"
+                        : user.isActive
+                          ? "Active & Verified"
+                          : "Deactivated / Deleted"}
                   </p>
                 </div>
 

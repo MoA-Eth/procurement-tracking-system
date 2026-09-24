@@ -68,6 +68,25 @@ const TAB_CONFIGS: {
   },
 ];
 
+const TAB_PLACEHOLDERS: Record<TabType, { code: string; label: string }> = {
+  PROJECT_CODE: {
+    code: "e.g. DRIVE, CALM, BREFONS",
+    label: "e.g. De-risking, Inclusion and Value Enhancement Project",
+  },
+  SECTOR: {
+    code: "e.g. SEC_AGRI, SEC_LIVESTOCK",
+    label: "e.g. Agriculture and Horticulture Development Sector",
+  },
+  FUNDING_SOURCE: {
+    code: "e.g. FS_WB, FS_AFDB, FS_GOV",
+    label: "e.g. World Bank (IDA), African Development Bank (AfDB)",
+  },
+  PROCUREMENT_METHOD: {
+    code: "e.g. PM_RFQ, PM_NCB, PM_QCBS",
+    label: "e.g. Request for Quotations (RFQ), Quality and Cost-Based Selection (QCBS)",
+  },
+};
+
 export function SettingsManagementView({
   currentUser: _currentUser,
 }: SettingsManagementViewProps) {
@@ -398,11 +417,7 @@ export function SettingsManagementView({
                 type="text"
                 value={newCode}
                 onChange={(e) => setNewCode(e.target.value)}
-                placeholder={
-                  activeTab === "PROJECT_CODE"
-                    ? "e.g. DRIVE, CALM, BREFONS"
-                    : "e.g. SEC_AGRI"
-                }
+                placeholder={TAB_PLACEHOLDERS[activeTab].code}
                 className="w-full rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
               />
             </div>
@@ -417,11 +432,7 @@ export function SettingsManagementView({
                 type="text"
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
-                placeholder={
-                  activeTab === "PROJECT_CODE"
-                    ? "e.g. De-risking, Inclusion and Value Enhancement Project"
-                    : "e.g. Agriculture & Livestock"
-                }
+                placeholder={TAB_PLACEHOLDERS[activeTab].label}
                 className="w-full rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
               />
             </div>
@@ -631,6 +642,7 @@ export function SettingsManagementView({
                   type="text"
                   value={editCode}
                   onChange={(e) => setEditCode(e.target.value)}
+                  placeholder={TAB_PLACEHOLDERS[activeTab].code}
                   className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase focus:bg-white focus:border-emerald-500 outline-none"
                 />
               </div>
@@ -645,6 +657,7 @@ export function SettingsManagementView({
                   rows={2}
                   value={editLabel}
                   onChange={(e) => setEditLabel(e.target.value)}
+                  placeholder={TAB_PLACEHOLDERS[activeTab].label}
                   className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 outline-none resize-none"
                 />
               </div>

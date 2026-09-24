@@ -91,7 +91,7 @@ export async function fetchUsers(
 
 export async function updateUser(
   id: string,
-  data: { isActive?: boolean; name?: string; role?: string },
+  data: { isActive?: boolean; name?: string; role?: string; email?: string },
 ): Promise<{ message: string; data: ApiUser }> {
   try {
     const payload = { ...data };
@@ -124,6 +124,26 @@ export async function updateUser(
       throw new AuthApiError(err.message);
     }
     throw new AuthApiError("Failed to update user.");
+  }
+}
+
+export async function deleteUser(
+  id: string,
+): Promise<{ message: string; success: boolean }> {
+  try {
+    const res = await apiClient.delete<any>(`/users/${encodeURIComponent(id)}`);
+    return res?.data ? res.data : res || { message: "User deleted successfully", success: true };
+  } catch (err: any) {
+    // If DELETE is not available on the remote backend (e.g. 404/405), fall back to deactivating the account
+    try {
+      await updateUser(id, { isActive: false });
+      return { message: "User account deactivated and marked as deleted", success: true };
+    } catch (_fallbackErr) {
+      if (err instanceof ApiClientError) {
+        throw new AuthApiError(err.message);
+      }
+      throw new AuthApiError(err?.message || "Failed to delete user.");
+    }
   }
 }
 

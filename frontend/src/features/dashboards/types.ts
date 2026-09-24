@@ -1,7 +1,24 @@
 import type { LucideIcon } from "lucide-react";
 
 export type DashboardTone =
-  "blue" | "emerald" | "orange" | "slate" | "violet" | "rose" | "purple";
+  | "blue"
+  | "emerald"
+  | "orange"
+  | "amber"
+  | "slate"
+  | "violet"
+  | "rose"
+  | "purple";
+
+export interface DashboardMetricSubItem {
+  label: string;
+  value: string | number;
+  icon?: LucideIcon;
+  tone?: DashboardTone;
+  isActive?: boolean;
+  onClick?: () => void;
+  detail?: string;
+}
 
 export interface DashboardMetric {
   label: string;
@@ -14,6 +31,9 @@ export interface DashboardMetric {
   actionHref?: string;
   detailLines?: readonly string[];
   actionLines?: readonly string[];
+  onClick?: () => void;
+  isActive?: boolean;
+  subItems?: readonly DashboardMetricSubItem[];
 }
 
 export interface DashboardWorkspace {
