@@ -163,25 +163,35 @@ export async function changePassword(
   newPassword: string,
   confirmPassword?: string,
 ): Promise<AuthSession> {
-  void confirmPassword;
+  if (!confirmPassword || newPassword !== confirmPassword) {
+    throw new AuthApiError("The password confirmation does not match.");
+  }
+
   try {
     const res = await apiClient.post<any>("/auth/change-password", {
       currentPassword,
       newPassword,
+      confirmPassword,
     });
-    return (
-      res.data || {
-        status: "AUTHENTICATED",
-        user: {
-          id: "u-current",
-          email: "user@moa.gov.et",
-          username: "user",
-          displayName: "User",
-          role: "OFFICER",
-        },
-        expiresAt: new Date(Date.now() + 86400000).toISOString(),
-      }
-    );
+
+    const result = res.data || res;
+    const email = result.user?.email;
+
+    if (typeof email !== "string" || !email) {
+      throw new AuthApiError(
+        "Your password changed. Please open a private browser window and sign in with your new password.",
+      );
+    }
+
+    // Password changes revoke the previous session token.
+    // Authenticate again to refresh the frontend session and role.
+    try {
+      return await authenticate(email, newPassword);
+    } catch {
+      throw new AuthApiError(
+        "Your password changed, but automatic sign-in failed. Please open a private browser window and sign in with your new password.",
+      );
+    }
   } catch (err) {
     if (err instanceof ApiClientError) {
       throw new AuthApiError(err.message);
