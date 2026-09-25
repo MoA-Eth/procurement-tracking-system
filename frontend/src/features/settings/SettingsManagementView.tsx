@@ -15,6 +15,7 @@ import {
   Pencil,
   AlertTriangle,
   X,
+  Banknote,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/authTypes";
 import {
@@ -31,7 +32,11 @@ interface SettingsManagementViewProps {
 }
 
 type TabType =
-  "PROJECT_CODE" | "SECTOR" | "FUNDING_SOURCE" | "PROCUREMENT_METHOD";
+  | "PROJECT_CODE"
+  | "SECTOR"
+  | "FUNDING_SOURCE"
+  | "FUNDING_TYPE"
+  | "PROCUREMENT_METHOD";
 
 const TAB_CONFIGS: {
   type: TabType;
@@ -61,6 +66,13 @@ const TAB_CONFIGS: {
       "Development partners, multilateral banks, and treasury accounts.",
   },
   {
+    type: "FUNDING_TYPE",
+    label: "Funding Types",
+    icon: Banknote,
+    description:
+      "Financing instruments and mechanisms (e.g. Loan, Grant, Treasury, Mixed).",
+  },
+  {
     type: "PROCUREMENT_METHOD",
     label: "Procurement Methods",
     icon: FileSpreadsheet,
@@ -80,6 +92,10 @@ const TAB_PLACEHOLDERS: Record<TabType, { code: string; label: string }> = {
   FUNDING_SOURCE: {
     code: "e.g. FS_WB, FS_AFDB, FS_GOV",
     label: "e.g. World Bank (IDA), African Development Bank (AfDB)",
+  },
+  FUNDING_TYPE: {
+    code: "e.g. FT_LOAN, FT_GRANT, FT_CONCESSIONAL",
+    label: "e.g. Loan, Grant, Concessional Financing, Blended Finance",
   },
   PROCUREMENT_METHOD: {
     code: "e.g. PM_RFQ, PM_NCB, PM_QCBS",
@@ -101,6 +117,7 @@ export function SettingsManagementView({
     PROJECT_CODE: 0,
     SECTOR: 0,
     FUNDING_SOURCE: 0,
+    FUNDING_TYPE: 0,
     PROCUREMENT_METHOD: 0,
   });
 
@@ -148,6 +165,7 @@ export function SettingsManagementView({
         PROJECT_CODE: 0,
         SECTOR: 0,
         FUNDING_SOURCE: 0,
+        FUNDING_TYPE: 0,
         PROCUREMENT_METHOD: 0,
       };
       all.forEach((item) => {

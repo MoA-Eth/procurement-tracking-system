@@ -235,35 +235,19 @@ export function CreateProjectView({
     const resolved: string[] = [];
     let hasCustom = false;
     for (const part of parts) {
-      const isStandard = FUNDING_SOURCE_OPTIONS.some(
-        (fs) => fs.label === part && fs.category === "Standard",
-      );
-      if (isStandard) {
-        resolved.push(part);
-      } else {
+      if (part === "Other (Specify Custom Donor)") {
         hasCustom = true;
+      } else {
+        resolved.push(part);
       }
     }
-    if (hasCustom) {
+    if (hasCustom && !resolved.includes("Other (Specify Custom Donor)")) {
       resolved.push("Other (Specify Custom Donor)");
     }
     return resolved;
   })();
 
-  const initialCustomFunding = (() => {
-    if (!isEditing || !initialData?.fundingSource) return "";
-    const parts = initialData.fundingSource
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const nonStandard = parts.filter(
-      (part) =>
-        !FUNDING_SOURCE_OPTIONS.some(
-          (fs) => fs.label === part && fs.category === "Standard",
-        ),
-    );
-    return nonStandard.join(", ");
-  })();
+  const initialCustomFunding = initialData?.customFundingSource || "";
 
   const [step2Data, setStep2Data] = useState<Step2FinancialsFormData>({
     fundingSources: initialFundingSources,

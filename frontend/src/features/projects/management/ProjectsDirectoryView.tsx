@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Home,
@@ -15,6 +15,12 @@ import {
 } from "lucide-react";
 import type { ProjectItem, ProjectOfficer } from "./projectsData";
 import { QuickAssignOfficerModal } from "./components/QuickAssignOfficerModal";
+import {
+  fetchLookups,
+  subscribeToLookups,
+  getInitialLookups,
+  type LookupItem,
+} from "@/lib/lookupsApi";
 
 interface ProjectsDirectoryViewProps {
   projects: ProjectItem[];
@@ -46,6 +52,64 @@ export function ProjectsDirectoryView({
   const [officerModalProject, setOfficerModalProject] =
     useState<ProjectItem | null>(null);
 
+  const [lookupFundingSources, setLookupFundingSources] = useState<
+    LookupItem[]
+  >(() => getInitialLookups("FUNDING_SOURCE"));
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchLookups("FUNDING_SOURCE")
+      .then((list) => {
+        if (isMounted && list && list.length > 0) {
+          setLookupFundingSources(list);
+        }
+      })
+      .catch(() => {});
+
+    const unsubscribe = subscribeToLookups(() => {
+      fetchLookups("FUNDING_SOURCE")
+        .then((list) => {
+          if (isMounted && list && list.length > 0) {
+            setLookupFundingSources(list);
+          }
+        })
+        .catch(() => {});
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  const fundingOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    lookupFundingSources.forEach((fs) => {
+      map.set(fs.label, fs.label);
+    });
+    projects.forEach((p) => {
+      if (p.fundingSource) {
+        p.fundingSource.split(",").forEach((s) => {
+          const trimmed = s.trim();
+          if (trimmed && !map.has(trimmed)) {
+            map.set(trimmed, trimmed);
+          }
+        });
+      }
+    });
+    return Array.from(map.values()).sort();
+  }, [lookupFundingSources, projects]);
+
+  const officerOptions = useMemo(() => {
+    const set = new Set<string>();
+    projects.forEach((p) => {
+      p.assignedOfficers?.forEach((o) => {
+        if (o.name && o.name.trim()) set.add(o.name.trim());
+      });
+    });
+    return Array.from(set).sort();
+  }, [projects]);
+
   // Filtered logic
   const filteredProjects = projects.filter((project) => {
     const query = searchQuery.toLowerCase();
@@ -67,11 +131,16 @@ export function ProjectsDirectoryView({
 
     const matchesOfficer =
       officerFilter === "All Assigned Officers" ||
-      project.assignedOfficers.some((o) => o.name === officerFilter);
+      project.assignedOfficers.some(
+        (o) =>
+          o.name.trim().toLowerCase() === officerFilter.trim().toLowerCase(),
+      );
 
     const matchesFunding =
       fundingFilter === "All Funding Sources" ||
-      project.fundingSource === fundingFilter;
+      project.fundingSource
+        .toLowerCase()
+        .includes(fundingFilter.toLowerCase());
 
     return matchesSearch && matchesStatus && matchesOfficer && matchesFunding;
   });
@@ -162,10 +231,11 @@ export function ProjectsDirectoryView({
             className="rounded-xl bg-slate-50/80 border border-slate-200/90 px-3.5 py-2.5 text-xs font-semibold text-slate-700 focus:bg-white focus:border-emerald-500 outline-none cursor-pointer transition-all"
           >
             <option value="All Assigned Officers">All Assigned Officers</option>
-            <option value="Demelash Worku">Demelash Worku</option>
-            <option value="Abebe Kebede">Abebe Kebede</option>
-            <option value="Dawit Mekonnen">Dawit Mekonnen</option>
-            <option value="Bethelhem Tadesse">Bethelhem Tadesse</option>
+            {officerOptions.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
           </select>
 
           {/* Funding Source Filter */}
@@ -175,11 +245,11 @@ export function ProjectsDirectoryView({
             className="rounded-xl bg-slate-50/80 border border-slate-200/90 px-3.5 py-2.5 text-xs font-semibold text-slate-700 focus:bg-white focus:border-emerald-500 outline-none cursor-pointer transition-all"
           >
             <option value="All Funding Sources">All Funding Sources</option>
-            <option value="African Development Bank (AfDB)">AfDB</option>
-            <option value="World Bank (IDA)">World Bank (IDA)</option>
-            <option value="Government Treasury (መንግሥት)">
-              Government Treasury
-            </option>
+            {fundingOptions.map((fs) => (
+              <option key={fs} value={fs}>
+                {fs}
+              </option>
+            ))}
           </select>
         </div>
       </div>

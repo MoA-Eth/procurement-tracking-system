@@ -71,6 +71,62 @@ const FALLBACK_LOOKUPS: LookupItem[] = [
     isActive: true,
   },
   {
+    id: "fs-4",
+    type: "FUNDING_SOURCE",
+    code: "FS_UNOPS",
+    label: "UNOPS",
+    isActive: true,
+  },
+  {
+    id: "fs-5",
+    type: "FUNDING_SOURCE",
+    code: "FS_IFAD",
+    label: "IFAD (International Fund for Agricultural Development)",
+    isActive: true,
+  },
+  {
+    id: "fs-6",
+    type: "FUNDING_SOURCE",
+    code: "FS_EU",
+    label: "EU Grant / European Union",
+    isActive: true,
+  },
+  {
+    id: "fs-7",
+    type: "FUNDING_SOURCE",
+    code: "FS_GEN",
+    label: "General Funding Source",
+    isActive: true,
+  },
+  {
+    id: "ft-1",
+    type: "FUNDING_TYPE",
+    code: "FT_TREASURY",
+    label: "Treasury",
+    isActive: true,
+  },
+  {
+    id: "ft-2",
+    type: "FUNDING_TYPE",
+    code: "FT_LOAN",
+    label: "Loan",
+    isActive: true,
+  },
+  {
+    id: "ft-3",
+    type: "FUNDING_TYPE",
+    code: "FT_GRANT",
+    label: "Grant",
+    isActive: true,
+  },
+  {
+    id: "ft-4",
+    type: "FUNDING_TYPE",
+    code: "FT_MIXED",
+    label: "Mixed (Loan & Grant)",
+    isActive: true,
+  },
+  {
     id: "pm-1",
     type: "PROCUREMENT_METHOD",
     code: "PM_RFQ",
@@ -165,10 +221,13 @@ function saveCustomLookupToStorage(item: LookupItem) {
   try {
     const list = getStoredCustomLookups();
     const existingIdx = list.findIndex(
-      (l) => l.id === item.id || (l.type === item.type && l.code === item.code),
+      (l) =>
+        l.id === item.id ||
+        (l.type.toUpperCase() === item.type.toUpperCase() &&
+          l.code.toUpperCase() === item.code.toUpperCase()),
     );
     if (existingIdx >= 0) {
-      list[existingIdx] = item;
+      list[existingIdx] = { ...list[existingIdx], ...item };
     } else {
       list.unshift(item);
     }
@@ -194,39 +253,100 @@ function removeCustomLookupFromStorage(id: string) {
   }
 }
 
+export function getInitialLookups(type?: string): LookupItem[] {
+  const normType = type ? type.trim().toUpperCase() : undefined;
+  const customItems = getStoredCustomLookups();
+  const baseline = normType
+    ? FALLBACK_LOOKUPS.filter((l) => l.type.toUpperCase() === normType)
+    : FALLBACK_LOOKUPS;
+
+  const combinedMap = new Map<string, LookupItem>();
+  const makeKey = (t: string, c: string) =>
+    `${t.trim().toUpperCase()}:${c.trim().toUpperCase()}`;
+
+  baseline.forEach((item) => {
+    combinedMap.set(makeKey(item.type, item.code), {
+      ...item,
+      type: item.type.toUpperCase(),
+      code: item.code.toUpperCase(),
+    });
+  });
+
+  customItems.forEach((item) => {
+    if (!normType || item.type.toUpperCase() === normType) {
+      combinedMap.set(makeKey(item.type, item.code), {
+        ...item,
+        type: item.type.toUpperCase(),
+        code: item.code.toUpperCase(),
+      });
+    }
+  });
+
+  return Array.from(combinedMap.values()).filter((l) => l.isActive);
+}
+
 export async function fetchLookups(type?: string): Promise<LookupItem[]> {
+  const normType = type ? type.trim().toUpperCase() : undefined;
   const customItems = getStoredCustomLookups();
   let serverItems: LookupItem[] = [];
 
   try {
     const payload = await apiClient.get<any>("/lookups", {
-      params: type ? { type } : undefined,
+      params: normType ? { type: normType } : undefined,
     });
     serverItems = Array.isArray(payload) ? payload : payload?.data || [];
   } catch {
     // Graceful fallback
   }
 
-  const baseline = type
-    ? FALLBACK_LOOKUPS.filter((l) => l.type === type)
+  const baseline = normType
+    ? FALLBACK_LOOKUPS.filter((l) => l.type.toUpperCase() === normType)
     : FALLBACK_LOOKUPS;
 
   const combinedMap = new Map<string, LookupItem>();
+  const makeKey = (t: string, c: string) =>
+    `${t.trim().toUpperCase()}:${c.trim().toUpperCase()}`;
 
   // 1. Baseline
   baseline.forEach((item) => {
-    combinedMap.set(`${item.type}:${item.code}`, item);
+    combinedMap.set(makeKey(item.type, item.code), {
+      ...item,
+      type: item.type.toUpperCase(),
+      code: item.code.toUpperCase(),
+    });
   });
 
-  // 2. Server items
+  // 2. Server items (priority over baseline)
   serverItems.forEach((item) => {
-    combinedMap.set(`${item.type}:${item.code}`, item);
+    if (!normType || item.type.toUpperCase() === normType) {
+      combinedMap.set(makeKey(item.type, item.code), {
+        ...item,
+        type: item.type.toUpperCase(),
+        code: item.code.toUpperCase(),
+      });
+    }
   });
 
-  // 3. Custom stored items
+  // 3. Custom stored items (preserve newly created user custom lookups even before/if offline)
   customItems.forEach((item) => {
-    if (!type || item.type === type) {
-      combinedMap.set(`${item.type}:${item.code}`, item);
+    if (!normType || item.type.toUpperCase() === normType) {
+      const k = makeKey(item.type, item.code);
+      const existing = combinedMap.get(k);
+      if (
+        !existing ||
+        !existing.id ||
+        existing.id.startsWith("custom-") ||
+        existing.id.startsWith("sec-") ||
+        existing.id.startsWith("fs-") ||
+        existing.id.startsWith("proj-code-") ||
+        existing.id.startsWith("pm-")
+      ) {
+        combinedMap.set(k, {
+          ...item,
+          type: item.type.toUpperCase(),
+          code: item.code.toUpperCase(),
+        });
+      }
     }
   });
 
@@ -300,11 +420,12 @@ export async function createLookup(data: {
   code: string;
   label: string;
 }): Promise<LookupItem> {
+  const cleanType = data.type.trim().toUpperCase();
   const cleanCode = data.code.trim().toUpperCase();
   const cleanLabel = data.label.trim();
   const newItem: LookupItem = {
-    id: `custom-${data.type.toLowerCase()}-${Date.now()}`,
-    type: data.type,
+    id: `custom-${cleanType.toLowerCase()}-${Date.now()}`,
+    type: cleanType,
     code: cleanCode,
     label: cleanLabel,
     isActive: true,
@@ -312,12 +433,15 @@ export async function createLookup(data: {
 
   try {
     const res = await apiClient.post<any>("/lookups", {
-      type: data.type,
+      type: cleanType,
       code: cleanCode,
       label: cleanLabel,
     });
-    if (res?.data?.id) {
-      newItem.id = res.data.id;
+    const resultData = res?.data || res;
+    if (resultData?.id) {
+      newItem.id = resultData.id;
+      if (resultData.code) newItem.code = resultData.code;
+      if (resultData.label) newItem.label = resultData.label;
     }
   } catch (err) {
     console.warn("Backend createLookup note (saved locally):", err);

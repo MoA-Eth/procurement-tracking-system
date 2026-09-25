@@ -123,30 +123,34 @@ describe("auth API", () => {
   });
 
   it("submits password reset and change fields", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          data: {
-            user: {
-              id: "1",
-              email: "director@moa.gov.et",
-              name: "Director",
-              role: "ProcurementDirector",
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            data: {
+              user: {
+                id: "1",
+                email: "director@moa.gov.et",
+                name: "Director",
+                role: "ProcurementDirector",
+              },
             },
-          },
-        }),
-        { status: 200 },
+          }),
+          { status: 200 },
+        ),
       ),
     );
 
     await changePassword("Temporary1!", "New-Password2!", "New-Password2!");
 
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
       expect.stringContaining("/auth/change-password"),
       expect.objectContaining({
         body: JSON.stringify({
           currentPassword: "Temporary1!",
           newPassword: "New-Password2!",
+          confirmPassword: "New-Password2!",
         }),
       }),
     );

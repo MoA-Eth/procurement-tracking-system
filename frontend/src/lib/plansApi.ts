@@ -232,7 +232,9 @@ export function invalidatePlansCache() {
 
 export async function fetchPlans(): Promise<BackendPlan[]> {
   try {
-    const res = await apiClient.get<any>("/plans");
+    const res = await apiClient.get<any>("/plans", {
+      params: { pageSize: 500 },
+    });
     const data = Array.isArray(res) ? res : res.data || [];
     if (Array.isArray(data) && data.length > 0) {
       _cachedPlans = data;

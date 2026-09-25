@@ -1,7 +1,23 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { CircleDollarSign, Plus, Trash2, X, ChevronDown, Check } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import {
+  CircleDollarSign,
+  Plus,
+  Trash2,
+  X,
+  ChevronDown,
+  Check,
+  Search,
+  AlertCircle,
+} from "lucide-react";
+import {
+  fetchLookups,
+  createLookup,
+  subscribeToLookups,
+  getInitialLookups,
+  type LookupItem,
+} from "@/lib/lookupsApi";
 import {
   FUNDING_SOURCE_OPTIONS,
   FUNDING_TYPE_OPTIONS,
@@ -23,9 +39,11 @@ interface Step2FinancialsFormProps {
 
 function MultiSelectFundingSource({
   selected,
+  options,
   onChange,
 }: {
   selected: string[];
+  options: LookupItem[];
   onChange: (value: string[]) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,16 +64,17 @@ function MultiSelectFundingSource({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const standardOptions = FUNDING_SOURCE_OPTIONS.filter(
-    (fs) => fs.category === "Standard"
-  );
-  const customOption = FUNDING_SOURCE_OPTIONS.find(
-    (fs) => fs.category === "Custom"
-  );
+  const customOptionLabel = "Other (Specify Custom Donor)";
 
-  const filteredOptions = standardOptions.filter((fs) =>
-    fs.label.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredOptions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(q) ||
+        opt.code.toLowerCase().includes(q),
+    );
+  }, [options, search]);
 
   function toggleOption(label: string) {
     if (selected.includes(label)) {
@@ -69,7 +88,7 @@ function MultiSelectFundingSource({
     onChange(selected.filter((s) => s !== label));
   }
 
-  const hasCustom = selected.includes("Other (Specify Custom Donor)");
+  const hasCustom = selected.includes(customOptionLabel);
 
   return (
     <div ref={containerRef} className="relative">
@@ -89,13 +108,13 @@ function MultiSelectFundingSource({
         ) : (
           <div className="flex flex-wrap gap-1.5 flex-1">
             {selected
-              .filter((s) => s !== "Other (Specify Custom Donor)")
+              .filter((s) => s !== customOptionLabel)
               .map((label) => (
                 <span
                   key={label}
                   className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-emerald-200/80"
                 >
-                  <span className="truncate max-w-[180px]">{label}</span>
+                  <span className="truncate max-w-[200px]">{label}</span>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -115,7 +134,7 @@ function MultiSelectFundingSource({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    removeTag("Other (Specify Custom Donor)");
+                    removeTag(customOptionLabel);
                   }}
                   className="hover:bg-blue-200/60 rounded-full p-0.5 transition-colors cursor-pointer"
                 >
@@ -132,89 +151,97 @@ function MultiSelectFundingSource({
         />
       </div>
 
-      {/* Dropdown */}
+      {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
-          {/* Search */}
-          <div className="p-2 border-b border-slate-100">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+          {/* Search bar */}
+          <div className="p-2 border-b border-slate-100 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search funding sources..."
-              className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-400 outline-none"
+              placeholder="Search by donor name or acronym (e.g. WB, AfDB, IFAD)..."
+              className="w-full rounded-lg bg-slate-50 border border-slate-200 pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-400 outline-none"
               autoFocus
               onClick={(e) => e.stopPropagation()}
             />
           </div>
 
-          {/* Options */}
-          <div className="max-h-52 overflow-y-auto py-1">
+          {/* Options List */}
+          <div className="max-h-56 overflow-y-auto py-1 divide-y divide-slate-50">
             {filteredOptions.map((fs) => {
               const isSelected = selected.includes(fs.label);
               return (
                 <button
-                  key={fs.label}
+                  key={fs.id || fs.code || fs.label}
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleOption(fs.label);
                   }}
-                  className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer ${
+                  className={`w-full text-left px-3 py-2 text-xs font-semibold flex items-center justify-between gap-2 transition-colors cursor-pointer ${
                     isSelected
                       ? "bg-emerald-50 text-emerald-900"
                       : "text-slate-700 hover:bg-slate-50"
                   }`}
                 >
-                  <div
-                    className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-all ${
-                      isSelected
-                        ? "bg-emerald-600 border-emerald-600"
-                        : "border-slate-300 bg-white"
-                    }`}
-                  >
-                    {isSelected && <Check className="h-3 w-3 text-white" />}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-all ${
+                        isSelected
+                          ? "bg-emerald-600 border-emerald-600"
+                          : "border-slate-300 bg-white"
+                      }`}
+                    >
+                      {isSelected && <Check className="h-3 w-3 text-white" />}
+                    </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {fs.code && (
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono font-semibold text-[10px] shrink-0 border border-slate-200">
+                          {fs.code}
+                        </span>
+                      )}
+                      <span className="truncate text-slate-800">{fs.label}</span>
+                    </div>
                   </div>
-                  <span>{fs.label}</span>
                 </button>
               );
             })}
 
             {filteredOptions.length === 0 && (
               <div className="px-3 py-4 text-xs text-slate-400 text-center">
-                No funding sources match your search
+                No configured funding sources match "{search}"
               </div>
             )}
           </div>
 
-          {/* Custom option separator */}
-          {customOption && (
-            <div className="border-t border-slate-100">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleOption(customOption.label);
-                }}
-                className={`w-full text-left px-3 py-2.5 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer ${
+          {/* Custom option */}
+          <div className="border-t border-slate-100 bg-slate-50/50">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleOption(customOptionLabel);
+              }}
+              className={`w-full text-left px-3 py-2.5 text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer ${
+                hasCustom
+                  ? "bg-blue-50 text-blue-900"
+                  : "text-blue-700 hover:bg-blue-50/60"
+              }`}
+            >
+              <div
+                className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-all ${
                   hasCustom
-                    ? "bg-blue-50 text-blue-900"
-                    : "text-blue-700 hover:bg-blue-50/60"
+                    ? "bg-blue-600 border-blue-600"
+                    : "border-blue-300 bg-white"
                 }`}
               >
-                <div
-                  className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-all ${
-                    hasCustom
-                      ? "bg-blue-600 border-blue-600"
-                      : "border-blue-300 bg-white"
-                  }`}
-                >
-                  {hasCustom && <Check className="h-3 w-3 text-white" />}
-                </div>
-                <span>{customOption.label}</span>
-              </button>
-            </div>
-          )}
+                {hasCustom && <Check className="h-3 w-3 text-white" />}
+              </div>
+              <span>{customOptionLabel}</span>
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -225,6 +252,66 @@ export function Step2FinancialsForm({
   data,
   onChange,
 }: Step2FinancialsFormProps) {
+  const [fundingSourceOptions, setFundingSourceOptions] = useState<
+    LookupItem[]
+  >(() => getInitialLookups("FUNDING_SOURCE"));
+  const [fundingTypeOptions, setFundingTypeOptions] = useState<
+    LookupItem[]
+  >(() => getInitialLookups("FUNDING_TYPE"));
+
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
+  const [quickCode, setQuickCode] = useState("");
+  const [quickLabel, setQuickLabel] = useState("");
+  const [quickError, setQuickError] = useState<string | null>(null);
+  const [isQuickSubmitting, setIsQuickSubmitting] = useState(false);
+
+  // Quick-Add Funding Type modal state
+  const [showQuickAddTypeModal, setShowQuickAddTypeModal] = useState(false);
+  const [quickTypeCode, setQuickTypeCode] = useState("");
+  const [quickTypeLabel, setQuickTypeLabel] = useState("");
+  const [quickTypeError, setQuickTypeError] = useState<string | null>(null);
+  const [isQuickTypeSubmitting, setIsQuickTypeSubmitting] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLookups() {
+      try {
+        const [sourceList, typeList] = await Promise.all([
+          fetchLookups("FUNDING_SOURCE"),
+          fetchLookups("FUNDING_TYPE"),
+        ]);
+        if (isMounted) {
+          if (sourceList && sourceList.length > 0) {
+            setFundingSourceOptions(sourceList);
+          }
+          if (typeList && typeList.length > 0) {
+            setFundingTypeOptions(typeList);
+          }
+        }
+      } catch {
+        // Fallback handled by API
+      }
+    }
+    loadLookups();
+
+    const unsubscribe = subscribeToLookups(() => {
+      loadLookups();
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  const displayedTypes = useMemo(() => {
+    const list = fundingTypeOptions.map((f) => f.label);
+    if (data.fundingType && !list.includes(data.fundingType)) {
+      return [data.fundingType, ...list];
+    }
+    return list;
+  }, [fundingTypeOptions, data.fundingType]);
+
   function handleAddLoanNumber() {
     onChange({ loanGrantNumbers: [...data.loanGrantNumbers, ""] });
   }
@@ -242,8 +329,102 @@ export function Step2FinancialsForm({
     });
   }
 
+  const handleQuickAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanCode = quickCode.trim().toUpperCase();
+    const cleanLabel = quickLabel.trim();
+
+    if (!cleanCode || !cleanLabel) {
+      setQuickError("Please provide both donor acronym/code and the full name.");
+      return;
+    }
+
+    if (
+      fundingSourceOptions.some(
+        (fs) =>
+          fs.code.toUpperCase() === cleanCode ||
+          fs.label.toLowerCase() === cleanLabel.toLowerCase(),
+      )
+    ) {
+      setQuickError(`Funding source "${cleanLabel}" or code "${cleanCode}" already exists.`);
+      return;
+    }
+
+    setIsQuickSubmitting(true);
+    setQuickError(null);
+
+    try {
+      const created = await createLookup({
+        type: "FUNDING_SOURCE",
+        code: cleanCode,
+        label: cleanLabel,
+      });
+
+      setFundingSourceOptions((prev) => [created, ...prev]);
+      // Immediately select the newly created donor in the form
+      if (!data.fundingSources.includes(created.label)) {
+        onChange({
+          fundingSources: [...data.fundingSources, created.label],
+        });
+      }
+      setQuickCode("");
+      setQuickLabel("");
+      setShowQuickAddModal(false);
+    } catch (err: any) {
+      setQuickError(err?.message || "Failed to create funding source.");
+    } finally {
+      setIsQuickSubmitting(false);
+    }
+  };
+
+  const handleQuickAddTypeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanLabel = quickTypeLabel.trim();
+    const cleanCode =
+      quickTypeCode.trim().toUpperCase() ||
+      `FT_${cleanLabel.replace(/[^A-Za-z0-9]/g, "_").toUpperCase().slice(0, 15)}`;
+
+    if (!cleanLabel) {
+      setQuickTypeError("Please provide the funding type name / instrument.");
+      return;
+    }
+
+    if (
+      fundingTypeOptions.some(
+        (ft) =>
+          ft.code.trim().toUpperCase() === cleanCode ||
+          ft.label.trim().toLowerCase() === cleanLabel.toLowerCase(),
+      )
+    ) {
+      setQuickTypeError(`Funding type "${cleanLabel}" already exists.`);
+      return;
+    }
+
+    setIsQuickTypeSubmitting(true);
+    setQuickTypeError(null);
+
+    try {
+      const created = await createLookup({
+        type: "FUNDING_TYPE",
+        code: cleanCode,
+        label: cleanLabel,
+      });
+
+      setFundingTypeOptions((prev) => [created, ...prev]);
+      // Immediately select the newly created type in the form
+      onChange({ fundingType: created.label });
+      setQuickTypeCode("");
+      setQuickTypeLabel("");
+      setShowQuickAddTypeModal(false);
+    } catch (err: any) {
+      setQuickTypeError(err?.message || "Failed to create funding type.");
+    } finally {
+      setIsQuickTypeSubmitting(false);
+    }
+  };
+
   const hasCustomDonor = data.fundingSources.includes(
-    "Other (Specify Custom Donor)"
+    "Other (Specify Custom Donor)",
   );
 
   return (
@@ -264,19 +445,35 @@ export function Step2FinancialsForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Funding Source / Donor — Multi-Select */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-800 block">
-              Funding Source / Donor *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-800 block">
+                Funding Source / Donor *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuickError(null);
+                  setQuickCode("");
+                  setQuickLabel("");
+                  setShowQuickAddModal(true);
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                title="Quick-add a new donor or funding source"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Add Donor</span>
+              </button>
+            </div>
             <MultiSelectFundingSource
               selected={data.fundingSources}
+              options={fundingSourceOptions}
               onChange={(val) => onChange({ fundingSources: val })}
             />
             {data.fundingSources.length > 1 && (
               <p className="text-[11px] text-emerald-600 font-medium mt-1">
                 {data.fundingSources.filter(
-                  (s) => s !== "Other (Specify Custom Donor)"
-                ).length +
-                  (hasCustomDonor ? 1 : 0)}{" "}
+                  (s) => s !== "Other (Specify Custom Donor)",
+                ).length + (hasCustomDonor ? 1 : 0)}{" "}
                 funding source(s) selected
               </p>
             )}
@@ -284,15 +481,31 @@ export function Step2FinancialsForm({
 
           {/* Funding Type */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-800 block">
-              Funding Instrument / Type *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-800 block">
+                Funding Instrument / Type *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuickTypeError(null);
+                  setQuickTypeCode("");
+                  setQuickTypeLabel("");
+                  setShowQuickAddTypeModal(true);
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                title="Quick-add a new funding type / instrument"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Add Type</span>
+              </button>
+            </div>
             <select
               value={data.fundingType}
               onChange={(e) => onChange({ fundingType: e.target.value })}
               className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 outline-none cursor-pointer transition-all"
             >
-              {FUNDING_TYPE_OPTIONS.map((ft) => (
+              {displayedTypes.map((ft) => (
                 <option key={ft} value={ft}>
                   {ft}
                 </option>
@@ -384,6 +597,182 @@ export function Step2FinancialsForm({
           </div>
         </div>
       </div>
+
+      {/* Quick-Add Funding Source Modal */}
+      {showQuickAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Quick-Add Funding Source
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Saves to system and immediately selects in this wizard
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuickAddModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {quickError && (
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{quickError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleQuickAddSubmit} className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-800 block">
+                  Donor Acronym / Code *
+                </label>
+                <input
+                  type="text"
+                  value={quickCode}
+                  onChange={(e) => setQuickCode(e.target.value)}
+                  placeholder="e.g. FS_JICA, JICA, USAID, BGF"
+                  autoFocus
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-800 block">
+                  Full Official Donor / Source Name *
+                </label>
+                <textarea
+                  rows={2}
+                  value={quickLabel}
+                  onChange={(e) => setQuickLabel(e.target.value)}
+                  placeholder="e.g. Japan International Cooperation Agency (JICA)"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAddModal(false)}
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isQuickSubmitting}
+                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isQuickSubmitting ? "Saving..." : "Save & Select"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick-Add Funding Type Modal */}
+      {showQuickAddTypeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Quick-Add Funding Type / Instrument
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Saves to system and immediately selects in this wizard
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuickAddTypeModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {quickTypeError && (
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{quickTypeError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleQuickAddTypeSubmit} className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-800 block">
+                  Funding Type / Instrument Name *
+                </label>
+                <input
+                  type="text"
+                  value={quickTypeLabel}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setQuickTypeLabel(val);
+                    if (!quickTypeCode || quickTypeCode.startsWith("FT_")) {
+                      setQuickTypeCode(
+                        val.trim()
+                          ? `FT_${val.replace(/[^A-Za-z0-9]/g, "_").toUpperCase().slice(0, 15)}`
+                          : "",
+                      );
+                    }
+                  }}
+                  placeholder="e.g. Concessional Credit, Blended Finance, Trust Fund"
+                  autoFocus
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-800 block">
+                  Acronym / Code (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={quickTypeCode}
+                  onChange={(e) => setQuickTypeCode(e.target.value)}
+                  placeholder="e.g. FT_CONCESSIONAL, FT_BLENDED"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAddTypeModal(false)}
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isQuickTypeSubmitting}
+                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isQuickTypeSubmitting ? "Saving..." : "Save & Select"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

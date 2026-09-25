@@ -99,15 +99,19 @@ export function ProjectPlansView({
   };
 
   // Filter plans under this project
-  const projectPlans = plans.filter(
-    (p) =>
-      p.projectId === project.id ||
-      p.projectCode === project.code ||
-      p.projectId === project.code ||
-      (p.projectCode &&
-        project.id &&
-        p.projectCode.toLowerCase() === project.id.toLowerCase()),
-  );
+  const projectPlans = plans.filter((p) => {
+    const projId = (project.id || "").toLowerCase().trim();
+    const projCode = (project.code || "").toLowerCase().trim();
+    const pProjId = (p.projectId || "").toLowerCase().trim();
+    const pProjCode = (p.projectCode || "").toLowerCase().trim();
+
+    return (
+      (pProjId && projId && pProjId === projId) ||
+      (pProjCode && projCode && pProjCode === projCode) ||
+      (pProjId && projCode && pProjId === projCode) ||
+      (pProjCode && projId && pProjCode === projId)
+    );
+  });
 
   const filteredPlans = projectPlans.filter((plan) => {
     const q = searchQuery.toLowerCase();

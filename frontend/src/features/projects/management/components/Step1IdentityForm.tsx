@@ -12,6 +12,7 @@ import {
   fetchLookups,
   createLookup,
   subscribeToLookups,
+  getInitialLookups,
   type LookupItem,
 } from "@/lib/lookupsApi";
 import {
@@ -40,7 +41,7 @@ interface Step1IdentityFormProps {
 
 export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
   const [projectCodeOptions, setProjectCodeOptions] = useState<LookupItem[]>(
-    [],
+    () => getInitialLookups("PROJECT_CODE"),
   );
   const [isCustomCode, setIsCustomCode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -59,11 +60,8 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
     async function loadCodes() {
       try {
         const list = await fetchLookups("PROJECT_CODE");
-        if (isMounted) {
+        if (isMounted && list && list.length > 0) {
           setProjectCodeOptions(list);
-          if (data.code && !list.some((item) => item.code === data.code)) {
-            setIsCustomCode(true);
-          }
         }
       } catch {
         // Fallback handled by API
@@ -80,7 +78,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
       isMounted = false;
       unsubscribe();
     };
-  }, [data.code]);
+  }, []);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -106,7 +104,11 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
     );
   }, [projectCodeOptions, searchQuery]);
 
-  const selectedMatched = projectCodeOptions.find((p) => p.code === data.code);
+  const selectedMatched = useMemo(() => {
+    if (!data.code) return undefined;
+    const clean = data.code.trim().toUpperCase();
+    return projectCodeOptions.find((p) => p.code.trim().toUpperCase() === clean);
+  }, [projectCodeOptions, data.code]);
 
   const handleSelectCode = (selectedCode: string) => {
     if (selectedCode === "CUSTOM") {
@@ -117,7 +119,10 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
     setIsCustomCode(false);
     setIsDropdownOpen(false);
-    const matched = projectCodeOptions.find((p) => p.code === selectedCode);
+    const target = selectedCode.trim().toUpperCase();
+    const matched = projectCodeOptions.find(
+      (p) => p.code.trim().toUpperCase() === target,
+    );
     if (matched) {
       onChange({
         code: matched.code,
@@ -127,7 +132,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
             : data.name,
       });
     } else {
-      onChange({ code: selectedCode });
+      onChange({ code: target });
     }
   };
 
@@ -143,7 +148,11 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
       return;
     }
 
-    if (projectCodeOptions.some((p) => p.code.toUpperCase() === cleanCode)) {
+    if (
+      projectCodeOptions.some(
+        (p) => p.code.trim().toUpperCase() === cleanCode,
+      )
+    ) {
       setQuickError(`Project code "${cleanCode}" already exists.`);
       return;
     }
@@ -223,14 +232,16 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                 <input
                   type="text"
                   value={data.code}
-                  onChange={(e) => onChange({ code: e.target.value })}
+                  onChange={(e) =>
+                    onChange({ code: e.target.value.toUpperCase() })
+                  }
                   placeholder="Enter custom project code (e.g. DRIVE, CALM)..."
                   className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setIsCustomCode(false)}
-                  className="text-[11px] text-slate-500 hover:text-slate-800 font-medium underline cursor-pointer"
+                  className="text-[11px] text-[#006837] hover:text-[#00552c] font-semibold underline cursor-pointer"
                 >
                   &larr; Choose from configured codes
                 </button>
@@ -256,15 +267,39 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                       </span>
                     </span>
                   ) : data.code ? (
-                    <span className="font-mono font-semibold text-slate-900">
-                      {data.code}
+                    <span className="flex items-center gap-2 truncate">
+                      <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-900 font-mono font-semibold text-[11px] shrink-0 border border-slate-200">
+                        {data.code}
+                      </span>
+                      <span className="text-[11px] text-slate-500 italic">
+                        (Custom Code)
+                      </span>
                     </span>
                   ) : (
                     <span className="text-slate-400">
                       -- Select or Search Project Short Code --
                     </span>
                   )}
-                  <ChevronDown className="h-4 w-4 text-slate-400 shrink-0 ml-2" />
+                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                    {data.code && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onChange({ code: "" });
+                        }}
+                        className="p-0.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/60"
+                        title="Clear selection"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                    <ChevronDown
+                      className={`h-4 w-4 text-slate-400 transition-transform ${
+                        isDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
                 </button>
 
                 {/* Combobox Floating Menu */}
@@ -283,39 +318,112 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                     </div>
 
                     <div className="max-h-52 overflow-y-auto divide-y divide-slate-100">
-                      {filteredCodes.length === 0 ? (
-                        <div className="py-4 px-2 text-center text-xs text-slate-400">
-                          No matching project codes found.
-                        </div>
-                      ) : (
-                        filteredCodes.map((opt) => {
-                          const isSelected = opt.code === data.code;
-                          return (
+                      {filteredCodes.map((opt) => {
+                        const isSelected =
+                          opt.code.trim().toUpperCase() ===
+                          (data.code || "").trim().toUpperCase();
+                        return (
+                          <button
+                            key={opt.id || opt.code}
+                            type="button"
+                            onClick={() => handleSelectCode(opt.code)}
+                            className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-colors cursor-pointer flex items-center justify-between gap-2 ${
+                              isSelected
+                                ? "bg-emerald-50 text-emerald-900 font-semibold"
+                                : "hover:bg-slate-50 text-slate-800"
+                            }`}
+                          >
+                            <div className="min-w-0 flex items-center gap-2">
+                              <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono font-semibold text-[10px] shrink-0 border border-slate-200">
+                                {opt.code}
+                              </span>
+                              <span className="truncate text-[11px] text-slate-700">
+                                {opt.label}
+                              </span>
+                            </div>
+                            {isSelected && (
+                              <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {searchQuery.trim() &&
+                        !projectCodeOptions.some(
+                          (p) =>
+                            p.code.trim().toUpperCase() ===
+                            searchQuery.trim().toUpperCase(),
+                        ) && (
+                          <div className="pt-1.5 space-y-1">
                             <button
-                              key={opt.id || opt.code}
                               type="button"
-                              onClick={() => handleSelectCode(opt.code)}
-                              className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-colors cursor-pointer flex items-center justify-between gap-2 ${
-                                isSelected
-                                  ? "bg-emerald-50 text-emerald-900 font-semibold"
-                                  : "hover:bg-slate-50 text-slate-800"
-                              }`}
+                              onClick={() => {
+                                handleSelectCode(
+                                  searchQuery.trim().toUpperCase(),
+                                );
+                              }}
+                              className="w-full text-left px-2.5 py-2 rounded-lg text-xs hover:bg-emerald-50 text-emerald-900 font-semibold transition-colors cursor-pointer flex items-center gap-2"
                             >
-                              <div className="min-w-0 flex items-center gap-2">
-                                <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono font-semibold text-[10px] shrink-0 border border-slate-200">
-                                  {opt.code}
-                                </span>
-                                <span className="truncate text-[11px] text-slate-700">
-                                  {opt.label}
-                                </span>
-                              </div>
-                              {isSelected && (
-                                <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                              )}
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-mono text-[10px] shrink-0 border border-emerald-200">
+                                Use
+                              </span>
+                              <span className="truncate text-[11px]">
+                                Use &ldquo;{searchQuery.trim().toUpperCase()}&rdquo; as project code
+                              </span>
                             </button>
-                          );
-                        })
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setQuickCode(
+                                  searchQuery.trim().toUpperCase(),
+                                );
+                                setQuickLabel("");
+                                setQuickError(null);
+                                setIsDropdownOpen(false);
+                                setShowQuickAddModal(true);
+                              }}
+                              className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-slate-100 text-[#006837] font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                            >
+                              <Plus className="h-3.5 w-3.5 text-[#006837]" />
+                              <span className="text-[11px]">
+                                + Add &ldquo;{searchQuery.trim().toUpperCase()}&rdquo; to system
+                              </span>
+                            </button>
+                          </div>
+                        )}
+
+                      {filteredCodes.length === 0 && !searchQuery.trim() && (
+                        <div className="py-4 px-2 text-center text-xs text-slate-400">
+                          No project codes found.
+                        </div>
                       )}
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-1.5 flex items-center justify-between text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          setIsCustomCode(true);
+                        }}
+                        className="text-slate-500 hover:text-slate-800 font-medium cursor-pointer"
+                      >
+                        Enter code manually...
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickCode("");
+                          setQuickLabel("");
+                          setQuickError(null);
+                          setIsDropdownOpen(false);
+                          setShowQuickAddModal(true);
+                        }}
+                        className="text-[#006837] hover:text-[#00552c] font-semibold cursor-pointer flex items-center gap-0.5"
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>Add new code</span>
+                      </button>
                     </div>
                   </div>
                 )}

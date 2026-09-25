@@ -326,6 +326,8 @@ export function ProjectsManagementView({
       } else {
         // Create Project on backend
         let projectSavedOnBackend = false;
+        let targetSectorId: string | undefined;
+        let targetFsId: string | undefined;
         try {
           const [secLookupList, fundLookupList] = await Promise.all([
             fetchLookups("SECTOR"),
@@ -338,75 +340,88 @@ export function ProjectsManagementView({
               !id.startsWith("sec-") &&
               !id.startsWith("fs-") &&
               !id.startsWith("pm-") &&
+              !id.startsWith("off-") &&
               !id.startsWith("custom-") &&
               !id.startsWith("proj-code-") &&
               id.length > 5
             );
           };
 
+          const norm = (s?: string) =>
+            (s || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+
           // Find real DB sector lookup, or create one in the backend
-          let targetSectorId = secLookupList.find(
+          targetSectorId = secLookupList.find(
             (s) =>
               isRealId(s.id) &&
-              (s.label.toLowerCase() === savedProject.sector.toLowerCase() ||
-                s.code.toLowerCase() === savedProject.sector.toLowerCase()),
+              (norm(s.label) === norm(savedProject.sector) ||
+                norm(s.code) === norm(savedProject.sector) ||
+                norm(s.label).includes(norm(savedProject.sector)) ||
+                norm(savedProject.sector).includes(norm(s.label))),
           )?.id;
 
           if (!targetSectorId) {
             const anyRealSec = secLookupList.find((s) => isRealId(s.id));
-            if (anyRealSec) {
-              targetSectorId = anyRealSec.id;
-            } else {
-              try {
-                const newSec = await createLookup({
-                  type: "SECTOR",
-                  code:
-                    savedProject.sector
-                      .replace(/[^A-Za-z0-9]/g, "_")
-                      .toUpperCase()
-                      .slice(0, 10) || "SEC_GEN",
-                  label: savedProject.sector || "General Sector",
-                });
-                if (isRealId(newSec.id)) targetSectorId = newSec.id;
-              } catch {}
+            try {
+              const newSec = await createLookup({
+                type: "SECTOR",
+                code:
+                  savedProject.sector
+                    .replace(/[^A-Za-z0-9]/g, "_")
+                    .toUpperCase()
+                    .slice(0, 10) || "SEC_GEN",
+                label: savedProject.sector || "General Sector",
+              });
+              if (newSec && isRealId(newSec.id)) {
+                targetSectorId = newSec.id;
+              } else if (anyRealSec) {
+                targetSectorId = anyRealSec.id;
+              }
+            } catch {
+              if (anyRealSec) targetSectorId = anyRealSec.id;
             }
           }
 
           // Find real DB funding source lookup, or create one in the backend
-          // Use the first funding source as the primary DB reference
           const primaryFundingSource =
             savedProject.fundingSource.split(",")[0]?.trim() ||
             savedProject.fundingSource;
-          let targetFsId = fundLookupList.find(
+          targetFsId = fundLookupList.find(
             (f) =>
               isRealId(f.id) &&
-              (f.label
-                .toLowerCase()
-                .includes(primaryFundingSource.toLowerCase()) ||
-                f.code
-                  .toLowerCase()
-                  .includes(primaryFundingSource.toLowerCase())),
+              (norm(f.label) === norm(primaryFundingSource) ||
+                norm(f.code) === norm(primaryFundingSource) ||
+                norm(f.label).includes(norm(primaryFundingSource)) ||
+                norm(primaryFundingSource).includes(norm(f.label))),
           )?.id;
 
           if (!targetFsId) {
             const anyRealFs = fundLookupList.find((f) => isRealId(f.id));
-            if (anyRealFs) {
-              targetFsId = anyRealFs.id;
-            } else {
-              try {
-                const newFs = await createLookup({
-                  type: "FUNDING_SOURCE",
-                  code:
-                    primaryFundingSource
-                      .replace(/[^A-Za-z0-9]/g, "_")
-                      .toUpperCase()
-                      .slice(0, 10) || "FS_GEN",
-                  label: primaryFundingSource || "General Funding",
-                });
-                if (isRealId(newFs.id)) targetFsId = newFs.id;
-              } catch {}
+            try {
+              const newFs = await createLookup({
+                type: "FUNDING_SOURCE",
+                code:
+                  primaryFundingSource
+                    .replace(/[^A-Za-z0-9]/g, "_")
+                    .toUpperCase()
+                    .slice(0, 10) || "FS_GEN",
+                label: primaryFundingSource || "General Funding",
+              });
+              if (newFs && isRealId(newFs.id)) {
+                targetFsId = newFs.id;
+              } else if (anyRealFs) {
+                targetFsId = anyRealFs.id;
+              }
+            } catch {
+              if (anyRealFs) targetFsId = anyRealFs.id;
             }
           }
+
+          const parseDateIso = (d?: string) => {
+            if (!d) return undefined;
+            const parsed = new Date(d);
+            return !isNaN(parsed.getTime()) ? parsed.toISOString() : undefined;
+          };
 
           if (targetSectorId && targetFsId) {
             const result = await createProject({
@@ -423,12 +438,8 @@ export function ProjectsManagementView({
               components: savedProject.components,
               subcomponents: savedProject.subcomponents,
               baseCurrency: savedProject.currency,
-              projectStartDate: savedProject.startDate
-                ? new Date(savedProject.startDate).toISOString()
-                : undefined,
-              projectEndDate: savedProject.endDate
-                ? new Date(savedProject.endDate).toISOString()
-                : undefined,
+              projectStartDate: parseDateIso(savedProject.startDate),
+              projectEndDate: parseDateIso(savedProject.endDate),
             });
 
             if (result && result.id) {
@@ -440,7 +451,21 @@ export function ProjectsManagementView({
               ) {
                 for (const off of savedProject.assignedOfficers) {
                   try {
-                    await assignOfficerToProject(result.id, off.id);
+                    let targetOfficerId = off.id;
+                    if (!isRealId(targetOfficerId)) {
+                      const matched = availableOfficers.find(
+                        (ao) =>
+                          isRealId(ao.id) &&
+                          (ao.email?.toLowerCase() === off.email?.toLowerCase() ||
+                            norm(ao.name) === norm(off.name)),
+                      );
+                      if (matched) {
+                        targetOfficerId = matched.id;
+                      }
+                    }
+                    if (isRealId(targetOfficerId)) {
+                      await assignOfficerToProject(result.id, targetOfficerId);
+                    }
                   } catch (assignErr) {
                     console.warn("Assign officer note:", assignErr);
                   }
@@ -454,17 +479,25 @@ export function ProjectsManagementView({
 
         if (projectSavedOnBackend) {
           await loadData();
+          showToast(
+            `New sector project "${savedProject.code}" registered and officer assigned!`,
+          );
         } else {
-          // Optimistic local state fallback: ensures project appears in the table immediately
+          // If backend saving failed, inform the user clearly
+          const reason = !targetSectorId
+            ? "Could not resolve valid sector lookup in database"
+            : !targetFsId
+              ? "Could not resolve valid funding source lookup in database"
+              : "Backend server rejected project creation";
+          console.error("Project registration failure:", reason);
+          showToast(
+            `Warning: Could not save project to server (${reason}). Showing in-memory draft.`,
+          );
           setProjects((prev) => [
             savedProject,
             ...prev.filter((p) => p.code !== savedProject.code),
           ]);
         }
-
-        showToast(
-          `New sector project "${savedProject.code}" registered and officer assigned!`,
-        );
       }
     } finally {
       setEditingProject(null);

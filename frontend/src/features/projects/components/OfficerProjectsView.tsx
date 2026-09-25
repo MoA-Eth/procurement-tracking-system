@@ -390,15 +390,25 @@ export function OfficerProjectsView({
   const allProjects = useMemo(() => {
     // Merge backend plans into each project
     return backendProjects.map((proj) => {
+      const projCode = (proj.code || "").toLowerCase().trim();
+      const projId = (proj.id || "").toLowerCase().trim();
+      const projName = (proj.name || "").toLowerCase().trim();
+
       const matchingBackendPlans = backendPlans
-        .filter(
-          (bp) =>
-            bp.project?.code === proj.code ||
-            bp.projectId === proj.code ||
-            (Boolean(proj.id) && bp.projectId === proj.id) ||
-            (Boolean(proj.id) && bp.project?.id === proj.id) ||
-            (bp.project && bp.project.name === proj.name),
-        )
+        .filter((bp) => {
+          const bpCode = (bp.project?.code || "").toLowerCase().trim();
+          const bpProjId = (bp.projectId || bp.project?.id || "")
+            .toLowerCase()
+            .trim();
+          const bpName = (bp.project?.name || "").toLowerCase().trim();
+
+          return (
+            (bpCode && projCode && bpCode === projCode) ||
+            (bpProjId && projCode && bpProjId === projCode) ||
+            (bpProjId && projId && bpProjId === projId) ||
+            (bpName && projName && bpName === projName)
+          );
+        })
         .map(mapBackendPlanToOfficerPlanSummary);
 
       if (matchingBackendPlans.length === 0) return proj;
