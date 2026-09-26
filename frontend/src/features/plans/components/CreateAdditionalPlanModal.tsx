@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   PlusCircle,
@@ -11,6 +11,11 @@ import {
 } from "lucide-react";
 import type { ProcurementPlanSummary } from "@/features/projects/data/officerProjects";
 import type { ProcurementActivitySummary } from "@/features/projects/data/officerActivityDrafts";
+import {
+  fetchLookups,
+  getInitialLookups,
+  subscribeToLookups,
+} from "@/lib/lookupsApi";
 
 interface CreateAdditionalPlanModalProps {
   isOpen: boolean;
@@ -29,7 +34,7 @@ interface CreateAdditionalPlanModalProps {
   }) => Promise<void> | void;
 }
 
-const PROCUREMENT_METHODS = [
+const DEFAULT_PROCUREMENT_METHODS = [
   "RFB - National",
   "RFB - International",
   "RFQ - Shopping",
@@ -51,7 +56,42 @@ export function CreateAdditionalPlanModal({
 }: CreateAdditionalPlanModalProps) {
   const [justification, setJustification] = useState("");
   const [activityDescription, setActivityDescription] = useState("");
-  const [method, setMethod] = useState(PROCUREMENT_METHODS[0]);
+  const [methodOptions, setMethodOptions] = useState<string[]>(() => {
+    const list = getInitialLookups("PROCUREMENT_METHOD");
+    if (list && list.length > 0) {
+      return Array.from(
+        new Set([...list.map((m) => m.label), ...DEFAULT_PROCUREMENT_METHODS]),
+      );
+    }
+    return DEFAULT_PROCUREMENT_METHODS;
+  });
+  const [method, setMethod] = useState(
+    () => methodOptions[0] || DEFAULT_PROCUREMENT_METHODS[0],
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadMethods() {
+      try {
+        const list = await fetchLookups("PROCUREMENT_METHOD");
+        if (isMounted && Array.isArray(list) && list.length > 0) {
+          const labels = list.map((m) => m.label);
+          setMethodOptions(
+            Array.from(new Set([...labels, ...DEFAULT_PROCUREMENT_METHODS])),
+          );
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    loadMethods();
+
+    const unsub = subscribeToLookups(loadMethods);
+    return () => {
+      isMounted = false;
+      unsub();
+    };
+  }, []);
   const [estimatedBudget, setEstimatedBudget] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -269,7 +309,7 @@ export function CreateAdditionalPlanModal({
                   onChange={(e) => setMethod(e.target.value)}
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer"
                 >
-                  {PROCUREMENT_METHODS.map((m) => (
+                  {methodOptions.map((m) => (
                     <option key={m} value={m}>
                       {m}
                     </option>

@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   X,
   Banknote,
+  CircleDollarSign,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/authTypes";
 import {
@@ -36,7 +37,8 @@ type TabType =
   | "SECTOR"
   | "FUNDING_SOURCE"
   | "FUNDING_TYPE"
-  | "PROCUREMENT_METHOD";
+  | "PROCUREMENT_METHOD"
+  | "CURRENCY";
 
 const TAB_CONFIGS: {
   type: TabType;
@@ -78,6 +80,13 @@ const TAB_CONFIGS: {
     icon: FileSpreadsheet,
     description: "Approved procurement selection and bidding methods.",
   },
+  {
+    type: "CURRENCY",
+    label: "Base Currencies",
+    icon: CircleDollarSign,
+    description:
+      "Configured transaction and reporting currencies (e.g. ETB, USD, EUR, UA).",
+  },
 ];
 
 const TAB_PLACEHOLDERS: Record<TabType, { code: string; label: string }> = {
@@ -101,6 +110,10 @@ const TAB_PLACEHOLDERS: Record<TabType, { code: string; label: string }> = {
     code: "e.g. PM_RFQ, PM_NCB, PM_QCBS",
     label: "e.g. Request for Quotations (RFQ), Quality and Cost-Based Selection (QCBS)",
   },
+  CURRENCY: {
+    code: "e.g. ETB, USD, EUR, UA, GBP",
+    label: "e.g. ETB (Ethiopian Birr), USD (United States Dollar)",
+  },
 };
 
 export function SettingsManagementView({
@@ -119,6 +132,7 @@ export function SettingsManagementView({
     FUNDING_SOURCE: 0,
     FUNDING_TYPE: 0,
     PROCUREMENT_METHOD: 0,
+    CURRENCY: 0,
   });
 
   // Form states (Add)
@@ -167,13 +181,13 @@ export function SettingsManagementView({
         FUNDING_SOURCE: 0,
         FUNDING_TYPE: 0,
         PROCUREMENT_METHOD: 0,
+        CURRENCY: 0,
       };
       all.forEach((item) => {
         if (counts[item.type as TabType] !== undefined) {
           counts[item.type as TabType]++;
         }
       });
-      setTabCounts(counts);
     } catch {
       // Fallback
     }

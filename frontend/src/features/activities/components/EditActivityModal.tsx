@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Save, Edit3, DollarSign } from "lucide-react";
 import type { ProcurementActivitySummary } from "@/features/projects/data/officerActivityDrafts";
 import type { ProcurementPlanSummary } from "@/features/projects/data/officerProjects";
@@ -14,6 +14,11 @@ import {
   updateActivity,
   resolveProcurementMethodId,
 } from "@/lib/activitiesApi";
+import {
+  fetchLookups,
+  getInitialLookups,
+  subscribeToLookups,
+} from "@/lib/lookupsApi";
 
 interface EditActivityModalProps {
   isOpen: boolean;
@@ -25,6 +30,20 @@ interface EditActivityModalProps {
   userRole?: string;
   userName?: string;
 }
+
+const DEFAULT_METHODS = [
+  "RFB - National",
+  "RFB - International",
+  "RFQ / Shopping",
+  "Direct Procurement",
+  "QCBS",
+  "FBS",
+  "LCS",
+  "CQS",
+  "Individual Consultant",
+];
+
+const DEFAULT_CURRENCIES = ["ETB", "USD", "EUR", "UA"];
 
 export function EditActivityModal({
   isOpen,
@@ -44,6 +63,60 @@ export function EditActivityModal({
   const [currency, setCurrency] = useState(
     activity.details?.form?.currency || plan.currency || "ETB",
   );
+
+  const [methodOptions, setMethodOptions] = useState<string[]>(() => {
+    const list = getInitialLookups("PROCUREMENT_METHOD");
+    if (list && list.length > 0) {
+      return Array.from(
+        new Set([...list.map((m) => m.label), ...DEFAULT_METHODS]),
+      );
+    }
+    return DEFAULT_METHODS;
+  });
+
+  const [currencyOptions, setCurrencyOptions] = useState<string[]>(() => {
+    const list = getInitialLookups("CURRENCY");
+    if (list && list.length > 0) {
+      return Array.from(
+        new Set([...list.map((c) => c.code), ...DEFAULT_CURRENCIES]),
+      );
+    }
+    return DEFAULT_CURRENCIES;
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    async function load() {
+      try {
+        const [methods, currs] = await Promise.all([
+          fetchLookups("PROCUREMENT_METHOD"),
+          fetchLookups("CURRENCY"),
+        ]);
+        if (isMounted) {
+          if (Array.isArray(methods) && methods.length > 0) {
+            setMethodOptions(
+              Array.from(
+                new Set([...methods.map((m) => m.label), ...DEFAULT_METHODS]),
+              ),
+            );
+          }
+          if (Array.isArray(currs) && currs.length > 0) {
+            setCurrencyOptions(
+              Array.from(
+                new Set([...currs.map((c) => c.code), ...DEFAULT_CURRENCIES]),
+              ),
+            );
+          }
+        }
+      } catch {}
+    }
+    load();
+    const unsub = subscribeToLookups(load);
+    return () => {
+      isMounted = false;
+      unsub();
+    };
+  }, []);
   const [fundingSource, setFundingSource] = useState(
     activity.details?.form?.fundingSource || "African Development Bank (AfDB)",
   );
@@ -268,9 +341,11 @@ export function EditActivityModal({
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
               >
-                <option value="ETB">ETB (Ethiopian Birr)</option>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
+                {currencyOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -285,17 +360,11 @@ export function EditActivityModal({
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
               >
-                <option value="RFB - National">RFB - National</option>
-                <option value="RFB - International">RFB - International</option>
-                <option value="RFQ / Shopping">RFQ / Shopping</option>
-                <option value="Direct Procurement">Direct Procurement</option>
-                <option value="QCBS">QCBS</option>
-                <option value="FBS">FBS</option>
-                <option value="LCS">LCS</option>
-                <option value="CQS">CQS</option>
-                <option value="Individual Consultant">
-                  Individual Consultant
-                </option>
+                {methodOptions.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
               </select>
             </div>
 

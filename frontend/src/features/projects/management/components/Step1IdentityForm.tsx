@@ -43,35 +43,53 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
   const [projectCodeOptions, setProjectCodeOptions] = useState<LookupItem[]>(
     () => getInitialLookups("PROJECT_CODE"),
   );
+  const [sectorOptions, setSectorOptions] = useState<LookupItem[]>(
+    () => getInitialLookups("SECTOR"),
+  );
   const [isCustomCode, setIsCustomCode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Quick-Add Modal state
+  // Quick-Add Project Code Modal state
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [quickCode, setQuickCode] = useState("");
   const [quickLabel, setQuickLabel] = useState("");
   const [quickError, setQuickError] = useState<string | null>(null);
   const [isQuickSubmitting, setIsQuickSubmitting] = useState(false);
 
+  // Quick-Add Sector Modal state
+  const [showQuickAddSectorModal, setShowQuickAddSectorModal] = useState(false);
+  const [quickSectorCode, setQuickSectorCode] = useState("");
+  const [quickSectorLabel, setQuickSectorLabel] = useState("");
+  const [quickSectorError, setQuickSectorError] = useState<string | null>(null);
+  const [isQuickSectorSubmitting, setIsQuickSectorSubmitting] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
-    async function loadCodes() {
+    async function loadData() {
       try {
-        const list = await fetchLookups("PROJECT_CODE");
-        if (isMounted && list && list.length > 0) {
-          setProjectCodeOptions(list);
+        const [codeList, sectorList] = await Promise.all([
+          fetchLookups("PROJECT_CODE"),
+          fetchLookups("SECTOR"),
+        ]);
+        if (isMounted) {
+          if (codeList && codeList.length > 0) {
+            setProjectCodeOptions(codeList);
+          }
+          if (sectorList && sectorList.length > 0) {
+            setSectorOptions(sectorList);
+          }
         }
       } catch {
         // Fallback handled by API
       }
     }
-    loadCodes();
+    loadData();
 
     // Subscribe to cross-tab and in-app lookups updates
     const unsubscribe = subscribeToLookups(() => {
-      loadCodes();
+      loadData();
     });
 
     return () => {
@@ -184,6 +202,59 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
     }
   };
 
+  const displayedSectors = useMemo(() => {
+    const list = sectorOptions.map((s) => s.label);
+    if (data.sector && !list.includes(data.sector)) {
+      return [data.sector, ...list];
+    }
+    return list;
+  }, [sectorOptions, data.sector]);
+
+  const handleQuickAddSectorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanLabel = quickSectorLabel.trim();
+    const cleanCode =
+      quickSectorCode.trim().toUpperCase() ||
+      `SEC_${cleanLabel.replace(/[^A-Za-z0-9]/g, "_").toUpperCase().slice(0, 15)}`;
+
+    if (!cleanLabel) {
+      setQuickSectorError("Please provide the sector / directorate name.");
+      return;
+    }
+
+    if (
+      sectorOptions.some(
+        (s) =>
+          s.code.trim().toUpperCase() === cleanCode ||
+          s.label.trim().toLowerCase() === cleanLabel.toLowerCase(),
+      )
+    ) {
+      setQuickSectorError(`Sector "${cleanLabel}" already exists.`);
+      return;
+    }
+
+    setIsQuickSectorSubmitting(true);
+    setQuickSectorError(null);
+
+    try {
+      const created = await createLookup({
+        type: "SECTOR",
+        code: cleanCode,
+        label: cleanLabel,
+      });
+
+      setSectorOptions((prev) => [created, ...prev]);
+      onChange({ sector: created.label });
+      setQuickSectorCode("");
+      setQuickSectorLabel("");
+      setShowQuickAddSectorModal(false);
+    } catch (err: any) {
+      setQuickSectorError(err?.message || "Failed to create sector.");
+    } finally {
+      setIsQuickSectorSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -249,11 +320,19 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
             ) : (
               <div className="relative">
                 {/* Combobox Trigger */}
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
                     setIsDropdownOpen(!isDropdownOpen);
                     setSearchQuery("");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setIsDropdownOpen(!isDropdownOpen);
+                      setSearchQuery("");
+                    }
                   }}
                   className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-900 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all flex items-center justify-between text-left cursor-pointer hover:border-slate-300"
                 >
@@ -300,7 +379,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                       }`}
                     />
                   </div>
-                </button>
+                </div>
 
                 {/* Combobox Floating Menu */}
                 {isDropdownOpen && (
@@ -560,15 +639,31 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
           {/* Sector */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-800 block">
-              Sector / Directorate *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-800 block">
+                Sector / Directorate *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuickSectorError(null);
+                  setQuickSectorCode("");
+                  setQuickSectorLabel("");
+                  setShowQuickAddSectorModal(true);
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                title="Quick-add a new sector if not on the list"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Add Sector</span>
+              </button>
+            </div>
             <select
               value={data.sector}
               onChange={(e) => onChange({ sector: e.target.value })}
               className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 outline-none cursor-pointer transition-all"
             >
-              {SECTOR_OPTIONS.map((sec) => (
+              {displayedSectors.map((sec) => (
                 <option key={sec} value={sec}>
                   {sec}
                 </option>
@@ -654,6 +749,89 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                   className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isQuickSubmitting ? "Saving..." : "Save & Select"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick-Add Sector Modal */}
+      {showQuickAddSectorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Quick-Add Sector / Directorate
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Saves to system and immediately selects in this wizard
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuickAddSectorModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {quickSectorError && (
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{quickSectorError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleQuickAddSectorSubmit} className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-800 block">
+                  Sector Code (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={quickSectorCode}
+                  onChange={(e) => setQuickSectorCode(e.target.value)}
+                  placeholder="e.g. SEC_COFFEE, SEC_HORT"
+                  autoFocus
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-800 block">
+                  Sector / Directorate Full Name *
+                </label>
+                <input
+                  type="text"
+                  value={quickSectorLabel}
+                  onChange={(e) => setQuickSectorLabel(e.target.value)}
+                  placeholder="e.g. Coffee and Tea Development Authority"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAddSectorModal(false)}
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isQuickSectorSubmitting}
+                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isQuickSectorSubmitting ? "Saving..." : "Save & Select"}
                 </button>
               </div>
             </form>

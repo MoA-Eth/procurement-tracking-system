@@ -3,6 +3,7 @@ import type {
   ProcurementCategory,
   ProcurementPlanSummary,
 } from "./officerProjects";
+import { getInitialLookups } from "@/lib/lookupsApi";
 
 export type ProcurementActivityCategory = ProcurementCategory;
 
@@ -16,7 +17,8 @@ export type ProcurementMethodKey =
   | "fbs"
   | "lcs"
   | "cqs"
-  | "indv";
+  | "indv"
+  | (string & {});
 
 export interface ProcurementMethodOption {
   appliesTo: readonly ProcurementActivityCategory[];
@@ -247,8 +249,67 @@ export function normalizeActivityCategory(
   return "Goods";
 }
 
+export function getAllProcurementMethodOptions(): readonly ProcurementMethodOption[] {
+  const options = [...procurementMethodOptions];
+
+  try {
+    const dynamicLookups = getInitialLookups("PROCUREMENT_METHOD");
+    if (dynamicLookups && dynamicLookups.length > 0) {
+      for (const item of dynamicLookups) {
+        if (!item.isActive) continue;
+        const itemCode = (item.code || "").toUpperCase();
+        const itemLabel = (item.label || "").trim();
+        if (!itemLabel) continue;
+
+        const exists = options.some(
+          (opt) =>
+            opt.key.toUpperCase() === itemCode ||
+            opt.label.toLowerCase() === itemLabel.toLowerCase(),
+        );
+
+        if (!exists) {
+          const isConsulting =
+            itemLabel.toLowerCase().includes("consult") ||
+            itemCode.includes("QCBS") ||
+            itemCode.includes("CQS") ||
+            itemCode.includes("INDV");
+
+          const roadmap: ProcurementMethodOption["roadmap"] = isConsulting
+            ? "consulting"
+            : itemLabel.toLowerCase().includes("quotation") ||
+                itemCode.includes("RFQ")
+              ? "rfq"
+              : itemLabel.toLowerCase().includes("direct") ||
+                  itemCode.includes("DIR") ||
+                  itemCode.includes("SSS")
+                ? "direct"
+                : "rfb";
+
+          options.push({
+            key: item.code.toLowerCase().replace(/[^a-z0-9]/g, "-") as any,
+            label: item.label,
+            appliesTo: isConsulting
+              ? ["Consultancy Services"]
+              : [
+                  "Goods",
+                  "Works",
+                  "Non-Consulting Services",
+                  "Consultancy Services",
+                ],
+            roadmap,
+          });
+        }
+      }
+    }
+  } catch {
+    // Fallback gracefully
+  }
+
+  return options;
+}
+
 export function methodsForCategory(category: ProcurementActivityCategory) {
-  return procurementMethodOptions.filter((method) =>
+  return getAllProcurementMethodOptions().filter((method) =>
     method.appliesTo.includes(category),
   );
 }
@@ -257,21 +318,22 @@ export function resolveProcurementMethodOption(
   methodOrKeyOrLabel?: string,
 ): ProcurementMethodOption | undefined {
   if (!methodOrKeyOrLabel) return undefined;
+  const allOptions = getAllProcurementMethodOptions();
   const needle = methodOrKeyOrLabel.trim().toLowerCase();
 
   // 1. Direct match by key
-  const byKey = procurementMethodOptions.find((opt) => opt.key === needle);
+  const byKey = allOptions.find((opt) => opt.key === needle);
   if (byKey) return byKey;
 
   // 2. Direct match by label
-  const byLabel = procurementMethodOptions.find(
+  const byLabel = allOptions.find(
     (opt) => opt.label.toLowerCase() === needle,
   );
   if (byLabel) return byLabel;
 
   // 3. Clean alphanumeric match (e.g. "rfb national" -> "rfbnational")
   const clean = needle.replace(/[^a-z0-9]/g, "");
-  const byClean = procurementMethodOptions.find(
+  const byClean = allOptions.find(
     (opt) =>
       opt.key.replace(/[^a-z0-9]/g, "") === clean ||
       opt.label.toLowerCase().replace(/[^a-z0-9]/g, "") === clean,
@@ -279,7 +341,7 @@ export function resolveProcurementMethodOption(
   if (byClean) return byClean;
 
   // 4. Substring / partial matching
-  const byPartial = procurementMethodOptions.find((opt) => {
+  const byPartial = allOptions.find((opt) => {
     const optClean = opt.key.replace(/[^a-z0-9]/g, "");
     const optLabelClean = opt.label.toLowerCase().replace(/[^a-z0-9]/g, "");
     return (
@@ -294,40 +356,40 @@ export function resolveProcurementMethodOption(
   // 5. Common acronym / prefix mappings
   if (needle.startsWith("rfb") || needle.includes("bids")) {
     return needle.includes("inter")
-      ? procurementMethodOptions.find((opt) => opt.key === "rfb-international")
-      : procurementMethodOptions.find((opt) => opt.key === "rfb-national");
+      ? allOptions.find((opt) => opt.key === "rfb-international")
+      : allOptions.find((opt) => opt.key === "rfb-national");
   }
   if (
     needle.startsWith("rfq") ||
     needle.includes("quotation") ||
     needle.includes("shopping")
   ) {
-    return procurementMethodOptions.find((opt) => opt.key === "rfq-shopping");
+    return allOptions.find((opt) => opt.key === "rfq-shopping");
   }
   if (needle.includes("direct")) {
-    return procurementMethodOptions.find((opt) => opt.key === "direct");
+    return allOptions.find((opt) => opt.key === "direct");
   }
   if (needle.includes("un") || needle.includes("unops")) {
-    return procurementMethodOptions.find((opt) => opt.key === "un-agency");
+    return allOptions.find((opt) => opt.key === "un-agency");
   }
   if (needle.includes("qcbs")) {
-    return procurementMethodOptions.find((opt) => opt.key === "qcbs");
+    return allOptions.find((opt) => opt.key === "qcbs");
   }
   if (needle.includes("fbs")) {
-    return procurementMethodOptions.find((opt) => opt.key === "fbs");
+    return allOptions.find((opt) => opt.key === "fbs");
   }
   if (needle.includes("lcs")) {
-    return procurementMethodOptions.find((opt) => opt.key === "lcs");
+    return allOptions.find((opt) => opt.key === "lcs");
   }
   if (needle.includes("cqs")) {
-    return procurementMethodOptions.find((opt) => opt.key === "cqs");
+    return allOptions.find((opt) => opt.key === "cqs");
   }
   if (
     needle.includes("indv") ||
     needle.includes("ics") ||
     needle.includes("individual")
   ) {
-    return procurementMethodOptions.find((opt) => opt.key === "indv");
+    return allOptions.find((opt) => opt.key === "indv");
   }
 
   return undefined;

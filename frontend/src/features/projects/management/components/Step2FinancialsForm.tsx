@@ -258,6 +258,9 @@ export function Step2FinancialsForm({
   const [fundingTypeOptions, setFundingTypeOptions] = useState<
     LookupItem[]
   >(() => getInitialLookups("FUNDING_TYPE"));
+  const [currencyOptions, setCurrencyOptions] = useState<
+    LookupItem[]
+  >(() => getInitialLookups("CURRENCY"));
 
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [quickCode, setQuickCode] = useState("");
@@ -272,13 +275,21 @@ export function Step2FinancialsForm({
   const [quickTypeError, setQuickTypeError] = useState<string | null>(null);
   const [isQuickTypeSubmitting, setIsQuickTypeSubmitting] = useState(false);
 
+  // Quick-Add Currency modal state
+  const [showQuickAddCurrencyModal, setShowQuickAddCurrencyModal] = useState(false);
+  const [quickCurrencyCode, setQuickCurrencyCode] = useState("");
+  const [quickCurrencyLabel, setQuickCurrencyLabel] = useState("");
+  const [quickCurrencyError, setQuickCurrencyError] = useState<string | null>(null);
+  const [isQuickCurrencySubmitting, setIsQuickCurrencySubmitting] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
     async function loadLookups() {
       try {
-        const [sourceList, typeList] = await Promise.all([
+        const [sourceList, typeList, currencyList] = await Promise.all([
           fetchLookups("FUNDING_SOURCE"),
           fetchLookups("FUNDING_TYPE"),
+          fetchLookups("CURRENCY"),
         ]);
         if (isMounted) {
           if (sourceList && sourceList.length > 0) {
@@ -286,6 +297,9 @@ export function Step2FinancialsForm({
           }
           if (typeList && typeList.length > 0) {
             setFundingTypeOptions(typeList);
+          }
+          if (currencyList && currencyList.length > 0) {
+            setCurrencyOptions(currencyList);
           }
         }
       } catch {
@@ -423,6 +437,63 @@ export function Step2FinancialsForm({
     }
   };
 
+  const displayedCurrencies = useMemo(() => {
+    const list = currencyOptions.map((c) => c.label);
+    if (data.currency && !list.includes(data.currency)) {
+      return [data.currency, ...list];
+    }
+    return list;
+  }, [currencyOptions, data.currency]);
+
+  const handleQuickAddCurrencySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanCode = quickCurrencyCode.trim().toUpperCase();
+    const cleanLabelInput = quickCurrencyLabel.trim();
+
+    if (!cleanCode) {
+      setQuickCurrencyError("Please provide a currency code (e.g. GBP, CAD, JPY).");
+      return;
+    }
+
+    const cleanLabel = cleanLabelInput
+      ? cleanLabelInput.startsWith(cleanCode)
+        ? cleanLabelInput
+        : `${cleanCode} (${cleanLabelInput})`
+      : `${cleanCode} (${cleanCode})`;
+
+    if (
+      currencyOptions.some(
+        (c) =>
+          c.code.trim().toUpperCase() === cleanCode ||
+          c.label.trim().toLowerCase() === cleanLabel.toLowerCase(),
+      )
+    ) {
+      setQuickCurrencyError(`Currency "${cleanCode}" already exists.`);
+      return;
+    }
+
+    setIsQuickCurrencySubmitting(true);
+    setQuickCurrencyError(null);
+
+    try {
+      const created = await createLookup({
+        type: "CURRENCY",
+        code: cleanCode,
+        label: cleanLabel,
+      });
+
+      setCurrencyOptions((prev) => [created, ...prev]);
+      onChange({ currency: created.label });
+      setQuickCurrencyCode("");
+      setQuickCurrencyLabel("");
+      setShowQuickAddCurrencyModal(false);
+    } catch (err: any) {
+      setQuickCurrencyError(err?.message || "Failed to create currency.");
+    } finally {
+      setIsQuickCurrencySubmitting(false);
+    }
+  };
+
   const hasCustomDonor = data.fundingSources.includes(
     "Other (Specify Custom Donor)",
   );
@@ -535,15 +606,31 @@ export function Step2FinancialsForm({
         {/* Currency Selection */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-800 block">
-              Primary Base Currency *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-800 block">
+                Primary Base Currency *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuickCurrencyError(null);
+                  setQuickCurrencyCode("");
+                  setQuickCurrencyLabel("");
+                  setShowQuickAddCurrencyModal(true);
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                title="Quick-add a new currency"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Add Currency</span>
+              </button>
+            </div>
             <select
               value={data.currency}
               onChange={(e) => onChange({ currency: e.target.value })}
               className="w-full rounded-xl bg-slate-50/80 border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 outline-none cursor-pointer transition-all"
             >
-              {CURRENCY_OPTIONS.map((c) => (
+              {displayedCurrencies.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
@@ -767,6 +854,89 @@ export function Step2FinancialsForm({
                   className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isQuickTypeSubmitting ? "Saving..." : "Save & Select"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick-Add Currency Modal */}
+      {showQuickAddCurrencyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Quick-Add Base Currency
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Saves to system and immediately selects in this wizard
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuickAddCurrencyModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {quickCurrencyError && (
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{quickCurrencyError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleQuickAddCurrencySubmit} className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-800 block">
+                  Currency Code (ISO) *
+                </label>
+                <input
+                  type="text"
+                  value={quickCurrencyCode}
+                  onChange={(e) => setQuickCurrencyCode(e.target.value)}
+                  placeholder="e.g. GBP, CAD, JPY, SDR"
+                  autoFocus
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-800 block">
+                  Display Name / Description (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={quickCurrencyLabel}
+                  onChange={(e) => setQuickCurrencyLabel(e.target.value)}
+                  placeholder="e.g. British Pound, Canadian Dollar"
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAddCurrencyModal(false)}
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isQuickCurrencySubmitting}
+                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isQuickCurrencySubmitting ? "Saving..." : "Save & Select"}
                 </button>
               </div>
             </form>

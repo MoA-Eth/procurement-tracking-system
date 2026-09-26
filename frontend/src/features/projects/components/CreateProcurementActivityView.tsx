@@ -20,11 +20,13 @@ import {
   methodsForCategory,
   normalizeActivityCategory,
   procurementMethodOptions,
+  getAllProcurementMethodOptions,
   roadmapForMethod,
   resolveMethodKey,
   resolveProcurementMethodOption,
   type ProcurementActivityCategory,
 } from "../data/procurementActivityConfig";
+import { fetchLookups, subscribeToLookups } from "@/lib/lookupsApi";
 import {
   ArrowLeft,
   ArrowRight,
@@ -135,9 +137,27 @@ export function CreateProcurementActivityView({
     }
   }, [initialActivity, project, plan, category]);
 
-  const methodOptions = useMemo(() => methodsForCategory(category), [category]);
-  const selectedMethod = procurementMethodOptions.find(
-    (method) => method.key === form.method,
+  const [lookupVersion, setLookupVersion] = useState(0);
+
+  useEffect(() => {
+    fetchLookups("PROCUREMENT_METHOD")
+      .then(() => {
+        setLookupVersion((v) => v + 1);
+      })
+      .catch(() => {});
+    const unsub = subscribeToLookups(() => {
+      setLookupVersion((v) => v + 1);
+    });
+    return () => unsub();
+  }, []);
+
+  const methodOptions = useMemo(
+    () => methodsForCategory(category),
+    [category, lookupVersion],
+  );
+  const selectedMethod = useMemo(
+    () => resolveProcurementMethodOption(form.method),
+    [form.method, lookupVersion],
   );
   const planHref =
     "/workspace/projects?project=" +

@@ -32,7 +32,7 @@ describe("SettingsManagementView", () => {
     );
   });
 
-  it("renders all four category tabs with counter badges", () => {
+  it("renders all category tabs including Funding Types and Base Currencies with counter badges", () => {
     const html = renderToStaticMarkup(
       <SettingsManagementView currentUser={mockDirectorUser} />,
     );
@@ -40,7 +40,9 @@ describe("SettingsManagementView", () => {
     expect(html).toContain("Project Short Codes");
     expect(html).toContain("Sectors");
     expect(html).toContain("Funding Sources");
+    expect(html).toContain("Funding Types");
     expect(html).toContain("Procurement Methods");
+    expect(html).toContain("Base Currencies");
   });
 
   it("renders the Add action button and table structure", () => {

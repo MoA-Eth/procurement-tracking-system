@@ -128,6 +128,7 @@ export interface ReplanStageInput {
 }
 
 import { apiClient } from "./apiClient";
+import { fetchLookups } from "./lookupsApi";
 
 // ── Procurement Method Lookup Cache ────────────────────────────────
 export interface ProcurementMethodLookup {
@@ -142,18 +143,21 @@ let _methodsCache: ProcurementMethodLookup[] | null = null;
 export async function fetchProcurementMethods(): Promise<
   ProcurementMethodLookup[]
 > {
-  if (_methodsCache) return _methodsCache;
   try {
-    const res = await apiClient.get<any>("/lookups", {
-      params: { type: "PROCUREMENT_METHOD" },
-    });
-    const list = res?.data || (Array.isArray(res) ? res : []);
-    _methodsCache = Array.isArray(list) ? list : [];
-    return _methodsCache;
+    const list = await fetchLookups("PROCUREMENT_METHOD");
+    if (Array.isArray(list) && list.length > 0) {
+      _methodsCache = list.map((l) => ({
+        id: l.id,
+        type: l.type,
+        code: l.code,
+        label: l.label,
+      }));
+      return _methodsCache;
+    }
   } catch (err) {
     console.warn("fetchProcurementMethods error:", err);
-    return [];
   }
+  return _methodsCache || [];
 }
 
 /**
