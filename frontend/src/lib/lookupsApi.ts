@@ -27,7 +27,7 @@ export interface OfficerUserItem {
 
 import { apiClient } from "./apiClient";
 
-const FALLBACK_LOOKUPS: LookupItem[] = [
+export const FALLBACK_LOOKUPS: LookupItem[] = [
   // Sectors (Standard Ministry of Agriculture Directorates & Sectors)
   {
     id: "sec-1",

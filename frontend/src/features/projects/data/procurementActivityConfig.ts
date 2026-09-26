@@ -430,19 +430,19 @@ export function activityReferenceFor(
     "Non-Consulting Services": "NCS",
     Works: "CW",
   }[category];
-  const methodSegment =
-    {
-      cqs: "CQS",
-      direct: "DIR",
-      fbs: "FBS",
-      indv: "INDV",
-      lcs: "LCS",
-      qcbs: "QCBS",
-      "rfb-international": "RFB",
-      "rfb-national": "RFB",
-      "rfq-shopping": "RFQ",
-      "un-agency": "UN",
-    }[methodKey as ProcurementMethodKey] ?? "TBD";
+  const methodSegmentMap: Record<string, string> = {
+    cqs: "CQS",
+    direct: "DIR",
+    fbs: "FBS",
+    indv: "INDV",
+    lcs: "LCS",
+    qcbs: "QCBS",
+    "rfb-international": "RFB",
+    "rfb-national": "RFB",
+    "rfq-shopping": "RFQ",
+    "un-agency": "UN",
+  };
+  const methodSegment = methodSegmentMap[methodKey] ?? "TBD";
   const uniqueNumber = String(existingActivityCount + 1).padStart(6, "0");
 
   return [
