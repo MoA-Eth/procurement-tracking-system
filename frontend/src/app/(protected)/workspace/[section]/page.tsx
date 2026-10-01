@@ -35,6 +35,7 @@ export default async function WorkspaceSectionPage({
     plan?: string | string[];
     planId?: string | string[];
     project?: string | string[];
+    status?: string | string[];
   }>;
 }) {
   const { section } = await params;
@@ -118,7 +119,14 @@ export default async function WorkspaceSectionPage({
   }
 
   if (section === "user-management") {
-    return <UserManagementView currentUser={session.user} />;
+    const initialStatus =
+      typeof query.status === "string" ? query.status : undefined;
+    return (
+      <UserManagementView
+        currentUser={session.user}
+        initialStatus={initialStatus}
+      />
+    );
   }
 
   if (section === "settings") {

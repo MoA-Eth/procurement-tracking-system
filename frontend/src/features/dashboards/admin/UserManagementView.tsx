@@ -51,6 +51,19 @@ import {
 interface UserManagementViewProps {
   initialMode?: "list" | "invite";
   currentUser?: AuthUser | null;
+  initialStatus?: string;
+}
+
+function normalizeStatusParam(param: string | null | undefined): string | null {
+  if (!param) return null;
+  const p = param.trim().toUpperCase();
+  if (p === "ALL") return "ALL";
+  if (p === "ACTIVE") return "Active";
+  if (p === "DEACTIVATED") return "Deactivated";
+  if (p === "DELETED") return "Deleted";
+  if (p === "CANCELLED" || p === "CANCELLED_INVITATION") return "Cancelled";
+  if (p === "INACTIVE" || p === "RESTRICTED") return "Inactive";
+  return param;
 }
 
 const PRISMA_ROLE_LABELS: Record<string, string> = {
@@ -212,6 +225,7 @@ const DEFAULT_USERS_RESPONSE: PaginatedResponse<ApiUser> = {
 export function UserManagementView({
   initialMode = "list",
   currentUser,
+  initialStatus,
 }: UserManagementViewProps) {
   const [viewMode, setViewMode] = useState<"list" | "invite">(initialMode);
   const [storedUser] = useState<AuthUser | null>(() =>
@@ -229,15 +243,51 @@ export function UserManagementView({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>(() => {
+    if (initialStatus) {
+      const normalized = normalizeStatusParam(initialStatus);
+      if (normalized) return normalized;
+    }
     if (typeof window !== "undefined") {
       try {
         const param = new URLSearchParams(window.location.search).get("status");
-        if (param) return param;
+        if (param) {
+          const normalized = normalizeStatusParam(param);
+          if (normalized) return normalized;
+        }
       } catch {}
     }
     return "Active";
   });
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Keep selectedStatus in sync if initialStatus prop or URL changes
+  useEffect(() => {
+    if (initialStatus) {
+      const normalized = normalizeStatusParam(initialStatus);
+      if (normalized) {
+        setSelectedStatus(normalized);
+        setCurrentPage(1);
+      }
+    }
+  }, [initialStatus]);
+
+  useEffect(() => {
+    const syncStatusFromUrl = () => {
+      try {
+        const param = new URLSearchParams(window.location.search).get("status");
+        if (param) {
+          const normalized = normalizeStatusParam(param);
+          if (normalized) {
+            setSelectedStatus(normalized);
+            setCurrentPage(1);
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener("popstate", syncStatusFromUrl);
+    return () => window.removeEventListener("popstate", syncStatusFromUrl);
+  }, []);
 
   // Invite Form State
   const [inviteFullName, setInviteFullName] = useState("");
@@ -350,12 +400,25 @@ export function UserManagementView({
         ADMIN: "Administrator",
       };
 
+      const isRestrictedFilter =
+        selectedStatus === "Deactivated" ||
+        selectedStatus === "Deleted" ||
+        selectedStatus === "Cancelled" ||
+        selectedStatus === "Inactive";
+
+      const isActiveParam =
+        selectedStatus === "Active"
+          ? true
+          : isRestrictedFilter
+            ? false
+            : undefined;
+
       const result = await fetchUsers({
         page: currentPage,
         pageSize: PAGE_SIZE,
         search: searchQuery || undefined,
         role: roleFilterMap[selectedRole],
-        isActive: selectedStatus === "Active" ? true : undefined,
+        isActive: isActiveParam,
       });
       setUsersResponse((prev) => {
         if (!prev) return result;
@@ -396,12 +459,25 @@ export function UserManagementView({
       ADMIN: "Administrator",
     };
 
+    const isRestrictedFilter =
+      selectedStatus === "Deactivated" ||
+      selectedStatus === "Deleted" ||
+      selectedStatus === "Cancelled" ||
+      selectedStatus === "Inactive";
+
+    const isActiveParam =
+      selectedStatus === "Active"
+        ? true
+        : isRestrictedFilter
+          ? false
+          : undefined;
+
     fetchUsers({
       page: currentPage,
       pageSize: PAGE_SIZE,
       search: searchQuery || undefined,
       role: roleFilterMap[selectedRole],
-      isActive: selectedStatus === "Active" ? true : undefined,
+      isActive: isActiveParam,
     })
       .then((result) => {
         if (active) {
@@ -464,6 +540,13 @@ export function UserManagementView({
   const handleStatusChange = (val: string) => {
     setSelectedStatus(val);
     setCurrentPage(1);
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set("status", val);
+        window.history.replaceState({}, "", url.toString());
+      } catch {}
+    }
   };
 
   // ─── Modal Actions Handlers ─────────────────────────────────────────────
@@ -1052,9 +1135,38 @@ export function UserManagementView({
                   <option value="Deactivated">Deactivated Accounts</option>
                   <option value="Deleted">Deleted Accounts</option>
                   <option value="Cancelled">Cancelled Invitations</option>
+                  <option value="Inactive">Restricted Accounts (All)</option>
                 </select>
               </div>
             </div>
+
+            {/* Active Status Filter Indicator Banner */}
+            {selectedStatus !== "ALL" && (
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200/90 px-4 py-2.5 rounded-2xl text-xs shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500 font-medium">
+                    Filtering table by:
+                  </span>
+                  <span className="font-semibold text-slate-800 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-2xs">
+                    {selectedStatus === "Active" && "Active Accounts"}
+                    {selectedStatus === "Deactivated" && "Deactivated Accounts"}
+                    {selectedStatus === "Deleted" && "Deleted Accounts"}
+                    {selectedStatus === "Cancelled" && "Cancelled Invitations"}
+                    {selectedStatus === "Inactive" && "All Restricted Accounts"}
+                  </span>
+                  <span className="text-slate-400 font-medium">
+                    ({users.length} account{users.length === 1 ? "" : "s"})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleStatusChange("ALL")}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                >
+                  Clear filter (Show all)
+                </button>
+              </div>
+            )}
 
             {/* Loading State */}
             {isLoading && (

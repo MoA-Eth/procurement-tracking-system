@@ -141,7 +141,7 @@ export function RecentAuditTrailTable({
                       </td>
 
                       <td className="py-3.5 px-4 text-[#334155] font-medium leading-relaxed align-middle wrap-break-word">
-                        {formatChanges(log.changes, log.action)}
+                        {log.summary || formatChanges(log.changes, log.action)}
                       </td>
                     </tr>
                   );

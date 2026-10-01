@@ -189,11 +189,50 @@ export function SystemLogsView() {
                 className="bg-[#f8fafc] border border-[#e2e8f0] rounded-full px-4 py-2 text-xs font-semibold text-[#334155] focus:outline-none cursor-pointer w-full"
               >
                 <option value="ALL">All Actions</option>
-                <option value="LOGIN_SUCCEEDED">Login Succeeded</option>
-                <option value="LOGIN_FAILED">Login Failed</option>
-                <option value="LOGOUT">Logout</option>
-                <option value="USER_INVITED">User Invited</option>
-                <option value="PASSWORD_CHANGED">Password Changed</option>
+                <optgroup label="Authentication & Access">
+                  <option value="LOGIN_SUCCEEDED">Login Succeeded</option>
+                  <option value="LOGIN_FAILED">Login Failed</option>
+                  <option value="LOGOUT">Logout</option>
+                  <option value="USER_INVITED">User Invited</option>
+                  <option value="USER_ROLE_CHANGED">User Role Changed</option>
+                  <option value="USER_DEACTIVATED">User Deactivated</option>
+                  <option value="USER_ACTIVATED">User Activated</option>
+                  <option value="USER_DELETED">User Deleted</option>
+                  <option value="PASSWORD_CHANGED">Password Changed</option>
+                </optgroup>
+                <optgroup label="Procurement Activities & Stages">
+                  <option value="ACTIVITY_CREATED">Activity Created</option>
+                  <option value="ACTIVITY_UPDATED">Activity Updated</option>
+                  <option value="STAGE_REPLANNED">Stage Replanned</option>
+                  <option value="STAGE_UPDATED">Stage Updated</option>
+                </optgroup>
+                <optgroup label="Contracts & Financials">
+                  <option value="CONTRACT_CREATED">Contract Created</option>
+                  <option value="CONTRACT_UPDATED">Contract Updated</option>
+                  <option value="CONTRACT_AMENDED">Contract Amended</option>
+                  <option value="CONTRACT_DELETED">Contract Deleted</option>
+                  <option value="PAYMENT_ADDED">Payment Recorded</option>
+                </optgroup>
+                <optgroup label="Procurement Plans">
+                  <option value="PLAN_CREATED">Plan Created</option>
+                  <option value="PLAN_SUBMITTED">Plan Submitted</option>
+                  <option value="PLAN_SENT_TO_COMMITTEE">
+                    Forwarded to Committee
+                  </option>
+                  <option value="PLAN_RETURNED_FOR_REVISION">
+                    Plan Returned for Revision
+                  </option>
+                  <option value="PLAN_ENDORSED">Plan Endorsed</option>
+                  <option value="PLAN_APPROVED">Plan Finally Approved</option>
+                  <option value="PLAN_REJECTED">Plan Rejected</option>
+                  <option value="COMMITTEE_VOTE_CAST">
+                    Committee Vote Cast
+                  </option>
+                </optgroup>
+                <optgroup label="Projects">
+                  <option value="PROJECT_CREATED">Project Created</option>
+                  <option value="PROJECT_UPDATED">Project Updated</option>
+                </optgroup>
               </select>
             </div>
           </div>
@@ -276,7 +315,8 @@ export function SystemLogsView() {
                           </td>
 
                           <td className="py-4 px-4 text-[#334155] font-medium leading-relaxed align-middle wrap-break-word">
-                            {formatChanges(log.changes, log.action)}
+                            {log.summary ||
+                              formatChanges(log.changes, log.action)}
                           </td>
                         </tr>
                       );

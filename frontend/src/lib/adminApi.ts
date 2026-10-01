@@ -34,6 +34,7 @@ export interface AuditLogEntry {
   entityType: string | null;
   entityId: string | null;
   changes: Record<string, unknown> | null;
+  summary?: string;
   createdAt: string;
   user: {
     id: string;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   History,
   ShieldCheck,
@@ -18,18 +19,15 @@ import { AdminDashboardSearch } from "./AdminDashboardSearch";
 import { RecentAuditTrailTable } from "./RecentAuditTrailTable";
 import { UserAccessTable } from "./UserAccessTable";
 import { useAdminDashboard } from "./useAdminDashboard";
-import { RespectiveAccountsModal } from "./components/RespectiveAccountsModal";
 import { getDetailedAccountStatus } from "@/lib/userAccountStatus";
 
 export function AdminDashboard({ user }: { user: AuthUser }) {
+  const router = useRouter();
   const heading = getDashboardHeading("ADMIN");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<
     "ALL" | "ACTIVE" | "DEACTIVATED" | "DELETED" | "CANCELLED"
   >("ALL");
-  const [modalStatusType, setModalStatusType] = useState<
-    "ALL" | "ACTIVE" | "DEACTIVATED" | "DELETED" | "CANCELLED" | null
-  >(null);
 
   const {
     users,
@@ -43,18 +41,19 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
   } = useAdminDashboard(user);
 
   const handleMetricCardClick = (
-    statusType: "ALL" | "ACTIVE" | "DEACTIVATED" | "DELETED" | "CANCELLED",
+    statusType:
+      "ALL" | "ACTIVE" | "DEACTIVATED" | "DELETED" | "CANCELLED" | "INACTIVE",
   ) => {
-    // Set active filter for the on-page table
-    setSelectedStatusFilter(statusType);
-    // Open dedicated respective accounts modal for instant inspection
-    setModalStatusType(statusType);
-
-    // Smooth scroll down towards UserAccessTable
-    const tableEl = document.getElementById("user-access-table-heading");
-    if (tableEl) {
-      tableEl.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    const statusParamMap: Record<string, string> = {
+      ALL: "ALL",
+      ACTIVE: "Active",
+      DEACTIVATED: "Deactivated",
+      DELETED: "Deleted",
+      CANCELLED: "Cancelled",
+      INACTIVE: "Inactive",
+    };
+    const statusParam = statusParamMap[statusType] ?? statusType;
+    router.push(`/workspace/user-management?status=${statusParam}`);
   };
 
   const filteredUsers = useMemo(() => {
@@ -146,7 +145,6 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             detail: "Registered user profiles",
             icon: Users,
             tone: "blue",
-            isActive: selectedStatusFilter === "ALL",
             onClick: () => handleMetricCardClick("ALL"),
           },
           {
@@ -155,7 +153,6 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             detail: "Permitted to sign in",
             icon: UserCheck,
             tone: "emerald",
-            isActive: selectedStatusFilter === "ACTIVE",
             onClick: () => handleMetricCardClick("ACTIVE"),
           },
           {
@@ -178,26 +175,24 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                   } accounts currently restricted`,
             icon: UserX,
             tone: "rose",
+            onClick: () => handleMetricCardClick("INACTIVE"),
             subItems: [
               {
                 label: "Deactivated",
                 value: String(metrics.deactivatedAccounts),
                 tone: "rose",
-                isActive: selectedStatusFilter === "DEACTIVATED",
                 onClick: () => handleMetricCardClick("DEACTIVATED"),
               },
               {
                 label: "Deleted",
                 value: String(metrics.deletedAccounts),
                 tone: "rose",
-                isActive: selectedStatusFilter === "DELETED",
                 onClick: () => handleMetricCardClick("DELETED"),
               },
               {
                 label: "Cancelled",
                 value: String(metrics.cancelledInvitations),
                 tone: "amber",
-                isActive: selectedStatusFilter === "CANCELLED",
                 onClick: () => handleMetricCardClick("CANCELLED"),
               },
             ],
@@ -538,16 +533,6 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
           />
         </div>
       </section>
-
-      {/* Respective Accounts Modal when clicking Deactivated, Deleted, or Cancelled metric cards */}
-      <RespectiveAccountsModal
-        isOpen={Boolean(modalStatusType)}
-        onClose={() => setModalStatusType(null)}
-        statusType={modalStatusType}
-        users={users}
-        onToggleStatus={handleToggleStatus}
-        onRefresh={refreshData}
-      />
     </div>
   );
 }
