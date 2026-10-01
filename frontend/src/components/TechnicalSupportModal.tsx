@@ -63,21 +63,21 @@ export function TechnicalSupportModal({
 
         <div className="mt-6 space-y-3">
           <a
-            href="tel:+251116460128"
+            href="tel:+251116462199"
             className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 hover:border-emerald-600"
           >
             <Phone size={20} className="text-emerald-700" />
             <span>
               <span className="block text-xs font-semibold uppercase text-slate-500">
-                Hotline
+                Phone
               </span>
               <span className="font-medium text-slate-900">
-                9090 / +251 11 646 0128
+                +251 11646 21 99
               </span>
             </span>
           </a>
           <a
-            href="mailto:support@moa.gov.et"
+            href="mailto:info@moa.gov.et"
             className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 hover:border-emerald-600"
           >
             <Mail size={20} className="text-emerald-700" />
@@ -86,7 +86,7 @@ export function TechnicalSupportModal({
                 Support email
               </span>
               <span className="font-medium text-slate-900">
-                support@moa.gov.et
+                info@moa.gov.et
               </span>
             </span>
           </a>

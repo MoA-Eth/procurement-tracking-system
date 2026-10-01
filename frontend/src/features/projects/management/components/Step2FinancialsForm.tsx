@@ -202,7 +202,9 @@ function MultiSelectFundingSource({
                           {fs.code}
                         </span>
                       )}
-                      <span className="truncate text-slate-800">{fs.label}</span>
+                      <span className="truncate text-slate-800">
+                        {fs.label}
+                      </span>
                     </div>
                   </div>
                 </button>
@@ -211,7 +213,7 @@ function MultiSelectFundingSource({
 
             {filteredOptions.length === 0 && (
               <div className="px-3 py-4 text-xs text-slate-400 text-center">
-                No configured funding sources match "{search}"
+                No configured funding sources match &ldquo;{search}&rdquo;
               </div>
             )}
           </div>
@@ -255,12 +257,12 @@ export function Step2FinancialsForm({
   const [fundingSourceOptions, setFundingSourceOptions] = useState<
     LookupItem[]
   >(() => getInitialLookups("FUNDING_SOURCE"));
-  const [fundingTypeOptions, setFundingTypeOptions] = useState<
-    LookupItem[]
-  >(() => getInitialLookups("FUNDING_TYPE"));
-  const [currencyOptions, setCurrencyOptions] = useState<
-    LookupItem[]
-  >(() => getInitialLookups("CURRENCY"));
+  const [fundingTypeOptions, setFundingTypeOptions] = useState<LookupItem[]>(
+    () => getInitialLookups("FUNDING_TYPE"),
+  );
+  const [currencyOptions, setCurrencyOptions] = useState<LookupItem[]>(() =>
+    getInitialLookups("CURRENCY"),
+  );
 
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [quickCode, setQuickCode] = useState("");
@@ -276,11 +278,15 @@ export function Step2FinancialsForm({
   const [isQuickTypeSubmitting, setIsQuickTypeSubmitting] = useState(false);
 
   // Quick-Add Currency modal state
-  const [showQuickAddCurrencyModal, setShowQuickAddCurrencyModal] = useState(false);
+  const [showQuickAddCurrencyModal, setShowQuickAddCurrencyModal] =
+    useState(false);
   const [quickCurrencyCode, setQuickCurrencyCode] = useState("");
   const [quickCurrencyLabel, setQuickCurrencyLabel] = useState("");
-  const [quickCurrencyError, setQuickCurrencyError] = useState<string | null>(null);
-  const [isQuickCurrencySubmitting, setIsQuickCurrencySubmitting] = useState(false);
+  const [quickCurrencyError, setQuickCurrencyError] = useState<string | null>(
+    null,
+  );
+  const [isQuickCurrencySubmitting, setIsQuickCurrencySubmitting] =
+    useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -349,7 +355,9 @@ export function Step2FinancialsForm({
     const cleanLabel = quickLabel.trim();
 
     if (!cleanCode || !cleanLabel) {
-      setQuickError("Please provide both donor acronym/code and the full name.");
+      setQuickError(
+        "Please provide both donor acronym/code and the full name.",
+      );
       return;
     }
 
@@ -360,7 +368,9 @@ export function Step2FinancialsForm({
           fs.label.toLowerCase() === cleanLabel.toLowerCase(),
       )
     ) {
-      setQuickError(`Funding source "${cleanLabel}" or code "${cleanCode}" already exists.`);
+      setQuickError(
+        `Funding source "${cleanLabel}" or code "${cleanCode}" already exists.`,
+      );
       return;
     }
 
@@ -396,7 +406,10 @@ export function Step2FinancialsForm({
     const cleanLabel = quickTypeLabel.trim();
     const cleanCode =
       quickTypeCode.trim().toUpperCase() ||
-      `FT_${cleanLabel.replace(/[^A-Za-z0-9]/g, "_").toUpperCase().slice(0, 15)}`;
+      `FT_${cleanLabel
+        .replace(/[^A-Za-z0-9]/g, "_")
+        .toUpperCase()
+        .slice(0, 15)}`;
 
     if (!cleanLabel) {
       setQuickTypeError("Please provide the funding type name / instrument.");
@@ -451,7 +464,9 @@ export function Step2FinancialsForm({
     const cleanLabelInput = quickCurrencyLabel.trim();
 
     if (!cleanCode) {
-      setQuickCurrencyError("Please provide a currency code (e.g. GBP, CAD, JPY).");
+      setQuickCurrencyError(
+        "Please provide a currency code (e.g. GBP, CAD, JPY).",
+      );
       return;
     }
 
@@ -816,7 +831,10 @@ export function Step2FinancialsForm({
                     if (!quickTypeCode || quickTypeCode.startsWith("FT_")) {
                       setQuickTypeCode(
                         val.trim()
-                          ? `FT_${val.replace(/[^A-Za-z0-9]/g, "_").toUpperCase().slice(0, 15)}`
+                          ? `FT_${val
+                              .replace(/[^A-Za-z0-9]/g, "_")
+                              .toUpperCase()
+                              .slice(0, 15)}`
                           : "",
                       );
                     }
@@ -895,7 +913,10 @@ export function Step2FinancialsForm({
               </div>
             )}
 
-            <form onSubmit={handleQuickAddCurrencySubmit} className="space-y-3.5">
+            <form
+              onSubmit={handleQuickAddCurrencySubmit}
+              className="space-y-3.5"
+            >
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-800 block">
                   Currency Code (ISO) *

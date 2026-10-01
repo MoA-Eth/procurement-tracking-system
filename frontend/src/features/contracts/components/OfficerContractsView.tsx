@@ -223,7 +223,28 @@ export function OfficerContractsView({
         currency: contract.currency || "ETB",
         region: contract.details?.organizationRegion || "Federal",
         sector: "Agriculture",
-      });
+        supplierName: contract.supplier || undefined,
+        activityReference: contract.details?.activityReference || undefined,
+        subcomponent: contract.details?.subcomponent || undefined,
+        remarks: contract.details?.remarks || undefined,
+        vatRate: contract.details?.vatRate || undefined,
+        contractAmountWithVat: contract.details?.amountWithVat || undefined,
+        contractNetOfVat: contract.details?.netOfVat || undefined,
+        awardDate: contract.details?.awardDate?.gregorian || undefined,
+        signatureDate: contract.signingDate?.gregorian || undefined,
+        startDate: contract.details?.startDate?.gregorian || undefined,
+        plannedEndDate: contract.completionDate?.gregorian || undefined,
+        actualCompletionDate:
+          contract.details?.actualCompletionDate?.gregorian || undefined,
+        status:
+          contract.status === "Completed"
+            ? "COMPLETED"
+            : contract.status === "Signed" ||
+                contract.status === "Active / Under Implementation"
+              ? "ACTIVE"
+              : "DRAFT",
+      } as any);
+      await loadContractsData();
     } catch (err) {
       console.warn("Backend createContract note:", err);
     }

@@ -365,10 +365,17 @@ function collectTrackableActivities(
             (record.projectCode?.toLowerCase() ===
               project.code?.toLowerCase() ||
               record.projectCode?.toLowerCase() ===
-                project.shortName?.toLowerCase()) &&
+                project.shortName?.toLowerCase() ||
+              (Boolean(project.id) &&
+                record.projectCode?.toLowerCase() ===
+                  project.id?.toLowerCase())) &&
             (record.planReference?.toLowerCase() ===
               plan.reference?.toLowerCase() ||
-              record.planReference?.toLowerCase() === plan.name?.toLowerCase()),
+              record.planReference?.toLowerCase() ===
+                plan.name?.toLowerCase() ||
+              (Boolean(plan.id) &&
+                record.planReference?.toLowerCase() ===
+                  plan.id?.toLowerCase())),
         )
         .map((record) => record.activity);
 
@@ -398,6 +405,68 @@ function collectTrackableActivities(
 
         const item = { activity, plan, project, tracking };
         itemsByIdentity.set(trackedActivityIdentity(item), item);
+      }
+    }
+  }
+
+  // Safety net: ensure every activity in savedActivityRecords is captured even if plan/project references differ
+  for (const record of savedActivityRecords) {
+    const act = record.activity;
+    if (!act || !act.reference) continue;
+    const refLower = act.reference.toLowerCase();
+    const alreadyCaptured = Array.from(itemsByIdentity.values()).some(
+      (item) =>
+        item.activity.reference.toLowerCase() === refLower ||
+        (Boolean(act.id) &&
+          Boolean(item.activity.id) &&
+          item.activity.id === act.id) ||
+        (Boolean(act.activityId) &&
+          Boolean(item.activity.activityId) &&
+          item.activity.activityId === act.activityId),
+    );
+    if (!alreadyCaptured && projects.length > 0) {
+      const projMatch =
+        projects.find(
+          (p) =>
+            p.code?.toLowerCase() === record.projectCode?.toLowerCase() ||
+            p.shortName?.toLowerCase() === record.projectCode?.toLowerCase() ||
+            (Boolean(p.id) &&
+              p.id?.toLowerCase() === record.projectCode?.toLowerCase()),
+        ) || projects[0];
+
+      if (projMatch) {
+        const planMatch =
+          projMatch.plans?.find(
+            (pl) =>
+              pl.reference?.toLowerCase() ===
+                record.planReference?.toLowerCase() ||
+              pl.name?.toLowerCase() === record.planReference?.toLowerCase() ||
+              (Boolean(pl.id) &&
+                pl.id?.toLowerCase() === record.planReference?.toLowerCase()),
+          ) || projMatch.plans?.[0];
+
+        if (planMatch) {
+          const tracking =
+            findActivityTrackingRecord(
+              trackingRecords,
+              projMatch.code,
+              planMatch.reference,
+              act.reference,
+            ) ??
+            createInitialActivityTrackingRecord(
+              projMatch.code,
+              planMatch.reference,
+              act,
+            );
+
+          const item = {
+            activity: act,
+            plan: planMatch,
+            project: projMatch,
+            tracking,
+          };
+          itemsByIdentity.set(trackedActivityIdentity(item), item);
+        }
       }
     }
   }

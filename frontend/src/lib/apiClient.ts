@@ -1,10 +1,24 @@
 import { authTokenManager } from "./authTokenManager";
 
 export const BACKEND_API_URL = (() => {
+  let defaultUrl = "http://localhost:5000/api";
+  if (typeof window !== "undefined") {
+    const isLocal =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    if (isLocal) {
+      defaultUrl = "http://localhost:5000/api";
+    } else {
+      defaultUrl = `${window.location.origin}/api`;
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    defaultUrl = "https://procurement.moa.gov.et/api";
+  }
+
   const envUrl =
     process.env.NEXT_PUBLIC_BACKEND_API_URL ||
     process.env.BACKEND_API_URL ||
-    "https://procurement-tracking-system-backend-3g8n.onrender.com/api";
+    defaultUrl;
   let url = envUrl.trim().replace(/\/+$/, "");
   if (!url.endsWith("/api")) {
     url = `${url}/api`;

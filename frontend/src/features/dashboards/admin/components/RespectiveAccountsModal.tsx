@@ -231,7 +231,8 @@ export function RespectiveAccountsModal({
                 No accounts found in this category
               </p>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                There are currently no accounts matching the &quot;{header.title}&quot; criteria.
+                There are currently no accounts matching the &quot;
+                {header.title}&quot; criteria.
               </p>
             </div>
           ) : (
@@ -326,11 +327,15 @@ export function RespectiveAccountsModal({
                                 <UserCheck className="w-3 h-3" />
                               )}
                               <span>
-                                {detailed === "DELETED" ? "Restore" : "Activate"}
+                                {detailed === "DELETED"
+                                  ? "Restore"
+                                  : "Activate"}
                               </span>
                             </button>
                           ) : (
-                            <span className="text-slate-400 font-medium">—</span>
+                            <span className="text-slate-400 font-medium">
+                              —
+                            </span>
                           )}
                         </td>
                       </tr>

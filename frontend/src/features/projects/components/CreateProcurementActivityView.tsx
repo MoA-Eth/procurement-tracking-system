@@ -26,7 +26,11 @@ import {
   resolveProcurementMethodOption,
   type ProcurementActivityCategory,
 } from "../data/procurementActivityConfig";
-import { fetchLookups, subscribeToLookups } from "@/lib/lookupsApi";
+import {
+  fetchLookups,
+  getInitialLookups,
+  subscribeToLookups,
+} from "@/lib/lookupsApi";
 import {
   ArrowLeft,
   ArrowRight,
@@ -47,6 +51,7 @@ import {
   Plus,
   Save,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, useEffect, type ReactNode } from "react";
@@ -81,7 +86,9 @@ export function CreateProcurementActivityView({
 }: {
   existingActivityCount?: number;
   initialActivity?: ProcurementActivitySummary;
-  onSaveActivity?: (activity: ProcurementActivitySummary) => void;
+  onSaveActivity?: (
+    activity: ProcurementActivitySummary,
+  ) => void | Promise<void>;
   plan: ProcurementPlanSummary;
   project: OfficerProject;
 }) {
@@ -90,6 +97,7 @@ export function CreateProcurementActivityView({
   const [step, setStep] = useState<WizardStep>(1);
   const [attemptedStep, setAttemptedStep] = useState<WizardStep | null>(null);
   const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const initialMethodKey = resolveMethodKey(
     initialActivity?.details?.form?.method ||
@@ -140,11 +148,12 @@ export function CreateProcurementActivityView({
   const [lookupVersion, setLookupVersion] = useState(0);
 
   useEffect(() => {
-    fetchLookups("PROCUREMENT_METHOD")
-      .then(() => {
-        setLookupVersion((v) => v + 1);
-      })
-      .catch(() => {});
+    Promise.allSettled([
+      fetchLookups("PROCUREMENT_METHOD"),
+      fetchLookups("CURRENCY"),
+    ]).then(() => {
+      setLookupVersion((v) => v + 1);
+    });
     const unsub = subscribeToLookups(() => {
       setLookupVersion((v) => v + 1);
     });
@@ -155,15 +164,20 @@ export function CreateProcurementActivityView({
     () => methodsForCategory(category),
     [category, lookupVersion],
   );
+  const currencyOptions = useMemo(() => {
+    const items = getInitialLookups("CURRENCY");
+    return items.map((item) => ({ code: item.code, label: item.label }));
+  }, [lookupVersion]);
   const selectedMethod = useMemo(
     () => resolveProcurementMethodOption(form.method),
     [form.method, lookupVersion],
   );
+  const planRefParam = plan.id || plan.reference || plan.name;
   const planHref =
     "/workspace/projects?project=" +
     encodeURIComponent(project.code) +
     "&plan=" +
-    encodeURIComponent(plan.reference);
+    encodeURIComponent(planRefParam);
   const activityReference = initialActivity
     ? initialActivity.reference
     : activityReferenceFor(
@@ -280,7 +294,7 @@ export function CreateProcurementActivityView({
     window.scrollTo({ behavior: "smooth", top: 0 });
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (stepOneInvalid) {
       setAttemptedStep(1);
       moveTo(1);
@@ -302,40 +316,50 @@ export function CreateProcurementActivityView({
       return;
     }
 
-    onSaveActivity?.({
-      ...(initialActivity
-        ? {
-            id: initialActivity.id,
-            activityId: (initialActivity as any).activityId,
-            createdById: initialActivity.createdById,
-            createdByName: initialActivity.createdByName,
-            createdAt: initialActivity.createdAt,
-          }
-        : {}),
-      category,
-      currentStage:
-        roadmap.find((stage) => !stage.notApplicable)?.name ?? "Not Started",
-      description: form.activityDescription.trim(),
-      details: {
-        componentAllocations: componentAllocations.map((allocation) => ({
-          ...allocation,
-        })),
-        financingAllocations: financingAllocations.map((allocation) => ({
-          ...allocation,
-        })),
-        form: { ...form },
-        lots: form.lotRequired ? lots.map((lot) => ({ ...lot })) : [],
-        roadmap: roadmap.map((stage) => ({ ...stage })),
-      },
-      estimatedAmount: Number(form.estimatedAmount),
-      method: selectedMethod?.label ?? form.method,
-      reference: activityReference,
-      status: form.inProcess
-        ? "In Progress"
-        : initialActivity?.status || "Not Started",
-    });
-    setSaved(true);
-    window.scrollTo({ behavior: "smooth", top: 0 });
+    setIsSaving(true);
+    try {
+      if (onSaveActivity) {
+        await onSaveActivity({
+          ...(initialActivity
+            ? {
+                id: initialActivity.id,
+                activityId: (initialActivity as any).activityId,
+                createdById: initialActivity.createdById,
+                createdByName: initialActivity.createdByName,
+                createdAt: initialActivity.createdAt,
+              }
+            : {}),
+          category,
+          currentStage:
+            roadmap.find((stage) => !stage.notApplicable)?.name ??
+            "Not Started",
+          description: form.activityDescription.trim(),
+          details: {
+            componentAllocations: componentAllocations.map((allocation) => ({
+              ...allocation,
+            })),
+            financingAllocations: financingAllocations.map((allocation) => ({
+              ...allocation,
+            })),
+            form: { ...form },
+            lots: form.lotRequired ? lots.map((lot) => ({ ...lot })) : [],
+            roadmap: roadmap.map((stage) => ({ ...stage })),
+          },
+          estimatedAmount: Number(form.estimatedAmount),
+          method: selectedMethod?.label ?? form.method,
+          reference: activityReference,
+          status: form.inProcess
+            ? "In Progress"
+            : initialActivity?.status || "Not Started",
+        });
+      }
+      setSaved(true);
+      window.scrollTo({ behavior: "smooth", top: 0 });
+    } catch (err) {
+      console.error("Save activity error:", err);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function continueWizard() {
@@ -399,12 +423,17 @@ export function CreateProcurementActivityView({
             </div>
           </div>
           <button
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isSaving}
             onClick={handleSave}
             type="button"
           >
-            <Save className="h-3.5 w-3.5" />
-            Save Changes
+            {isSaving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
+            {isSaving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       )}
@@ -453,6 +482,7 @@ export function CreateProcurementActivityView({
                 <RelatedInformationStep
                   attempted={attemptedStep === 2}
                   context={context}
+                  currencyOptions={currencyOptions}
                   financingAllocations={financingAllocations}
                   form={form}
                   lots={lots}
@@ -492,6 +522,7 @@ export function CreateProcurementActivityView({
 
           <WizardFooter
             isEditing={isEditing}
+            isSaving={isSaving}
             onBack={goBack}
             onContinue={continueWizard}
             onSave={handleSave}
@@ -1199,6 +1230,7 @@ function YesNoChoice({
 
 function WizardFooter({
   isEditing = false,
+  isSaving = false,
   onBack,
   onContinue,
   onSave,
@@ -1206,6 +1238,7 @@ function WizardFooter({
   step,
 }: {
   isEditing?: boolean;
+  isSaving?: boolean;
   onBack: () => void;
   onContinue: () => void;
   onSave?: () => void;
@@ -1224,7 +1257,8 @@ function WizardFooter({
         </Link>
       ) : (
         <button
-          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0A3C2F] cursor-pointer"
+          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0A3C2F] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isSaving}
           onClick={onBack}
           type="button"
         >
@@ -1236,33 +1270,45 @@ function WizardFooter({
       <div className="flex items-center gap-2.5">
         {isEditing && step < 4 && (
           <button
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#006837] px-5 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] transition cursor-pointer"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#006837] px-5 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isSaving}
             onClick={onSave}
             type="button"
           >
-            <Save aria-hidden="true" className="h-4 w-4" />
-            Save Changes
+            {isSaving ? (
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save aria-hidden="true" className="h-4 w-4" />
+            )}
+            {isSaving ? "Saving..." : "Save Changes"}
           </button>
         )}
 
         <button
           className={
-            "inline-flex h-10 items-center justify-center gap-2 rounded-md px-5 text-xs font-semibold shadow-sm transition cursor-pointer " +
+            "inline-flex h-10 items-center justify-center gap-2 rounded-md px-5 text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed " +
             (step === 4
               ? "bg-[#006837] text-white hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
               : isEditing
                 ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                 : "bg-[#006837] text-white hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]")
           }
+          disabled={isSaving}
           onClick={step === 4 ? onSave : onContinue}
           type="button"
         >
           {step === 4 ? (
             <>
-              <Save aria-hidden="true" className="h-4 w-4" />
-              {isEditing
-                ? "Save Activity Changes"
-                : "Save Procurement Activity"}
+              {isSaving ? (
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save aria-hidden="true" className="h-4 w-4" />
+              )}
+              {isSaving
+                ? "Saving..."
+                : isEditing
+                  ? "Save Activity Changes"
+                  : "Save Procurement Activity"}
             </>
           ) : (
             <>
@@ -1670,6 +1716,7 @@ function KeyDetailsStep({
 function RelatedInformationStep({
   attempted,
   context,
+  currencyOptions,
   financingAllocations,
   form,
   lots,
@@ -1684,6 +1731,7 @@ function RelatedInformationStep({
     plan: ProcurementPlanSummary;
     project: OfficerProject;
   };
+  currencyOptions: { code: string; label: string }[];
   financingAllocations: Allocation[];
   form: ActivityFormState;
   lots: LotEntry[];
@@ -1819,9 +1867,11 @@ function RelatedInformationStep({
               value={form.currency}
             >
               <option value="">Select currency</option>
-              <option value="ETB">ETB - Ethiopian Birr</option>
-              <option value="USD">USD - United States Dollar</option>
-              <option value="UA">UA - Unit of Account</option>
+              {currencyOptions.map((cur) => (
+                <option key={cur.code} value={cur.code}>
+                  {cur.label}
+                </option>
+              ))}
             </SelectControl>
           </Field>
 

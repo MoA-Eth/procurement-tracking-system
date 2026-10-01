@@ -453,7 +453,7 @@ export function UserProfileModal({
                   <h4 className="text-base font-semibold text-slate-900 truncate">
                     {user.displayName || user.name || "Unnamed User"}
                   </h4>
-                  {(!user.isActive && user.status === "PENDING_INVITATION") ? (
+                  {!user.isActive && user.status === "PENDING_INVITATION" ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-rose-50 text-rose-800 border-rose-200">
                       <span className="w-1.5 h-1.5 rounded-full mr-1 bg-rose-500" />
                       Invitation Cancelled

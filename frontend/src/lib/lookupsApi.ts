@@ -347,7 +347,10 @@ function addDeletedLookup(id: string, type?: string, code?: string) {
       const typeCodeKey = `${type.trim().toUpperCase()}:${code.trim().toUpperCase()}`;
       if (!list.includes(typeCodeKey)) list.push(typeCodeKey);
     }
-    window.localStorage.setItem(DELETED_LOOKUPS_STORAGE_KEY, JSON.stringify(list));
+    window.localStorage.setItem(
+      DELETED_LOOKUPS_STORAGE_KEY,
+      JSON.stringify(list),
+    );
   } catch {}
 }
 
@@ -360,7 +363,10 @@ function unmarkDeletedLookup(id: string, type?: string, code?: string) {
       const typeCodeKey = `${type.trim().toUpperCase()}:${code.trim().toUpperCase()}`;
       list = list.filter((item) => item !== typeCodeKey);
     }
-    window.localStorage.setItem(DELETED_LOOKUPS_STORAGE_KEY, JSON.stringify(list));
+    window.localStorage.setItem(
+      DELETED_LOOKUPS_STORAGE_KEY,
+      JSON.stringify(list),
+    );
   } catch {}
 }
 
@@ -389,7 +395,11 @@ function saveCustomLookupToStorage(item: LookupItem) {
   }
 }
 
-function removeCustomLookupFromStorage(id: string, type?: string, code?: string) {
+function removeCustomLookupFromStorage(
+  id: string,
+  type?: string,
+  code?: string,
+) {
   if (typeof window === "undefined") return;
   try {
     addDeletedLookup(id, type, code);

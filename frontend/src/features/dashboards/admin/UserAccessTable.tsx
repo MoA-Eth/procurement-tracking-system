@@ -236,7 +236,11 @@ export function UserAccessTable({
                       </td>
 
                       <td className="py-3.5 px-4 text-[#475569] font-normal align-middle">
-                        <span className={isCancelled || isDeleted ? "text-slate-400" : ""}>
+                        <span
+                          className={
+                            isCancelled || isDeleted ? "text-slate-400" : ""
+                          }
+                        >
                           {user.email}
                         </span>
                       </td>

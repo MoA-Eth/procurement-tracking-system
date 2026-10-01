@@ -138,9 +138,7 @@ export function ProjectsDirectoryView({
 
     const matchesFunding =
       fundingFilter === "All Funding Sources" ||
-      project.fundingSource
-        .toLowerCase()
-        .includes(fundingFilter.toLowerCase());
+      project.fundingSource.toLowerCase().includes(fundingFilter.toLowerCase());
 
     return matchesSearch && matchesStatus && matchesOfficer && matchesFunding;
   });

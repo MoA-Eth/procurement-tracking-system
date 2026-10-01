@@ -129,6 +129,7 @@ export interface ReplanStageInput {
 
 import { apiClient } from "./apiClient";
 import { fetchLookups } from "./lookupsApi";
+import { invalidatePlansCache } from "./plansApi";
 
 // ── Procurement Method Lookup Cache ────────────────────────────────
 export interface ProcurementMethodLookup {
@@ -205,7 +206,15 @@ export async function fetchActivities(
     const res = await apiClient.get<any>("/activities", {
       params: planId ? { planId } : undefined,
     });
-    return Array.isArray(res) ? res : res.data || [];
+    return Array.isArray(res)
+      ? res
+      : Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.items)
+            ? res.data.items
+            : [];
   } catch (err) {
     console.warn("fetchActivities notice:", err);
     return [];
@@ -220,7 +229,9 @@ export async function fetchActivityById(id: string): Promise<BackendActivity> {
 export async function createActivity(
   data: CreateActivityInput,
 ): Promise<BackendActivity> {
+  invalidatePlansCache();
   const res = await apiClient.post<any>("/activities", data);
+  invalidatePlansCache();
   return res.data || res;
 }
 
@@ -228,16 +239,20 @@ export async function updateActivity(
   id: string,
   data: Partial<CreateActivityInput>,
 ): Promise<BackendActivity> {
+  invalidatePlansCache();
   const res = await apiClient.patch<any>(
     `/activities/${encodeURIComponent(id)}`,
     data,
   );
+  invalidatePlansCache();
   return res.data || res;
 }
 
 export async function deleteActivity(id: string): Promise<boolean> {
+  invalidatePlansCache();
   try {
     await apiClient.delete(`/activities/${encodeURIComponent(id)}`);
+    invalidatePlansCache();
     return true;
   } catch (err) {
     console.warn(`deleteActivity notice for ${id}:`, err);

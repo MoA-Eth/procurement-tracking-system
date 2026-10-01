@@ -348,7 +348,10 @@ export function ProjectsManagementView({
           };
 
           const norm = (s?: string) =>
-            (s || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+            (s || "")
+              .trim()
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, "");
 
           // Find real DB sector lookup, or create one in the backend
           targetSectorId = secLookupList.find(
@@ -456,7 +459,8 @@ export function ProjectsManagementView({
                       const matched = availableOfficers.find(
                         (ao) =>
                           isRealId(ao.id) &&
-                          (ao.email?.toLowerCase() === off.email?.toLowerCase() ||
+                          (ao.email?.toLowerCase() ===
+                            off.email?.toLowerCase() ||
                             norm(ao.name) === norm(off.name)),
                       );
                       if (matched) {

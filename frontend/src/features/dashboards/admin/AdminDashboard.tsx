@@ -472,15 +472,20 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
           {selectedStatusFilter !== "ALL" && (
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-slate-50 border border-slate-200/90 px-4 py-2.5 rounded-2xl text-xs shadow-2xs">
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-medium">Filtering table by:</span>
+                <span className="text-slate-500 font-medium">
+                  Filtering table by:
+                </span>
                 <span className="font-semibold text-slate-800 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-2xs">
                   {selectedStatusFilter === "ACTIVE" && "Active Accounts"}
-                  {selectedStatusFilter === "DEACTIVATED" && "Deactivated Accounts"}
+                  {selectedStatusFilter === "DEACTIVATED" &&
+                    "Deactivated Accounts"}
                   {selectedStatusFilter === "DELETED" && "Deleted Accounts"}
-                  {selectedStatusFilter === "CANCELLED" && "Cancelled Invitations"}
+                  {selectedStatusFilter === "CANCELLED" &&
+                    "Cancelled Invitations"}
                 </span>
                 <span className="text-slate-400 font-medium">
-                  ({filteredUsers.length} account{filteredUsers.length === 1 ? "" : "s"})
+                  ({filteredUsers.length} account
+                  {filteredUsers.length === 1 ? "" : "s"})
                 </span>
               </div>
               <button

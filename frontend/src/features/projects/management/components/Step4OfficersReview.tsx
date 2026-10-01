@@ -129,9 +129,7 @@ export function Step4OfficersReview({
     const hasCustom = fundingSources.includes("Other (Specify Custom Donor)");
     const parts = [
       ...standardSources,
-      ...(hasCustom
-        ? [customFundingSource || "Custom Funding Source"]
-        : []),
+      ...(hasCustom ? [customFundingSource || "Custom Funding Source"] : []),
     ];
     return parts.length > 0 ? parts.join(", ") : "N/A";
   })();
@@ -388,7 +386,10 @@ export function Step4OfficersReview({
 
                 {filteredOfficers.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-10 text-center bg-slate-50/50">
+                    <td
+                      colSpan={6}
+                      className="py-10 text-center bg-slate-50/50"
+                    >
                       <Users className="h-8 w-8 text-slate-300 mx-auto mb-2" />
                       <p className="text-xs font-semibold text-slate-700">
                         {officersList.length === 0

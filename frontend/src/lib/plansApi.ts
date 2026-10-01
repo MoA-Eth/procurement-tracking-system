@@ -235,7 +235,15 @@ export async function fetchPlans(): Promise<BackendPlan[]> {
     const res = await apiClient.get<any>("/plans", {
       params: { pageSize: 500 },
     });
-    const data = Array.isArray(res) ? res : res.data || [];
+    const data = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.items)
+            ? res.data.items
+            : [];
     if (Array.isArray(data) && data.length > 0) {
       _cachedPlans = data;
       _cachedPlansTimestamp = Date.now();

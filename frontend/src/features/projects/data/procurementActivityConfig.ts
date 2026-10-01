@@ -326,9 +326,7 @@ export function resolveProcurementMethodOption(
   if (byKey) return byKey;
 
   // 2. Direct match by label
-  const byLabel = allOptions.find(
-    (opt) => opt.label.toLowerCase() === needle,
-  );
+  const byLabel = allOptions.find((opt) => opt.label.toLowerCase() === needle);
   if (byLabel) return byLabel;
 
   // 3. Clean alphanumeric match (e.g. "rfb national" -> "rfbnational")

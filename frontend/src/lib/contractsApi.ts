@@ -149,7 +149,16 @@ export async function fetchContracts(params?: {
         status: params?.status,
       },
     });
-    return Array.isArray(res) ? res : res.data || [];
+    const data = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.items)
+            ? res.data.items
+            : [];
+    return data;
   } catch (err) {
     console.warn("fetchContracts notice:", err);
     return [];
@@ -190,7 +199,16 @@ export async function fetchContractPayments(
         params: status ? { "filter[status]": status } : undefined,
       },
     );
-    return Array.isArray(res) ? res : res.data || [];
+    const data = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.items)
+            ? res.data.items
+            : [];
+    return data;
   } catch (err) {
     console.error("fetchContractPayments error:", err);
     return [];
@@ -215,7 +233,16 @@ export async function fetchContractAmendments(
     const res = await apiClient.get<any>(
       `/contracts/${encodeURIComponent(contractId)}/amendments`,
     );
-    return Array.isArray(res) ? res : res.data || [];
+    const data = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.items)
+            ? res.data.items
+            : [];
+    return data;
   } catch (err) {
     console.error("fetchContractAmendments error:", err);
     return [];

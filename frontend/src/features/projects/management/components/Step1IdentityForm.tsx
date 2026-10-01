@@ -43,8 +43,8 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
   const [projectCodeOptions, setProjectCodeOptions] = useState<LookupItem[]>(
     () => getInitialLookups("PROJECT_CODE"),
   );
-  const [sectorOptions, setSectorOptions] = useState<LookupItem[]>(
-    () => getInitialLookups("SECTOR"),
+  const [sectorOptions, setSectorOptions] = useState<LookupItem[]>(() =>
+    getInitialLookups("SECTOR"),
   );
   const [isCustomCode, setIsCustomCode] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -125,7 +125,9 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
   const selectedMatched = useMemo(() => {
     if (!data.code) return undefined;
     const clean = data.code.trim().toUpperCase();
-    return projectCodeOptions.find((p) => p.code.trim().toUpperCase() === clean);
+    return projectCodeOptions.find(
+      (p) => p.code.trim().toUpperCase() === clean,
+    );
   }, [projectCodeOptions, data.code]);
 
   const handleSelectCode = (selectedCode: string) => {
@@ -167,9 +169,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
     }
 
     if (
-      projectCodeOptions.some(
-        (p) => p.code.trim().toUpperCase() === cleanCode,
-      )
+      projectCodeOptions.some((p) => p.code.trim().toUpperCase() === cleanCode)
     ) {
       setQuickError(`Project code "${cleanCode}" already exists.`);
       return;
@@ -215,7 +215,10 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
     const cleanLabel = quickSectorLabel.trim();
     const cleanCode =
       quickSectorCode.trim().toUpperCase() ||
-      `SEC_${cleanLabel.replace(/[^A-Za-z0-9]/g, "_").toUpperCase().slice(0, 15)}`;
+      `SEC_${cleanLabel
+        .replace(/[^A-Za-z0-9]/g, "_")
+        .toUpperCase()
+        .slice(0, 15)}`;
 
     if (!cleanLabel) {
       setQuickSectorError("Please provide the sector / directorate name.");
@@ -447,15 +450,14 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                                 Use
                               </span>
                               <span className="truncate text-[11px]">
-                                Use &ldquo;{searchQuery.trim().toUpperCase()}&rdquo; as project code
+                                Use &ldquo;{searchQuery.trim().toUpperCase()}
+                                &rdquo; as project code
                               </span>
                             </button>
                             <button
                               type="button"
                               onClick={() => {
-                                setQuickCode(
-                                  searchQuery.trim().toUpperCase(),
-                                );
+                                setQuickCode(searchQuery.trim().toUpperCase());
                                 setQuickLabel("");
                                 setQuickError(null);
                                 setIsDropdownOpen(false);
@@ -465,7 +467,8 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                             >
                               <Plus className="h-3.5 w-3.5 text-[#006837]" />
                               <span className="text-[11px]">
-                                + Add &ldquo;{searchQuery.trim().toUpperCase()}&rdquo; to system
+                                + Add &ldquo;{searchQuery.trim().toUpperCase()}
+                                &rdquo; to system
                               </span>
                             </button>
                           </div>

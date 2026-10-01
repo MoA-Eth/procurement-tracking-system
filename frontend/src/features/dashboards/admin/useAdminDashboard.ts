@@ -114,7 +114,10 @@ export function useAdminDashboard(currentUser: AuthUser) {
     };
     window.addEventListener("pts:account-status-changed", handleStatusChanged);
     return () =>
-      window.removeEventListener("pts:account-status-changed", handleStatusChanged);
+      window.removeEventListener(
+        "pts:account-status-changed",
+        handleStatusChanged,
+      );
   }, []);
 
   const metrics = useMemo(() => {

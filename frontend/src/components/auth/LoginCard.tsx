@@ -163,8 +163,6 @@ export function LoginCard({ onOpenTechSupport }: LoginCardProps) {
       </section>
       <footer className="auth-footer">
         © 2026 Ministry of Agriculture (MoA) Procurement Tracking System
-        <span aria-hidden="true"> • </span>
-        SRS MVP v1.1
       </footer>
     </main>
   );

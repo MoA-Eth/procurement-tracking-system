@@ -35,6 +35,7 @@ import {
   submitPlanForReview,
   fetchPlans,
   getCachedPlans,
+  invalidatePlansCache,
   mapBackendPlanToOfficerPlanSummary,
   type BackendPlan,
 } from "@/lib/plansApi";
@@ -213,7 +214,33 @@ export function OfficerProjectsView({
             )
           : projData.value;
         const effectiveProjectList =
-          filteredProjects.length > 0 ? filteredProjects : projData.value;
+          filteredProjects.length > 0
+            ? [...filteredProjects]
+            : [...projData.value];
+
+        // Ensure the currently viewed project is never excluded
+        if (selectedProjectCode) {
+          const normSel = selectedProjectCode.toLowerCase().trim();
+          const currentViewingProj = projData.value.find(
+            (bp) =>
+              (bp.code || "").toLowerCase().trim() === normSel ||
+              (bp.id || "").toLowerCase().trim() === normSel ||
+              (bp.name || "").toLowerCase().trim() === normSel,
+          );
+          if (
+            currentViewingProj &&
+            !effectiveProjectList.some(
+              (p) =>
+                (p.id && p.id === currentViewingProj.id) ||
+                (p.code &&
+                  p.code.toLowerCase() ===
+                    currentViewingProj.code?.toLowerCase()),
+            )
+          ) {
+            effectiveProjectList.push(currentViewingProj);
+          }
+        }
+
         const uniqueProjectMap = new Map<
           string,
           (typeof effectiveProjectList)[0]
@@ -233,7 +260,7 @@ export function OfficerProjectsView({
       }
 
       if (planData.status === "fulfilled" && planData.value.length > 0) {
-        // Only load plans that belong to the officer's assigned projects
+        // Only load plans that belong to the officer's assigned projects or the currently selected plan
         if (effectiveUser && assignedProjList.length > 0) {
           const assignedIds = new Set(
             assignedProjList.map((p) => p.id).filter(Boolean),
@@ -246,7 +273,11 @@ export function OfficerProjectsView({
               (p.projectId && assignedIds.has(p.projectId)) ||
               (p.project?.id && assignedIds.has(p.project.id)) ||
               (p.project?.code &&
-                assignedCodes.has(p.project.code.toLowerCase())),
+                assignedCodes.has(p.project.code.toLowerCase())) ||
+              (selectedPlanReference &&
+                (p.id === selectedPlanReference ||
+                  p.title.toLowerCase().trim() ===
+                    selectedPlanReference.toLowerCase().trim())),
           );
         } else if (effectiveUser && assignedProjList.length === 0) {
           fetchedPlans = [];
@@ -279,13 +310,19 @@ export function OfficerProjectsView({
             );
             return (
               (projCode && assignedCodes.has(projCode.toLowerCase())) ||
-              (projId && assignedIds.has(projId))
+              (projId && assignedIds.has(projId)) ||
+              (ba.planId && parentPlan && true)
             );
           })
           .map((ba: BackendActivity) => {
             const summary = mapBackendActivityToProcurementActivitySummary(ba);
             const parentPlan = fetchedPlans.find((p) => p.id === ba.planId);
-            const planRef = parentPlan?.title || ba.plan?.title || ba.planId;
+            const planRef =
+              parentPlan?.id ||
+              ba.planId ||
+              parentPlan?.title ||
+              ba.plan?.title ||
+              "";
             const projCode =
               parentPlan?.project?.code ||
               ba.plan?.project?.code ||
@@ -344,18 +381,27 @@ export function OfficerProjectsView({
       const rAmt = Number(rec.activity.estimatedAmount) || 0;
 
       return list.findIndex((ex) => {
-        const ePlan = norm(ex.planReference);
-        if (rPlan && ePlan && rPlan !== ePlan) return false;
-
         const eId = norm(
           (ex.activity as any).id || (ex.activity as any).activityId,
         );
-        const eRef = norm(ex.activity.reference);
-        const eDesc = norm(ex.activity.description);
-        const eAmt = Number(ex.activity.estimatedAmount) || 0;
-
+        const rId = norm(
+          (rec.activity as any).id || (rec.activity as any).activityId,
+        );
         if (rId && eId && rId === eId) return true;
+
+        const eRef = norm(ex.activity.reference);
+        const rRef = norm(rec.activity.reference);
         if (rRef && eRef && rRef === eRef) return true;
+
+        const ePlan = norm(ex.planReference);
+        const rPlan = norm(rec.planReference);
+        if (rPlan && ePlan && rPlan !== ePlan) return false;
+
+        const eDesc = norm(ex.activity.description);
+        const rDesc = norm(rec.activity.description);
+        const eAmt = Number(ex.activity.estimatedAmount) || 0;
+        const rAmt = Number(rec.activity.estimatedAmount) || 0;
+
         if (rDesc && eDesc && rDesc === eDesc) {
           if (rAmt === eAmt || Math.abs(rAmt - eAmt) < 1) return true;
           if (
@@ -468,38 +514,51 @@ export function OfficerProjectsView({
   const selectedPlanActivities = useMemo(() => {
     if (!selectedPlan || !selectedProject) return [];
 
-    const matchingBackendPlan = backendPlans.find(
-      (bp) =>
-        bp.id === selectedPlan.reference ||
-        (Boolean(selectedPlan.id) && bp.id === selectedPlan.id) ||
-        bp.title.toLowerCase() === selectedPlan.reference.toLowerCase() ||
-        bp.title.toLowerCase() === selectedPlan.name.toLowerCase(),
-    );
+    const normRef = (selectedPlan.reference || "").toLowerCase().trim();
+    const normId = (selectedPlan.id || "").toLowerCase().trim();
+    const normName = (selectedPlan.name || "").toLowerCase().trim();
+
+    const matchingBackendPlan = backendPlans.find((bp) => {
+      const bpId = (bp.id || "").toLowerCase().trim();
+      const bpTitle = (bp.title || "").toLowerCase().trim();
+      return (
+        (normRef && bpId === normRef) ||
+        (normId && bpId === normId) ||
+        (normRef && bpTitle === normRef) ||
+        (normName && bpTitle === normName)
+      );
+    });
 
     const directBackendActivities = (matchingBackendPlan?.activities || []).map(
       mapBackendActivityToProcurementActivitySummary,
     );
 
     const matchingSaved = effectiveSavedActivityRecords
-      .filter(
-        (record) =>
-          (record.projectCode?.toLowerCase() ===
-            selectedProject.code?.toLowerCase() ||
-            record.projectCode?.toLowerCase() ===
-              selectedProject.shortName?.toLowerCase() ||
-            (Boolean(selectedProject.id) &&
-              record.projectCode?.toLowerCase() ===
-                selectedProject.id?.toLowerCase())) &&
-          (record.planReference?.toLowerCase() ===
-            selectedPlan.reference?.toLowerCase() ||
-            record.planReference?.toLowerCase() ===
-              selectedPlan.name?.toLowerCase() ||
-            (matchingBackendPlan &&
-              (record.planReference?.toLowerCase() ===
-                matchingBackendPlan.id.toLowerCase() ||
-                record.planReference?.toLowerCase() ===
-                  matchingBackendPlan.title.toLowerCase()))),
-      )
+      .filter((record) => {
+        const recProj = (record.projectCode || "").toLowerCase().trim();
+        const selCode = (selectedProject.code || "").toLowerCase().trim();
+        const selShort = (selectedProject.shortName || "").toLowerCase().trim();
+        const selId = (selectedProject.id || "").toLowerCase().trim();
+
+        const matchesProject =
+          recProj === selCode ||
+          (selShort && recProj === selShort) ||
+          (selId && recProj === selId);
+
+        if (!matchesProject) return false;
+
+        const recPlan = (record.planReference || "").toLowerCase().trim();
+        const bpId = (matchingBackendPlan?.id || "").toLowerCase().trim();
+        const bpTitle = (matchingBackendPlan?.title || "").toLowerCase().trim();
+
+        return (
+          (normRef && recPlan === normRef) ||
+          (normName && recPlan === normName) ||
+          (normId && recPlan === normId) ||
+          (bpId && recPlan === bpId) ||
+          (bpTitle && recPlan === bpTitle)
+        );
+      })
       .map((record) => record.activity);
 
     const combined: ProcurementActivitySummary[] = [];
@@ -1148,15 +1207,21 @@ export function OfficerProjectsView({
             ? existingBackendAct.activity.id
             : undefined);
 
-        if (existingBackendId) {
-          try {
-            await updateActivity(existingBackendId, {
-              description: activity.description || "Activity description",
-              estimatedBudget: Number(activity.estimatedAmount) || 500000,
-              currency: selectedPlan.currency || "ETB",
-              procurementMethodId: resolvedMethodId,
-              stages: customStages.length > 0 ? customStages : undefined,
-              fundings: [
+        const formDetails = activity.details?.form || ({} as any);
+
+        // Map funding allocations
+        const rawFundings = activity.details?.financingAllocations || [];
+        const mappedFundings = rawFundings
+          .filter((fa: any) => Boolean(fa.source?.trim()))
+          .map((fa: any) => ({
+            fundingSource: fa.source.trim(),
+            loanGrantNumber: fa.loanNumber?.trim() || undefined,
+            allocationPct: Number(fa.share) || 100,
+          }));
+        const fundingsPayload =
+          mappedFundings.length > 0
+            ? mappedFundings
+            : [
                 {
                   fundingSource:
                     selectedProject.fundingSource ||
@@ -1165,8 +1230,73 @@ export function OfficerProjectsView({
                     selectedProject.financingNumbers?.[0] || undefined,
                   allocationPct: 100,
                 },
-              ],
-            });
+              ];
+
+        // Map component allocations
+        const rawComponents = activity.details?.componentAllocations || [];
+        const mappedComponents = rawComponents
+          .filter((ca: any) => Boolean(ca.name?.trim()))
+          .map((ca: any) => ({
+            component: ca.name.trim(),
+            subcomponent: ca.code?.trim() || undefined,
+            allocationPct: Number(ca.share) || 100,
+          }));
+        const componentsPayload =
+          mappedComponents.length > 0 ? mappedComponents : undefined;
+
+        // Map lots
+        const rawLots = activity.details?.lots || [];
+        const mappedLots =
+          formDetails.lotRequired && rawLots.length > 0
+            ? rawLots
+                .filter((l: any) => Boolean(l.number?.trim()))
+                .map((l: any) => ({
+                  lotNumber: String(l.number).trim(),
+                  description: l.description?.trim() || undefined,
+                  estimatedAmount:
+                    Number(l.amount) > 0 ? Number(l.amount) : undefined,
+                }))
+            : undefined;
+        const lotsPayload =
+          mappedLots && mappedLots.length > 0 ? mappedLots : undefined;
+
+        const baseActivityPayload: any = {
+          description: activity.description || "Activity description",
+          estimatedBudget: Number(activity.estimatedAmount) || 500000,
+          currency: selectedPlan.currency || "ETB",
+          procurementMethodId: resolvedMethodId,
+          marketApproach: formDetails.marketApproach || undefined,
+          qualificationApproach: formDetails.qualificationApproach || undefined,
+          domesticPreference:
+            formDetails.domesticPreference === "Yes" ||
+            formDetails.domesticPreference === true ||
+            formDetails.domesticPreference === "true"
+              ? true
+              : false,
+          reviewType: formDetails.reviewType || undefined,
+          procurementProcess: formDetails.procurementProcess || undefined,
+          procurementDocumentType:
+            formDetails.procurementDocumentType || undefined,
+          contractType: formDetails.contractType || undefined,
+          pricingBasis:
+            formDetails.pricingBasis === "BOQ"
+              ? "BOQ"
+              : formDetails.pricingBasis
+                ? "LUMP_SUM"
+                : undefined,
+          scopeNotes: formDetails.scopeNotes?.trim() || undefined,
+          remarks: formDetails.remarks?.trim() || undefined,
+          lotRequired: Boolean(formDetails.lotRequired && lotsPayload),
+          lots: lotsPayload,
+          fundings: fundingsPayload,
+          components: componentsPayload,
+          stages: customStages.length > 0 ? customStages : undefined,
+          roadmap: customStages.length > 0 ? customStages : undefined,
+        };
+
+        if (existingBackendId) {
+          try {
+            await updateActivity(existingBackendId, baseActivityPayload);
           } catch (updateErr) {
             console.warn("Backend updateActivity note:", updateErr);
           }
@@ -1174,27 +1304,13 @@ export function OfficerProjectsView({
           let createdBackendAct: any = null;
           try {
             createdBackendAct = await createActivity({
+              ...baseActivityPayload,
               planId: targetBackendPlanId,
               reference: activity.reference,
-              procurementMethodId: resolvedMethodId,
-              description: activity.description || "Activity description",
-              estimatedBudget: Number(activity.estimatedAmount) || 500000,
-              currency: selectedPlan.currency || "ETB",
-              stages: customStages.length > 0 ? customStages : undefined,
-              fundings: [
-                {
-                  fundingSource:
-                    selectedProject.fundingSource ||
-                    "African Development Bank (AfDB)",
-                  loanGrantNumber:
-                    selectedProject.financingNumbers?.[0] || undefined,
-                  allocationPct: 100,
-                },
-              ],
             });
           } catch (firstErr) {
             console.warn(
-              "First createActivity attempt failed, attempting fallback without custom stages:",
+              "First createActivity attempt failed, attempting fallback:",
               firstErr,
             );
             try {
@@ -1227,7 +1343,7 @@ export function OfficerProjectsView({
               createdBackendAct.reference || activity.reference;
 
             // Sync savedActivityRecords
-            const updatedSavedActs = savedActivityRecords.map((r) => {
+            const updatedSavedActs = nextRecords.map((r) => {
               if (
                 r.activity.reference?.toLowerCase() ===
                   activity.reference?.toLowerCase() ||
@@ -1253,7 +1369,7 @@ export function OfficerProjectsView({
             );
 
             // Sync savedPlanRecords
-            const updatedSavedPlans = savedPlanRecords.map((item) => {
+            const updatedSavedPlans = nextPlanRecords.map((item) => {
               if (
                 item.plan.reference?.toLowerCase() ===
                   selectedPlan.reference?.toLowerCase() ||
@@ -1300,6 +1416,7 @@ export function OfficerProjectsView({
       }
     }
 
+    invalidatePlansCache();
     await loadData();
 
     // Navigate back to plan detail
@@ -1758,7 +1875,7 @@ export function OfficerProjectsView({
       OFFICER_PLAN_DRAFTS_STORAGE_KEY,
       JSON.stringify(nextPlanRecords),
     );
-
+    invalidatePlansCache();
     await loadData();
   }
 

@@ -269,7 +269,9 @@ export function UserManagementView({
     user: ApiUser;
   } | null>(null);
   const [isConfirmingAction, setIsConfirmingAction] = useState(false);
-  const [confirmModalError, setConfirmModalError] = useState<string | null>(null);
+  const [confirmModalError, setConfirmModalError] = useState<string | null>(
+    null,
+  );
 
   // Change Email Modal state
   const [changeEmailModal, setChangeEmailModal] = useState<{
@@ -281,9 +283,9 @@ export function UserManagementView({
   const [changeEmailError, setChangeEmailError] = useState<string | null>(null);
 
   // Action Success Banner
-  const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(
-    null,
-  );
+  const [actionSuccessMessage, setActionSuccessMessage] = useState<
+    string | null
+  >(null);
 
   // Cancelled and deleted user IDs tracked for active session & storage
   const [cancelledUserIds, setCancelledUserIds] = useState<Set<string>>(() =>
@@ -300,7 +302,10 @@ export function UserManagementView({
     };
     window.addEventListener("pts:account-status-changed", handleStatusChanged);
     return () =>
-      window.removeEventListener("pts:account-status-changed", handleStatusChanged);
+      window.removeEventListener(
+        "pts:account-status-changed",
+        handleStatusChanged,
+      );
   }, []);
 
   // Floating Toast Notification state
@@ -350,15 +355,14 @@ export function UserManagementView({
         pageSize: PAGE_SIZE,
         search: searchQuery || undefined,
         role: roleFilterMap[selectedRole],
-        isActive:
-          selectedStatus === "Active"
-            ? true
-            : undefined,
+        isActive: selectedStatus === "Active" ? true : undefined,
       });
       setUsersResponse((prev) => {
         if (!prev) return result;
         // Keep any users from prev that are in cancelledUserIds so the user can immediately observe the "Invitation Cancelled" indication
-        const cancelledInPrev = prev.data.filter((u) => cancelledUserIds.has(u.id));
+        const cancelledInPrev = prev.data.filter((u) =>
+          cancelledUserIds.has(u.id),
+        );
         const newIds = new Set(result.data.map((u) => u.id));
         const toKeep = cancelledInPrev.filter((u) => !newIds.has(u.id));
         return {
@@ -371,7 +375,14 @@ export function UserManagementView({
         err instanceof Error ? err.message : "Failed to load users.",
       );
     }
-  }, [currentPage, searchQuery, selectedRole, selectedStatus, cancelledUserIds, deletedUserIds]);
+  }, [
+    currentPage,
+    searchQuery,
+    selectedRole,
+    selectedStatus,
+    cancelledUserIds,
+    deletedUserIds,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -390,17 +401,16 @@ export function UserManagementView({
       pageSize: PAGE_SIZE,
       search: searchQuery || undefined,
       role: roleFilterMap[selectedRole],
-      isActive:
-        selectedStatus === "Active"
-          ? true
-          : undefined,
+      isActive: selectedStatus === "Active" ? true : undefined,
     })
       .then((result) => {
         if (active) {
           if (result && Array.isArray(result.data)) {
             setUsersResponse((prev) => {
               if (!prev) return result;
-              const cancelledInPrev = prev.data.filter((u) => cancelledUserIds.has(u.id));
+              const cancelledInPrev = prev.data.filter((u) =>
+                cancelledUserIds.has(u.id),
+              );
               const newIds = new Set(result.data.map((u) => u.id));
               const toKeep = cancelledInPrev.filter((u) => !newIds.has(u.id));
               return {
@@ -433,7 +443,13 @@ export function UserManagementView({
     return () => {
       active = false;
     };
-  }, [currentPage, searchQuery, selectedRole, selectedStatus, cancelledUserIds]);
+  }, [
+    currentPage,
+    searchQuery,
+    selectedRole,
+    selectedStatus,
+    cancelledUserIds,
+  ]);
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
@@ -529,7 +545,9 @@ export function UserManagementView({
           return {
             ...prev,
             data: prev.data.map((u) =>
-              u.id === user.id ? { ...u, isActive: false, status: "INACTIVE" } : u,
+              u.id === user.id
+                ? { ...u, isActive: false, status: "INACTIVE" }
+                : u,
             ),
           };
         }
@@ -714,7 +732,11 @@ export function UserManagementView({
   const rawUsers = usersResponse?.data ?? [];
   const users = rawUsers.filter((u) => {
     if (selectedStatus === "ALL") return true;
-    const detailed = getDetailedAccountStatus(u, cancelledUserIds, deletedUserIds);
+    const detailed = getDetailedAccountStatus(
+      u,
+      cancelledUserIds,
+      deletedUserIds,
+    );
     if (selectedStatus === "Active")
       return detailed === "ACTIVE" || detailed === "PENDING_INVITATION";
     if (selectedStatus === "Deactivated") return detailed === "DEACTIVATED";
@@ -1100,7 +1122,8 @@ export function UserManagementView({
                           const isCancelled =
                             detailedStatus === "CANCELLED_INVITATION";
                           const isDeleted = detailedStatus === "DELETED";
-                          const isDeactivated = detailedStatus === "DEACTIVATED";
+                          const isDeactivated =
+                            detailedStatus === "DEACTIVATED";
                           const isActive = detailedStatus === "ACTIVE";
                           const isPending =
                             detailedStatus === "PENDING_INVITATION";
@@ -1144,7 +1167,11 @@ export function UserManagementView({
 
                               <td className="py-4 px-4 text-[#475569] font-normal align-middle max-w-xs">
                                 <div className="flex items-center gap-2 group">
-                                  <span className={`truncate ${isCancelled || isDeleted ? "text-slate-400" : ""}`}>{user.email}</span>
+                                  <span
+                                    className={`truncate ${isCancelled || isDeleted ? "text-slate-400" : ""}`}
+                                  >
+                                    {user.email}
+                                  </span>
                                   {!isCancelled && !isDeleted && (
                                     <button
                                       type="button"
@@ -1222,7 +1249,10 @@ export function UserManagementView({
                                     disabled={actionUserId === user.id}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      openConfirmModal("cancel_invitation", user);
+                                      openConfirmModal(
+                                        "cancel_invitation",
+                                        user,
+                                      );
                                     }}
                                     className="px-3 py-1 text-xs font-semibold rounded-full border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:border-amber-400 transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
                                     title="Cancel and revoke invitation link"
@@ -1231,7 +1261,9 @@ export function UserManagementView({
                                     <span>Cancel Invitation</span>
                                   </button>
                                 ) : (
-                                  <span className="text-slate-300 font-medium">—</span>
+                                  <span className="text-slate-300 font-medium">
+                                    —
+                                  </span>
                                 )}
                               </td>
 
@@ -1329,7 +1361,10 @@ export function UserManagementView({
                                       disabled={actionUserId === user.id}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        openConfirmModal(isActive ? "deactivate" : "activate", user);
+                                        openConfirmModal(
+                                          isActive ? "deactivate" : "activate",
+                                          user,
+                                        );
                                       }}
                                       className={`px-3.5 py-1 text-xs font-semibold rounded-full border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 ${
                                         isActive
@@ -1488,27 +1523,45 @@ export function UserManagementView({
                       <>
                         Are you sure you want to deactivate the account for{" "}
                         <strong className="text-slate-900">
-                          {confirmModal.user.displayName || confirmModal.user.name}
+                          {confirmModal.user.displayName ||
+                            confirmModal.user.name}
                         </strong>{" "}
-                        (<span className="font-mono">{confirmModal.user.email}</span>)? The user will be immediately barred from signing into the system.
+                        (
+                        <span className="font-mono">
+                          {confirmModal.user.email}
+                        </span>
+                        )? The user will be immediately barred from signing into
+                        the system.
                       </>
                     )}
                     {confirmModal.type === "activate" && (
                       <>
                         Are you sure you want to reactivate the account for{" "}
                         <strong className="text-slate-900">
-                          {confirmModal.user.displayName || confirmModal.user.name}
+                          {confirmModal.user.displayName ||
+                            confirmModal.user.name}
                         </strong>{" "}
-                        (<span className="font-mono">{confirmModal.user.email}</span>)? The user will be granted permission to sign in again.
+                        (
+                        <span className="font-mono">
+                          {confirmModal.user.email}
+                        </span>
+                        )? The user will be granted permission to sign in again.
                       </>
                     )}
                     {confirmModal.type === "delete" && (
                       <>
                         Are you sure you want to delete the account for{" "}
                         <strong className="text-slate-900">
-                          {confirmModal.user.displayName || confirmModal.user.name}
+                          {confirmModal.user.displayName ||
+                            confirmModal.user.name}
                         </strong>{" "}
-                        (<span className="font-mono">{confirmModal.user.email}</span>)? This account will be removed from the active directory and visible under &quot;Deactivated or deleted accounts&quot;.
+                        (
+                        <span className="font-mono">
+                          {confirmModal.user.email}
+                        </span>
+                        )? This account will be removed from the active
+                        directory and visible under &quot;Deactivated or deleted
+                        accounts&quot;.
                       </>
                     )}
                     {confirmModal.type === "cancel_invitation" && (
@@ -1517,7 +1570,8 @@ export function UserManagementView({
                         <strong className="text-slate-900 font-mono">
                           {confirmModal.user.email}
                         </strong>
-                        ? The invitation link will be permanently revoked immediately to prevent anyone from registering.
+                        ? The invitation link will be permanently revoked
+                        immediately to prevent anyone from registering.
                       </>
                     )}
                   </p>
@@ -1603,7 +1657,8 @@ export function UserManagementView({
                     Change User Email Address
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    {changeEmailModal.user.displayName || changeEmailModal.user.name}
+                    {changeEmailModal.user.displayName ||
+                      changeEmailModal.user.name}
                   </p>
                 </div>
               </div>
@@ -1653,7 +1708,8 @@ export function UserManagementView({
                   className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium transition-all"
                 />
                 <p className="text-[11px] text-slate-500 mt-1.5 leading-normal">
-                  Updating this address will change where login credentials, verification codes, and official notifications are sent.
+                  Updating this address will change where login credentials,
+                  verification codes, and official notifications are sent.
                 </p>
               </div>
 

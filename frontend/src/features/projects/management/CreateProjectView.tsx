@@ -477,9 +477,7 @@ export function CreateProjectView({
     const allSources = [
       ...standardSources,
       ...(hasCustomDonor
-        ? [
-            step2Data.customFundingSource.trim() || "Custom Funding Source",
-          ]
+        ? [step2Data.customFundingSource.trim() || "Custom Funding Source"]
         : []),
     ];
     const finalFunding = allSources.join(", ") || "Custom Funding Source";

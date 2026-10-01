@@ -132,8 +132,18 @@ export function invalidateProjectsCache() {
 
 export async function fetchProjects(): Promise<BackendProject[]> {
   try {
-    const res = await apiClient.get<any>("/projects");
-    const data = Array.isArray(res) ? res : res.data || [];
+    const res = await apiClient.get<any>("/projects", {
+      params: { pageSize: 500 },
+    });
+    const data = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.items)
+            ? res.data.items
+            : [];
     if (Array.isArray(data) && data.length > 0) {
       _cachedProjects = data;
       _cachedProjectsTimestamp = Date.now();

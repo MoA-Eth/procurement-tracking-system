@@ -108,7 +108,8 @@ const TAB_PLACEHOLDERS: Record<TabType, { code: string; label: string }> = {
   },
   PROCUREMENT_METHOD: {
     code: "e.g. PM_RFQ, PM_NCB, PM_QCBS",
-    label: "e.g. Request for Quotations (RFQ), Quality and Cost-Based Selection (QCBS)",
+    label:
+      "e.g. Request for Quotations (RFQ), Quality and Cost-Based Selection (QCBS)",
   },
   CURRENCY: {
     code: "e.g. ETB, USD, EUR, UA, GBP",
