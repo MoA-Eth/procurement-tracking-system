@@ -20,6 +20,11 @@ export interface ProcurementActivityAllocation {
   id: string;
   percent: string;
   selected: boolean;
+  name?: string;
+  code?: string;
+  source?: string;
+  loanNumber?: string;
+  share?: number;
 }
 
 export interface ProcurementActivityLot {
@@ -86,9 +91,18 @@ export interface ProcurementActivityFormValues {
   scopeNotes: string;
   specificMethod: string;
   subcomponent: string;
+  additionalReferences?: AdditionalReference[];
+  stepReference?: string;
+}
+
+export interface AdditionalReference {
+  id: string;
+  type: string;
+  value: string;
 }
 
 export interface ProcurementActivityDetails {
+  additionalReferences?: AdditionalReference[];
   componentAllocations: ProcurementActivityAllocation[];
   financingAllocations: ProcurementActivityAllocation[];
   form: ProcurementActivityFormValues;
@@ -109,6 +123,8 @@ export interface ProcurementActivitySummary {
   method: string;
   reference: string;
   status: ProcurementActivityStatus;
+  currency?: string;
+  fundingSource?: string;
   createdById?: string;
   createdByName?: string;
   updatedById?: string;
@@ -123,6 +139,48 @@ export interface SavedOfficerActivityRecord {
   projectCode: string;
 }
 
+export function isTestOrJunkActivity(
+  reference?: string,
+  description?: string,
+): boolean {
+  const ref = (reference || "").trim().toLowerCase();
+  const desc = (description || "").trim().toLowerCase();
+
+  if (!ref && !desc) return false;
+  if (
+    ref.startsWith("act-test") ||
+    ref.includes("act-test") ||
+    ref.startsWith("test-") ||
+    ref.includes("test verification")
+  ) {
+    return true;
+  }
+  if (
+    desc.includes("vermy culture center") ||
+    desc.includes("vermy") ||
+    desc.includes("consultancy consultancy")
+  ) {
+    return true;
+  }
+  if (
+    desc.includes("test verification activity") ||
+    desc.includes("automated persistence verification")
+  ) {
+    return true;
+  }
+  if (desc === "test" || desc === "test test" || desc === "test test test") {
+    return true;
+  }
+  if (/^test(\s+test)+$/i.test(desc)) {
+    return true;
+  }
+  if (/^g{5,}$/i.test(desc) || /^m{5,}$/i.test(desc) || /^hbhb/i.test(desc)) {
+    return true;
+  }
+
+  return false;
+}
+
 export function parseSavedActivityRecords(
   serializedRecords: string | null,
 ): SavedOfficerActivityRecord[] {
@@ -131,12 +189,48 @@ export function parseSavedActivityRecords(
   try {
     const parsed: unknown = JSON.parse(serializedRecords);
     if (!Array.isArray(parsed)) return [];
-    return parsed
+    const valid = parsed
       .filter(isSavedOfficerActivityRecord)
-      .filter((record) => !record.activity.reference.startsWith("MOA/"));
+      .filter((record) => !record.activity.reference.startsWith("MOA/"))
+      .filter(
+        (record) =>
+          !isTestOrJunkActivity(
+            record.activity.reference,
+            record.activity.description,
+          ),
+      );
+
+    if (typeof window !== "undefined" && valid.length < parsed.length) {
+      try {
+        window.localStorage.setItem(
+          OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+          JSON.stringify(valid),
+        );
+      } catch {}
+    }
+
+    return valid;
   } catch {
     return [];
   }
+}
+
+export function purgeLocalTestAndJunkRecords(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const rawActs = window.localStorage.getItem(
+      OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+    );
+    if (rawActs) {
+      parseSavedActivityRecords(rawActs);
+    }
+  } catch {}
+}
+
+if (typeof window !== "undefined") {
+  setTimeout(() => {
+    purgeLocalTestAndJunkRecords();
+  }, 0);
 }
 
 export function addSavedActivityRecord(
@@ -147,7 +241,10 @@ export function addSavedActivityRecord(
     (existing) =>
       existing.projectCode !== record.projectCode ||
       existing.planReference !== record.planReference ||
-      existing.activity.reference !== record.activity.reference,
+      (existing.activity.reference !== record.activity.reference &&
+        (!existing.activity.id ||
+          !record.activity.id ||
+          existing.activity.id !== record.activity.id)),
   );
 
   return [...withoutExisting, record];
@@ -490,6 +587,9 @@ export function mapBackendActivityToProcurementActivitySummary(
     method: ba.procurementMethod?.label || ba.procurementMethod?.code || "RFB",
     reference: ba.reference || ba.id,
     status,
+    currency: ba.currency || "ETB",
+    fundingSource:
+      ba.fundings?.[0]?.fundingSource || ba.fundingSource || undefined,
     createdById: ba.createdById || ba.creator?.id,
     createdByName,
     updatedById: ba.updatedById || ba.updatedByUser?.id,
@@ -499,45 +599,64 @@ export function mapBackendActivityToProcurementActivitySummary(
     details: {
       componentAllocations: (ba.components || []).map((c: any) => ({
         id: c.component || "comp-1",
+        name: c.component || "",
+        code: c.subcomponent || "",
+        share: Number(c.allocationPct || 100),
         percent: String(c.allocationPct || 100),
         selected: true,
       })),
       financingAllocations: (ba.fundings || []).map((f: any) => ({
         id: f.fundingSource || "fs-1",
+        source: f.fundingSource || "",
+        loanNumber: f.loanGrantNumber || "",
+        share: Number(f.allocationPct || 100),
         percent: String(f.allocationPct || 100),
         selected: true,
       })),
       form: {
         activityDescription: ba.description || "",
-        classificationCode: "",
-        comments: "",
+        classificationCode: ba.procurementClassificationCode || "",
+        comments: ba.remarks || "",
         contractType: ba.contractType || "Lump Sum",
         currency: ba.currency || "ETB",
-        domesticPreference: "No",
+        domesticPreference:
+          ba.domesticPreference === "Yes" ||
+          ba.domesticPreference === true ||
+          ba.domesticPreference === "true"
+            ? "Yes"
+            : "No",
         estimatedAmount: String(ba.estimatedBudget || 0),
-        evaluationOptionCode: "",
-        fundingSource: ba.fundings?.[0]?.fundingSource || "",
-        highRiskCode: "",
-        inProcess: false,
-        invitationReference: "",
-        latitude: "",
-        location: "",
-        longitude: "",
+        evaluationOptionCode:
+          (Array.isArray(ba.evaluationOptions) && ba.evaluationOptions[0]) ||
+          "",
+        fundingSource:
+          ba.fundings?.[0]?.fundingSource || ba.fundingSource || "",
+        highRiskCode: ba.highSeaShRisk ? "High" : "",
+        inProcess: ba.status === "IN_PROGRESS",
+        invitationReference: ba.bidReferenceNo || "",
+        latitude: ba.latitude ? String(ba.latitude) : "",
+        location: ba.location || "",
+        longitude: ba.longitude ? String(ba.longitude) : "",
         lotRequired: Boolean(ba.lotRequired),
-        marketApproach: ba.marketApproach || "OPEN_NATIONAL",
+        marketApproach: ba.marketApproach || "Open - National",
         method: ba.procurementMethod?.code || "",
-        oversightClassification: "",
-        pricingBasis: "",
-        procurementDocumentType: "",
-        procurementProcess: "",
-        qualificationApproach: "",
-        requiresUnAgency: false,
-        reviewType: ba.reviewType || "POST",
-        scopeNotes: "",
-        specificMethod: "",
-        subcomponent: "",
+        oversightClassification: ba.oversightClassification || "",
+        pricingBasis: ba.pricingBasis || "",
+        procurementDocumentType: ba.procurementDocumentType || "",
+        procurementProcess: ba.procurementProcess || "",
+        qualificationApproach: ba.qualificationApproach || "",
+        requiresUnAgency: Boolean(ba.requiresUnAgencyContracting),
+        reviewType: ba.reviewType || "Post Review",
+        scopeNotes: ba.scopeNotes || "",
+        specificMethod: ba.specificMethod || "",
+        subcomponent: ba.components?.[0]?.subcomponent || "",
       },
-      lots: [],
+      lots: (ba.lots || []).map((l: any, idx: number) => ({
+        id: l.id || idx + 1,
+        number: String(l.lotNumber || idx + 1),
+        description: l.description || "",
+        amount: String(l.estimatedAmount || ""),
+      })),
       roadmap,
     },
   };

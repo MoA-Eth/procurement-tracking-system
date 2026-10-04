@@ -145,6 +145,10 @@ export function useAdminDashboard(currentUser: AuthUser) {
     let adminsCount = 0;
 
     for (const u of users) {
+      const status = getDetailedAccountStatus(u, cancelledIds, deletedIds);
+      // Access Role Allocation reflects active permissions/access - only count active accounts
+      if (status !== "ACTIVE") continue;
+
       const roleStr = u.authRole || u.role;
       const normalized = normalizeUserRole(roleStr);
       if (normalized === "OFFICER") officersCount++;

@@ -132,8 +132,25 @@ export function OfficerProcurementActivityDetailView({
       : []),
   ]);
 
+  const additionalRefs =
+    (activity.details as any)?.additionalReferences ||
+    (activity.details as any)?.form?.additionalReferences;
+  const legacyStepRef =
+    (activity.details as any)?.form?.stepReference ||
+    (activity as any).bidReferenceNo;
+
   const relatedInformation = compactValues([
     { label: "Activity Reference", value: activity.reference },
+    ...(Array.isArray(additionalRefs) && additionalRefs.length > 0
+      ? additionalRefs
+          .filter((r: any) => Boolean(r?.value?.trim()))
+          .map((r: any) => ({
+            label: r.type || "Additional Reference",
+            value: r.value,
+          }))
+      : legacyStepRef
+        ? [{ label: "STEP Reference", value: legacyStepRef }]
+        : []),
     { label: "Activity Description", value: activity.description },
     {
       label: `Estimated Amount (${form?.currency || plan.currency})`,

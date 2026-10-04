@@ -124,6 +124,18 @@ export function mergeSavedPlans(
       return {
         ...saved,
         ...plan,
+        planPeriod:
+          plan.planPeriod?.from?.gregorian || plan.planPeriod?.to?.gregorian
+            ? plan.planPeriod
+            : saved.planPeriod || plan.planPeriod,
+        generalProcurementNoticeDate:
+          plan.generalProcurementNoticeDate?.gregorian ||
+          plan.generalProcurementNoticeDate?.ethiopian
+            ? plan.generalProcurementNoticeDate
+            : saved.generalProcurementNoticeDate ||
+              plan.generalProcurementNoticeDate,
+        description: plan.description || saved.description,
+        organizationRegion: plan.organizationRegion || saved.organizationRegion,
         status: resolvedStatus,
         rejectionReason: resolvedReason,
         activities: Math.max(
@@ -158,6 +170,22 @@ export function mergeSavedPlans(
   });
 }
 
+export function isTestOrJunkPlan(reference?: string, name?: string): boolean {
+  const ref = (reference || "").trim().toLowerCase();
+  const n = (name || "").trim().toLowerCase();
+
+  if (
+    ref.startsWith("test") ||
+    n === "test" ||
+    n === "test test" ||
+    /^test(\s+test)+$/i.test(n)
+  ) {
+    return true;
+  }
+  if (/^g{5,}$/i.test(n) || /^m{5,}$/i.test(n)) return true;
+  return false;
+}
+
 export function parseSavedPlanRecords(
   serializedRecords: string | null,
 ): SavedOfficerPlanRecord[] {
@@ -167,11 +195,24 @@ export function parseSavedPlanRecords(
     const parsed: unknown = JSON.parse(serializedRecords);
     if (!Array.isArray(parsed)) return [];
 
-    return parsed
+    const valid = parsed
       .map(normalizeSavedOfficerPlanRecord)
       .filter(
-        (record): record is SavedOfficerPlanRecord => record !== undefined,
+        (record): record is SavedOfficerPlanRecord =>
+          record !== undefined &&
+          !isTestOrJunkPlan(record.plan.reference, record.plan.name),
       );
+
+    if (typeof window !== "undefined" && valid.length < parsed.length) {
+      try {
+        window.localStorage.setItem(
+          OFFICER_PLAN_DRAFTS_STORAGE_KEY,
+          serializeSavedPlanRecords(valid),
+        );
+      } catch {}
+    }
+
+    return valid;
   } catch {
     return [];
   }
@@ -279,9 +320,8 @@ function normalizeProcurementPlanSummary(
       typeof plan.reference === "string" &&
       typeof plan.budgetYear === "string" &&
       isValidStatus &&
-      (plan.currency === "ETB" ||
-        plan.currency === "USD" ||
-        plan.currency === "UA") &&
+      typeof plan.currency === "string" &&
+      Boolean(plan.currency) &&
       typeof plan.activities === "number" &&
       typeof plan.completedActivities === "number" &&
       typeof plan.delayedActivities === "number" &&

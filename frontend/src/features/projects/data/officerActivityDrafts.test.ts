@@ -104,4 +104,66 @@ describe("officer activity draft storage", () => {
       [],
     );
   });
+
+  it("filters out test verification activities and junk records", () => {
+    const testRecords = [
+      {
+        projectCode: "SLMP",
+        planReference: "PP-SLMP-2018",
+        activity: {
+          reference: "ACT-TEST-2063",
+          description: "Test Verification Activity 2063",
+          estimatedAmount: 100000,
+          method: "RFQ",
+          category: "Goods",
+          currentStage: "Preparation",
+          status: "Not Started",
+        },
+      },
+      {
+        projectCode: "CREW",
+        planReference: "PP-CREW-2018",
+        activity: {
+          reference: "ACT-001",
+          description: "vermy culture center",
+          estimatedAmount: 100000,
+          method: "RFQ",
+          category: "Goods",
+          currentStage: "Preparation",
+          status: "Not Started",
+        },
+      },
+      {
+        projectCode: "CREW",
+        planReference: "PP-CREW-2018",
+        activity: {
+          reference: "ACT-002",
+          description: "Consultancy Consultancy",
+          estimatedAmount: 100000,
+          method: "QCBS",
+          category: "Consultancy Services",
+          currentStage: "Preparation",
+          status: "Not Started",
+        },
+      },
+      {
+        projectCode: "CREW",
+        planReference: "PP-CREW-2018",
+        activity: {
+          reference: "ACT-003",
+          description: "test test",
+          estimatedAmount: 100000,
+          method: "RFQ",
+          category: "Goods",
+          currentStage: "Preparation",
+          status: "Not Started",
+        },
+      },
+      record, // valid record
+    ];
+
+    const result = parseSavedActivityRecords(JSON.stringify(testRecords));
+    expect(result).toHaveLength(1);
+    expect(result[0].activity.reference).toBe("ET-MoA-000013-GO-RFQ");
+  });
 });

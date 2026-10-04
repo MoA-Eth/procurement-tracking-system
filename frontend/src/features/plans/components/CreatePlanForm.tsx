@@ -139,6 +139,22 @@ export function CreatePlanForm({
       return;
     }
 
+    if (targetStatus === "Submitted to Director") {
+      const activitiesCount = initialData?.activitiesCount ?? 0;
+      if (activitiesCount === 0) {
+        setDateError(
+          "Cannot submit an empty plan. The plan must contain procurement activities before submission to the Director.",
+        );
+        return;
+      }
+      const confirmed = window.confirm(
+        `Are you sure you want to submit the procurement plan "${planName.trim()}" to the Director for review?`,
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
     const finalStatus = targetStatus || status;
     let finalDescription = description.trim();
 
@@ -566,9 +582,15 @@ export function CreatePlanForm({
                     status === "Draft") && (
                     <button
                       type="button"
-                      onClick={() =>
-                        handleSaveWithStatus("Submitted to Director")
-                      }
+                      onClick={() => {
+                        if ((initialData?.activitiesCount ?? 0) === 0) {
+                          alert(
+                            "An empty plan or a plan without an activity will not be submitted to the Director. Please add at least one procurement activity before submitting.",
+                          );
+                          return;
+                        }
+                        handleSaveWithStatus("Submitted to Director");
+                      }}
                       className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0A3C2F] hover:bg-[#072F25] text-xs sm:text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer"
                     >
                       <Send className="h-4 w-4" />

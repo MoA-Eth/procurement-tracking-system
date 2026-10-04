@@ -143,4 +143,28 @@ describe("OfficerProcurementPlanDetailView", () => {
 
     expect(markup).toContain("Version History");
   });
+
+  it("does not show empty plan warning banner by default on an empty draft plan and displays Submit to Director", () => {
+    const emptyDraftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      activities: 0,
+      planActivities: [],
+      status: "Draft",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={emptyDraftPlan}
+        project={mockProject}
+        savedActivities={[]}
+      />,
+    );
+
+    expect(markup).not.toContain("Plan is not ready for submission");
+    expect(markup).not.toContain("Plan cannot be submitted");
+    expect(markup).not.toContain(
+      "An empty plan or a plan without an activity will not be submitted",
+    );
+    expect(markup).toContain("Submit to Director");
+    expect(markup).toContain("Plan is ready for review");
+  });
 });

@@ -15,12 +15,15 @@ export interface DualCalendarDateValue {
   gregorian: string;
 }
 
+export type SupportedCurrency =
+  "ETB" | "USD" | "EUR" | "GBP" | "JPY" | "UA" | (string & {});
+
 export interface ProcurementPlanSummary {
   activities: number;
   budgetYear: string;
   category: ProcurementCategory;
   completedActivities: number;
-  currency: "ETB" | "USD" | "UA";
+  currency: SupportedCurrency;
   delayedActivities: number;
   description?: string;
   estimatedValue: number;
@@ -67,13 +70,14 @@ export interface OfficerProject {
     gregorian: string;
   };
   availableOrganizationRegions?: readonly string[];
-  baseCurrency: "ETB" | "USD" | "UA";
+  baseCurrency: SupportedCurrency;
   code: string;
   components?: readonly string[];
   countryOrganisation: string;
   executingAgency: string;
   financingNumbers?: readonly string[];
   fundingSource: string;
+  fundingSources?: readonly string[];
   fundingType: string;
   name: string;
   organizationRegion?: string;

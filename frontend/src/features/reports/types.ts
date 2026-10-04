@@ -33,6 +33,7 @@ export interface ReportFilterState {
   fromDate: string;
   toDate: string;
   project: string;
+  projects?: string[];
   category: string;
   fundingSource: string;
   fundingType: string;
@@ -60,6 +61,7 @@ export const DEFAULT_FILTERS: ReportFilterState = {
   fromDate: "2024-07-08",
   toDate: "2027-07-07",
   project: "ALL",
+  projects: [],
   category: "ALL",
   fundingSource: "ALL",
   fundingType: "ALL",

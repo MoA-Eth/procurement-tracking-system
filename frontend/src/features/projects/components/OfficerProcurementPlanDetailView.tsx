@@ -28,6 +28,7 @@ import {
   AlertCircle,
   FileCheck2,
   Clock,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState, useEffect } from "react";
@@ -111,6 +112,10 @@ export function OfficerProcurementPlanDetailView({
     useState(false);
   const [editingActivity, setEditingActivity] =
     useState<ProcurementActivitySummary | null>(null);
+  const [isConfirmSubmitOpen, setIsConfirmSubmitOpen] = useState(false);
+  const [resubmitReason, setResubmitReason] = useState("");
+  const [emptyPlanNotice, setEmptyPlanNotice] = useState<string | null>(null);
+  const emptyNoticeRef = useRef<HTMLElement>(null);
 
   const handleSelectActivityDelay = (act: PlanActivity) => {
     const rawDelay = (act as any).delayDays || (act as any).daysOverdue || 7;
@@ -181,6 +186,16 @@ export function OfficerProcurementPlanDetailView({
     }
     return list;
   }, [savedActivities, currentPlan.planActivities]);
+
+  const totalActivitiesCount =
+    activities.length > 0 ? activities.length : (currentPlan.activities ?? 0);
+  const isPlanEmpty = totalActivitiesCount === 0;
+
+  useEffect(() => {
+    if (!isPlanEmpty && emptyPlanNotice) {
+      setEmptyPlanNotice(null);
+    }
+  }, [isPlanEmpty, emptyPlanNotice]);
 
   const categoryOptions = useMemo(
     () =>
@@ -259,8 +274,40 @@ export function OfficerProcurementPlanDetailView({
     }
   };
 
-  const handleSubmitToDirector = async (reason?: string) => {
+  const handleOpenSubmitModal = () => {
+    if (isPlanEmpty) {
+      const msg =
+        "An empty plan or a plan without an activity will not be submitted to the Director. Please add at least one procurement activity before submitting.";
+      setEmptyPlanNotice(msg);
+      setTimeout(() => {
+        emptyNoticeRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 50);
+      return;
+    }
+    setEmptyPlanNotice(null);
     setSubmitError(null);
+    setIsConfirmSubmitOpen(true);
+  };
+
+  const handleSubmitToDirector = async (reason?: string) => {
+    if (isPlanEmpty) {
+      const msg =
+        "An empty plan or a plan without an activity will not be submitted to the Director. Please add at least one procurement activity before submitting.";
+      setEmptyPlanNotice(msg);
+      setTimeout(() => {
+        emptyNoticeRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 50);
+      return;
+    }
+
+    setSubmitError(null);
+    setEmptyPlanNotice(null);
     setIsSubmitting(true);
 
     try {
@@ -673,7 +720,7 @@ export function OfficerProcurementPlanDetailView({
             <button
               className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#0A3C2F] px-5 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={isSubmitting}
-              onClick={() => handleSubmitToDirector()}
+              onClick={handleOpenSubmitModal}
               type="button"
             >
               {isSubmitting ? (
@@ -692,7 +739,47 @@ export function OfficerProcurementPlanDetailView({
         </section>
       )}
 
-      {/* ── DRAFT READY FOR INITIAL SUBMISSION ──────────────────────── */}
+      {/* ── EMPTY PLAN SUBMISSION NOTICE (ONLY DISPLAYED UPON CLICKING SUBMIT) ── */}
+      {emptyPlanNotice && (
+        <section
+          ref={emptyNoticeRef}
+          aria-label="Empty plan submission notice"
+          className="flex flex-col gap-3.5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm border-l-4 border-l-slate-700 sm:flex-row sm:items-center sm:justify-between animate-in fade-in"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 border border-slate-200">
+              <AlertCircle
+                aria-hidden="true"
+                className="h-5 w-5 text-slate-600"
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-[#10243f]">
+                  Plan cannot be submitted
+                </h2>
+                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 border border-slate-200">
+                  Action Required
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                {emptyPlanNotice}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <button
+              className="inline-flex h-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
+              onClick={() => setEmptyPlanNotice(null)}
+              type="button"
+            >
+              Dismiss
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* ── DRAFT READY FOR SUBMISSION SECTION ─────────────────────── */}
       {activePlanStatus === "Draft" && (
         <section
           aria-label="Submit plan for review"
@@ -718,7 +805,7 @@ export function OfficerProcurementPlanDetailView({
           <button
             className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-2xs hover:bg-[#083025] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             disabled={isSubmitting}
-            onClick={() => handleSubmitToDirector()}
+            onClick={handleOpenSubmitModal}
             type="button"
           >
             {isSubmitting ? (
@@ -1070,6 +1157,148 @@ export function OfficerProcurementPlanDetailView({
         assignedOfficerName={currentPlan.createdByName}
         onSubmit={handleCreateAdditionalPlan}
       />
+
+      {/* ── CONFIRM SUBMISSION TO DIRECTOR MODAL ─────────────────────── */}
+      {isConfirmSubmitOpen && (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in"
+          role="dialog"
+        >
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0A3C2F] text-white">
+                  <Send className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Confirm Submission to Director
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Verify plan details before proceeding
+                  </p>
+                </div>
+              </div>
+              <button
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                onClick={() => setIsConfirmSubmitOpen(false)}
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Are you sure you want to submit this procurement plan to the
+                Director for review? Once submitted, the plan will be locked for
+                editing while under review.
+              </p>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2.5 text-xs">
+                <div className="flex justify-between items-center text-slate-600">
+                  <span className="text-slate-500 font-medium">Plan Name:</span>
+                  <span className="font-semibold text-slate-900 text-right truncate max-w-[260px]">
+                    {currentPlan.name}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span className="text-slate-500 font-medium">Reference:</span>
+                  <span className="font-mono font-semibold text-slate-900">
+                    {currentPlan.reference}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span className="text-slate-500 font-medium">Category:</span>
+                  <span className="font-semibold text-slate-900">
+                    {currentPlan.category}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span className="text-slate-500 font-medium">
+                    Activities Count:
+                  </span>
+                  <span className="font-semibold text-emerald-800">
+                    {totalActivitiesCount}{" "}
+                    {totalActivitiesCount === 1 ? "activity" : "activities"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span className="text-slate-500 font-medium">
+                    Estimated Value:
+                  </span>
+                  <span className="font-mono font-semibold text-slate-900">
+                    {formatAmount(
+                      currentPlan.estimatedValue ||
+                        activities.reduce(
+                          (sum, a) => sum + (Number(a.estimatedAmount) || 0),
+                          0,
+                        ),
+                    )}{" "}
+                    {currentPlan.currency || "ETB"}
+                  </span>
+                </div>
+              </div>
+
+              {isReturned && (
+                <div className="space-y-1.5 pt-1">
+                  <label
+                    htmlFor="resubmit-reason"
+                    className="block text-xs font-semibold text-slate-700"
+                  >
+                    Officer Revision Comment / Note for Director (Optional)
+                  </label>
+                  <textarea
+                    id="resubmit-reason"
+                    className="w-full rounded-lg border border-slate-300 p-2.5 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
+                    placeholder="Briefly state revisions made before resubmitting..."
+                    rows={2}
+                    value={resubmitReason}
+                    onChange={(e) => setResubmitReason(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 bg-slate-50 px-6 py-3.5">
+              <button
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                disabled={isSubmitting}
+                onClick={() => setIsConfirmSubmitOpen(false)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0A3C2F] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
+                onClick={async () => {
+                  await handleSubmitToDirector(
+                    resubmitReason.trim() || undefined,
+                  );
+                  setIsConfirmSubmitOpen(false);
+                }}
+                type="button"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-3.5 w-3.5" />
+                    <span>
+                      {isReturned ? "Confirm & Resubmit" : "Confirm & Submit"}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

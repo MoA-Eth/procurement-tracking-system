@@ -15,6 +15,7 @@ import {
 } from "../data/officerActivityTracking";
 import { ActivityTrackingDetailView } from "./ActivityTrackingDetailView";
 import {
+  isTestOrJunkActivity,
   mapBackendActivityToProcurementActivitySummary,
   OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
   parseSavedActivityRecords,
@@ -31,6 +32,7 @@ import {
   type OfficerProject,
   type ProcurementPlanSummary,
 } from "../../projects/data/officerProjects";
+import { formatGregorianDate as formatGregorianDateHelper } from "../../projects/utils/ethiopianCalendar";
 import {
   fetchProjects,
   isProjectAssignedToOfficer,
@@ -121,32 +123,9 @@ export function OfficerActivityTrackerView({
                 isProjectAssignedToOfficer(p, effectiveUser),
               )
             : rawProjects;
-          const assignedRawProjects =
-            filteredProjects.length > 0
-              ? [...filteredProjects]
-              : [...rawProjects];
-
-          if (selectedProjectCode) {
-            const normSel = selectedProjectCode.toLowerCase().trim();
-            const currentViewingProj = rawProjects.find(
-              (bp) =>
-                (bp.code || "").toLowerCase().trim() === normSel ||
-                (bp.id || "").toLowerCase().trim() === normSel ||
-                (bp.name || "").toLowerCase().trim() === normSel,
-            );
-            if (
-              currentViewingProj &&
-              !assignedRawProjects.some(
-                (p) =>
-                  (p.id && p.id === currentViewingProj.id) ||
-                  (p.code &&
-                    p.code.toLowerCase() ===
-                      currentViewingProj.code?.toLowerCase()),
-              )
-            ) {
-              assignedRawProjects.push(currentViewingProj);
-            }
-          }
+          const assignedRawProjects = effectiveUser
+            ? [...filteredProjects]
+            : [...rawProjects];
 
           const assignedIds = new Set(
             assignedRawProjects.map((p) => p.id).filter(Boolean),
@@ -181,8 +160,12 @@ export function OfficerActivityTrackerView({
           setBackendProjects(mapped);
 
           if (rawActivities && rawActivities.length > 0) {
-            const dbRecords: SavedOfficerActivityRecord[] = rawActivities.map(
-              (ba: BackendActivity) => {
+            const dbRecords: SavedOfficerActivityRecord[] = rawActivities
+              .filter(
+                (ba: BackendActivity) =>
+                  !isTestOrJunkActivity(ba.reference, ba.description || ""),
+              )
+              .map((ba: BackendActivity) => {
                 const summary =
                   mapBackendActivityToProcurementActivitySummary(ba);
                 const parentPlan = (rawPlans || []).find(
@@ -209,8 +192,7 @@ export function OfficerActivityTrackerView({
                   planReference: planRef,
                   projectCode: projCode,
                 };
-              },
-            );
+              });
             setBackendActivities(dbRecords);
           }
         }
@@ -345,6 +327,9 @@ export function collectTrackableActivities(
       const allActivitiesForPlan = Array.from(combinedMap.values());
 
       for (const activity of allActivitiesForPlan) {
+        if (isTestOrJunkActivity(activity.reference, activity.description)) {
+          continue;
+        }
         const tracking =
           findActivityTrackingRecord(
             trackingRecords,
@@ -369,6 +354,7 @@ export function collectTrackableActivities(
   for (const record of savedActivityRecords) {
     const act = record.activity;
     if (!act || !act.reference) continue;
+    if (isTestOrJunkActivity(act.reference, act.description)) continue;
     const refLower = act.reference.toLowerCase();
     const alreadyCaptured = Array.from(itemsByIdentity.values()).some(
       (item) =>
@@ -1549,12 +1535,5 @@ function trackerItemKey(item: OfficerTrackedActivityItem) {
 }
 
 function formatGregorianDate(value: string) {
-  const date = new Date(`${value}T00:00:00Z`);
-  if (Number.isNaN(date.valueOf())) return value;
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    timeZone: "UTC",
-    year: "numeric",
-  }).format(date);
+  return formatGregorianDateHelper(value) || value;
 }

@@ -63,14 +63,19 @@ describe("ReportFiltersPanel - Dynamic Filter Sets per Report Type", () => {
     methodOptions: [{ value: "ALL", label: "All Methods" }],
     officerOptions: [{ value: "ALL", label: "All Officers" }],
     categoryOptions: [{ value: "ALL", label: "All Categories" }],
+    sectorOptions: [
+      { value: "ALL", label: "All Sectors" },
+      { value: "Agriculture", label: "Agriculture" },
+    ],
   };
 
-  it("renders Annual Plan filters (EFY, Project, Category, Method, Source, Status)", () => {
+  it("renders Annual Plan filters (EFY, Project, Sector, Category, Method, Source, Status)", () => {
     const html = renderToStaticMarkup(
       <ReportFiltersPanel {...dummyProps} activeReport="annual-plan" />,
     );
     expect(html).toContain("EFY");
     expect(html).toContain("Project");
+    expect(html).toContain("Sector");
     expect(html).toContain("Category");
     expect(html).toContain("Procurement Method");
     expect(html).toContain("Funding Source");
@@ -138,6 +143,32 @@ describe("ReportFiltersPanel - Dynamic Filter Sets per Report Type", () => {
     );
     expect(html).toContain("Project");
     expect(html).toContain("Assigned Officer");
+  });
+
+  it("renders multi-project selection and sector filter with badge count", () => {
+    const html = renderToStaticMarkup(
+      <ReportFiltersPanel
+        {...dummyProps}
+        filters={{
+          ...DEFAULT_FILTERS,
+          projects: ["p-1", "p-2"],
+          sector: "Agriculture",
+        }}
+        projectOptions={[
+          { value: "ALL", label: "All Projects" },
+          { value: "p-1", label: "Project Alpha" },
+          { value: "p-2", label: "Project Beta" },
+        ]}
+        sectorOptions={[
+          { value: "ALL", label: "All Sectors" },
+          { value: "Agriculture", label: "Agriculture" },
+        ]}
+        activeReport="annual-plan"
+      />,
+    );
+    expect(html).toContain("2 Projects Selected");
+    expect(html).toContain("2 selected");
+    expect(html).toContain("Sector");
   });
 });
 

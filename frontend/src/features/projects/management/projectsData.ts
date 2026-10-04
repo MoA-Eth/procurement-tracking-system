@@ -104,8 +104,10 @@ export const FUNDING_TYPE_OPTIONS = [
 export const CURRENCY_OPTIONS = [
   "ETB (Ethiopian Birr)",
   "USD (US Dollar)",
-  "UA (AfDB Unit of Account)",
   "EUR (Euro)",
+  "GBP (British Pound Sterling)",
+  "JPY (Japanese Yen)",
+  "UA (AfDB Unit of Account)",
 ];
 
 export const BUDGET_YEAR_OPTIONS = [

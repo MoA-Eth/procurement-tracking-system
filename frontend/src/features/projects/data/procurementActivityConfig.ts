@@ -18,6 +18,7 @@ export type ProcurementMethodKey =
   | "lcs"
   | "cqs"
   | "indv"
+  | "sss"
   | (string & {});
 
 export interface ProcurementMethodOption {
@@ -77,7 +78,7 @@ export const procurementMethodOptions: readonly ProcurementMethodOption[] = [
       "Consultancy Services",
     ],
     key: "un-agency",
-    label: "UN Agency / UNOPS Direct",
+    label: "UN Agency",
     roadmap: "un",
   },
   {
@@ -109,6 +110,12 @@ export const procurementMethodOptions: readonly ProcurementMethodOption[] = [
     key: "indv",
     label: "Individual Consultant (INDV)",
     roadmap: "individual",
+  },
+  {
+    appliesTo: ["Consultancy Services"],
+    key: "sss",
+    label: "Single Source Selection (SSS)",
+    roadmap: "consulting",
   },
 ];
 
@@ -272,30 +279,55 @@ export function getAllProcurementMethodOptions(): readonly ProcurementMethodOpti
             itemLabel.toLowerCase().includes("consult") ||
             itemCode.includes("QCBS") ||
             itemCode.includes("CQS") ||
-            itemCode.includes("INDV");
+            itemCode.includes("INDV") ||
+            itemCode.includes("ICS") ||
+            itemCode.includes("SSS") ||
+            itemCode.includes("FBS") ||
+            itemCode.includes("LCS") ||
+            itemCode.includes("QBS") ||
+            itemLabel.toLowerCase().includes("single source") ||
+            itemLabel.toLowerCase().includes("individual");
 
-          const roadmap: ProcurementMethodOption["roadmap"] = isConsulting
-            ? "consulting"
-            : itemLabel.toLowerCase().includes("quotation") ||
-                itemCode.includes("RFQ")
-              ? "rfq"
-              : itemLabel.toLowerCase().includes("direct") ||
-                  itemCode.includes("DIR") ||
-                  itemCode.includes("SSS")
-                ? "direct"
-                : "rfb";
+          const isUniversal =
+            itemLabel.toLowerCase().includes("direct") ||
+            itemCode.includes("DIR") ||
+            itemLabel.toLowerCase().includes("un agency") ||
+            itemLabel.toLowerCase().includes("unops") ||
+            itemCode.includes("UN");
+
+          const roadmap: ProcurementMethodOption["roadmap"] =
+            itemCode.includes("CQS") || itemLabel.toLowerCase().includes("cqs")
+              ? "cqs"
+              : itemCode.includes("INDV") ||
+                  itemCode.includes("ICS") ||
+                  itemLabel.toLowerCase().includes("individual")
+                ? "individual"
+                : isConsulting
+                  ? "consulting"
+                  : itemLabel.toLowerCase().includes("quotation") ||
+                      itemCode.includes("RFQ")
+                    ? "rfq"
+                    : itemLabel.toLowerCase().includes("direct") ||
+                        itemCode.includes("DIR")
+                      ? "direct"
+                      : itemLabel.toLowerCase().includes("un") ||
+                          itemCode.includes("UN")
+                        ? "un"
+                        : "rfb";
 
           options.push({
             key: item.code.toLowerCase().replace(/[^a-z0-9]/g, "-") as any,
             label: item.label,
             appliesTo: isConsulting
               ? ["Consultancy Services"]
-              : [
-                  "Goods",
-                  "Works",
-                  "Non-Consulting Services",
-                  "Consultancy Services",
-                ],
+              : isUniversal
+                ? [
+                    "Goods",
+                    "Works",
+                    "Non-Consulting Services",
+                    "Consultancy Services",
+                  ]
+                : nonConsultingCategories,
             roadmap,
           });
         }
@@ -388,6 +420,14 @@ export function resolveProcurementMethodOption(
     needle.includes("individual")
   ) {
     return allOptions.find((opt) => opt.key === "indv");
+  }
+  if (needle.includes("sss") || needle.includes("single source")) {
+    return allOptions.find(
+      (opt) =>
+        opt.key === "sss" ||
+        opt.key === "pm-sss" ||
+        opt.label.toLowerCase().includes("single source"),
+    );
   }
 
   return undefined;

@@ -17,6 +17,7 @@ import {
   type TrackingDateValue,
 } from "../data/officerActivityTracking";
 import { DualCalendarField } from "../../projects/components/CreateProcurementPlanView";
+import { formatGregorianDate as formatGregorianDateHelper } from "../../projects/utils/ethiopianCalendar";
 import type { ProcurementActivityRoadmapStage } from "../../projects/data/officerActivityDrafts";
 import {
   recordActualStageDates,
@@ -1460,14 +1461,7 @@ function formatAmount(value: number) {
 }
 
 function formatGregorianDate(value: string) {
-  const date = new Date(`${value}T00:00:00Z`);
-  if (Number.isNaN(date.valueOf())) return value;
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    timeZone: "UTC",
-    year: "numeric",
-  }).format(date);
+  return formatGregorianDateHelper(value) || value;
 }
 
 function formatDateTime(value: string) {

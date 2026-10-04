@@ -11,13 +11,20 @@ import {
 } from "lucide-react";
 import {
   ETHIOPIAN_MONTHS,
+  GREGORIAN_MONTHS,
   daysInEthiopianMonth,
+  daysInGregorianMonth,
   ethiopianToGregorian,
   ethiopianWeekday,
   formatEthiopianDate,
+  formatGregorianDate,
   gregorianToEthiopian,
+  gregorianToIso,
+  gregorianWeekday,
   parseEthiopianDate,
+  parseGregorianDate,
   type EthiopianDate,
+  type GregorianDate,
 } from "../utils/ethiopianCalendar";
 
 export interface DualCalendarFieldProps {
@@ -65,8 +72,10 @@ export function DualCalendarField({
       onChange("", "");
       return;
     }
-    const converted = gregorianToEthiopian(value);
-    onChange(value, converted ? formatEthiopianDate(converted) : "");
+    const parsed = parseGregorianDate(value);
+    const isoValue = parsed ? gregorianToIso(parsed) : value;
+    const converted = gregorianToEthiopian(isoValue);
+    onChange(isoValue, converted ? formatEthiopianDate(converted) : "");
   }
 
   function changeEthiopian(value: EthiopianDate) {
@@ -107,19 +116,15 @@ export function DualCalendarField({
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-          {/* Gregorian Input */}
+          {/* Gregorian Calendar Picker */}
           <div className="min-w-0">
-            <input
+            <GregorianCalendarPicker
               id={`${id}-gregorian`}
-              type="date"
               value={gregorianValue}
-              onChange={(e) => changeGregorian(e.target.value)}
+              onSelect={changeGregorian}
+              onClear={clearBoth}
               disabled={disabled || readOnly}
-              className={`w-full rounded-lg bg-white border border-slate-300 px-3 py-2 text-xs text-slate-900 outline-none transition-colors ${
-                disabled || readOnly
-                  ? "bg-slate-100 text-slate-500 cursor-not-allowed"
-                  : "focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]/20 cursor-pointer"
-              }`}
+              popDirection={popDirection}
             />
           </div>
 
@@ -146,6 +151,267 @@ export function DualCalendarField({
           {errorMessage}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+const GREGORIAN_YEARS = Array.from({ length: 51 }, (_, idx) => 2000 + idx);
+
+function GregorianCalendarPicker({
+  id,
+  value,
+  onSelect,
+  onClear,
+  disabled,
+  popDirection = "auto",
+}: {
+  id: string;
+  value: string;
+  onSelect: (value: string) => void;
+  onClear?: () => void;
+  disabled?: boolean;
+  popDirection?: "up" | "down" | "auto";
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [autoPlacement, setAutoPlacement] = useState<"up" | "down">("down");
+  const effectivePlacement =
+    popDirection === "auto" ? autoPlacement : popDirection;
+
+  const parsedValue = parseGregorianDate(value);
+  const now = new Date();
+  const today: GregorianDate = {
+    day: now.getDate(),
+    month: now.getMonth() + 1,
+    year: now.getFullYear(),
+  };
+
+  const [visibleMonth, setVisibleMonth] = useState(
+    parsedValue?.month ?? today.month,
+  );
+  const [visibleYear, setVisibleYear] = useState(
+    parsedValue?.year ?? today.year,
+  );
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  function moveMonth(offset: number) {
+    const monthIndex = visibleMonth - 1 + offset;
+    const yearOffset = Math.floor(monthIndex / 12);
+    setVisibleYear((current) => current + yearOffset);
+    setVisibleMonth((((monthIndex % 12) + 12) % 12) + 1);
+  }
+
+  const leadingDays = gregorianWeekday(visibleYear, visibleMonth);
+  const monthDays = daysInGregorianMonth(visibleYear, visibleMonth);
+
+  const placementClass =
+    effectivePlacement === "up"
+      ? "bottom-full mb-2 left-0 origin-bottom-left"
+      : "top-full mt-2 left-0 origin-top-left";
+
+  const displayFormatted = parsedValue ? formatGregorianDate(parsedValue) : "";
+
+  const yearsList = GREGORIAN_YEARS.includes(visibleYear)
+    ? GREGORIAN_YEARS
+    : [...GREGORIAN_YEARS, visibleYear].sort((a, b) => a - b);
+
+  return (
+    <div ref={containerRef} className={`relative w-full ${open ? "z-50" : ""}`}>
+      {/* Hidden input preserves raw value for form serialization / static markup assertions */}
+      <input type="hidden" id={`${id}-value`} name={id} value={value || ""} />
+
+      <button
+        id={id}
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) {
+            if (!open) {
+              const current = parseGregorianDate(value) ?? today;
+              setVisibleMonth(current.month);
+              setVisibleYear(current.year);
+              if (popDirection === "auto" && containerRef.current) {
+                const rect = containerRef.current.getBoundingClientRect();
+                const spaceAbove = rect.top;
+                const spaceBelow = window.innerHeight - rect.bottom;
+                setAutoPlacement(
+                  spaceBelow >= 320 || spaceBelow >= spaceAbove ? "down" : "up",
+                );
+              }
+            }
+            setOpen((prev) => !prev);
+          }
+        }}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        className={`w-full rounded-lg bg-white border border-slate-300 px-3 py-2 text-xs font-semibold outline-none flex items-center justify-between text-left transition-colors ${
+          disabled
+            ? "bg-slate-100 text-slate-500 cursor-not-allowed"
+            : "hover:border-slate-400 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]/20 cursor-pointer text-slate-900"
+        }`}
+      >
+        <span
+          className={
+            displayFormatted
+              ? "truncate text-slate-900"
+              : "truncate text-slate-400"
+          }
+        >
+          {displayFormatted || "DD-Month-YYYY"}
+        </span>
+        <CalendarDays className="h-3.5 w-3.5 text-slate-400 shrink-0 ml-1.5" />
+      </button>
+
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Gregorian calendar"
+          className={`absolute ${placementClass} z-50 w-72 rounded-xl border border-slate-200 bg-white p-3 text-slate-800 shadow-2xl animate-in fade-in zoom-in-95`}
+        >
+          {/* Header Month / Year controls with interactive dropdowns */}
+          <div className="flex items-center justify-between gap-1 pb-2 border-b border-slate-100">
+            <button
+              type="button"
+              aria-label="Previous Gregorian month"
+              onClick={() => moveMonth(-1)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 transition-colors shrink-0 cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              <select
+                aria-label="Select Gregorian month"
+                value={visibleMonth}
+                onChange={(e) => setVisibleMonth(Number(e.target.value))}
+                className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
+              >
+                {GREGORIAN_MONTHS.map((monthName, idx) => (
+                  <option key={monthName} value={idx + 1}>
+                    {monthName}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                aria-label="Select Gregorian year"
+                value={visibleYear}
+                onChange={(e) => setVisibleYear(Number(e.target.value))}
+                className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
+              >
+                {yearsList.map((yr) => (
+                  <option key={yr} value={yr}>
+                    {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              aria-label="Next Gregorian month"
+              onClick={() => moveMonth(1)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 transition-colors shrink-0 cursor-pointer"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Weekday labels */}
+          <div className="mt-2 grid grid-cols-7 text-center text-[10px] font-semibold text-slate-400">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+              <span key={day} className="py-1">
+                {day}
+              </span>
+            ))}
+          </div>
+
+          {/* Days grid */}
+          <div className="grid grid-cols-7 gap-1 text-center text-xs">
+            {Array.from({ length: leadingDays }, (_, idx) => (
+              <span key={`empty-${idx}`} aria-hidden="true" />
+            ))}
+
+            {Array.from({ length: monthDays }, (_, idx) => idx + 1).map(
+              (day) => {
+                const isSelected =
+                  parsedValue?.year === visibleYear &&
+                  parsedValue.month === visibleMonth &&
+                  parsedValue.day === day;
+                const isToday =
+                  today.year === visibleYear &&
+                  today.month === visibleMonth &&
+                  today.day === day;
+
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    aria-label={`${day} ${GREGORIAN_MONTHS[visibleMonth - 1]} ${visibleYear}`}
+                    onClick={() => {
+                      onSelect(
+                        gregorianToIso({
+                          day,
+                          month: visibleMonth,
+                          year: visibleYear,
+                        }),
+                      );
+                      setOpen(false);
+                    }}
+                    className={`flex h-7 w-full items-center justify-center rounded-lg text-xs transition-colors cursor-pointer ${
+                      isSelected
+                        ? "bg-[#0A3C2F] font-semibold text-white shadow-xs"
+                        : isToday
+                          ? "border border-[#0A3C2F] font-semibold text-[#0A3C2F] hover:bg-emerald-50"
+                          : "hover:bg-slate-100 text-slate-700 font-medium"
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
+              },
+            )}
+          </div>
+
+          {/* Bottom Actions: Clear & Today */}
+          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => {
+                onClear?.();
+                setOpen(false);
+              }}
+              className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onSelect(gregorianToIso(today));
+                setOpen(false);
+              }}
+              className="text-[11px] font-semibold text-[#0A3C2F] hover:text-emerald-800 transition-colors cursor-pointer"
+            >
+              Today
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -178,15 +178,29 @@ export const FALLBACK_LOOKUPS: LookupItem[] = [
   {
     id: "cur-3",
     type: "CURRENCY",
-    code: "UA",
-    label: "UA (AfDB Unit of Account)",
+    code: "EUR",
+    label: "EUR (Euro)",
     isActive: true,
   },
   {
     id: "cur-4",
     type: "CURRENCY",
-    code: "EUR",
-    label: "EUR (Euro)",
+    code: "GBP",
+    label: "GBP (British Pound Sterling)",
+    isActive: true,
+  },
+  {
+    id: "cur-5",
+    type: "CURRENCY",
+    code: "JPY",
+    label: "JPY (Japanese Yen)",
+    isActive: true,
+  },
+  {
+    id: "cur-6",
+    type: "CURRENCY",
+    code: "UA",
+    label: "UA (AfDB Unit of Account)",
     isActive: true,
   },
 

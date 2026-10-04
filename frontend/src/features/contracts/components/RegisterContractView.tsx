@@ -24,6 +24,11 @@ import {
 } from "@/lib/projectsApi";
 import { fetchPlans, mapBackendPlanToOfficerPlanSummary } from "@/lib/plansApi";
 import { fetchActivities } from "@/lib/activitiesApi";
+import { getInitialLookups } from "@/lib/lookupsApi";
+import {
+  formatEthiopianDate,
+  gregorianToEthiopian,
+} from "../../projects/utils/ethiopianCalendar";
 import {
   ArrowLeft,
   Building2,
@@ -95,6 +100,113 @@ const statusOptions: readonly ContractStatus[] = [
   "Partially Terminated",
   "Terminated",
 ];
+
+export interface CurrencyOption {
+  code: string;
+  label: string;
+  name: string;
+  symbol: string;
+}
+
+export const BASE_SYSTEM_CURRENCIES: readonly CurrencyOption[] = [
+  {
+    code: "ETB",
+    label: "ETB - Ethiopian Birr (Br)",
+    name: "Ethiopian Birr",
+    symbol: "Br",
+  },
+  {
+    code: "USD",
+    label: "USD - US Dollar ($)",
+    name: "US Dollar",
+    symbol: "$",
+  },
+  {
+    code: "EUR",
+    label: "EUR - Euro (€)",
+    name: "Euro",
+    symbol: "€",
+  },
+  {
+    code: "GBP",
+    label: "GBP - British Pound Sterling (£)",
+    name: "British Pound Sterling",
+    symbol: "£",
+  },
+  {
+    code: "JPY",
+    label: "JPY - Japanese Yen (¥)",
+    name: "Japanese Yen",
+    symbol: "¥",
+  },
+  {
+    code: "UA",
+    label: "UA - Unit of Account (AfDB)",
+    name: "Unit of Account",
+    symbol: "UA",
+  },
+] as const;
+
+function getPlanPlannedEndDate(context?: ActivityContext): ContractDateValue {
+  if (!context) return emptyDate();
+  const planTo = context.plan.planPeriod?.to;
+  if (planTo && (planTo.gregorian || planTo.ethiopian)) {
+    const greg = planTo.gregorian || "";
+    const converted = greg ? gregorianToEthiopian(greg) : null;
+    return {
+      ethiopian:
+        planTo.ethiopian || (converted ? formatEthiopianDate(converted) : ""),
+      gregorian: greg,
+    };
+  }
+  const rawEnd =
+    (context.plan as any)?.periodEnd || (context.plan as any)?.periodTo;
+  if (rawEnd) {
+    const d = new Date(rawEnd);
+    const greg = !isNaN(d.getTime())
+      ? d.toISOString().slice(0, 10)
+      : String(rawEnd);
+    const converted = gregorianToEthiopian(greg);
+    return {
+      ethiopian: converted ? formatEthiopianDate(converted) : "",
+      gregorian: greg,
+    };
+  }
+  if (
+    context.activity.details?.roadmap &&
+    context.activity.details.roadmap.length > 0
+  ) {
+    const stages = context.activity.details.roadmap;
+    const lastStage = [...stages]
+      .reverse()
+      .find(
+        (s) => s.currentTargetEndDate || s.plannedEndDate || s.gregorianDate,
+      );
+    if (lastStage) {
+      const greg =
+        lastStage.currentTargetEndDate ||
+        lastStage.plannedEndDate ||
+        lastStage.gregorianDate ||
+        "";
+      const converted = greg ? gregorianToEthiopian(greg) : null;
+      return {
+        ethiopian:
+          lastStage.ethiopianDate ||
+          (converted ? formatEthiopianDate(converted) : ""),
+        gregorian: greg,
+      };
+    }
+  }
+  if (context.project.projectPeriod?.to) {
+    const greg = context.project.projectPeriod.to;
+    const converted = gregorianToEthiopian(greg);
+    return {
+      ethiopian: converted ? formatEthiopianDate(converted) : "",
+      gregorian: greg,
+    };
+  }
+  return emptyDate();
+}
 
 export function RegisterContractView({
   existingContracts,
@@ -266,6 +378,67 @@ export function RegisterContractView({
     datesComplete &&
     dateOrderValid;
 
+  useEffect(() => {
+    if (selectedContext && !form.plannedCompletionDate.gregorian) {
+      const inherited = getPlanPlannedEndDate(selectedContext);
+      if (inherited.gregorian) {
+        setForm((prev) => ({
+          ...prev,
+          plannedCompletionDate: inherited,
+        }));
+      }
+    }
+  }, [selectedContext, form.plannedCompletionDate.gregorian]);
+
+  const availableCurrencies = useMemo(() => {
+    const map = new Map<string, { code: string; label: string }>();
+
+    for (const c of BASE_SYSTEM_CURRENCIES) {
+      map.set(c.code.toUpperCase(), { code: c.code, label: c.label });
+    }
+
+    const lookupCurrencies = getInitialLookups("CURRENCY");
+    for (const l of lookupCurrencies) {
+      const code = l.code.toUpperCase();
+      if (!map.has(code)) {
+        map.set(code, { code: l.code, label: l.label || code });
+      }
+    }
+
+    for (const proj of projects) {
+      if (proj.baseCurrency) {
+        const code = proj.baseCurrency.trim().toUpperCase();
+        if (!map.has(code)) {
+          map.set(code, { code, label: `${code} - Project Currency` });
+        }
+      }
+      for (const pl of proj.plans || []) {
+        if (pl.currency) {
+          const code = pl.currency.trim().toUpperCase();
+          if (!map.has(code)) {
+            map.set(code, { code, label: `${code} - Plan Currency` });
+          }
+        }
+      }
+    }
+
+    for (const c of existingContracts) {
+      if (c.currency) {
+        const code = c.currency.trim().toUpperCase();
+        if (!map.has(code)) {
+          map.set(code, { code, label: code });
+        }
+      }
+    }
+
+    if (form.currency && !map.has(form.currency.toUpperCase())) {
+      const code = form.currency.trim().toUpperCase();
+      map.set(code, { code, label: code });
+    }
+
+    return Array.from(map.values());
+  }, [projects, existingContracts, form.currency]);
+
   function updateField<K extends keyof ContractFormState>(
     field: K,
     value: ContractFormState[K],
@@ -277,11 +450,14 @@ export function RegisterContractView({
     const context = eligibleActivities.find(
       (option) => activityKey(option) === key,
     );
+    const inheritedPlannedDate = getPlanPlannedEndDate(context);
 
     setForm((current) => ({
       ...current,
       activityKey: key,
-      currency: context?.plan.currency ?? current.currency,
+      currency: (context?.plan.currency ||
+        context?.project.baseCurrency ||
+        current.currency) as ContractCurrency,
       organizationRegion:
         context?.plan.organizationRegion ||
         context?.project.organizationRegion ||
@@ -289,6 +465,9 @@ export function RegisterContractView({
       originalAmount: context
         ? String(context.activity.estimatedAmount)
         : current.originalAmount,
+      plannedCompletionDate: inheritedPlannedDate.gregorian
+        ? inheritedPlannedDate
+        : current.plannedCompletionDate,
       subcomponent:
         context?.activity.details?.form.subcomponent || current.subcomponent,
     }));
@@ -572,9 +751,11 @@ export function RegisterContractView({
                   }
                   value={form.currency}
                 >
-                  <option value="ETB">ETB - Ethiopian Birr</option>
-                  <option value="USD">USD - United States Dollar</option>
-                  <option value="UA">UA - Unit of Account</option>
+                  {availableCurrencies.map((cur) => (
+                    <option key={cur.code} value={cur.code}>
+                      {cur.label}
+                    </option>
+                  ))}
                 </SelectControl>
               </Field>
               <Field hint="Use 0 when VAT does not apply." label="VAT Rate">
@@ -762,9 +943,10 @@ export function RegisterContractView({
                 required={false}
               />
               <DualCalendarField
+                disabled={true}
                 errorMessage={
                   attempted && !form.plannedCompletionDate.gregorian
-                    ? "Enter the planned completion date."
+                    ? "Planned completion date is missing from the selected plan."
                     : attempted && !dateOrderValid
                       ? "Planned completion must follow the contract start or signature date."
                       : undefined
@@ -772,13 +954,17 @@ export function RegisterContractView({
                 ethiopianValue={form.plannedCompletionDate.ethiopian}
                 gregorianValue={form.plannedCompletionDate.gregorian}
                 id="contract-completion-date"
-                label="Planned Completion / End Date"
-                onChange={(gregorian, ethiopian) =>
-                  updateField("plannedCompletionDate", {
-                    ethiopian,
-                    gregorian,
-                  })
+                label={
+                  <span className="flex items-center gap-1.5">
+                    <span>Planned Completion / End Date</span>
+                    <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                      Inherited from Plan
+                    </span>
+                  </span>
                 }
+                onChange={() => {}}
+                readOnly={true}
+                required={true}
               />
               <DualCalendarField
                 errorMessage={

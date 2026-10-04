@@ -920,6 +920,32 @@ export function mapBackendPlanToOfficerPlanSummary(
       };
     });
 
+  const gpnIso = (() => {
+    if (!backendPlan.gpnDate) return "";
+    const d = new Date(backendPlan.gpnDate);
+    return !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : "";
+  })();
+
+  const startIso = (() => {
+    const raw =
+      backendPlan.periodStart ||
+      (backendPlan as any).planPeriodFrom ||
+      (backendPlan as any).periodFrom;
+    if (!raw) return "";
+    const d = new Date(raw);
+    return !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : "";
+  })();
+
+  const endIso = (() => {
+    const raw =
+      backendPlan.periodEnd ||
+      (backendPlan as any).planPeriodTo ||
+      (backendPlan as any).periodTo;
+    if (!raw) return "";
+    const d = new Date(raw);
+    return !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : "";
+  })();
+
   return {
     reference: backendPlan.id,
     id: backendPlan.id,
@@ -953,23 +979,24 @@ export function mapBackendPlanToOfficerPlanSummary(
       undefined,
     createdAt: backendPlan.createdAt,
     updatedAt: backendPlan.updatedAt,
-    planPeriod: backendPlan.periodStart
+    generalProcurementNoticeDate: gpnIso
       ? {
-          from: {
-            ethiopian: "01 Meskerem 2018",
-            gregorian: new Date(backendPlan.periodStart).toLocaleDateString(
-              "en-GB",
-              { day: "numeric", month: "short", year: "numeric" },
-            ),
-          },
-          to: {
-            ethiopian: "30 Sene 2018",
-            gregorian: new Date(backendPlan.periodEnd).toLocaleDateString(
-              "en-GB",
-              { day: "numeric", month: "short", year: "numeric" },
-            ),
-          },
+          gregorian: gpnIso,
+          ethiopian: toEthiopianDateString(gpnIso),
         }
       : undefined,
+    planPeriod:
+      startIso || endIso
+        ? {
+            from: {
+              ethiopian: startIso ? toEthiopianDateString(startIso) : "",
+              gregorian: startIso,
+            },
+            to: {
+              ethiopian: endIso ? toEthiopianDateString(endIso) : "",
+              gregorian: endIso,
+            },
+          }
+        : undefined,
   };
 }

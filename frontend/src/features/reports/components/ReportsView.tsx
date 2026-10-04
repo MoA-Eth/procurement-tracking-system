@@ -102,6 +102,7 @@ export function ReportsView() {
   const [fundingSources, setFundingSources] = useState<LookupItem[]>([]);
   const [methods, setMethods] = useState<LookupItem[]>([]);
   const [officers, setOfficers] = useState<OfficerUserItem[]>([]);
+  const [sectors, setSectors] = useState<LookupItem[]>([]);
   const [currentTime, setCurrentTime] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -184,15 +185,23 @@ export function ReportsView() {
     let isMounted = true;
     async function loadData() {
       try {
-        const [plans, projects, fsList, pmList, offList, contractsList] =
-          await Promise.all([
-            fetchPlans().catch(() => []),
-            fetchProjects().catch(() => []),
-            fetchLookups("FUNDING_SOURCE").catch(() => []),
-            fetchLookups("PROCUREMENT_METHOD").catch(() => []),
-            fetchOfficers().catch(() => []),
-            fetchContracts().catch(() => []),
-          ]);
+        const [
+          plans,
+          projects,
+          fsList,
+          pmList,
+          offList,
+          contractsList,
+          secList,
+        ] = await Promise.all([
+          fetchPlans().catch(() => []),
+          fetchProjects().catch(() => []),
+          fetchLookups("FUNDING_SOURCE").catch(() => []),
+          fetchLookups("PROCUREMENT_METHOD").catch(() => []),
+          fetchOfficers().catch(() => []),
+          fetchContracts().catch(() => []),
+          fetchLookups("SECTOR").catch(() => []),
+        ]);
         if (isMounted) {
           setBackendPlans(plans || []);
           setBackendProjects(projects || []);
@@ -200,6 +209,7 @@ export function ReportsView() {
           setMethods(pmList || []);
           setOfficers(offList || []);
           setBackendContracts(contractsList || []);
+          setSectors(secList || []);
         }
       } catch (err: any) {
         console.warn("ReportsView loadData error:", err);
@@ -229,6 +239,34 @@ export function ReportsView() {
     });
     return list;
   }, [backendProjects]);
+
+  const sectorOptions = useMemo(() => {
+    const list = [{ value: "ALL", label: "All Sectors" }];
+    const seen = new Set<string>();
+
+    sectors.forEach((s) => {
+      const label = s.label || s.code;
+      if (label && !seen.has(label.toLowerCase())) {
+        seen.add(label.toLowerCase());
+        list.push({ value: label, label });
+      }
+    });
+
+    backendProjects.forEach((p) => {
+      const sLabel =
+        p.sector?.label || (p as any).sectorName || (p as any).sector;
+      if (
+        sLabel &&
+        typeof sLabel === "string" &&
+        !seen.has(sLabel.toLowerCase())
+      ) {
+        seen.add(sLabel.toLowerCase());
+        list.push({ value: sLabel, label: sLabel });
+      }
+    });
+
+    return list;
+  }, [sectors, backendProjects]);
 
   const fundingSourceOptions = useMemo(() => {
     const list = [{ value: "ALL", label: "All Sources" }];
@@ -305,27 +343,93 @@ export function ReportsView() {
     return list;
   }, [backendContracts]);
 
+  // Helper to match selected projects (multi-select supported)
+  const isProjectMatch = (projectId: string | undefined | null) => {
+    const selected =
+      filters.projects && filters.projects.length > 0
+        ? filters.projects.filter((p) => p !== "ALL")
+        : filters.project && filters.project !== "ALL"
+          ? filters.project
+              .split(",")
+              .map((s) => s.trim())
+              .filter((s) => s !== "ALL")
+          : [];
+    if (selected.length === 0) return true;
+    if (!projectId) return false;
+    return selected.includes(projectId);
+  };
+
+  // Helper to get sector for a plan
+  const getSectorForPlan = (plan: any) => {
+    const proj = backendProjects.find(
+      (bp) => bp.id === plan?.projectId || bp.id === plan?.project?.id,
+    );
+    return (
+      proj?.sector?.label ||
+      proj?.sector?.code ||
+      (proj as any)?.sectorName ||
+      plan?.project?.sector?.label ||
+      plan?.project?.sector?.code ||
+      (plan as any)?.sector ||
+      ""
+    );
+  };
+
+  // Helper to get sector for a project
+  const getSectorForProject = (proj: any) => {
+    return (
+      proj?.sector?.label ||
+      proj?.sector?.code ||
+      (proj as any)?.sectorName ||
+      ""
+    );
+  };
+
+  // Helper to match selected sector
+  const isSectorMatch = (sectorValue: string | undefined | null) => {
+    if (!filters.sector || filters.sector === "ALL") return true;
+    if (!sectorValue) return false;
+    const sNorm = sectorValue.toLowerCase().trim();
+    const fNorm = filters.sector.toLowerCase().trim();
+    return sNorm === fNorm || sNorm.includes(fNorm) || fNorm.includes(sNorm);
+  };
+
+  // Helper to get matching plan for a contract
+  const getPlanForContract = (c: any) => {
+    return backendPlans.find((p) =>
+      p.activities?.some(
+        (a) => a.id === c.activityId || a.reference === c.activity?.reference,
+      ),
+    );
+  };
+
   // Active Filter Count Calculation
   const activeFilterCount = useMemo(() => {
     let count = 0;
+    const isProjectActive =
+      (filters.projects &&
+        filters.projects.length > 0 &&
+        !filters.projects.includes("ALL")) ||
+      (filters.project && filters.project !== "ALL");
+    const isSectorActive = filters.sector && filters.sector !== "ALL";
+
+    if (isProjectActive) count++;
+    if (isSectorActive) count++;
+
     if (activeReport === "annual-plan") {
       if (filters.efy !== "ALL") count++;
-      if (filters.project !== "ALL") count++;
       if (filters.category !== "ALL") count++;
       if (filters.procurementMethod !== "ALL") count++;
       if (filters.fundingSource !== "ALL") count++;
       if (filters.planStatus !== "ALL") count++;
     } else if (activeReport === "plan-vs-actual") {
       if (filters.efy !== "ALL") count++;
-      if (filters.project !== "ALL") count++;
       if (filters.fromDate !== "2024-07-08" || filters.toDate !== "2027-07-07")
         count++;
     } else if (activeReport === "procurement-step") {
-      if (filters.project !== "ALL") count++;
       if (filters.marketApproach !== "ALL") count++;
       if (filters.reviewType !== "ALL") count++;
     } else if (activeReport === "delayed-procurement") {
-      if (filters.project !== "ALL") count++;
       if (filters.delayRange !== "ALL") count++;
       if (filters.officer !== "ALL") count++;
     } else if (
@@ -345,34 +449,27 @@ export function ReportsView() {
       activeReport === "quarterly-detailed" ||
       activeReport === "detailed-procurement"
     ) {
-      if (filters.project !== "ALL") count++;
       if (filters.category !== "ALL") count++;
       if (filters.quarter !== "ALL") count++;
     } else if (activeReport === "contract-register") {
-      if (filters.project !== "ALL") count++;
       if (filters.contractStatus !== "ALL") count++;
       if (filters.supplier !== "ALL") count++;
       if (filters.region !== "ALL") count++;
     } else if (activeReport === "contract-payment") {
-      if (filters.project !== "ALL") count++;
       if (filters.contractStatus !== "ALL") count++;
       if (filters.region !== "ALL") count++;
     } else if (activeReport === "regional-sector-summary") {
       if (filters.orgGrouping !== "REGION") count++;
       if (filters.efy !== "ALL") count++;
-      if (filters.project !== "ALL") count++;
     } else if (activeReport === "project-summary") {
-      if (filters.project !== "ALL") count++;
       if (filters.efy !== "ALL") count++;
       if (filters.category !== "ALL") count++;
     } else if (
       activeReport === "officer-summary" ||
       activeReport === "project-officer"
     ) {
-      if (filters.project !== "ALL") count++;
       if (filters.officer !== "ALL") count++;
     } else if (activeReport === "committee-approval") {
-      if (filters.project !== "ALL") count++;
       if (filters.committeeResult !== "ALL") count++;
       if (filters.managementDecision !== "ALL") count++;
       if (filters.officer !== "ALL") count++;
@@ -457,17 +554,16 @@ export function ReportsView() {
         return false;
       });
     }
-    if (filters.project !== "ALL") {
-      rows = rows.filter((r) => {
-        const matchingPlan = backendPlans.find((p) =>
-          p.activities?.some((a) => a.id === r.id),
-        );
-        return (
-          matchingPlan?.projectId === filters.project ||
-          matchingPlan?.project?.id === filters.project
-        );
-      });
-    }
+    rows = rows.filter((r) => {
+      const matchingPlan = backendPlans.find((p) =>
+        p.activities?.some((a) => a.id === r.id),
+      );
+      const projId = matchingPlan?.projectId || matchingPlan?.project?.id;
+      if (!isProjectMatch(projId)) return false;
+      const sec = getSectorForPlan(matchingPlan);
+      if (!isSectorMatch(sec)) return false;
+      return true;
+    });
     if (filters.category !== "ALL") {
       const catNorm = filters.category.toLowerCase().replace(/[\s\-_]/g, "");
       rows = rows.filter((r) =>
@@ -667,20 +763,19 @@ export function ReportsView() {
       });
     }
 
-    if (filters.project !== "ALL") {
-      rows = rows.filter((r) => {
-        const matchingPlan = backendPlans.find((p) =>
-          p.activities?.some((a) => a.id === r.id),
-        );
-        return (
-          matchingPlan?.projectId === filters.project ||
-          matchingPlan?.project?.id === filters.project
-        );
-      });
-    }
+    rows = rows.filter((r) => {
+      const matchingPlan = backendPlans.find((p) =>
+        p.activities?.some((a) => a.id === r.id),
+      );
+      const projId = matchingPlan?.projectId || matchingPlan?.project?.id;
+      if (!isProjectMatch(projId)) return false;
+      const sec = getSectorForPlan(matchingPlan);
+      if (!isSectorMatch(sec)) return false;
+      return true;
+    });
 
     return rows;
-  }, [backendPlans, filters]);
+  }, [backendPlans, backendProjects, filters]);
 
   // ─── 3. Procurement STEP Report Rows ──────────────────────────────────────
   const stepReportRows = useMemo(() => {
@@ -728,17 +823,16 @@ export function ReportsView() {
       }
     }
 
-    if (filters.project !== "ALL") {
-      rows = rows.filter((r) => {
-        const matchingPlan = backendPlans.find((p) =>
-          p.activities?.some((a) => a.id === r.id),
-        );
-        return (
-          matchingPlan?.projectId === filters.project ||
-          matchingPlan?.project?.id === filters.project
-        );
-      });
-    }
+    rows = rows.filter((r) => {
+      const matchingPlan = backendPlans.find((p) =>
+        p.activities?.some((a) => a.id === r.id),
+      );
+      const projId = matchingPlan?.projectId || matchingPlan?.project?.id;
+      if (!isProjectMatch(projId)) return false;
+      const sec = getSectorForPlan(matchingPlan);
+      if (!isSectorMatch(sec)) return false;
+      return true;
+    });
 
     if (filters.marketApproach !== "ALL") {
       const approachNorm = filters.marketApproach
@@ -758,7 +852,7 @@ export function ReportsView() {
     }
 
     return rows;
-  }, [backendPlans, filters]);
+  }, [backendPlans, backendProjects, filters]);
 
   // ─── 4. Delayed Procurement Rows ──────────────────────────────────────────
   const delayedProcurementRows = useMemo(() => {
@@ -825,17 +919,16 @@ export function ReportsView() {
       }
     }
 
-    if (filters.project !== "ALL") {
-      rows = rows.filter((r) => {
-        const matchingPlan = backendPlans.find((p) =>
-          p.activities?.some((a) => r.id.startsWith(a.id)),
-        );
-        return (
-          matchingPlan?.projectId === filters.project ||
-          matchingPlan?.project?.id === filters.project
-        );
-      });
-    }
+    rows = rows.filter((r) => {
+      const matchingPlan = backendPlans.find((p) =>
+        p.activities?.some((a) => r.id.startsWith(a.id)),
+      );
+      const projId = matchingPlan?.projectId || matchingPlan?.project?.id;
+      if (!isProjectMatch(projId)) return false;
+      const sec = getSectorForPlan(matchingPlan);
+      if (!isSectorMatch(sec)) return false;
+      return true;
+    });
 
     if (filters.officer !== "ALL") {
       const selectedOfficer = officers.find((o) => o.id === filters.officer);
@@ -868,21 +961,17 @@ export function ReportsView() {
     }
 
     return rows;
-  }, [backendPlans, currentTime, filters, officers]);
+  }, [backendPlans, backendProjects, currentTime, filters, officers]);
 
   // ─── 5. Monthly Procurement Rows ──────────────────────────────────────────
   const monthlyProcurementRows = useMemo(() => {
     const rows: MonthlyProcurementRow[] = [];
     if (backendPlans.length > 0) {
       for (const p of backendPlans) {
-        if (filters.project !== "ALL") {
-          if (
-            p.projectId !== filters.project &&
-            p.project?.id !== filters.project
-          ) {
-            continue;
-          }
-        }
+        const projId = p.projectId || p.project?.id;
+        if (!isProjectMatch(projId)) continue;
+        const sec = getSectorForPlan(p);
+        if (!isSectorMatch(sec)) continue;
 
         for (const a of p.activities || []) {
           const dateStr =
@@ -935,7 +1024,7 @@ export function ReportsView() {
       }
     }
     return rows;
-  }, [backendPlans, filters]);
+  }, [backendPlans, backendProjects, filters]);
 
   // Legacy Monthly Summary Rows (aggregated format)
   const monthlySummaryRows = useMemo(() => {
@@ -953,13 +1042,10 @@ export function ReportsView() {
 
     if (backendPlans.length > 0) {
       for (const p of backendPlans) {
-        if (filters.project !== "ALL") {
-          if (
-            p.projectId !== filters.project &&
-            p.project?.id !== filters.project
-          )
-            continue;
-        }
+        const projId = p.projectId || p.project?.id;
+        if (!isProjectMatch(projId)) continue;
+        const sec = getSectorForPlan(p);
+        if (!isSectorMatch(sec)) continue;
 
         for (const a of p.activities || []) {
           const cat = (p as any).category || a.category || "Goods";
@@ -992,9 +1078,15 @@ export function ReportsView() {
     const rate =
       filters.currency === "USD"
         ? 1 / 125
-        : filters.currency === "UA"
-          ? 1 / 165
-          : 1;
+        : filters.currency === "EUR"
+          ? 1 / 135
+          : filters.currency === "GBP"
+            ? 1 / 160
+            : filters.currency === "JPY"
+              ? 1 / 0.85
+              : filters.currency === "UA"
+                ? 1 / 165
+                : 1;
 
     return Array.from(monthMap.entries()).map(([id, data]) => ({
       id,
@@ -1002,7 +1094,7 @@ export function ReportsView() {
       currency: filters.currency || "ETB",
       totalAmountETB: Math.round(data.totalAmountETB * rate),
     }));
-  }, [backendPlans, filters]);
+  }, [backendPlans, backendProjects, filters]);
 
   // ─── 6. Quarterly Procurement Summary Rows ────────────────────────────────
   const quarterlySummaryRows = useMemo(() => {
@@ -1019,6 +1111,11 @@ export function ReportsView() {
     >();
 
     backendPlans.forEach((p) => {
+      const projId = p.projectId || p.project?.id;
+      if (!isProjectMatch(projId)) return;
+      const sec = getSectorForPlan(p);
+      if (!isSectorMatch(sec)) return;
+
       p.activities?.forEach((a) => {
         const method =
           a.procurementMethod?.label || a.procurementMethod?.code || "RFB";
@@ -1048,7 +1145,7 @@ export function ReportsView() {
           ? `Quarter ${filters.quarter}`
           : "Full Fiscal Year",
     }));
-  }, [backendPlans, filters]);
+  }, [backendPlans, backendProjects, filters]);
 
   // ─── 7. Quarterly Detailed Rows ───────────────────────────────────────────
   const quarterlyDetailedRows = useMemo(() => {
@@ -1056,6 +1153,11 @@ export function ReportsView() {
     let rowCount = 1;
 
     backendPlans.forEach((p) => {
+      const projId = p.projectId || p.project?.id;
+      if (!isProjectMatch(projId)) return;
+      const sec = getSectorForPlan(p);
+      if (!isSectorMatch(sec)) return;
+
       p.activities?.forEach((a) => {
         const matchedContract = backendContracts.find(
           (c) => c.activityId === a.id || c.activity?.reference === a.reference,
@@ -1095,14 +1197,14 @@ export function ReportsView() {
     });
 
     return rows;
-  }, [backendPlans, backendContracts]);
+  }, [backendPlans, backendContracts, backendProjects, filters]);
 
   // Legacy Detailed Procurement
   const detailedProcurementRows = quarterlyDetailedRows;
 
   // ─── 8. Contract Register Rows ────────────────────────────────────────────
   const contractRegisterRows = useMemo(() => {
-    return backendContracts.map((c) => {
+    const list = backendContracts.map((c) => {
       const orig = Number(c.contractNetOfVat || c.totalValue || 0);
       const amend = Number((c as any).amendmentAmount || 0);
       const priceAdj = Number((c as any).priceAdjustmentAmount || 0);
@@ -1161,11 +1263,41 @@ export function ReportsView() {
         remarks: c.remarks || "—",
       };
     });
-  }, [backendContracts, backendPlans]);
+
+    return list.filter((r) => {
+      const c = backendContracts.find((item) => item.id === r.id);
+      const matchingPlan = getPlanForContract(c);
+      const projId = matchingPlan?.projectId || matchingPlan?.project?.id;
+      if (!isProjectMatch(projId)) return false;
+      const sec = getSectorForPlan(matchingPlan);
+      if (!isSectorMatch(sec)) return false;
+      if (
+        filters.contractStatus !== "ALL" &&
+        r.contractStatus !== filters.contractStatus
+      )
+        return false;
+      if (filters.supplier !== "ALL") {
+        if (
+          !r.supplierName
+            .toLowerCase()
+            .includes(filters.supplier.toLowerCase()) &&
+          c?.supplierId !== filters.supplier
+        ) {
+          return false;
+        }
+      }
+      if (
+        filters.region !== "ALL" &&
+        !r.region.toLowerCase().includes(filters.region.toLowerCase())
+      )
+        return false;
+      return true;
+    });
+  }, [backendContracts, backendPlans, backendProjects, filters]);
 
   // ─── 9. Contract & Payment Rows ───────────────────────────────────────────
   const contractPaymentRows = useMemo(() => {
-    return backendContracts.map((c) => {
+    const list = backendContracts.map((c) => {
       const originalAmount = Number(c.contractNetOfVat || c.totalValue || 0);
       const finalAmount = Number(
         c.contractAmountWithVat || c.totalValue || originalAmount,
@@ -1234,7 +1366,27 @@ export function ReportsView() {
         contractStatus: c.status || "ACTIVE",
       };
     });
-  }, [backendContracts]);
+
+    return list.filter((r) => {
+      const c = backendContracts.find((item) => item.id === r.id);
+      const matchingPlan = getPlanForContract(c);
+      const projId = matchingPlan?.projectId || matchingPlan?.project?.id;
+      if (!isProjectMatch(projId)) return false;
+      const sec = getSectorForPlan(matchingPlan);
+      if (!isSectorMatch(sec)) return false;
+      if (
+        filters.contractStatus !== "ALL" &&
+        r.contractStatus !== filters.contractStatus
+      )
+        return false;
+      if (
+        filters.region !== "ALL" &&
+        !r.region.toLowerCase().includes(filters.region.toLowerCase())
+      )
+        return false;
+      return true;
+    });
+  }, [backendContracts, backendPlans, backendProjects, filters]);
 
   // ─── 10. Regional / Sector Summary Rows ───────────────────────────────────
   const regionalSectorRows = useMemo(() => {
@@ -1254,6 +1406,11 @@ export function ReportsView() {
     >();
 
     backendPlans.forEach((p) => {
+      const projId = p.projectId || p.project?.id;
+      if (!isProjectMatch(projId)) return;
+      const sec = getSectorForPlan(p);
+      if (!isSectorMatch(sec)) return;
+
       const unit = p.organization || "Federal / MoA Head Office";
       const curr = regionMap.get(unit) || {
         organizationUnit: unit,
@@ -1280,6 +1437,12 @@ export function ReportsView() {
     });
 
     backendContracts.forEach((c) => {
+      const matchingPlan = getPlanForContract(c);
+      const projId = matchingPlan?.projectId || matchingPlan?.project?.id;
+      if (!isProjectMatch(projId)) return;
+      const sec = getSectorForPlan(matchingPlan);
+      if (!isSectorMatch(sec)) return;
+
       const unit = c.region || "Federal / MoA Head Office";
       const curr = regionMap.get(unit);
       if (curr) {
@@ -1304,11 +1467,18 @@ export function ReportsView() {
         delayMeasure: `${data.delayed} delayed`,
       };
     });
-  }, [backendPlans, backendContracts]);
+  }, [backendPlans, backendContracts, backendProjects, filters]);
 
   // ─── 11. Project Summary Rows ─────────────────────────────────────────────
   const projectSummaryRows = useMemo(() => {
-    return backendProjects.map((proj) => {
+    const filteredProjects = backendProjects.filter((proj) => {
+      if (!isProjectMatch(proj.id)) return false;
+      const sec = getSectorForProject(proj);
+      if (!isSectorMatch(sec)) return false;
+      return true;
+    });
+
+    return filteredProjects.map((proj) => {
       const plans = backendPlans.filter(
         (p) => p.projectId === proj.id || p.project?.id === proj.id,
       );
@@ -1362,14 +1532,25 @@ export function ReportsView() {
             : "0%",
       };
     });
-  }, [backendProjects, backendPlans, backendContracts]);
+  }, [backendProjects, backendPlans, backendContracts, filters]);
 
   // ─── 12. Officer Summary Rows ─────────────────────────────────────────────
   const officerSummaryRows = useMemo(() => {
-    return officers.map((off) => {
-      const plans = backendPlans.filter(
-        (p) => p.creator?.id === off.id || (p as any).creatorId === off.id,
-      );
+    const activeOfficers =
+      filters.officer !== "ALL"
+        ? officers.filter((o) => o.id === filters.officer)
+        : officers;
+
+    return activeOfficers.map((off) => {
+      const plans = backendPlans.filter((p) => {
+        if (p.creator?.id !== off.id && (p as any).creatorId !== off.id)
+          return false;
+        const projId = p.projectId || p.project?.id;
+        if (!isProjectMatch(projId)) return false;
+        const sec = getSectorForPlan(p);
+        if (!isSectorMatch(sec)) return false;
+        return true;
+      });
       const activities = plans.flatMap((p) => p.activities || []);
       const completed = activities.filter(
         (a) => a.status === "COMPLETED",
@@ -1400,12 +1581,19 @@ export function ReportsView() {
         delayMeasure: `${delayed} overdue`,
       };
     });
-  }, [officers, backendPlans]);
+  }, [officers, backendPlans, backendProjects, filters]);
 
   // Legacy Project Officer Summary Rows
   const projectOfficerRows = useMemo(() => {
     const rows: ProjectOfficerSummaryRow[] = [];
-    backendProjects.forEach((proj) => {
+    const filteredProjects = backendProjects.filter((proj) => {
+      if (!isProjectMatch(proj.id)) return false;
+      const sec = getSectorForProject(proj);
+      if (!isSectorMatch(sec)) return false;
+      return true;
+    });
+
+    filteredProjects.forEach((proj) => {
       const plans = backendPlans.filter(
         (p) => p.projectId === proj.id || p.project?.id === proj.id,
       );
@@ -1440,11 +1628,19 @@ export function ReportsView() {
       }
     });
     return rows;
-  }, [backendProjects, backendPlans]);
+  }, [backendProjects, backendPlans, filters]);
 
   // ─── 13. Committee / Approval Progress Rows ───────────────────────────────
   const committeeApprovalRows = useMemo(() => {
-    return backendPlans.map((p) => {
+    const filteredPlans = backendPlans.filter((p) => {
+      const projId = p.projectId || p.project?.id;
+      if (!isProjectMatch(projId)) return false;
+      const sec = getSectorForPlan(p);
+      if (!isSectorMatch(sec)) return false;
+      return true;
+    });
+
+    return filteredPlans.map((p) => {
       const isApproved = p.status === "APPROVED";
       return {
         id: p.id,
@@ -1472,11 +1668,18 @@ export function ReportsView() {
         currentPlanStatus: p.status,
       };
     });
-  }, [backendPlans]);
+  }, [backendPlans, backendProjects, filters]);
 
   // ─── 14. Supplier Performance Rows ────────────────────────────────────────
   const supplierPerformanceRows = useMemo(() => {
-    let filteredContracts = backendContracts;
+    let filteredContracts = backendContracts.filter((c) => {
+      const matchingPlan = getPlanForContract(c);
+      const projId = matchingPlan?.projectId || matchingPlan?.project?.id;
+      if (!isProjectMatch(projId)) return false;
+      const sec = getSectorForPlan(matchingPlan);
+      if (!isSectorMatch(sec)) return false;
+      return true;
+    });
 
     if (filters.supplier && filters.supplier !== "ALL") {
       filteredContracts = filteredContracts.filter(
@@ -1563,24 +1766,31 @@ export function ReportsView() {
         status: data.activeContracts > 0 ? "Active Supplier" : "Satisfactory",
       };
     });
-  }, [
-    backendContracts,
-    filters.supplier,
-    filters.region,
-    filters.contractStatus,
-  ]);
+  }, [backendContracts, backendPlans, backendProjects, filters]);
 
   // ─── Excel Export Handling ────────────────────────────────────────────────
   const handleExportExcel = async () => {
     setExportError(null);
     setIsExporting(true);
+    const effectiveProjectId =
+      filters.projects &&
+      filters.projects.length > 0 &&
+      !filters.projects.includes("ALL")
+        ? filters.projects.join(",")
+        : filters.project && filters.project !== "ALL"
+          ? filters.project
+          : undefined;
+    const effectiveSector =
+      filters.sector && filters.sector !== "ALL" ? filters.sector : undefined;
+
     try {
       switch (activeReport) {
         case "annual-plan":
           await downloadAnnualProcurementPlanReport({
             budgetYear:
               filters.efy && filters.efy !== "ALL" ? filters.efy : "2017 EFY",
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             category: filters.category !== "ALL" ? filters.category : undefined,
             methodId:
               filters.procurementMethod !== "ALL"
@@ -1598,7 +1808,8 @@ export function ReportsView() {
         case "plan-vs-actual":
           await downloadPlanVsActualReport({
             budgetYear: filters.efy !== "ALL" ? filters.efy : undefined,
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             dateFrom: filters.fromDate,
             dateTo: filters.toDate,
           });
@@ -1606,7 +1817,8 @@ export function ReportsView() {
 
         case "procurement-step":
           await downloadProcurementStepsReport({
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             marketApproach:
               filters.marketApproach !== "ALL"
                 ? filters.marketApproach
@@ -1618,7 +1830,8 @@ export function ReportsView() {
 
         case "delayed-procurement":
           await downloadDelayedProcurementReport({
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             officerId: filters.officer !== "ALL" ? filters.officer : undefined,
             delayBucket:
               filters.delayRange !== "ALL"
@@ -1634,6 +1847,8 @@ export function ReportsView() {
             new Date().getFullYear();
           await downloadMonthlyProcurementReport({
             year: yearNum,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             fundingSourceId:
               filters.fundingType !== "ALL" ? filters.fundingType : undefined,
           });
@@ -1643,6 +1858,8 @@ export function ReportsView() {
         case "quarterly-summary":
           await downloadQuarterlySummaryReport({
             budgetYear: filters.efy !== "ALL" ? filters.efy : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             quarter:
               filters.quarter !== "ALL"
                 ? parseInt(filters.quarter, 10)
@@ -1653,14 +1870,16 @@ export function ReportsView() {
         case "quarterly-detailed":
         case "detailed-procurement":
           await downloadQuarterlyDetailedReport({
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             category: filters.category !== "ALL" ? filters.category : undefined,
           });
           break;
 
         case "contract-register":
           await downloadContractRegisterReport({
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             contractStatus:
               filters.contractStatus !== "ALL"
                 ? filters.contractStatus
@@ -1671,7 +1890,8 @@ export function ReportsView() {
 
         case "contract-payment":
           await downloadContractPaymentReport({
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             contractStatus:
               filters.contractStatus !== "ALL"
                 ? filters.contractStatus
@@ -1683,26 +1903,30 @@ export function ReportsView() {
         case "regional-sector-summary":
           await downloadRegionalSectorSummaryReport({
             groupBy: filters.orgGrouping,
+            projectId: effectiveProjectId,
           });
           break;
 
         case "project-summary":
           await downloadProjectSummaryReport({
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
           });
           break;
 
         case "officer-summary":
         case "project-officer":
           await downloadOfficerSummaryReport({
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             officerId: filters.officer !== "ALL" ? filters.officer : undefined,
           });
           break;
 
         case "committee-approval":
           await downloadCommitteeApprovalReport({
-            projectId: filters.project !== "ALL" ? filters.project : undefined,
+            projectId: effectiveProjectId,
+            sector: effectiveSector,
             committeeResult:
               filters.committeeResult !== "ALL"
                 ? filters.committeeResult
@@ -1712,6 +1936,7 @@ export function ReportsView() {
 
         case "supplier-performance":
           await downloadSupplierPerformanceReport({
+            sector: effectiveSector,
             supplierId:
               filters.supplier !== "ALL" ? filters.supplier : undefined,
           });
@@ -1909,6 +2134,7 @@ export function ReportsView() {
         officerOptions={officerOptions}
         categoryOptions={categoryOptions}
         supplierOptions={supplierOptions}
+        sectorOptions={sectorOptions}
       />
 
       {/* Bottom Container: Full Width Data Output Tables */}

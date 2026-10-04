@@ -3,7 +3,10 @@ import { canAccessWorkspaceSection, getNavigationForRole } from "./navigation";
 
 describe("role navigation permission matrix", () => {
   it.each([
-    ["OFFICER", ["Dashboard", "Projects", "Contracts", "Activity Tracker"]],
+    [
+      "OFFICER",
+      ["Dashboard", "Projects", "Contracts", "Activity Tracker", "Reports"],
+    ],
     [
       "DIRECTOR",
       [

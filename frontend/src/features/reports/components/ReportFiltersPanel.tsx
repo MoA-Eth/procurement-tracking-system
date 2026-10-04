@@ -12,6 +12,7 @@ import {
   SearchableSelect,
   type SearchableSelectOption,
 } from "./SearchableSelect";
+import { SearchableMultiSelect } from "./SearchableMultiSelect";
 
 export interface ReportFiltersPanelProps {
   activeReport: ReportType;
@@ -29,6 +30,7 @@ export interface ReportFiltersPanelProps {
   appliedFeedback: boolean;
   activeFilterCount: number;
   projectOptions: SearchableSelectOption[];
+  sectorOptions?: SearchableSelectOption[];
   fundingSourceOptions: SearchableSelectOption[];
   fundingTypeOptions?: SearchableSelectOption[];
   methodOptions: SearchableSelectOption[];
@@ -45,6 +47,7 @@ export function ReportFiltersPanel({
   exportError,
   activeFilterCount,
   projectOptions,
+  sectorOptions = [{ value: "ALL", label: "All Sectors" }],
   fundingSourceOptions,
   fundingTypeOptions,
   methodOptions,
@@ -53,6 +56,21 @@ export function ReportFiltersPanel({
   supplierOptions = [],
 }: ReportFiltersPanelProps) {
   const [showMore, setShowMore] = useState(false);
+
+  const handleProjectsChange = (vals: string[]) => {
+    onUpdateFilter("projects", vals);
+    onUpdateFilter(
+      "project",
+      vals.length === 1 ? vals[0] : vals.length > 1 ? vals.join(",") : "ALL",
+    );
+  };
+
+  const selectedProjectValues =
+    filters.projects && filters.projects.length > 0
+      ? filters.projects
+      : filters.project && filters.project !== "ALL"
+        ? filters.project.split(",")
+        : [];
 
   return (
     <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
@@ -128,9 +146,17 @@ export function ReportFiltersPanel({
             </div>
 
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -212,9 +238,17 @@ export function ReportFiltersPanel({
             </div>
 
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -272,9 +306,17 @@ export function ReportFiltersPanel({
         {activeReport === "procurement-step" && (
           <>
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -340,9 +382,17 @@ export function ReportFiltersPanel({
         {activeReport === "delayed-procurement" && (
           <>
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -434,6 +484,9 @@ export function ReportFiltersPanel({
               >
                 <option value="ETB">ETB (Ethiopian Birr)</option>
                 <option value="USD">USD (US Dollar)</option>
+                <option value="EUR">EUR (Euro)</option>
+                <option value="GBP">GBP (British Pound Sterling)</option>
+                <option value="JPY">JPY (Japanese Yen)</option>
                 <option value="UA">UA (AfDB Unit of Account)</option>
               </select>
             </div>
@@ -466,9 +519,16 @@ export function ReportFiltersPanel({
             {showMore && (
               <>
                 <SearchableSelect
+                  label="Sector"
+                  value={filters.sector}
+                  onChange={(val) => onUpdateFilter("sector", val)}
+                  options={sectorOptions}
+                  searchPlaceholder="Search sector..."
+                />
+                <SearchableMultiSelect
                   label="Project"
-                  value={filters.project}
-                  onChange={(val) => onUpdateFilter("project", val)}
+                  values={selectedProjectValues}
+                  onChange={handleProjectsChange}
                   options={projectOptions}
                   searchPlaceholder="Search project..."
                 />
@@ -538,13 +598,29 @@ export function ReportFiltersPanel({
             />
 
             {showMore && (
-              <SearchableSelect
-                label="Procurement Method"
-                value={filters.procurementMethod}
-                onChange={(val) => onUpdateFilter("procurementMethod", val)}
-                options={methodOptions}
-                searchPlaceholder="Search method..."
-              />
+              <>
+                <SearchableSelect
+                  label="Sector"
+                  value={filters.sector}
+                  onChange={(val) => onUpdateFilter("sector", val)}
+                  options={sectorOptions}
+                  searchPlaceholder="Search sector..."
+                />
+                <SearchableMultiSelect
+                  label="Project"
+                  values={selectedProjectValues}
+                  onChange={handleProjectsChange}
+                  options={projectOptions}
+                  searchPlaceholder="Search project..."
+                />
+                <SearchableSelect
+                  label="Procurement Method"
+                  value={filters.procurementMethod}
+                  onChange={(val) => onUpdateFilter("procurementMethod", val)}
+                  options={methodOptions}
+                  searchPlaceholder="Search method..."
+                />
+              </>
             )}
           </>
         )}
@@ -554,9 +630,17 @@ export function ReportFiltersPanel({
           activeReport === "detailed-procurement") && (
           <>
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -611,9 +695,17 @@ export function ReportFiltersPanel({
         {activeReport === "contract-register" && (
           <>
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -677,9 +769,17 @@ export function ReportFiltersPanel({
         {activeReport === "contract-payment" && (
           <>
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -769,9 +869,17 @@ export function ReportFiltersPanel({
             </div>
 
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -782,9 +890,17 @@ export function ReportFiltersPanel({
         {activeReport === "project-summary" && (
           <>
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -821,9 +937,17 @@ export function ReportFiltersPanel({
           activeReport === "project-officer") && (
           <>
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -860,9 +984,17 @@ export function ReportFiltersPanel({
         {activeReport === "committee-approval" && (
           <>
             <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
               label="Project"
-              value={filters.project}
-              onChange={(val) => onUpdateFilter("project", val)}
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
               options={projectOptions}
               searchPlaceholder="Search project..."
             />
@@ -917,6 +1049,22 @@ export function ReportFiltersPanel({
         {/* 14. SUPPLIER PERFORMANCE */}
         {activeReport === "supplier-performance" && (
           <>
+            <SearchableSelect
+              label="Sector"
+              value={filters.sector}
+              onChange={(val) => onUpdateFilter("sector", val)}
+              options={sectorOptions}
+              searchPlaceholder="Search sector..."
+            />
+
+            <SearchableMultiSelect
+              label="Project"
+              values={selectedProjectValues}
+              onChange={handleProjectsChange}
+              options={projectOptions}
+              searchPlaceholder="Search project..."
+            />
+
             <SearchableSelect
               label="Supplier / Contractor"
               value={filters.supplier}

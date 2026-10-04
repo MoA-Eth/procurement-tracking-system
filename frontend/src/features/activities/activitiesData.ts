@@ -5,7 +5,7 @@ export type ProcurementMethod =
   | "RFB - National"
   | "RFQ / Shopping"
   | "Direct Procurement"
-  | "UN Agency / UNOPS Direct"
+  | "UN Agency"
   | "QCBS"
   | "FBS"
   | "LCS"
@@ -116,7 +116,11 @@ function methodToConfigKey(method: ProcurementMethod): string {
   if (method === "RFB - National") return "rfb-national";
   if (method === "RFQ / Shopping") return "rfq";
   if (method === "Direct Procurement") return "direct-goods";
-  if (method === "UN Agency / UNOPS Direct") return "un-agency";
+  if (
+    method === "UN Agency" ||
+    (method as string) === "UN Agency / UNOPS Direct"
+  )
+    return "un-agency";
   if (method === "QCBS") return "qcbs";
   if (method === "FBS") return "fbs";
   if (method === "LCS") return "lcs";

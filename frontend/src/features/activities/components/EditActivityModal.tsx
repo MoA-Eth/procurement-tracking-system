@@ -43,7 +43,25 @@ const DEFAULT_METHODS = [
   "Individual Consultant",
 ];
 
-const DEFAULT_CURRENCIES = ["ETB", "USD", "EUR", "UA"];
+const DEFAULT_CURRENCIES = ["ETB", "USD", "EUR", "GBP", "JPY", "UA"];
+
+function getCurrencySymbol(curr: string) {
+  if (curr === "USD") return "$";
+  if (curr === "EUR") return "€";
+  if (curr === "GBP") return "£";
+  if (curr === "JPY") return "¥";
+  if (curr === "UA") return "UA";
+  return "Br";
+}
+
+const CURRENCY_LABEL_MAP: Record<string, string> = {
+  ETB: "ETB - Ethiopian Birr (Br)",
+  USD: "USD - US Dollar ($)",
+  EUR: "EUR - Euro (€)",
+  GBP: "GBP - British Pound Sterling (£)",
+  JPY: "JPY - Japanese Yen (¥)",
+  UA: "UA - Unit of Account",
+};
 
 export function EditActivityModal({
   isOpen,
@@ -327,7 +345,7 @@ export function EditActivityModal({
                   onChange={(e) => setEstimatedAmount(e.target.value)}
                 />
                 <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 font-semibold">
-                  {currency === "USD" ? "$" : "Br"}
+                  {getCurrencySymbol(currency)}
                 </span>
               </div>
             </div>
@@ -343,7 +361,7 @@ export function EditActivityModal({
               >
                 {currencyOptions.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    {CURRENCY_LABEL_MAP[c] || c}
                   </option>
                 ))}
               </select>

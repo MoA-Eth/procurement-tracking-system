@@ -58,6 +58,11 @@ import {
   isProjectAssignedToOfficer,
   mapBackendProjectToOfficerProject,
 } from "@/lib/projectsApi";
+import {
+  gregorianToEthiopian,
+  formatEthiopianDate,
+  formatGregorianDate,
+} from "@/features/projects/utils/ethiopianCalendar";
 import { getCurrentUser } from "@/lib/authApi";
 import type { AuthUser } from "@/lib/authTypes";
 import {
@@ -103,24 +108,17 @@ function upsertSummaryActivity(
     list.push(act);
   } else {
     const existing = list[existingIdx];
-    const isIncomingBackend = Boolean(
-      (act as any).id &&
-      String((act as any).id).includes("-") &&
-      String((act as any).id).length > 20,
-    );
-    const isExistingBackend = Boolean(
-      (existing as any).id &&
-      String((existing as any).id).includes("-") &&
-      String((existing as any).id).length > 20,
-    );
-
-    if (isIncomingBackend && !isExistingBackend) {
-      list[existingIdx] = act;
-    } else if (!isIncomingBackend && isExistingBackend) {
-      // Keep backend
-    } else {
-      list[existingIdx] = { ...existing, ...act };
-    }
+    list[existingIdx] = {
+      ...existing,
+      ...act,
+      id: (act as any).id || (existing as any).id,
+      activityId:
+        (act as any).activityId ||
+        (existing as any).activityId ||
+        (existing as any).id,
+      details: act.details || existing.details,
+      status: act.status || existing.status,
+    };
   }
 }
 
@@ -163,8 +161,9 @@ export function OfficerProjectsView({
               isProjectAssignedToOfficer(bp, effectiveUser),
             )
           : cachedProjs;
-        const effectiveProjectList =
-          filteredProjects.length > 0 ? filteredProjects : cachedProjs;
+        const effectiveProjectList = effectiveUser
+          ? filteredProjects
+          : cachedProjs;
         const uniqueProjectMap = new Map<
           string,
           (typeof effectiveProjectList)[0]
@@ -213,33 +212,9 @@ export function OfficerProjectsView({
               isProjectAssignedToOfficer(bp, effectiveUser),
             )
           : projData.value;
-        const effectiveProjectList =
-          filteredProjects.length > 0
-            ? [...filteredProjects]
-            : [...projData.value];
-
-        // Ensure the currently viewed project is never excluded
-        if (selectedProjectCode) {
-          const normSel = selectedProjectCode.toLowerCase().trim();
-          const currentViewingProj = projData.value.find(
-            (bp) =>
-              (bp.code || "").toLowerCase().trim() === normSel ||
-              (bp.id || "").toLowerCase().trim() === normSel ||
-              (bp.name || "").toLowerCase().trim() === normSel,
-          );
-          if (
-            currentViewingProj &&
-            !effectiveProjectList.some(
-              (p) =>
-                (p.id && p.id === currentViewingProj.id) ||
-                (p.code &&
-                  p.code.toLowerCase() ===
-                    currentViewingProj.code?.toLowerCase()),
-            )
-          ) {
-            effectiveProjectList.push(currentViewingProj);
-          }
-        }
+        const effectiveProjectList = effectiveUser
+          ? [...filteredProjects]
+          : [...projData.value];
 
         const uniqueProjectMap = new Map<
           string,
@@ -427,6 +402,8 @@ export function OfficerProjectsView({
       const idx = findIndex(rec);
       if (idx === -1) {
         list.push(rec);
+      } else {
+        list[idx] = rec;
       }
     });
 
@@ -687,6 +664,9 @@ export function OfficerProjectsView({
 
     const periodStart = safeIsoDate(input.periodFrom, "2025-07-08");
     const periodEnd = safeIsoDate(input.periodTo, "2026-07-07");
+    const gpnDate = input.generalProcurementNoticeDate
+      ? safeIsoDate(input.generalProcurementNoticeDate, "2025-07-08")
+      : undefined;
 
     // Resolve target project database UUID
     let targetProjectId =
@@ -807,6 +787,7 @@ export function OfficerProjectsView({
             description: input.remarks || undefined,
             periodStart,
             periodEnd,
+            gpnDate,
           });
           if (updated && updated.id) {
             updatedPlan.id = updated.id;
@@ -828,6 +809,7 @@ export function OfficerProjectsView({
           description: input.remarks || undefined,
           periodStart,
           periodEnd,
+          gpnDate,
         });
         if (created && created.id) {
           updatedPlan.id = created.id;
@@ -905,6 +887,7 @@ export function OfficerProjectsView({
           description: input.remarks || undefined,
           periodStart,
           periodEnd,
+          gpnDate,
         });
       } catch {
         dbPlan = backendMatch;
@@ -923,6 +906,7 @@ export function OfficerProjectsView({
         description: input.remarks || undefined,
         periodStart,
         periodEnd,
+        gpnDate,
       });
 
       if (!dbPlan || !dbPlan.id) {
@@ -941,6 +925,23 @@ export function OfficerProjectsView({
       category: input.category,
       organizationRegion:
         input.organizationRegion || selectedProject.organizationRegion,
+      description: input.remarks || undefined,
+      planPeriod: {
+        from: {
+          gregorian: input.periodFrom,
+          ethiopian: input.periodFromEthiopian,
+        },
+        to: {
+          gregorian: input.periodTo,
+          ethiopian: input.periodToEthiopian,
+        },
+      },
+      generalProcurementNoticeDate: input.generalProcurementNoticeDate
+        ? {
+            gregorian: input.generalProcurementNoticeDate,
+            ethiopian: input.generalProcurementNoticeDateEthiopian,
+          }
+        : undefined,
       createdById: dbPlan.createdBy,
       createdByName:
         dbPlan.creator?.displayName ||
@@ -1055,7 +1056,9 @@ export function OfficerProjectsView({
 
     // Update the saved plan record to also reflect the incremented activity count and embedded activities
     const currentPlanActivities = selectedPlanActivities.filter(
-      (a) => a.reference.toLowerCase() !== activity.reference.toLowerCase(),
+      (a) =>
+        a.reference.toLowerCase() !== activity.reference.toLowerCase() &&
+        (!a.id || !(activity as any).id || a.id !== (activity as any).id),
     );
     const updatedActivities = [...currentPlanActivities, activity];
 
@@ -1224,8 +1227,10 @@ export function OfficerProjectsView({
             : [
                 {
                   fundingSource:
+                    formDetails.fundingSource ||
+                    (activity as any).fundingSource ||
                     selectedProject.fundingSource ||
-                    "African Development Bank (AfDB)",
+                    "World Bank",
                   loanGrantNumber:
                     selectedProject.financingNumbers?.[0] || undefined,
                   allocationPct: 100,
@@ -1263,7 +1268,11 @@ export function OfficerProjectsView({
         const baseActivityPayload: any = {
           description: activity.description || "Activity description",
           estimatedBudget: Number(activity.estimatedAmount) || 500000,
-          currency: selectedPlan.currency || "ETB",
+          currency:
+            formDetails.currency ||
+            (activity as any).currency ||
+            selectedPlan.currency ||
+            "ETB",
           procurementMethodId: resolvedMethodId,
           marketApproach: formDetails.marketApproach || undefined,
           qualificationApproach: formDetails.qualificationApproach || undefined,
@@ -1278,6 +1287,15 @@ export function OfficerProjectsView({
           procurementDocumentType:
             formDetails.procurementDocumentType || undefined,
           contractType: formDetails.contractType || undefined,
+          requiresUnAgencyContracting: Boolean(formDetails.requiresUnAgency),
+          bidReferenceNo:
+            (Array.isArray(formDetails.additionalReferences) &&
+              formDetails.additionalReferences
+                .find((r: any) => Boolean(r.value?.trim()))
+                ?.value?.trim()) ||
+            formDetails.stepReference?.trim() ||
+            formDetails.invitationReference?.trim() ||
+            undefined,
           pricingBasis:
             formDetails.pricingBasis === "BOQ"
               ? "BOQ"
@@ -1320,12 +1338,18 @@ export function OfficerProjectsView({
                 procurementMethodId: resolvedMethodId,
                 description: activity.description || "Activity description",
                 estimatedBudget: Number(activity.estimatedAmount) || 500000,
-                currency: selectedPlan.currency || "ETB",
+                currency:
+                  formDetails.currency ||
+                  (activity as any).currency ||
+                  selectedPlan.currency ||
+                  "ETB",
                 fundings: [
                   {
                     fundingSource:
+                      formDetails.fundingSource ||
+                      (activity as any).fundingSource ||
                       selectedProject.fundingSource ||
-                      "African Development Bank (AfDB)",
+                      "World Bank",
                     loanGrantNumber:
                       selectedProject.financingNumbers?.[0] || undefined,
                     allocationPct: 100,
@@ -1419,17 +1443,39 @@ export function OfficerProjectsView({
     invalidatePlansCache();
     await loadData();
 
-    // Navigate back to plan detail
-    router.push(
-      "/workspace/projects?project=" +
-        encodeURIComponent(selectedProject.code) +
-        "&plan=" +
-        encodeURIComponent(selectedPlan.reference),
-    );
+    // Navigate back to plan or activity detail
+    const targetActivityRef = activity.reference || selectedActivityReference;
+    if (mode === "edit-activity" && targetActivityRef) {
+      router.push(
+        "/workspace/projects?project=" +
+          encodeURIComponent(selectedProject.code) +
+          "&plan=" +
+          encodeURIComponent(selectedPlan.reference) +
+          "&activity=" +
+          encodeURIComponent(targetActivityRef),
+      );
+    } else {
+      router.push(
+        "/workspace/projects?project=" +
+          encodeURIComponent(selectedProject.code) +
+          "&plan=" +
+          encodeURIComponent(selectedPlan.reference),
+      );
+    }
   }
 
   async function submitPlanToDirector(planReference?: string, reason?: string) {
     if (!selectedProject || !selectedPlan) return;
+
+    const totalActs =
+      (selectedPlanActivities?.length ?? 0) > 0
+        ? selectedPlanActivities.length
+        : (selectedPlan.activities ?? 0);
+    if (totalActs === 0) {
+      throw new Error(
+        "Cannot submit an empty plan. The plan must contain at least one procurement activity before submission to the Director.",
+      );
+    }
 
     // 1. Resolve matching backend plan UUID
     const matchingBackendPlan = backendPlans.find(
@@ -1880,6 +1926,14 @@ export function OfficerProjectsView({
   }
 
   if (selectedProject && (mode === "create-plan" || mode === "edit-plan")) {
+    const actCount =
+      mode === "edit-plan" && selectedPlan
+        ? selectedPlanActivities.length ||
+          selectedPlan.activities ||
+          selectedPlan.planActivities?.length ||
+          0
+        : 0;
+
     return (
       <CreateProcurementPlanView
         key={
@@ -1887,6 +1941,7 @@ export function OfficerProjectsView({
             ? selectedPlan?.reference || "edit-plan"
             : "create-plan"
         }
+        activityCount={actCount}
         initialPlan={mode === "edit-plan" ? selectedPlan : undefined}
         onSavePlan={savePlan}
         project={selectedProject}
@@ -2279,8 +2334,8 @@ function OfficerProjectsList({
                     <th className="w-[15%] px-4 py-3.5" scope="col">
                       Organization / region
                     </th>
-                    <th className="w-[15%] px-4 py-3.5" scope="col">
-                      Assignment start
+                    <th className="w-[16%] px-4 py-3.5" scope="col">
+                      Project period
                     </th>
                     <th className="w-[8%] px-4 py-3.5 text-center" scope="col">
                       Active plans
@@ -2321,12 +2376,59 @@ function OfficerProjectsList({
                           {project.organizationRegion ?? "Not specified"}
                         </td>
                         <td className="px-4 py-4 text-xs text-slate-600">
-                          <p className="font-medium text-slate-800">
-                            {project.assignmentStart?.gregorian}
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            {project.assignmentStart?.ethiopian}
-                          </p>
+                          {project.projectPeriod?.from ||
+                          project.assignmentStart ? (
+                            <>
+                              <p className="font-medium text-slate-800">
+                                {project.assignmentStart?.gregorian ||
+                                  (project.projectPeriod?.from
+                                    ? formatGregorianDate(
+                                        project.projectPeriod.from,
+                                      )
+                                    : "")}
+                                {project.projectPeriod?.to ? (
+                                  <>
+                                    <span className="text-slate-400 mx-1">
+                                      –
+                                    </span>
+                                    {formatGregorianDate(
+                                      project.projectPeriod.to,
+                                    )}
+                                  </>
+                                ) : null}
+                              </p>
+                              <p className="text-[11px] text-slate-400">
+                                {project.assignmentStart?.ethiopian ||
+                                  (project.projectPeriod?.from &&
+                                  gregorianToEthiopian(
+                                    project.projectPeriod.from,
+                                  )
+                                    ? formatEthiopianDate(
+                                        gregorianToEthiopian(
+                                          project.projectPeriod.from,
+                                        )!,
+                                      )
+                                    : "")}
+                                {project.projectPeriod?.to &&
+                                gregorianToEthiopian(
+                                  project.projectPeriod.to,
+                                ) ? (
+                                  <>
+                                    <span className="text-slate-300 mx-1">
+                                      –
+                                    </span>
+                                    {formatEthiopianDate(
+                                      gregorianToEthiopian(
+                                        project.projectPeriod.to,
+                                      )!,
+                                    )}
+                                  </>
+                                ) : null}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-slate-400 italic">Not set</p>
+                          )}
                         </td>
                         <td className="px-4 py-4 text-center text-sm font-semibold text-slate-800">
                           {project.activePlans}

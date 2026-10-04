@@ -31,6 +31,7 @@ import {
   type OfficerActivityTrackingRecord,
 } from "../data/officerActivityTracking";
 import {
+  isTestOrJunkActivity,
   mapBackendActivityToProcurementActivitySummary,
   OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
   parseSavedActivityRecords,
@@ -135,8 +136,12 @@ export function DirectorActivityTrackerView({
         }
 
         if (isMounted && rawActivities && rawActivities.length > 0) {
-          const dbRecords: SavedOfficerActivityRecord[] = rawActivities.map(
-            (ba: BackendActivity) => {
+          const dbRecords: SavedOfficerActivityRecord[] = rawActivities
+            .filter(
+              (ba: BackendActivity) =>
+                !isTestOrJunkActivity(ba.reference, ba.description || ""),
+            )
+            .map((ba: BackendActivity) => {
               const summary =
                 mapBackendActivityToProcurementActivitySummary(ba);
               const parentPlan = (rawPlans || []).find(
@@ -152,8 +157,7 @@ export function DirectorActivityTrackerView({
                 planReference: planRef,
                 projectCode: projCode,
               };
-            },
-          );
+            });
           setBackendActivities(dbRecords);
         }
       } catch (err) {
@@ -390,6 +394,9 @@ function collectTrackableActivities(
       const allActivitiesForPlan = Array.from(combinedMap.values());
 
       for (const activity of allActivitiesForPlan) {
+        if (isTestOrJunkActivity(activity.reference, activity.description)) {
+          continue;
+        }
         const tracking =
           findActivityTrackingRecord(
             trackingRecords,
@@ -413,6 +420,7 @@ function collectTrackableActivities(
   for (const record of savedActivityRecords) {
     const act = record.activity;
     if (!act || !act.reference) continue;
+    if (isTestOrJunkActivity(act.reference, act.description)) continue;
     const refLower = act.reference.toLowerCase();
     const alreadyCaptured = Array.from(itemsByIdentity.values()).some(
       (item) =>

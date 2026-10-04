@@ -35,6 +35,7 @@ import {
 import Link from "next/link";
 import {
   useEffect,
+  useRef,
   useState,
   type FormEvent,
   type ReactNode,
@@ -54,6 +55,149 @@ interface PlanFormState {
   periodToEthiopian: string;
   planName: string;
   remarks: string;
+}
+
+function toInputDate(val?: unknown): string {
+  if (!val) return "";
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return "";
+    return val.toISOString().slice(0, 10);
+  }
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (!trimmed) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    const d = new Date(trimmed);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().slice(0, 10);
+  }
+  return "";
+}
+
+function toEthDate(greg?: unknown, eth?: unknown): string {
+  if (typeof eth === "string" && eth.trim()) return eth.trim();
+  const iso = toInputDate(greg);
+  if (!iso) return "";
+  const ethObj = gregorianToEthiopian(iso);
+  return ethObj ? formatEthiopianDate(ethObj) : "";
+}
+
+function normalizeCategory(cat?: unknown): ProcurementCategory | null {
+  if (!cat) return null;
+  if (
+    cat === "Goods" ||
+    cat === "Works" ||
+    cat === "Non-Consulting Services" ||
+    cat === "Consultancy Services"
+  ) {
+    return cat as ProcurementCategory;
+  }
+  const upper = String(cat).toUpperCase();
+  if (upper === "GOODS") return "Goods";
+  if (upper === "WORKS") return "Works";
+  if (upper === "CONSULTANCY") return "Consultancy Services";
+  if (upper === "NON_CONSULTING" || upper === "NON-CONSULTING SERVICES") {
+    return "Non-Consulting Services";
+  }
+  return null;
+}
+
+function extractPlanFormData(
+  initialPlan?: ProcurementPlanSummary,
+  project?: OfficerProject,
+): PlanFormState {
+  const planAny = initialPlan as any;
+
+  // Period From
+  const rawFromGreg =
+    initialPlan?.planPeriod?.from?.gregorian ||
+    (typeof planAny?.planPeriod?.from === "string"
+      ? planAny.planPeriod.from
+      : "") ||
+    planAny?.periodFrom ||
+    planAny?.periodStart ||
+    planAny?.planPeriodFrom ||
+    planAny?.startDate ||
+    "";
+  const periodFrom = toInputDate(rawFromGreg);
+
+  const rawFromEth =
+    initialPlan?.planPeriod?.from?.ethiopian ||
+    (typeof planAny?.periodFromEthiopian === "string"
+      ? planAny.periodFromEthiopian
+      : "") ||
+    (typeof planAny?.planPeriodFromEthiopian === "string"
+      ? planAny.planPeriodFromEthiopian
+      : "") ||
+    "";
+  const periodFromEthiopian = toEthDate(periodFrom, rawFromEth);
+
+  // Period To
+  const rawToGreg =
+    initialPlan?.planPeriod?.to?.gregorian ||
+    (typeof planAny?.planPeriod?.to === "string"
+      ? planAny.planPeriod.to
+      : "") ||
+    planAny?.periodTo ||
+    planAny?.periodEnd ||
+    planAny?.planPeriodTo ||
+    planAny?.endDate ||
+    "";
+  const periodTo = toInputDate(rawToGreg);
+
+  const rawToEth =
+    initialPlan?.planPeriod?.to?.ethiopian ||
+    (typeof planAny?.periodToEthiopian === "string"
+      ? planAny.periodToEthiopian
+      : "") ||
+    (typeof planAny?.planPeriodToEthiopian === "string"
+      ? planAny.planPeriodToEthiopian
+      : "") ||
+    "";
+  const periodToEthiopian = toEthDate(periodTo, rawToEth);
+
+  // General Procurement Notice Date
+  const rawGpnGreg =
+    initialPlan?.generalProcurementNoticeDate?.gregorian ||
+    (typeof planAny?.generalProcurementNoticeDate === "string"
+      ? planAny.generalProcurementNoticeDate
+      : "") ||
+    planAny?.gpnDate ||
+    planAny?.generalNoticeDate ||
+    "";
+  const generalProcurementNoticeDate = toInputDate(rawGpnGreg);
+
+  const rawGpnEth =
+    initialPlan?.generalProcurementNoticeDate?.ethiopian ||
+    (typeof planAny?.generalProcurementNoticeDateEthiopian === "string"
+      ? planAny.generalProcurementNoticeDateEthiopian
+      : "") ||
+    "";
+  const generalProcurementNoticeDateEthiopian = toEthDate(
+    generalProcurementNoticeDate,
+    rawGpnEth,
+  );
+
+  return {
+    budgetYear:
+      initialPlan?.budgetYear?.replace(/ EFY/i, "").trim() ||
+      planAny?.fiscalYear?.replace(/ EFY/i, "").trim() ||
+      "2017",
+    generalProcurementNoticeDate,
+    generalProcurementNoticeDateEthiopian,
+    organizationRegion:
+      initialPlan?.organizationRegion ||
+      planAny?.organization ||
+      project?.availableOrganizationRegions?.[0] ||
+      project?.organizationRegion ||
+      "",
+    periodFrom,
+    periodFromEthiopian,
+    periodTo,
+    periodToEthiopian,
+    planName: initialPlan?.name || planAny?.title || planAny?.planName || "",
+    remarks: initialPlan?.description || planAny?.remarks || "",
+  };
 }
 
 const compactFieldClasses =
@@ -93,10 +237,12 @@ export function suggestedPlanName(
 }
 
 export function CreateProcurementPlanView({
+  activityCount,
   initialPlan,
   onSavePlan,
   project,
 }: {
+  activityCount?: number;
   initialPlan?: ProcurementPlanSummary;
   onSavePlan: (
     input: ProcurementPlanDraftInput,
@@ -106,8 +252,18 @@ export function CreateProcurementPlanView({
   project: OfficerProject;
 }) {
   const isEditing = Boolean(initialPlan);
+  const effectiveActivityCount =
+    activityCount !== undefined
+      ? activityCount
+      : (initialPlan?.activities ?? initialPlan?.planActivities?.length ?? 0);
+  const hasActivities = effectiveActivityCount > 0;
   const [selectedCategory, setSelectedCategory] =
-    useState<ProcurementCategory | null>(() => initialPlan?.category ?? null);
+    useState<ProcurementCategory | null>(
+      () =>
+        initialPlan?.category ??
+        normalizeCategory((initialPlan as any)?.procurementCategory) ??
+        null,
+    );
   const [planNameEdited, setPlanNameEdited] = useState(() =>
     Boolean(initialPlan),
   );
@@ -116,52 +272,28 @@ export function CreateProcurementPlanView({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [validationAttempted, setValidationAttempted] = useState(false);
-  const [form, setForm] = useState<PlanFormState>(() => ({
-    budgetYear: initialPlan?.budgetYear?.replace(/ EFY/i, "").trim() || "2017",
-    generalProcurementNoticeDate:
-      initialPlan?.generalProcurementNoticeDate?.gregorian || "",
-    generalProcurementNoticeDateEthiopian:
-      initialPlan?.generalProcurementNoticeDate?.ethiopian || "",
-    organizationRegion:
-      initialPlan?.organizationRegion ||
-      project.availableOrganizationRegions?.[0] ||
-      project.organizationRegion ||
-      "",
-    periodFrom: initialPlan?.planPeriod?.from?.gregorian || "",
-    periodFromEthiopian: initialPlan?.planPeriod?.from?.ethiopian || "",
-    periodTo: initialPlan?.planPeriod?.to?.gregorian || "",
-    periodToEthiopian: initialPlan?.planPeriod?.to?.ethiopian || "",
-    planName: initialPlan?.name || "",
-    remarks: initialPlan?.description || "",
-  }));
+  const lastLoadedPlanRef = useRef<string | null>(null);
+  const [form, setForm] = useState<PlanFormState>(() =>
+    extractPlanFormData(initialPlan, project),
+  );
 
   useEffect(() => {
     if (!initialPlan) return;
-    setSelectedCategory(initialPlan.category ?? null);
+    const planKey = initialPlan.id || initialPlan.reference || initialPlan.name;
+    const extracted = extractPlanFormData(initialPlan, project);
+    const planSignature = `${planKey}|${extracted.periodFrom}|${extracted.periodTo}|${extracted.generalProcurementNoticeDate}|${extracted.remarks}|${extracted.planName}|${extracted.budgetYear}|${extracted.organizationRegion}`;
+
+    if (lastLoadedPlanRef.current === planSignature) return;
+    lastLoadedPlanRef.current = planSignature;
+
+    const cat =
+      initialPlan.category ??
+      normalizeCategory((initialPlan as any)?.procurementCategory) ??
+      null;
+    setSelectedCategory(cat);
     setPlanNameEdited(true);
-    setForm({
-      budgetYear: initialPlan.budgetYear?.replace(/ EFY/i, "").trim() || "2017",
-      generalProcurementNoticeDate:
-        initialPlan.generalProcurementNoticeDate?.gregorian || "",
-      generalProcurementNoticeDateEthiopian:
-        initialPlan.generalProcurementNoticeDate?.ethiopian || "",
-      organizationRegion:
-        initialPlan.organizationRegion ||
-        project.availableOrganizationRegions?.[0] ||
-        project.organizationRegion ||
-        "",
-      periodFrom: initialPlan.planPeriod?.from?.gregorian || "",
-      periodFromEthiopian: initialPlan.planPeriod?.from?.ethiopian || "",
-      periodTo: initialPlan.planPeriod?.to?.gregorian || "",
-      periodToEthiopian: initialPlan.planPeriod?.to?.ethiopian || "",
-      planName: initialPlan.name || "",
-      remarks: initialPlan.description || "",
-    });
-  }, [
-    initialPlan,
-    project.availableOrganizationRegions,
-    project.organizationRegion,
-  ]);
+    setForm(extracted);
+  }, [initialPlan, project]);
 
   const detailHref = `/workspace/projects?project=${encodeURIComponent(
     project.code,
@@ -461,8 +593,12 @@ export function CreateProcurementPlanView({
                 <select
                   aria-invalid={categoryError}
                   aria-required="true"
-                  className={`${compactFieldClasses} appearance-none pr-9`}
-                  disabled={isEditing}
+                  className={`${compactFieldClasses} appearance-none pr-9 ${
+                    hasActivities
+                      ? "bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200"
+                      : ""
+                  }`}
+                  disabled={hasActivities}
                   id="procurementCategory"
                   name="procurementCategory"
                   onChange={(event) =>
@@ -486,7 +622,19 @@ export function CreateProcurementPlanView({
                   className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-slate-500"
                 />
               </div>
-              {categoryError ? (
+              {hasActivities ? (
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-700">
+                  <LockKeyhole
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 shrink-0 text-amber-600"
+                  />
+                  <span>
+                    Procurement category cannot be edited because this plan
+                    already contains {effectiveActivityCount}{" "}
+                    {effectiveActivityCount === 1 ? "activity" : "activities"}.
+                  </span>
+                </p>
+              ) : categoryError ? (
                 <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
                   <Info aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                   Please select a procurement category.
@@ -879,5 +1027,9 @@ function CompactFormField({
 function currencyLabel(currency: string) {
   if (currency === "USD") return "USD ($)";
   if (currency === "ETB") return "ETB (Br)";
+  if (currency === "EUR") return "EUR (€)";
+  if (currency === "GBP") return "GBP (£)";
+  if (currency === "JPY") return "JPY (¥)";
+  if (currency === "UA") return "UA (Unit of Account)";
   return currency;
 }

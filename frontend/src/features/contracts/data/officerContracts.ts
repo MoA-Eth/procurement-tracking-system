@@ -1,6 +1,7 @@
 export const OFFICER_CONTRACTS_STORAGE_KEY = "moa-pts:officer-contracts:v2";
 
-export type ContractCurrency = "ETB" | "UA" | "USD";
+export type ContractCurrency =
+  "ETB" | "USD" | "EUR" | "GBP" | "JPY" | "UA" | (string & {});
 export type ContractStatus =
   | "Active"
   | "Active / Under Implementation"

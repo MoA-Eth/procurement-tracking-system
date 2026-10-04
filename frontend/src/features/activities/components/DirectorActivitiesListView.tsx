@@ -97,19 +97,21 @@ function mapBackendActivityToProcurementActivity(
         ? "RFB - National"
         : methodLabel.includes("RFQ") || methodLabel.includes("Shopping")
           ? "RFQ / Shopping"
-          : methodLabel.includes("Direct")
-            ? "Direct Procurement"
-            : methodLabel.includes("QCBS")
-              ? "QCBS"
-              : methodLabel.includes("FBS")
-                ? "FBS"
-                : methodLabel.includes("LCS")
-                  ? "LCS"
-                  : methodLabel.includes("CQS")
-                    ? "CQS"
-                    : methodLabel.includes("INDV")
-                      ? "INDV"
-                      : "RFB - National"
+          : methodLabel.includes("UN")
+            ? "UN Agency"
+            : methodLabel.includes("Direct")
+              ? "Direct Procurement"
+              : methodLabel.includes("QCBS")
+                ? "QCBS"
+                : methodLabel.includes("FBS")
+                  ? "FBS"
+                  : methodLabel.includes("LCS")
+                    ? "LCS"
+                    : methodLabel.includes("CQS")
+                      ? "CQS"
+                      : methodLabel.includes("INDV")
+                        ? "INDV"
+                        : "RFB - National"
   ) as ProcurementMethod;
 
   const defaultRoadmap = generateRoadmapForMethod(

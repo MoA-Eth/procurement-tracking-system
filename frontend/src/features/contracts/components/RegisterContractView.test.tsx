@@ -89,7 +89,22 @@ describe("RegisterContractView", () => {
     expect(markup).toContain("Signature Date");
     expect(markup).toContain("Actual Completion Date");
     expect(markup).toContain("Contract Status");
+    expect(markup).toContain("Planned Completion / End Date");
+    expect(markup).toContain("Inherited from Plan");
     expect(markup).not.toContain("Payment Amount");
     expect(markup).not.toContain("Payment Date");
+  });
+
+  it("renders all required currencies in the currency selection dropdown", () => {
+    const markup = renderToStaticMarkup(
+      <RegisterContractView existingContracts={[]} onSave={vi.fn()} />,
+    );
+
+    expect(markup).toContain("ETB - Ethiopian Birr");
+    expect(markup).toContain("USD - US Dollar");
+    expect(markup).toContain("EUR - Euro");
+    expect(markup).toContain("GBP - British Pound Sterling");
+    expect(markup).toContain("JPY - Japanese Yen");
+    expect(markup).toContain("UA - Unit of Account");
   });
 });

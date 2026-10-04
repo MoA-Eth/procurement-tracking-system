@@ -1,4 +1,7 @@
-import type { ProcurementActivitySummary } from "@/features/projects/data/officerActivityDrafts";
+import {
+  type ProcurementActivitySummary,
+  isTestOrJunkActivity,
+} from "@/features/projects/data/officerActivityDrafts";
 
 export const OFFICER_ACTIVITY_TRACKING_STORAGE_KEY =
   "moa-pts:officer-activity-tracking:v2";
@@ -268,9 +271,27 @@ export function parseActivityTrackingRecords(serialized: string | null) {
   try {
     const parsed: unknown = JSON.parse(serialized);
     if (!Array.isArray(parsed)) return [];
-    return parsed
+    const valid = parsed
       .filter(isOfficerActivityTrackingRecord)
-      .filter((record) => !record.activityReference.startsWith("MOA/"));
+      .filter((record) => !record.activityReference.startsWith("MOA/"))
+      .filter(
+        (record) =>
+          !isTestOrJunkActivity(
+            record.activityReference,
+            record.generalRemarks,
+          ),
+      );
+
+    if (typeof window !== "undefined" && valid.length < parsed.length) {
+      try {
+        window.localStorage.setItem(
+          OFFICER_ACTIVITY_TRACKING_STORAGE_KEY,
+          JSON.stringify(valid),
+        );
+      } catch {}
+    }
+
+    return valid;
   } catch {
     return [];
   }

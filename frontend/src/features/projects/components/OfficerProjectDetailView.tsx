@@ -17,13 +17,23 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
+import { formatGregorianDate } from "@/features/projects/utils/ethiopianCalendar";
 import { exportProjectPlansToExcel } from "@/features/projects/utils/projectExcelUtils";
 import { PlanExcelImportModal } from "@/features/projects/components/PlanExcelImportModal";
 import type { ProcurementPlanSummary } from "@/features/projects/data/officerProjects";
 
 function formatProjectPeriod(project: OfficerProject): string | undefined {
-  const from = project.projectPeriod?.from?.trim();
-  const to = project.projectPeriod?.to?.trim();
+  const rawFrom = project.projectPeriod?.from?.trim();
+  const rawTo = project.projectPeriod?.to?.trim();
+
+  if (!rawFrom && !rawTo) return undefined;
+
+  const formatDate = (dateStr: string) => {
+    return formatGregorianDate(dateStr) || dateStr;
+  };
+
+  const from = rawFrom ? formatDate(rawFrom) : undefined;
+  const to = rawTo ? formatDate(rawTo) : undefined;
 
   if (from && to) return `${from} - ${to}`;
   if (from) return `From ${from}`;

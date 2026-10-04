@@ -69,6 +69,7 @@ export interface ProcurementStepsQuery extends ReportPagination {
   currency?: string;
   dateFrom?: string;
   dateTo?: string;
+  sector?: string;
 }
 
 export interface DelayedProcurementQuery extends ReportPagination {
@@ -127,6 +128,7 @@ export interface QuarterlyDetailedQuery extends ReportPagination {
   projectId?: string;
   planId?: string;
   region?: string;
+  sector?: string;
   category?: string;
   methodId?: string;
   fundingSourceId?: string;
@@ -211,6 +213,7 @@ export interface CommitteeApprovalQuery extends ReportPagination {
   budgetYear?: string;
   projectId?: string;
   officerId?: string;
+  sector?: string;
   planStatus?: string;
   directorDecision?: string;
   committeeResult?: string;

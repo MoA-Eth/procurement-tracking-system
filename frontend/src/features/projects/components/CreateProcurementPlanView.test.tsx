@@ -139,4 +139,82 @@ describe("CreateProcurementPlanView", () => {
     expect(markup).toContain('pattern="[0-9]*"');
     expect(markup).toContain('maxLength="4"');
   });
+
+  it("locks the procurement category when the plan already has activities", () => {
+    const planWithActivities = {
+      activities: 3,
+      budgetYear: "2017 EFY",
+      category: "Works" as const,
+      completedActivities: 0,
+      currency: "ETB" as const,
+      delayedActivities: 0,
+      description: "Construction of regional irrigation canals",
+      estimatedValue: 12_000_000,
+      inProgressActivities: 0,
+      name: "DRIVE - Regional Irrigation Works - 2017 EFY",
+      organizationRegion: "Oromia",
+      planPeriod: {
+        from: { ethiopian: "01/11/2016", gregorian: "2024-07-08" },
+        to: { ethiopian: "30/10/2017", gregorian: "2025-07-07" },
+      },
+      reference: "PLN-OROMIA-2017-WORKS",
+      status: "Draft" as const,
+      version: 2,
+    };
+
+    const markup = renderToStaticMarkup(
+      <CreateProcurementPlanView
+        initialPlan={planWithActivities}
+        onSavePlan={() => undefined}
+        project={mockProject2}
+      />,
+    );
+
+    expect(markup).toContain('disabled=""');
+    expect(markup).toContain(
+      "Procurement category cannot be edited because this plan already contains 3 activities",
+    );
+  });
+
+  it("retains and pre-fills all plan period dates and description when editing", () => {
+    const planToEdit: any = {
+      activities: 1,
+      budgetYear: "2017 EFY",
+      category: "Goods" as const,
+      completedActivities: 0,
+      currency: "ETB" as const,
+      delayedActivities: 0,
+      description:
+        "Procurement of drought-resilient forage seeds and establishment of community seed banks",
+      estimatedValue: 500_000,
+      generalProcurementNoticeDate: {
+        gregorian: "2025-07-15",
+        ethiopian: "08-Hamle-2017",
+      },
+      inProgressActivities: 0,
+      name: "BREFONS - Goods Procurement Plan - 2017 EFY",
+      organizationRegion: "Federal / FPCU",
+      planPeriod: {
+        from: { ethiopian: "01-Hamle-2017", gregorian: "2025-07-08" },
+        to: { ethiopian: "30-Sene-2018", gregorian: "2026-07-07" },
+      },
+      reference: "PLN-BREFONS-2017-01",
+      status: "Draft" as const,
+    };
+
+    const markup = renderToStaticMarkup(
+      <CreateProcurementPlanView
+        initialPlan={planToEdit}
+        onSavePlan={() => undefined}
+        project={mockProject1}
+      />,
+    );
+
+    expect(markup).toContain("2025-07-08");
+    expect(markup).toContain("2026-07-07");
+    expect(markup).toContain("2025-07-15");
+    expect(markup).toContain(
+      "Procurement of drought-resilient forage seeds and establishment of community seed banks",
+    );
+  });
 });

@@ -25,6 +25,9 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
   const router = useRouter();
   const heading = getDashboardHeading("ADMIN");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState<string | null>(
+    null,
+  );
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<
     "ALL" | "ACTIVE" | "DEACTIVATED" | "DELETED" | "CANCELLED"
   >("ALL");
@@ -59,8 +62,25 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
   const filteredUsers = useMemo(() => {
     let result = users;
 
-    // Apply metric card status filter if not ALL
-    if (selectedStatusFilter !== "ALL") {
+    // When filtering by a role from Access Role Allocation, strictly show active accounts and never deleted accounts
+    if (selectedRoleFilter) {
+      result = result.filter((u) => {
+        const s = getDetailedAccountStatus(u);
+        if (s !== "ACTIVE") return false;
+
+        const roleStr = u.authRole || u.role;
+        const normalized = normalizeUserRole(roleStr);
+        if (selectedRoleFilter === "Officer") return normalized === "OFFICER";
+        if (selectedRoleFilter === "Director") return normalized === "DIRECTOR";
+        if (selectedRoleFilter === "Committee")
+          return normalized === "ENDORSING_COMMITTEE";
+        if (selectedRoleFilter === "Management")
+          return normalized === "MANAGEMENT";
+        if (selectedRoleFilter === "Administrator")
+          return normalized === "ADMIN";
+        return true;
+      });
+    } else if (selectedStatusFilter !== "ALL") {
       result = result.filter((u) => {
         const s = getDetailedAccountStatus(u);
         if (selectedStatusFilter === "ACTIVE") return s === "ACTIVE";
@@ -70,11 +90,20 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
           return s === "CANCELLED_INVITATION";
         return true;
       });
+    } else {
+      // By default in ALL view, do not display deleted accounts unless DELETED filter is explicitly chosen
+      result = result.filter((u) => {
+        const s = getDetailedAccountStatus(u);
+        return s !== "DELETED";
+      });
     }
 
     if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
     return result.filter((u) => {
+      const s = getDetailedAccountStatus(u);
+      if (selectedStatusFilter !== "DELETED" && s === "DELETED") return false;
+
       const name = (u.name || u.displayName || "").toLowerCase();
       const email = (u.email || "").toLowerCase();
       const rawRole = (u.role || "").toLowerCase();
@@ -100,7 +129,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         (q === "admin" && normalized === "admin")
       );
     });
-  }, [users, searchQuery, selectedStatusFilter]);
+  }, [users, searchQuery, selectedStatusFilter, selectedRoleFilter]);
 
   const filteredLogs = useMemo(() => {
     if (!searchQuery.trim()) return logs;
@@ -222,10 +251,13 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                 </p>
               </div>
             </div>
-            {Boolean(searchQuery) && (
+            {(Boolean(selectedRoleFilter) || Boolean(searchQuery)) && (
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSelectedRoleFilter(null);
+                  setSearchQuery("");
+                }}
                 className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
               >
                 Reset filter
@@ -337,8 +369,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                 {/* Role List / Legend */}
                 <div className="flex-1 w-full space-y-1">
                   {roles.map((r) => {
-                    const isSelected =
-                      searchQuery.toLowerCase() === r.filter.toLowerCase();
+                    const isSelected = selectedRoleFilter === r.filter;
                     const pct =
                       totalAllocated > 0
                         ? Math.round((r.count / totalAllocated) * 100)
@@ -348,9 +379,12 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                       <button
                         key={r.name}
                         type="button"
-                        onClick={() =>
-                          setSearchQuery(isSelected ? "" : r.filter)
-                        }
+                        onClick={() => {
+                          setSelectedRoleFilter((prev) =>
+                            prev === r.filter ? null : r.filter,
+                          );
+                          setSearchQuery("");
+                        }}
                         className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer border ${
                           isSelected
                             ? "bg-slate-900 text-white border-slate-900 shadow-xs font-semibold"
@@ -464,19 +498,34 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         </div>
 
         <div className="mt-6">
-          {selectedStatusFilter !== "ALL" && (
+          {(selectedRoleFilter || selectedStatusFilter !== "ALL") && (
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-slate-50 border border-slate-200/90 px-4 py-2.5 rounded-2xl text-xs shadow-2xs">
               <div className="flex items-center gap-2">
                 <span className="text-slate-500 font-medium">
                   Filtering table by:
                 </span>
                 <span className="font-semibold text-slate-800 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-2xs">
-                  {selectedStatusFilter === "ACTIVE" && "Active Accounts"}
-                  {selectedStatusFilter === "DEACTIVATED" &&
-                    "Deactivated Accounts"}
-                  {selectedStatusFilter === "DELETED" && "Deleted Accounts"}
-                  {selectedStatusFilter === "CANCELLED" &&
-                    "Cancelled Invitations"}
+                  {selectedRoleFilter
+                    ? `Active ${
+                        selectedRoleFilter === "Management"
+                          ? "Management Team"
+                          : selectedRoleFilter === "Committee"
+                            ? "Endorsement Committee"
+                            : selectedRoleFilter === "Officer"
+                              ? "Officers"
+                              : selectedRoleFilter === "Director"
+                                ? "Directors"
+                                : selectedRoleFilter === "Administrator"
+                                  ? "Administrators"
+                                  : selectedRoleFilter
+                      }`
+                    : selectedStatusFilter === "ACTIVE"
+                      ? "Active Accounts"
+                      : selectedStatusFilter === "DEACTIVATED"
+                        ? "Deactivated Accounts"
+                        : selectedStatusFilter === "DELETED"
+                          ? "Deleted Accounts"
+                          : "Cancelled Invitations"}
                 </span>
                 <span className="text-slate-400 font-medium">
                   ({filteredUsers.length} account
@@ -485,7 +534,11 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedStatusFilter("ALL")}
+                onClick={() => {
+                  setSelectedRoleFilter(null);
+                  setSelectedStatusFilter("ALL");
+                  setSearchQuery("");
+                }}
                 className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
               >
                 Clear filter (Show all)

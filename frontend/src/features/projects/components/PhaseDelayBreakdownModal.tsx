@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import Link from "next/link";
+import { formatGregorianDate } from "../utils/ethiopianCalendar";
 
 export interface PhaseDelayItem {
   id?: string;
@@ -53,17 +54,8 @@ interface PhaseDelayBreakdownModalProps {
 
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return String(dateStr);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return String(dateStr);
-  }
+  const formatted = formatGregorianDate(dateStr);
+  return formatted || String(dateStr);
 }
 
 function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
