@@ -15,6 +15,7 @@ import {
   MapPin,
   Route,
   Edit3,
+  FileSignature,
   History,
   Clock,
 } from "lucide-react";
@@ -290,6 +291,7 @@ export function OfficerProcurementActivityDetailView({
               plan.status === "Returned" ||
               plan.status === "Returned for Revision") && (
               <Link
+                aria-label={`Edit activity ${activity.reference}`}
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition"
                 href={
                   "/workspace/projects?project=" +
@@ -300,11 +302,29 @@ export function OfficerProcurementActivityDetailView({
                   encodeURIComponent(activity.reference) +
                   "&mode=edit-activity"
                 }
+                title={`Edit activity ${activity.reference}`}
               >
                 <Edit3 className="h-3.5 w-3.5 text-slate-500" />
-                Revise Activity
+                Edit
               </Link>
             )}
+
+            <Link
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[#00552c] bg-[#006837] px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-[#00522c] transition"
+              href={
+                "/workspace/contracts?mode=register&project=" +
+                encodeURIComponent(project.code) +
+                "&plan=" +
+                encodeURIComponent(plan.reference) +
+                "&activity=" +
+                encodeURIComponent(activity.reference) +
+                "&from=projects"
+              }
+              title={`Register contract for ${activity.reference}`}
+            >
+              <FileSignature className="h-3.5 w-3.5" />
+              Register Contract
+            </Link>
 
             <Link
               className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#0A3C2F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"

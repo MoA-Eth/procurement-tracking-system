@@ -63,4 +63,28 @@ describe("AddContractPaymentView", () => {
     expect(markup).toContain("60,000,000.00");
     expect(markup).not.toContain("6,000,000,010,000,000.00");
   });
+
+  it("links back to the open contract details view when opened from the detail page", () => {
+    const markup = renderToStaticMarkup(
+      <AddContractPaymentView
+        contract={mockContract}
+        fromOpen={true}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("Back to Contract");
+    expect(markup).toContain(
+      "mode=open&amp;contract=" +
+        encodeURIComponent(mockContract.contractNumber),
+    );
+  });
+
+  it("includes Other option in the Payment Type dropdown", () => {
+    const markup = renderToStaticMarkup(
+      <AddContractPaymentView contract={mockContract} onSave={vi.fn()} />,
+    );
+
+    expect(markup).toContain('<option value="Other">Other</option>');
+  });
 });

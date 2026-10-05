@@ -106,10 +106,26 @@ export function mergeSavedPlans(
         : saved.status || plan.status;
       const resolvedReason = plan.rejectionReason || saved.rejectionReason;
 
+      const baseActs = plan.planActivities || [];
+      const savedActs = saved.planActivities || [];
+      const actMap = new Map<string, any>();
+      baseActs.forEach((a: any) => {
+        const key = (a.reference || a.id || "").toLowerCase().trim();
+        if (key) actMap.set(key, a);
+      });
+      savedActs.forEach((a: any) => {
+        const key = (a.reference || a.id || "").toLowerCase().trim();
+        if (key) {
+          const existing = actMap.get(key);
+          actMap.set(key, existing ? { ...existing, ...a } : a);
+        }
+      });
       const rawActivities =
-        plan.planActivities && plan.planActivities.length > 0
-          ? plan.planActivities
-          : saved.planActivities || [];
+        actMap.size > 0
+          ? Array.from(actMap.values())
+          : savedActs.length > 0
+            ? savedActs
+            : baseActs;
 
       const resolvedActivities = rawActivities.map((act: any) => ({
         ...act,

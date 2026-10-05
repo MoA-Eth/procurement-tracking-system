@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Download,
   FileEdit,
+  FolderOpen,
   House,
   Loader2,
   Plus,
@@ -28,6 +29,7 @@ import {
 import { AddContractAmendmentView } from "./AddContractAmendmentView";
 import { AddContractPaymentView } from "./AddContractPaymentView";
 import { RegisterContractView } from "./RegisterContractView";
+import { OfficerContractDetailView } from "./OfficerContractDetailView";
 import { ContractExcelImportModal } from "./ContractExcelImportModal";
 import { exportContractsToExcel } from "../utils/contractExcelUtils";
 import {
@@ -43,6 +45,7 @@ import {
   applyPaymentsToContract,
   OFFICER_PAYMENTS_STORAGE_KEY,
   parseSavedPayments,
+  paymentsForContract,
   type OfficerContractPayment,
 } from "../data/officerPayments";
 import {
@@ -51,6 +54,7 @@ import {
   recordContractPayment,
   fetchContracts,
   mapBackendContractToOfficerContract,
+  mapBackendPaymentType,
   importContracts,
 } from "@/lib/contractsApi";
 import { BACKEND_API_URL } from "@/lib/apiClient";
@@ -66,6 +70,8 @@ const amountFormatter = new Intl.NumberFormat("en-US", {
 });
 
 export function OfficerContractsView({
+  fromOpen,
+  fromProjects,
   fromTracker,
   initialActivityReference,
   initialPlanReference,
@@ -73,11 +79,13 @@ export function OfficerContractsView({
   mode,
   selectedContractNumber,
 }: {
+  fromOpen?: boolean;
+  fromProjects?: boolean;
   fromTracker?: boolean;
   initialActivityReference?: string;
   initialPlanReference?: string;
   initialProjectCode?: string;
-  mode?: "add-payment" | "register" | "add-amendment";
+  mode?: "add-payment" | "register" | "add-amendment" | "open" | "view";
   selectedContractNumber?: string;
 }) {
   const router = useRouter();
@@ -122,13 +130,47 @@ export function OfficerContractsView({
           mapByNum.set(c.contractNumber.toLowerCase(), c),
         );
         setSavedContracts(Array.from(mapByNum.values()));
+
+        const backendPayments: OfficerContractPayment[] = [];
+        for (const bc of backendContracts) {
+          if (Array.isArray(bc.payments)) {
+            for (const p of bc.payments) {
+              backendPayments.push({
+                amount: Number(p.amount) || 0,
+                contractNumber: bc.contractNo,
+                currency: bc.currency || "ETB",
+                date: {
+                  ethiopian: "",
+                  gregorian: p.paymentDate
+                    ? new Date(p.paymentDate).toLocaleDateString("en-GB")
+                    : p.createdAt
+                      ? new Date(p.createdAt).toLocaleDateString("en-GB")
+                      : "-",
+                },
+                id: p.id,
+                paymentType: mapBackendPaymentType(p.paymentType),
+                reference: p.referenceNo,
+                remarks: (p as any).remarks,
+              });
+            }
+          }
+        }
+        if (backendPayments.length > 0) {
+          const paymentsMap = new Map<string, OfficerContractPayment>();
+          localPayments.forEach((p) => paymentsMap.set(p.id, p));
+          backendPayments.forEach((p) => paymentsMap.set(p.id, p));
+          setSavedPayments(Array.from(paymentsMap.values()));
+        } else {
+          setSavedPayments(localPayments);
+        }
       } else {
         setSavedContracts(localContracts);
+        setSavedPayments(localPayments);
       }
     } catch {
       setSavedContracts(localContracts);
+      setSavedPayments(localPayments);
     }
-    setSavedPayments(localPayments);
   }, []);
 
   useEffect(() => {
@@ -185,7 +227,9 @@ export function OfficerContractsView({
   }, [savedContracts, savedPayments]);
 
   const selectedContract = contracts.find(
-    (contract) => contract.contractNumber === selectedContractNumber,
+    (contract) =>
+      contract.contractNumber.toLowerCase() ===
+      (selectedContractNumber || "").toLowerCase(),
   );
 
   const fiscalYearOptions = useMemo(
@@ -271,13 +315,20 @@ export function OfficerContractsView({
       console.warn("Backend recordContractPayment note:", err);
     }
 
-    router.push("/workspace/contracts");
+    if (fromOpen || selectedContractNumber) {
+      router.push(
+        `/workspace/contracts?mode=open&contract=${encodeURIComponent(payment.contractNumber)}${fromTracker ? "&from=tracker" : ""}`,
+      );
+    } else {
+      router.push("/workspace/contracts");
+    }
   }
 
   async function saveAmendment(amendmentData: {
     variationAmount: number;
     reason: string;
     effectiveDate?: string;
+    ethiopianDate?: string;
     approvalRef?: string;
     notes?: string;
     newTotalAmount: number;
@@ -298,6 +349,11 @@ export function OfficerContractsView({
               {
                 id: (selectedContract.details.amendments?.length || 0) + 1,
                 amount: amendmentData.variationAmount,
+                approvalRef: amendmentData.approvalRef,
+                effectiveDate: amendmentData.effectiveDate,
+                ethiopianDate: amendmentData.ethiopianDate,
+                notes: amendmentData.notes,
+                reason: amendmentData.reason,
               },
             ],
           }
@@ -323,7 +379,13 @@ export function OfficerContractsView({
       console.warn("Backend createContractAmendment note:", err);
     }
 
-    router.push("/workspace/contracts");
+    if (fromOpen || selectedContractNumber) {
+      router.push(
+        `/workspace/contracts?mode=open&contract=${encodeURIComponent(selectedContract.contractNumber)}${fromTracker ? "&from=tracker" : ""}`,
+      );
+    } else {
+      router.push("/workspace/contracts");
+    }
   }
 
   const allVisibleSelected =
@@ -409,6 +471,7 @@ export function OfficerContractsView({
     return (
       <RegisterContractView
         existingContracts={contracts}
+        fromProjects={fromProjects}
         fromTracker={fromTracker}
         initialActivityReference={initialActivityReference}
         initialPlanReference={initialPlanReference}
@@ -422,6 +485,7 @@ export function OfficerContractsView({
     return (
       <AddContractPaymentView
         contract={selectedContract}
+        fromOpen={fromOpen}
         fromTracker={fromTracker}
         onSave={savePayment}
       />
@@ -432,8 +496,22 @@ export function OfficerContractsView({
     return (
       <AddContractAmendmentView
         contract={selectedContract}
+        fromOpen={fromOpen}
         fromTracker={fromTracker}
         onSave={saveAmendment}
+      />
+    );
+  }
+
+  if ((mode === "open" || mode === "view") && selectedContract) {
+    return (
+      <OfficerContractDetailView
+        contract={selectedContract}
+        fromTracker={fromTracker}
+        payments={paymentsForContract(
+          savedPayments,
+          selectedContract.contractNumber,
+        )}
       />
     );
   }
@@ -724,12 +802,13 @@ export function OfficerContractsView({
                         />
                       </td>
                       <td className="w-72 min-w-[280px] whitespace-nowrap px-3.5 py-2.5 align-top">
-                        <span
-                          className="font-mono text-xs font-medium text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded-md border border-slate-200/80 inline-block truncate max-w-[260px]"
-                          title={contract.contractNumber}
+                        <Link
+                          className="font-mono text-xs font-medium text-slate-800 bg-slate-100/90 hover:bg-slate-200/90 hover:text-[#0A3C2F] px-2 py-0.5 rounded-md border border-slate-200/80 inline-block truncate max-w-[260px] transition-colors"
+                          href={`/workspace/contracts?mode=open&contract=${encodeURIComponent(contract.contractNumber)}${fromTracker ? "&from=tracker" : ""}`}
+                          title={`Open details for ${contract.contractNumber}`}
                         >
                           {contract.contractNumber}
-                        </span>
+                        </Link>
                       </td>
                       <td className="w-80 min-w-[320px] px-3.5 py-2.5 align-top text-xs leading-5 text-slate-700 wrap-break-word">
                         <span
@@ -776,9 +855,20 @@ export function OfficerContractsView({
                       <td className="px-3 py-2.5 text-center align-top whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           <Link
+                            aria-label={`Open contract ${contract.contractNumber}`}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-2xs cursor-pointer"
+                            href={`/workspace/contracts?mode=open&contract=${encodeURIComponent(contract.contractNumber)}${fromTracker ? "&from=tracker" : ""}`}
+                          >
+                            <FolderOpen
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5 text-slate-500"
+                            />
+                            Open
+                          </Link>
+                          <Link
                             aria-label={`Amend contract ${contract.contractNumber}`}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-2xs cursor-pointer"
-                            href={`/workspace/contracts?mode=add-amendment&contract=${encodeURIComponent(contract.contractNumber)}`}
+                            href={`/workspace/contracts?mode=add-amendment&contract=${encodeURIComponent(contract.contractNumber)}${fromTracker ? "&from=tracker" : ""}`}
                           >
                             <FileEdit
                               aria-hidden="true"
@@ -789,7 +879,7 @@ export function OfficerContractsView({
                           <Link
                             aria-label={`Add payment to contract ${contract.contractNumber}`}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50/50 text-xs font-semibold text-[#0A3C2F] hover:bg-emerald-100/60 hover:border-emerald-300 transition-colors shadow-2xs cursor-pointer"
-                            href={`/workspace/contracts?mode=add-payment&contract=${encodeURIComponent(contract.contractNumber)}`}
+                            href={`/workspace/contracts?mode=add-payment&contract=${encodeURIComponent(contract.contractNumber)}${fromTracker ? "&from=tracker" : ""}`}
                           >
                             <Banknote
                               aria-hidden="true"

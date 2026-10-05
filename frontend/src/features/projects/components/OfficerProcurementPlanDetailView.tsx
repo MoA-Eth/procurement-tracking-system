@@ -27,6 +27,7 @@ import {
   MessageSquare,
   AlertCircle,
   FileCheck2,
+  FileSignature,
   Clock,
   X,
 } from "lucide-react";
@@ -1017,28 +1018,31 @@ export function OfficerProcurementPlanDetailView({
           <table className="w-full table-fixed border-collapse text-left">
             <thead>
               <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
-                <th className="w-[11%] px-2 py-3" scope="col">
+                <th className="w-[10%] px-2 py-3" scope="col">
                   Ref
                 </th>
-                <th className="w-[23%] px-2 py-3" scope="col">
+                <th className="w-[22%] px-2 py-3" scope="col">
                   Description
                 </th>
-                <th className="w-[9%] px-2 py-3" scope="col">
+                <th className="w-[8%] px-2 py-3" scope="col">
                   Category
                 </th>
                 <th className="w-[9%] px-2 py-3" scope="col">
                   Method
                 </th>
-                <th className="w-[13%] px-2 py-3 text-right" scope="col">
+                <th className="w-[12%] px-2 py-3 text-right" scope="col">
                   Est. Amount ({currentPlan.currency})
                 </th>
                 <th className="w-[11%] px-2 py-3" scope="col">
                   Current Stage
                 </th>
-                <th className="w-[11%] px-2 py-3" scope="col">
+                <th className="w-[10%] px-2 py-3" scope="col">
                   Status
                 </th>
-                <th className="w-[13%] px-2 py-3 text-right" scope="col">
+                <th
+                  className="w-[18%] min-w-[170px] px-2 py-3 text-right"
+                  scope="col"
+                >
                   Actions
                 </th>
               </tr>
@@ -1068,6 +1072,15 @@ export function OfficerProcurementPlanDetailView({
                       encodeURIComponent(currentPlan.reference) +
                       "&activity=" +
                       encodeURIComponent(activity.reference)
+                    }
+                    registerContractHref={
+                      "/workspace/contracts?mode=register&project=" +
+                      encodeURIComponent(project.code) +
+                      "&plan=" +
+                      encodeURIComponent(currentPlan.reference) +
+                      "&activity=" +
+                      encodeURIComponent(activity.reference) +
+                      "&from=projects"
                     }
                   />
                 ))
@@ -1310,6 +1323,7 @@ function ActivityRow({
   href,
   isMultiOfficer = false,
   onSelectDelay,
+  registerContractHref,
 }: {
   activity: PlanActivity;
   canEdit?: boolean;
@@ -1317,6 +1331,7 @@ function ActivityRow({
   href: string;
   isMultiOfficer?: boolean;
   onSelectDelay?: (activity: PlanActivity) => void;
+  registerContractHref?: string;
 }) {
   const isDelayed =
     activity.status === "Delayed" ||
@@ -1385,14 +1400,25 @@ function ActivityRow({
           )}
         </div>
       </td>
-      <td className="px-2 py-2.5 text-right align-top whitespace-nowrap">
+      <td className="px-2 py-2.5 text-right align-top whitespace-nowrap min-w-[170px]">
         <div className="flex items-center justify-end gap-1.5 shrink-0">
+          {registerContractHref && (
+            <Link
+              aria-label={`Register contract for activity ${activity.reference}`}
+              className="inline-flex shrink-0 items-center gap-1 rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[9px] font-semibold text-[#0A3C2F] hover:bg-[#0A3C2F] hover:text-white transition-colors cursor-pointer shadow-2xs"
+              href={registerContractHref}
+              title={`Register contract for ${activity.reference}`}
+            >
+              <FileSignature className="h-2.5 w-2.5" />
+              Register Contract
+            </Link>
+          )}
           {canEdit && (
             <Link
               aria-label={`Edit activity ${activity.reference}`}
               className="inline-flex shrink-0 items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-700 hover:bg-[#0A3C2F] hover:text-white transition cursor-pointer"
               href={editHref}
-              title="Edit / Revise Activity"
+              title={`Edit activity ${activity.reference}`}
             >
               <Edit3 className="h-2.5 w-2.5" />
               Edit

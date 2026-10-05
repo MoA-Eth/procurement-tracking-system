@@ -210,6 +210,7 @@ function getPlanPlannedEndDate(context?: ActivityContext): ContractDateValue {
 
 export function RegisterContractView({
   existingContracts,
+  fromProjects: initialFromProjects,
   fromTracker,
   initialActivityReference,
   initialPlanReference,
@@ -217,6 +218,7 @@ export function RegisterContractView({
   onSave,
 }: {
   existingContracts: readonly OfficerContract[];
+  fromProjects?: boolean;
   fromTracker?: boolean;
   initialActivityReference?: string;
   initialPlanReference?: string;
@@ -314,6 +316,14 @@ export function RegisterContractView({
       backendProjects.length > 0 ? backendProjects : officerProjects;
     return mergeSavedPlans(baseProjects, savedPlans);
   }, [backendProjects, savedPlans]);
+
+  const fromProjects =
+    initialFromProjects ||
+    (typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("from") ===
+          "projects" ||
+        new URLSearchParams(window.location.search).get("from") === "plan"
+      : false);
 
   const targetActivityRef =
     initialActivityReference ||
@@ -550,10 +560,22 @@ export function RegisterContractView({
                 href={
                   fromTracker
                     ? "/workspace/activity-tracker"
-                    : "/workspace/contracts"
+                    : fromProjects
+                      ? selectedContext
+                        ? `/workspace/projects?project=${encodeURIComponent(
+                            selectedContext.project.code,
+                          )}&plan=${encodeURIComponent(
+                            selectedContext.plan.reference,
+                          )}`
+                        : "/workspace/projects"
+                      : "/workspace/contracts"
                 }
               >
-                {fromTracker ? "Activity Tracker" : "Contracts"}
+                {fromTracker
+                  ? "Activity Tracker"
+                  : fromProjects
+                    ? "Procurement Plan"
+                    : "Contracts"}
               </Link>
             </li>
             <li aria-hidden="true">/</li>
@@ -1106,11 +1128,23 @@ export function RegisterContractView({
                       selectedContext.activity.reference,
                     )}`
                   : "/workspace/activity-tracker"
-                : "/workspace/contracts"
+                : fromProjects
+                  ? selectedContext
+                    ? `/workspace/projects?project=${encodeURIComponent(
+                        selectedContext.project.code,
+                      )}&plan=${encodeURIComponent(
+                        selectedContext.plan.reference,
+                      )}`
+                    : "/workspace/projects"
+                  : "/workspace/contracts"
             }
           >
             <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
-            {fromTracker ? "Back to Tracker" : "Back"}
+            {fromTracker
+              ? "Back to Tracker"
+              : fromProjects
+                ? "Back to Plan"
+                : "Back"}
           </Link>
           <button
             className="inline-flex h-9 items-center gap-2 rounded-md border border-[#00552c] bg-[#006837] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006837]"
@@ -1316,6 +1350,23 @@ export function buildEligibleActivities(
 
   return projects.flatMap((project) => {
     const plansToUse = project.plans.filter((plan) => {
+      if (
+        requestedActivityReference &&
+        ((plan.planActivities || []).some(
+          (pa) =>
+            pa.reference.toLowerCase() ===
+            requestedActivityReference.toLowerCase(),
+        ) ||
+          savedActivities.some(
+            (sa) =>
+              sa.projectCode === project.code &&
+              sa.planReference === plan.reference &&
+              sa.activity.reference.toLowerCase() ===
+                requestedActivityReference.toLowerCase(),
+          ))
+      ) {
+        return true;
+      }
       const s = String(plan.status || "").toLowerCase();
       if (hasApprovedOrReviewPlans) {
         return (

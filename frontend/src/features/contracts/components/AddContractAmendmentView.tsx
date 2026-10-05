@@ -49,15 +49,18 @@ function formatAmount(value: number) {
 
 export function AddContractAmendmentView({
   contract,
+  fromOpen,
   fromTracker,
   onSave,
 }: {
   contract: OfficerContract;
+  fromOpen?: boolean;
   fromTracker?: boolean;
   onSave: (amendmentData: {
     variationAmount: number;
     reason: string;
     effectiveDate?: string;
+    ethiopianDate?: string;
     approvalRef?: string;
     notes?: string;
     newTotalAmount: number;
@@ -153,6 +156,7 @@ export function AddContractAmendmentView({
         variationAmount: signedVariation,
         reason: form.reason.trim(),
         effectiveDate: form.date.gregorian || undefined,
+        ethiopianDate: form.date.ethiopian || undefined,
         approvalRef: form.approvalRef.trim() || undefined,
         notes: form.notes.trim() || undefined,
         newTotalAmount,
@@ -191,6 +195,19 @@ export function AddContractAmendmentView({
                 {fromTracker ? "Activity Tracker" : "Contracts"}
               </Link>
             </li>
+            {fromOpen ? (
+              <>
+                <li aria-hidden="true">/</li>
+                <li>
+                  <Link
+                    className="hover:text-[#0A3C2F]"
+                    href={`/workspace/contracts?mode=open&contract=${encodeURIComponent(contract.contractNumber)}${fromTracker ? "&from=tracker" : ""}`}
+                  >
+                    {contract.contractNumber}
+                  </Link>
+                </li>
+              </>
+            ) : null}
             <li aria-hidden="true">/</li>
             <li aria-current="page" className="font-semibold text-slate-800">
               Contract Amendment #{nextAmendmentNo}
@@ -738,14 +755,18 @@ export function AddContractAmendmentView({
 
             <Link
               href={
-                fromTracker
-                  ? "/workspace/activity-tracker"
-                  : "/workspace/contracts"
+                fromOpen
+                  ? `/workspace/contracts?mode=open&contract=${encodeURIComponent(
+                      contract.contractNumber,
+                    )}${fromTracker ? "&from=tracker" : ""}`
+                  : fromTracker
+                    ? "/workspace/activity-tracker"
+                    : "/workspace/contracts"
               }
               className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Cancel</span>
+              <span>{fromOpen ? "Back to Contract" : "Cancel"}</span>
             </Link>
           </div>
         </aside>

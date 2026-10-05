@@ -19,7 +19,12 @@ export interface ContractDateValue {
 
 export interface ContractAmendment {
   amount: number;
+  approvalRef?: string;
+  effectiveDate?: string;
+  ethiopianDate?: string;
   id: number;
+  notes?: string;
+  reason?: string;
 }
 
 export interface OfficerContractDetails {

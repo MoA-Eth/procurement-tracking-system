@@ -14,8 +14,10 @@ export type ContractPaymentType =
 export interface OfficerContractPayment {
   amount: number;
   contractNumber: string;
+  currency?: string;
   date: ContractDateValue;
   id: string;
+  otherPaymentType?: string;
   paymentType: ContractPaymentType;
   reference?: string;
   remarks?: string;
@@ -88,6 +90,9 @@ function isOfficerContractPayment(
     Number.isFinite(payment.amount) &&
     payment.amount >= 0 &&
     isPaymentDate(payment.date) &&
+    (payment.currency === undefined || typeof payment.currency === "string") &&
+    (payment.otherPaymentType === undefined ||
+      typeof payment.otherPaymentType === "string") &&
     (payment.reference === undefined ||
       typeof payment.reference === "string") &&
     (payment.remarks === undefined || typeof payment.remarks === "string")

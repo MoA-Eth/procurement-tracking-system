@@ -76,4 +76,20 @@ describe("AddContractAmendmentView", () => {
     expect(markup).toContain("Previous Amendments History");
     expect(markup).toContain("Apply Amendment #2");
   });
+
+  it("links cancel button back to the open contract details view when opened from detail page", () => {
+    const markup = renderToStaticMarkup(
+      <AddContractAmendmentView
+        contract={mockContract}
+        fromOpen={true}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("Back to Contract");
+    expect(markup).toContain(
+      "mode=open&amp;contract=" +
+        encodeURIComponent(mockContract.contractNumber),
+    );
+  });
 });

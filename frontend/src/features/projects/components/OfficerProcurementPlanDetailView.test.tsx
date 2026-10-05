@@ -167,4 +167,19 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).toContain("Submit to Director");
     expect(markup).toContain("Plan is ready for review");
   });
+
+  it("renders Register Contract button for individual activities in the table", () => {
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={mockPlan}
+        project={mockProject}
+        savedActivities={[sampleActivity]}
+      />,
+    );
+
+    expect(markup).toContain("Register Contract");
+    expect(markup).toContain(
+      "/workspace/contracts?mode=register&amp;project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;activity=ET-MoA-000001-GO-RFQ&amp;from=projects",
+    );
+  });
 });

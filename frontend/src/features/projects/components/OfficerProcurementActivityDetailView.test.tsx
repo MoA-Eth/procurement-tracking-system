@@ -250,4 +250,36 @@ describe("OfficerProcurementActivityDetailView", () => {
 
     expect(markup).toContain("Version History");
   });
+
+  it("renders Register Contract button in the activity detail header", () => {
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={detailedActivity}
+        plan={plan}
+        project={project}
+      />,
+    );
+
+    expect(markup).toContain("Register Contract");
+    expect(markup).toContain(
+      "/workspace/contracts?mode=register&amp;project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;activity=" +
+        encodeURIComponent(detailedActivity.reference) +
+        "&amp;from=projects",
+    );
+  });
+
+  it("renders Edit button in the activity detail header for draft/returned plans", () => {
+    const draftPlan = { ...plan, status: "Draft" as const };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={detailedActivity}
+        plan={draftPlan}
+        project={project}
+      />,
+    );
+
+    expect(markup).toContain("Edit");
+    expect(markup).toContain("&amp;mode=edit-activity");
+    expect(markup).not.toContain("Revise Activity");
+  });
 });

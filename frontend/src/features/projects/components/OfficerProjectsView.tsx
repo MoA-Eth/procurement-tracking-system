@@ -539,14 +539,13 @@ export function OfficerProjectsView({
       .map((record) => record.activity);
 
     const combined: ProcurementActivitySummary[] = [];
-    directBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
-    matchingSaved.forEach((a) => upsertSummaryActivity(combined, a));
-
     if (selectedPlan.planActivities && selectedPlan.planActivities.length > 0) {
       selectedPlan.planActivities.forEach((a) =>
         upsertSummaryActivity(combined, a),
       );
     }
+    directBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
+    matchingSaved.forEach((a) => upsertSummaryActivity(combined, a));
 
     const activitiesList = combined.map((act) => {
       if (

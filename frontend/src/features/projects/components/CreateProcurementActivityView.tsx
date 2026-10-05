@@ -81,6 +81,20 @@ const steps = [
   { label: "Roadmap", number: 4 },
 ] as const;
 
+export function isCompetitiveMethod(method?: string): boolean {
+  if (!method) return false;
+  const m = method.toLowerCase().trim();
+  return (
+    m !== "direct" &&
+    m !== "sss" &&
+    !m.includes("direct") &&
+    !m.includes("single source") &&
+    !m.includes("single-source") &&
+    m !== "un-agency" &&
+    m !== "un_agency"
+  );
+}
+
 export function CreateProcurementActivityView({
   existingActivityCount,
   initialActivity,
@@ -99,7 +113,14 @@ export function CreateProcurementActivityView({
   const isEditing = Boolean(initialActivity);
   const category = normalizeActivityCategory(plan.category);
   const [step, setStep] = useState<WizardStep>(1);
-  const [attemptedStep, setAttemptedStep] = useState<WizardStep | null>(null);
+  const [attemptedSteps, setAttemptedSteps] = useState<
+    Record<WizardStep, boolean>
+  >({
+    1: false,
+    2: false,
+    3: false,
+    4: false,
+  });
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -149,7 +170,11 @@ export function CreateProcurementActivityView({
     AdditionalReference[]
   >(() => extractInitialAdditionalReferences(initialActivity));
   const [roadmap, setRoadmap] = useState<RoadmapStage[]>(() =>
-    extractInitialRoadmap(initialActivity, initialMethodKey),
+    extractInitialRoadmap(
+      initialActivity,
+      initialMethodKey,
+      initialActivity?.category || category,
+    ),
   );
 
   // Synchronize state only when a different initialActivity arrives
@@ -185,7 +210,13 @@ export function CreateProcurementActivityView({
     setAdditionalReferences(
       extractInitialAdditionalReferences(initialActivity),
     );
-    setRoadmap(extractInitialRoadmap(initialActivity, resolvedKey));
+    setRoadmap(
+      extractInitialRoadmap(
+        initialActivity,
+        resolvedKey,
+        initialActivity?.category || category,
+      ),
+    );
   }, [initialActivity, project, plan, category]);
 
   const [lookupVersion, setLookupVersion] = useState(0);
@@ -231,12 +262,11 @@ export function CreateProcurementActivityView({
         existingActivityCount,
       );
 
-  const usesCompetition =
-    Boolean(form.method) &&
-    form.method !== "direct" &&
-    form.method !== "un-agency";
+  const usesCompetition = isCompetitiveMethod(form.method);
   const usesRfb =
-    form.method === "rfb-international" || form.method === "rfb-national";
+    form.method === "rfb" ||
+    form.method === "rfb-international" ||
+    form.method === "rfb-national";
   const consultancy = category === "Consultancy Services";
   const preferenceApplies =
     usesRfb && (category === "Goods" || category === "Works");
@@ -314,7 +344,7 @@ export function CreateProcurementActivityView({
       requiresUnAgency: isUnAgency,
     }));
     setRoadmap(
-      roadmapForMethod(method).map((stage) => ({
+      roadmapForMethod(method, category).map((stage) => ({
         allowNotApplicable: Boolean(stage.allowNotApplicable),
         days: "",
         ethiopianDate: "",
@@ -327,10 +357,30 @@ export function CreateProcurementActivityView({
     );
   }
 
+  function scrollToFirstError() {
+    setTimeout(() => {
+      const el = document.querySelector(
+        "[data-field-has-error='true'], [aria-invalid='true'], .border-red-500, [role='alert']",
+      );
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 60);
+  }
+
   function moveTo(nextStep: WizardStep) {
-    setAttemptedStep(null);
     setStep(nextStep);
     window.scrollTo({ behavior: "smooth", top: 0 });
+  }
+
+  function handleStepClick(targetStep: WizardStep) {
+    if (issueCounts[targetStep] > 0) {
+      setAttemptedSteps((prev) => ({ ...prev, [targetStep]: true }));
+    }
+    moveTo(targetStep);
+    if (issueCounts[targetStep] > 0) {
+      scrollToFirstError();
+    }
   }
 
   function addAdditionalReference() {
@@ -361,23 +411,27 @@ export function CreateProcurementActivityView({
 
   async function handleSave() {
     if (stepOneInvalid) {
-      setAttemptedStep(1);
+      setAttemptedSteps((prev) => ({ ...prev, 1: true }));
       moveTo(1);
+      scrollToFirstError();
       return;
     }
     if (stepTwoInvalid) {
-      setAttemptedStep(2);
+      setAttemptedSteps((prev) => ({ ...prev, 2: true }));
       moveTo(2);
+      scrollToFirstError();
       return;
     }
     if (stepThreeInvalid) {
-      setAttemptedStep(3);
+      setAttemptedSteps((prev) => ({ ...prev, 3: true }));
       moveTo(3);
+      scrollToFirstError();
       return;
     }
     if (incompleteRoadmapStages.length > 0 || roadmapOrderErrors > 0) {
-      setAttemptedStep(4);
+      setAttemptedSteps((prev) => ({ ...prev, 4: true }));
       moveTo(4);
+      scrollToFirstError();
       return;
     }
 
@@ -447,11 +501,32 @@ export function CreateProcurementActivityView({
   }
 
   function continueWizard() {
-    setAttemptedStep(step);
+    setAttemptedSteps((prev) => ({ ...prev, [step]: true }));
 
-    if (step === 1 && !stepOneInvalid) moveTo(2);
-    if (step === 2 && !stepTwoInvalid) moveTo(3);
-    if (step === 3 && !stepThreeInvalid) moveTo(4);
+    if (step === 1) {
+      if (stepOneInvalid) {
+        scrollToFirstError();
+        return;
+      }
+      moveTo(2);
+      return;
+    }
+    if (step === 2) {
+      if (stepTwoInvalid) {
+        scrollToFirstError();
+        return;
+      }
+      moveTo(3);
+      return;
+    }
+    if (step === 3) {
+      if (stepThreeInvalid) {
+        scrollToFirstError();
+        return;
+      }
+      moveTo(4);
+      return;
+    }
     if (step === 4) {
       handleSave();
     }
@@ -526,7 +601,7 @@ export function CreateProcurementActivityView({
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-semibold tracking-tight text-[#16243a]">
             {isEditing
-              ? "Revise Procurement Activity"
+              ? "Edit Procurement Activity"
               : "Add Procurement Activity"}
           </h1>
           {isEditing && (
@@ -541,7 +616,7 @@ export function CreateProcurementActivityView({
         <WizardProgress
           currentStep={step}
           isEditing={isEditing}
-          onStepClick={moveTo}
+          onStepClick={handleStepClick}
         />
       </header>
 
@@ -553,7 +628,7 @@ export function CreateProcurementActivityView({
             <main className="min-w-0">
               {step === 1 ? (
                 <KeyDetailsStep
-                  attempted={attemptedStep === 1}
+                  attempted={attemptedSteps[1]}
                   category={activityCategory}
                   form={form}
                   methodOptions={methodOptions}
@@ -567,12 +642,13 @@ export function CreateProcurementActivityView({
                   onChange={updateField}
                   onMethodChange={selectMethod}
                   project={project}
+                  usesCompetition={usesCompetition}
                 />
               ) : null}
               {step === 2 ? (
                 <RelatedInformationStep
                   additionalReferences={additionalReferences}
-                  attempted={attemptedStep === 2}
+                  attempted={attemptedSteps[2]}
                   context={context}
                   currencyOptions={currencyOptions}
                   financingAllocations={financingAllocations}
@@ -588,7 +664,7 @@ export function CreateProcurementActivityView({
               ) : null}
               {step === 3 ? (
                 <AdditionalDetailsStep
-                  attempted={attemptedStep === 3}
+                  attempted={attemptedSteps[3]}
                   componentAllocations={componentAllocations}
                   financingAllocations={financingAllocations}
                   form={form}
@@ -600,7 +676,7 @@ export function CreateProcurementActivityView({
               ) : null}
               {step === 4 ? (
                 <ProcurementRoadmapTable
-                  attempted={attemptedStep === 4}
+                  attempted={attemptedSteps[4]}
                   methodLabel={selectedMethod?.label ?? "Selected method"}
                   onChange={setRoadmap}
                   stages={roadmap}
@@ -611,7 +687,7 @@ export function CreateProcurementActivityView({
               currentStep={step}
               isEditing={isEditing}
               issueCounts={issueCounts}
-              onStepClick={moveTo}
+              onStepClick={handleStepClick}
             />
           </div>
 
@@ -684,15 +760,30 @@ function createInitialForm(
         anyAct.procurementClassificationCode ||
         "",
       comments: d?.comments || anyAct.comments || anyAct.remarks || "",
-      contractType: anyAct.contractType || d?.contractType || "Lump Sum",
+      contractType: d?.contractType || anyAct.contractType || "Lump Sum",
       currency:
         d?.currency ||
+        initialActivity.currency ||
         anyAct.currency ||
         plan.currency ||
         project.baseCurrency ||
         "ETB",
       domesticPreference:
-        d?.domesticPreference || anyAct.domesticPreference || "No",
+        d?.domesticPreference === "Yes" ||
+        d?.domesticPreference === "true" ||
+        (d?.domesticPreference as any) === true ||
+        (anyAct.domesticPreference as any) === true ||
+        anyAct.domesticPreference === "Yes" ||
+        anyAct.domesticPreference === "true"
+          ? "Yes"
+          : d?.domesticPreference === "No" ||
+              d?.domesticPreference === "false" ||
+              (d?.domesticPreference as any) === false ||
+              (anyAct.domesticPreference as any) === false ||
+              anyAct.domesticPreference === "No" ||
+              anyAct.domesticPreference === "false"
+            ? "No"
+            : d?.domesticPreference || anyAct.domesticPreference || "No",
       estimatedAmount: String(
         initialActivity.estimatedAmount ??
           d?.estimatedAmount ??
@@ -708,6 +799,7 @@ function createInitialForm(
         "",
       fundingSource:
         d?.fundingSource ||
+        initialActivity.fundingSource ||
         anyAct.fundingSource ||
         anyAct.fundings?.[0]?.fundingSource ||
         getProjectFundingSources(project)[0] ||
@@ -732,8 +824,8 @@ function createInitialForm(
           ? String(anyAct.latitude)
           : ""),
       location:
-        anyAct.location ||
         d?.location ||
+        anyAct.location ||
         plan.organizationRegion ||
         project.organizationRegion ||
         "",
@@ -750,20 +842,25 @@ function createInitialForm(
         (anyAct.lots && anyAct.lots.length > 0),
       ),
       marketApproach:
-        anyAct.marketApproach || d?.marketApproach || "Open - National",
+        d?.marketApproach || anyAct.marketApproach || "Open - National",
       method: resolvedMethod,
       oversightClassification:
         d?.oversightClassification || anyAct.oversightClassification || "",
       pricingBasis:
         category === "Works"
-          ? d?.pricingBasis || anyAct.pricingBasis || ""
+          ? d?.pricingBasis === "BOQ" || anyAct.pricingBasis === "BOQ"
+            ? "Bill of Quantities (BOQ)"
+            : d?.pricingBasis === "LUMP_SUM" ||
+                anyAct.pricingBasis === "LUMP_SUM"
+              ? "Lump Sum"
+              : d?.pricingBasis || anyAct.pricingBasis || ""
           : "Not Applicable",
       procurementDocumentType:
         d?.procurementDocumentType || anyAct.procurementDocumentType || "",
       procurementProcess:
-        anyAct.procurementProcess ||
         d?.procurementProcess ||
-        "1 Envelope (Single Stage 1 Env)",
+        anyAct.procurementProcess ||
+        "Single Stage One Envelope",
       qualificationApproach:
         d?.qualificationApproach || anyAct.qualificationApproach || "",
       requiresUnAgency: Boolean(
@@ -772,7 +869,14 @@ function createInitialForm(
         anyAct.requiresUnAgencyContracting ||
         resolvedMethod === "un-agency",
       ),
-      reviewType: anyAct.reviewType || d?.reviewType || "Post Review",
+      reviewType:
+        d?.reviewType?.toLowerCase().includes("prior") ||
+        anyAct.reviewType?.toLowerCase().includes("prior")
+          ? "Prior Review"
+          : d?.reviewType?.toLowerCase().includes("post") ||
+              anyAct.reviewType?.toLowerCase().includes("post")
+            ? "Post Review"
+            : d?.reviewType || anyAct.reviewType || "Post Review",
       scopeNotes: d?.scopeNotes || anyAct.scopeNotes || "",
       specificMethod: d?.specificMethod || anyAct.specificMethod || "",
       subcomponent:
@@ -816,18 +920,52 @@ function createInitialForm(
   };
 }
 
+function normalizeRoadmapStageName(
+  rawName: string | undefined,
+  isConsultancy?: boolean,
+): string {
+  const name = String(rawName || "").trim();
+  const lower = name.toLowerCase();
+  if (
+    lower === "invitation to supplier / contractor" ||
+    lower === "invitation to providers" ||
+    lower === "invitation to bidders" ||
+    lower === "invitation to consultant" ||
+    lower === "invitation to identified / selected consultant"
+  ) {
+    return isConsultancy ? "Invitation to Consultant" : "Invitation to Bidders";
+  }
+  if (lower === "bid submission / opening / minutes") {
+    return "Bid Submission / Opening / Dates";
+  }
+  if (lower === "opening of technical proposals / minutes") {
+    return "Opening of Technical Proposals / Dates";
+  }
+  if (lower === "opening of financial proposals / minutes") {
+    return "Opening of Financial Proposals / Dates";
+  }
+  return name;
+}
+
 function extractInitialRoadmap(
   initialActivity: ProcurementActivitySummary | undefined,
   methodKey: string,
+  category?: string,
 ): RoadmapStage[] {
+  const isConsultancy =
+    category === "Consultancy Services" ||
+    category === "Consultancy" ||
+    category === "Consulting Services";
   if (initialActivity?.details?.roadmap?.length) {
     return initialActivity.details.roadmap.map((st: any) => ({
-      name: st.name || st.stageName || "",
+      name: normalizeRoadmapStageName(st.name || st.stageName, isConsultancy),
       days: String(st.days || "14"),
       ethiopianDate: st.ethiopianDate || "",
       gregorianDate: st.gregorianDate || st.plannedStartDate || "",
       notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-      allowNotApplicable: Boolean(st.allowNotApplicable),
+      allowNotApplicable: Boolean(
+        st.allowNotApplicable !== undefined ? st.allowNotApplicable : true,
+      ),
       remarks: st.remarks || "",
       status: st.status || "Not Started",
     }));
@@ -835,12 +973,14 @@ function extractInitialRoadmap(
   const anyAct = initialActivity as any;
   if (anyAct?.roadmap?.length) {
     return anyAct.roadmap.map((st: any) => ({
-      name: st.name || st.stageName || "",
+      name: normalizeRoadmapStageName(st.name || st.stageName, isConsultancy),
       days: String(st.days || "14"),
       ethiopianDate: st.ethiopianDate || "",
       gregorianDate: st.gregorianDate || st.plannedStartDate || "",
       notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-      allowNotApplicable: Boolean(st.allowNotApplicable),
+      allowNotApplicable: Boolean(
+        st.allowNotApplicable !== undefined ? st.allowNotApplicable : true,
+      ),
       remarks: st.remarks || "",
       status: st.status || "Not Started",
     }));
@@ -851,7 +991,10 @@ function extractInitialRoadmap(
         ? new Date(st.plannedStartDate).toISOString().slice(0, 10)
         : "";
       return {
-        name: st.stageType?.label || st.name || "",
+        name: normalizeRoadmapStageName(
+          st.stageType?.label || st.name,
+          isConsultancy,
+        ),
         days: String(st.plannedDays || "14"),
         ethiopianDate: st.ethiopianDate || "",
         gregorianDate: greg,
@@ -863,7 +1006,7 @@ function extractInitialRoadmap(
     });
   }
   if (methodKey) {
-    return roadmapForMethod(methodKey).map((stage) => ({
+    return roadmapForMethod(methodKey, category).map((stage) => ({
       allowNotApplicable: Boolean(stage.allowNotApplicable),
       days: "",
       ethiopianDate: "",
@@ -903,7 +1046,13 @@ function extractInitialFinancingAllocations(
     (initialActivity as any)?.fundings;
   if (raw && raw.length > 0) {
     return raw.map((f: any) => ({
-      id: f.id || f.source || f.fundingSource || "fs-1",
+      id:
+        f.id ||
+        f.loanGrantNumber ||
+        f.loanNumber ||
+        f.source ||
+        f.fundingSource ||
+        "fs-1",
       percent: String(f.percent ?? f.share ?? f.allocationPct ?? "100"),
       selected: f.selected !== undefined ? Boolean(f.selected) : true,
     }));
@@ -1338,23 +1487,37 @@ function Field({
   required?: boolean;
 }) {
   return (
-    <div className="block min-w-0">
+    <div className="block min-w-0" data-field-has-error={Boolean(error)}>
       <div className="mb-1.5 flex items-center justify-between">
         <label
           className={
-            "block text-xs font-semibold " +
-            (error ? "text-red-700" : "text-slate-700")
+            "block text-xs " +
+            (error ? "font-bold text-red-700" : "font-semibold text-slate-700")
           }
         >
           {label}
-          {required ? <span className="ml-1 text-red-600">*</span> : null}
+          {required ? (
+            <span
+              className={
+                error ? "ml-1 font-bold text-red-600" : "ml-1 text-red-600"
+              }
+            >
+              *
+            </span>
+          ) : null}
         </label>
         {action ? <div>{action}</div> : null}
       </div>
       {children}
       {error ? (
-        <span className="mt-1.5 flex items-center gap-1 text-xs text-red-600 font-medium">
-          <Info aria-hidden="true" className="h-3.5 w-3.5" />
+        <span
+          className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600"
+          role="alert"
+        >
+          <CircleAlert
+            aria-hidden="true"
+            className="h-3.5 w-3.5 shrink-0 text-red-600"
+          />
           {error}
         </span>
       ) : hint ? (
@@ -1380,11 +1543,12 @@ function SelectControl({
   return (
     <span className="relative block">
       <select
+        aria-invalid={hasError ? "true" : undefined}
         className={
           inputClasses +
           " appearance-none pr-9" +
           (hasError
-            ? " border-red-400 focus:border-red-500 focus:ring-red-500/15"
+            ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
             : "")
         }
         onChange={(event) => onChange(event.target.value)}
@@ -1394,7 +1558,10 @@ function SelectControl({
       </select>
       <ChevronDown
         aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
+        className={
+          "pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 " +
+          (hasError ? "text-red-500" : "text-slate-500")
+        }
       />
     </span>
   );
@@ -1570,6 +1737,7 @@ function KeyDetailsStep({
   onChange,
   onMethodChange,
   project,
+  usesCompetition,
 }: {
   attempted: boolean;
   category: ProcurementActivityCategory;
@@ -1579,16 +1747,15 @@ function KeyDetailsStep({
   onChange: UpdateActivityField;
   onMethodChange: (value: string) => void;
   project: OfficerProject;
+  usesCompetition: boolean;
 }) {
-  const selectedMethod = procurementMethodOptions.find(
-    (method) => method.key === form.method,
-  );
-  const usesCompetition =
-    form.method === "rfb-international" ||
-    form.method === "rfb-national" ||
-    form.method === "rfq-shopping";
+  const selectedMethod =
+    procurementMethodOptions.find((method) => method.key === form.method) ||
+    resolveProcurementMethodOption(form.method);
   const usesRfb =
-    form.method === "rfb-international" || form.method === "rfb-national";
+    form.method === "rfb" ||
+    form.method === "rfb-international" ||
+    form.method === "rfb-national";
   const consultancy = category === "Consultancy Services";
   const preferenceApplies =
     usesRfb && (category === "Goods" || category === "Works");
@@ -1617,6 +1784,28 @@ function KeyDetailsStep({
       icon={<ClipboardList aria-hidden="true" className="h-4 w-4" />}
       title="Procurement Method & Controls"
     >
+      {attempted &&
+      (!form.method ||
+        (usesCompetition && !form.marketApproach) ||
+        (usesRfb && !form.qualificationApproach) ||
+        (preferenceApplies && !form.domesticPreference) ||
+        (usesRfb && !form.procurementProcess) ||
+        (consultancy && Boolean(form.method) && !form.contractType)) ? (
+        <div
+          className="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700"
+          role="alert"
+        >
+          <CircleAlert
+            aria-hidden="true"
+            className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
+          />
+          <span>
+            Please complete the required procurement controls highlighted below
+            before continuing.
+          </span>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-2">
         <Field
           hint="Inherited from the procurement plan and cannot be changed here."
@@ -1655,6 +1844,13 @@ function KeyDetailsStep({
                 {method.label}
               </option>
             ))}
+            {form.method &&
+            !methodOptions.some((m) => m.key === form.method) &&
+            selectedMethod ? (
+              <option key={selectedMethod.key} value={selectedMethod.key}>
+                {selectedMethod.label}
+              </option>
+            ) : null}
           </SelectControl>
         </Field>
 
@@ -1690,12 +1886,24 @@ function KeyDetailsStep({
               value={form.marketApproach}
             >
               <option value="">Select approach</option>
-              <option>Open - International</option>
-              <option>Open - National</option>
-              <option>Limited</option>
-              <option>Direct</option>
-              {form.method === "rfq-shopping" ? (
-                <option>Shopping</option>
+              <option value="Open - International">Open - International</option>
+              <option value="Open - National">Open - National</option>
+              <option value="Limited">Limited</option>
+              <option value="Direct">Direct</option>
+              {form.method === "rfq-shopping" || form.method === "rfq" ? (
+                <option value="Shopping">Shopping</option>
+              ) : null}
+              {form.marketApproach &&
+              ![
+                "Open - International",
+                "Open - National",
+                "Limited",
+                "Direct",
+                "Shopping",
+              ].includes(form.marketApproach) ? (
+                <option value={form.marketApproach}>
+                  {form.marketApproach}
+                </option>
               ) : null}
             </SelectControl>
           </Field>
@@ -1749,11 +1957,21 @@ function KeyDetailsStep({
           <Field label="Review Type">
             <SelectControl
               onChange={(value) => onChange("reviewType", value)}
-              value={form.reviewType}
+              value={
+                form.reviewType.toLowerCase().includes("prior")
+                  ? "Prior Review"
+                  : form.reviewType.toLowerCase().includes("post")
+                    ? "Post Review"
+                    : form.reviewType
+              }
             >
               <option value="">Select review type</option>
-              <option>Prior</option>
-              <option>Post</option>
+              <option value="Prior Review">Prior Review</option>
+              <option value="Post Review">Post Review</option>
+              {form.reviewType &&
+              !["Prior Review", "Post Review"].includes(form.reviewType) ? (
+                <option value={form.reviewType}>{form.reviewType}</option>
+              ) : null}
             </SelectControl>
           </Field>
         ) : null}
@@ -1790,6 +2008,20 @@ function KeyDetailsStep({
             >
               <option value="">Select configured process</option>
               <option>Single Stage One Envelope</option>
+              <option>Single Stage - One Envelope</option>
+              <option>1 Envelope (Single Stage 1 Env)</option>
+              <option>Two Stage Two Envelope</option>
+              {form.procurementProcess &&
+              ![
+                "Single Stage One Envelope",
+                "Single Stage - One Envelope",
+                "1 Envelope (Single Stage 1 Env)",
+                "Two Stage Two Envelope",
+              ].includes(form.procurementProcess) ? (
+                <option value={form.procurementProcess}>
+                  {form.procurementProcess}
+                </option>
+              ) : null}
             </SelectControl>
           </Field>
         ) : null}
@@ -1804,6 +2036,12 @@ function KeyDetailsStep({
               {documentTypes.map((documentType) => (
                 <option key={documentType}>{documentType}</option>
               ))}
+              {form.procurementDocumentType &&
+              !documentTypes.includes(form.procurementDocumentType) ? (
+                <option value={form.procurementDocumentType}>
+                  {form.procurementDocumentType}
+                </option>
+              ) : null}
             </SelectControl>
           </Field>
         ) : null}
@@ -1831,34 +2069,17 @@ function KeyDetailsStep({
         ) : null}
 
         {donorFields && form.method ? (
-          <>
-            <Field
-              hint="Optional donor code; not enforced until the configured code list is confirmed."
-              label="Evaluation Options"
-            >
-              <input
-                className={inputClasses}
-                onChange={(event) =>
-                  onChange("evaluationOptionCode", event.target.value)
-                }
-                placeholder="Optional configured code"
-                value={form.evaluationOptionCode}
-              />
-            </Field>
-            <Field
-              hint="Optional donor code; not enforced until the code mapping is confirmed."
-              label="High SEA/SH Risk"
-            >
-              <input
-                className={inputClasses}
-                onChange={(event) =>
-                  onChange("highRiskCode", event.target.value)
-                }
-                placeholder="Optional configured code"
-                value={form.highRiskCode}
-              />
-            </Field>
-          </>
+          <Field
+            hint="Optional donor code; not enforced until the code mapping is confirmed."
+            label="High SEA/SH Risk"
+          >
+            <input
+              className={inputClasses}
+              onChange={(event) => onChange("highRiskCode", event.target.value)}
+              placeholder="Optional configured code"
+              value={form.highRiskCode}
+            />
+          </Field>
         ) : null}
       </div>
 
@@ -2041,6 +2262,34 @@ export function RelatedInformationStep({
         title="Activity Information"
       >
         <ActivityContext {...context} />
+        {attempted &&
+        (!form.activityDescription.trim() ||
+          !(Number(form.estimatedAmount) > 0) ||
+          !form.currency ||
+          !form.fundingSource ||
+          (category === "Works" && !form.pricingBasis) ||
+          (form.lotRequired &&
+            lots.some(
+              (lot) =>
+                !lot.number.trim() ||
+                !lot.description.trim() ||
+                !lot.amount.trim() ||
+                !(Number(lot.amount) >= 0),
+            ))) ? (
+          <div
+            className="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700"
+            role="alert"
+          >
+            <CircleAlert
+              aria-hidden="true"
+              className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
+            />
+            <span>
+              Please complete all required activity fields highlighted below
+              before continuing.
+            </span>
+          </div>
+        ) : null}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <Field
             hint="Generated by the system. Imported activity references are preserved during migration."
@@ -2156,11 +2405,16 @@ export function RelatedInformationStep({
               required
             >
               <textarea
+                aria-invalid={
+                  attempted && !form.activityDescription.trim()
+                    ? "true"
+                    : undefined
+                }
                 className={
                   textareaClasses +
                   " min-h-20" +
                   (attempted && !form.activityDescription.trim()
-                    ? " border-red-400 focus:border-red-500 focus:ring-red-500/15"
+                    ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
                     : "")
                 }
                 onChange={(event) =>
@@ -2182,10 +2436,15 @@ export function RelatedInformationStep({
             required
           >
             <input
+              aria-invalid={
+                attempted && !(Number(form.estimatedAmount) > 0)
+                  ? "true"
+                  : undefined
+              }
               className={
                 inputClasses +
                 (attempted && !(Number(form.estimatedAmount) > 0)
-                  ? " border-red-400 focus:border-red-500 focus:ring-red-500/15"
+                  ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
                   : "")
               }
               min="0"
@@ -2232,6 +2491,10 @@ export function RelatedInformationStep({
                   {cur.label}
                 </option>
               ))}
+              {form.currency &&
+              !currencyOptions.some((cur) => cur.code === form.currency) ? (
+                <option value={form.currency}>{form.currency}</option>
+              ) : null}
               <option value="__add_new_currency__">
                 + Add currency if not listed...
               </option>
@@ -2281,11 +2544,30 @@ export function RelatedInformationStep({
               <SelectControl
                 hasError={attempted && !form.pricingBasis}
                 onChange={(value) => onChange("pricingBasis", value)}
-                value={form.pricingBasis}
+                value={
+                  form.pricingBasis === "BOQ" ||
+                  form.pricingBasis === "Bill of Quantities (BOQ)"
+                    ? "Bill of Quantities (BOQ)"
+                    : form.pricingBasis === "LUMP_SUM" ||
+                        form.pricingBasis === "Lump Sum"
+                      ? "Lump Sum"
+                      : form.pricingBasis
+                }
               >
                 <option value="">Select pricing basis</option>
-                <option>Lump Sum</option>
-                <option>Bill of Quantities (BOQ)</option>
+                <option value="Lump Sum">Lump Sum</option>
+                <option value="Bill of Quantities (BOQ)">
+                  Bill of Quantities (BOQ)
+                </option>
+                {form.pricingBasis &&
+                ![
+                  "Lump Sum",
+                  "Bill of Quantities (BOQ)",
+                  "BOQ",
+                  "LUMP_SUM",
+                ].includes(form.pricingBasis) ? (
+                  <option value={form.pricingBasis}>{form.pricingBasis}</option>
+                ) : null}
               </SelectControl>
             </Field>
           ) : null}
@@ -2299,6 +2581,10 @@ export function RelatedInformationStep({
               {(project.subcomponents ?? []).map((subcomponent) => (
                 <option key={subcomponent}>{subcomponent}</option>
               ))}
+              {form.subcomponent &&
+              !(project.subcomponents ?? []).includes(form.subcomponent) ? (
+                <option value={form.subcomponent}>{form.subcomponent}</option>
+              ) : null}
             </SelectControl>
           </Field>
 
@@ -2361,7 +2647,15 @@ export function RelatedInformationStep({
                   required
                 >
                   <input
-                    className={inputClasses}
+                    aria-invalid={
+                      attempted && !lot.number.trim() ? "true" : undefined
+                    }
+                    className={
+                      inputClasses +
+                      (attempted && !lot.number.trim()
+                        ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
+                        : "")
+                    }
                     onChange={(event) =>
                       updateLot(lot.id, "number", event.target.value)
                     }
@@ -2378,7 +2672,15 @@ export function RelatedInformationStep({
                   required
                 >
                   <input
-                    className={inputClasses}
+                    aria-invalid={
+                      attempted && !lot.description.trim() ? "true" : undefined
+                    }
+                    className={
+                      inputClasses +
+                      (attempted && !lot.description.trim()
+                        ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
+                        : "")
+                    }
                     onChange={(event) =>
                       updateLot(lot.id, "description", event.target.value)
                     }
@@ -2397,7 +2699,19 @@ export function RelatedInformationStep({
                   required
                 >
                   <input
-                    className={inputClasses}
+                    aria-invalid={
+                      attempted &&
+                      (!lot.amount.trim() || !(Number(lot.amount) >= 0))
+                        ? "true"
+                        : undefined
+                    }
+                    className={
+                      inputClasses +
+                      (attempted &&
+                      (!lot.amount.trim() || !(Number(lot.amount) >= 0))
+                        ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
+                        : "")
+                    }
                     min="0"
                     onChange={(event) =>
                       updateLot(lot.id, "amount", event.target.value)
@@ -2629,6 +2943,7 @@ function AdditionalDetailsStep({
         <div className="grid gap-5">
           <AllocationBlock
             allocations={componentAllocations}
+            attempted={attempted}
             emptyMessage="No project component was entered for this project."
             icon={<ClipboardList aria-hidden="true" className="h-4 w-4" />}
             onChange={onComponentChange}
@@ -2636,6 +2951,7 @@ function AdditionalDetailsStep({
           />
           <AllocationBlock
             allocations={financingAllocations}
+            attempted={attempted}
             emptyMessage="No financing number was entered for this project."
             icon={<Landmark aria-hidden="true" className="h-4 w-4" />}
             onChange={onFinancingChange}
@@ -2690,6 +3006,9 @@ function AdditionalDetailsStep({
                 {regions.map((region) => (
                   <option key={region}>{region}</option>
                 ))}
+                {form.location && !regions.includes(form.location) ? (
+                  <option value={form.location}>{form.location}</option>
+                ) : null}
               </SelectControl>
             ) : (
               <input
@@ -2747,33 +3066,52 @@ function AdditionalDetailsStep({
 
 function AllocationBlock({
   allocations,
+  attempted = false,
   emptyMessage,
   icon,
   onChange,
   title,
 }: {
   allocations: Allocation[];
+  attempted?: boolean;
   emptyMessage: string;
   icon: ReactNode;
   onChange: (value: Allocation[]) => void;
   title: string;
 }) {
-  const total = allocations
-    .filter((allocation) => allocation.selected)
-    .reduce((sum, allocation) => sum + Number(allocation.percent), 0);
+  const selected = allocations.filter((allocation) => allocation.selected);
+  const total = selected.reduce(
+    (sum, allocation) => sum + Number(allocation.percent),
+    0,
+  );
+  const isValid = allocationTotalIsValid(allocations);
+  const hasError = attempted && !isValid;
 
   return (
-    <section>
+    <section
+      className={
+        "rounded-lg border p-3.5 transition-colors " +
+        (hasError
+          ? "border-red-300 bg-red-50/20"
+          : "border-slate-200 bg-transparent")
+      }
+      data-field-has-error={hasError}
+    >
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
         <h3 className="flex items-center gap-2 text-[10px] font-semibold text-[#10243f]">
-          <span className="text-[#0A3C2F]">{icon}</span>
+          <span className={hasError ? "text-red-600" : "text-[#0A3C2F]"}>
+            {icon}
+          </span>
           {title}
+          {hasError ? (
+            <span className="ml-1 text-red-600 font-bold">*</span>
+          ) : null}
         </h3>
         {allocations.length > 0 ? (
           <span
             className={
               "rounded-md border px-2 py-0.5 text-[9px] font-medium " +
-              (total === 100
+              (total === 100 && selected.every((a) => Number(a.percent) > 0)
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                 : "bg-red-50 text-red-700 border-red-200")
             }
@@ -2782,9 +3120,28 @@ function AllocationBlock({
           </span>
         ) : null}
       </div>
+      {hasError ? (
+        <p
+          className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-600"
+          role="alert"
+        >
+          <CircleAlert
+            aria-hidden="true"
+            className="h-3.5 w-3.5 shrink-0 text-red-600"
+          />
+          {allocations.length === 0
+            ? emptyMessage
+            : selected.length === 0
+              ? `Select at least one ${title.toLowerCase()} and assign percentages totaling 100%.`
+              : total !== 100
+                ? `Total percentage must equal exactly 100% (currently ${total}%).`
+                : "Each selected allocation must have a percentage greater than 0%."}
+        </p>
+      ) : null}
       <div className="mt-2">
         <AllocationSelector
           allocations={allocations}
+          attempted={attempted}
           emptyMessage={emptyMessage}
           onChange={onChange}
           showPercent
@@ -2796,11 +3153,13 @@ function AllocationBlock({
 
 function AllocationSelector({
   allocations,
+  attempted = false,
   emptyMessage,
   onChange,
   showPercent,
 }: {
   allocations: Allocation[];
+  attempted?: boolean;
   emptyMessage: string;
   onChange: (value: Allocation[]) => void;
   showPercent: boolean;
@@ -2846,7 +3205,15 @@ function AllocationSelector({
     <div className="space-y-2">
       {allocations.map((allocation) => (
         <div
-          className="flex min-h-10 items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-2"
+          className={
+            "flex min-h-10 items-center gap-3 rounded-md border px-3 py-2 " +
+            (attempted &&
+            showPercent &&
+            allocation.selected &&
+            !(Number(allocation.percent) > 0)
+              ? "border-red-300 bg-red-50/30"
+              : "border-slate-200 bg-white")
+          }
           key={allocation.id}
         >
           <input
@@ -2865,7 +3232,17 @@ function AllocationSelector({
                 {allocation.id} allocation percentage
               </span>
               <input
-                className="h-8 w-20 rounded border border-slate-300 px-2 text-right text-[10px] outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+                aria-invalid={
+                  attempted && !(Number(allocation.percent) > 0)
+                    ? "true"
+                    : undefined
+                }
+                className={
+                  "h-8 w-20 rounded border px-2 text-right text-[10px] outline-none " +
+                  (attempted && !(Number(allocation.percent) > 0)
+                    ? "!border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
+                    : "border-slate-300 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15")
+                }
                 max="100"
                 min="0.01"
                 onChange={(event) =>

@@ -8,14 +8,18 @@ import { getInitialLookups } from "@/lib/lookupsApi";
 export type ProcurementActivityCategory = ProcurementCategory;
 
 export type ProcurementMethodKey =
+  | "rfb"
   | "rfb-international"
   | "rfb-national"
+  | "rfq"
   | "rfq-shopping"
   | "direct"
+  | "rfp"
   | "un-agency"
   | "qcbs"
   | "fbs"
   | "lcs"
+  | "qbs"
   | "cqs"
   | "indv"
   | "sss"
@@ -41,83 +45,109 @@ const nonConsultingCategories: readonly ProcurementActivityCategory[] = [
 ];
 
 export const procurementMethodOptions: readonly ProcurementMethodOption[] = [
+  // Non-Consulting Services, Goods, Works
   {
     appliesTo: nonConsultingCategories,
-    key: "rfb-international",
-    label: "RFB - International",
+    key: "rfb",
+    label: "Request for Bids (RFB)",
     roadmap: "rfb",
   },
   {
     appliesTo: nonConsultingCategories,
-    key: "rfb-national",
-    label: "RFB - National",
-    roadmap: "rfb",
-  },
-  {
-    appliesTo: nonConsultingCategories,
-    key: "rfq-shopping",
-    label: "RFQ / Shopping",
+    key: "rfq",
+    label: "Request for Quotations (RFQ)",
     roadmap: "rfq",
   },
   {
-    appliesTo: [
-      "Goods",
-      "Works",
-      "Non-Consulting Services",
-      "Consultancy Services",
-    ],
+    appliesTo: nonConsultingCategories,
     key: "direct",
-    label: "Direct Procurement / Direct Selection",
+    label: "Direct Selection, Request",
     roadmap: "direct",
   },
   {
-    appliesTo: [
-      "Goods",
-      "Works",
-      "Non-Consulting Services",
-      "Consultancy Services",
-    ],
-    key: "un-agency",
-    label: "UN Agency",
-    roadmap: "un",
+    appliesTo: nonConsultingCategories,
+    key: "rfp",
+    label: "Request for Proposals (RFP)",
+    roadmap: "rfb",
   },
+
+  // Consulting Services
   {
     appliesTo: ["Consultancy Services"],
     key: "qcbs",
-    label: "QCBS",
+    label: "Quality- and Cost-Based Selection (QCBS)",
     roadmap: "consulting",
   },
   {
     appliesTo: ["Consultancy Services"],
     key: "fbs",
-    label: "FBS",
+    label: "Fixed Budget Selection (FBS)",
     roadmap: "consulting",
   },
   {
     appliesTo: ["Consultancy Services"],
     key: "lcs",
-    label: "LCS",
+    label: "Least-Cost Selection (LCS)",
+    roadmap: "consulting",
+  },
+  {
+    appliesTo: ["Consultancy Services"],
+    key: "qbs",
+    label: "Quality-Based Selection (QBS)",
     roadmap: "consulting",
   },
   {
     appliesTo: ["Consultancy Services"],
     key: "cqs",
-    label: "CQS",
+    label: "Consultant's Qualifications Selection (CQS)",
     roadmap: "cqs",
   },
   {
     appliesTo: ["Consultancy Services"],
     key: "indv",
-    label: "Individual Consultant (INDV)",
+    label: "Individual Consultant Selection (INDV)",
     roadmap: "individual",
   },
-  {
-    appliesTo: ["Consultancy Services"],
-    key: "sss",
-    label: "Single Source Selection (SSS)",
-    roadmap: "consulting",
-  },
 ];
+
+export const legacyProcurementMethodOptions: readonly ProcurementMethodOption[] =
+  [
+    {
+      appliesTo: nonConsultingCategories,
+      key: "rfb-international",
+      label: "RFB - International",
+      roadmap: "rfb",
+    },
+    {
+      appliesTo: nonConsultingCategories,
+      key: "rfb-national",
+      label: "RFB - National",
+      roadmap: "rfb",
+    },
+    {
+      appliesTo: nonConsultingCategories,
+      key: "rfq-shopping",
+      label: "RFQ / Shopping",
+      roadmap: "rfq",
+    },
+    {
+      appliesTo: [
+        "Goods",
+        "Works",
+        "Non-Consulting Services",
+        "Consultancy Services",
+      ],
+      key: "un-agency",
+      label: "UN Agency",
+      roadmap: "un",
+    },
+    {
+      appliesTo: ["Consultancy Services"],
+      key: "sss",
+      label: "Single Source Selection (SSS)",
+      roadmap: "consulting",
+    },
+  ];
 
 const roadmapTemplates: Record<
   ProcurementMethodOption["roadmap"],
@@ -143,9 +173,9 @@ const roadmapTemplates: Record<
     },
     { name: "Draft Bidding Documents" },
     { name: "Specific Procurement Notice" },
-    { name: "Invitation to Providers" },
+    { name: "Invitation to Bidders" },
     { name: "Amendments to Bidding Documents", allowNotApplicable: true },
-    { name: "Bid Submission / Opening / Minutes" },
+    { name: "Bid Submission / Opening / Dates" },
     { name: "Bid Evaluation Report and Recommendation for Award" },
     { name: "Notification of Intention of Award" },
     { name: "Signed Contract" },
@@ -156,7 +186,7 @@ const roadmapTemplates: Record<
   rfq: [
     { name: "Draft Request for Quotations" },
     { name: "Specific Procurement Notice", allowNotApplicable: true },
-    { name: "Invitation to Supplier / Contractor" },
+    { name: "Invitation to Bidders" },
     {
       name: "Amendments to Request for Quotations",
       allowNotApplicable: true,
@@ -171,7 +201,7 @@ const roadmapTemplates: Record<
   ],
   direct: [
     { name: "Justification for Direct Procurement" },
-    { name: "Invitation to Supplier / Contractor" },
+    { name: "Invitation to Bidders" },
     { name: "Draft Contract" },
     { name: "Notification of Intention of Award", allowNotApplicable: true },
     { name: "Signed Contract" },
@@ -198,9 +228,9 @@ const roadmapTemplates: Record<
     { name: "Short List and Draft Request for Proposals" },
     { name: "Request for Proposals as Issued" },
     { name: "Amendments to Request for Proposals", allowNotApplicable: true },
-    { name: "Opening of Technical Proposals / Minutes" },
+    { name: "Opening of Technical Proposals / Dates" },
     { name: "Evaluation of Technical Proposals" },
-    { name: "Opening of Financial Proposals / Minutes" },
+    { name: "Opening of Financial Proposals / Dates" },
     { name: "Combined Evaluation Report and Draft Negotiated Contract" },
     { name: "Notification of Intention of Award" },
     { name: "Signed Contract" },
@@ -233,7 +263,7 @@ const roadmapTemplates: Record<
       name: "Justification for Direct Selection",
       allowNotApplicable: true,
     },
-    { name: "Invitation to Identified / Selected Consultant" },
+    { name: "Invitation to Consultant" },
     { name: "Draft Negotiated Contract" },
     { name: "Notification of Intention of Award" },
     { name: "Signed Contract" },
@@ -247,17 +277,28 @@ export function normalizeActivityCategory(
   category: string | undefined,
 ): ProcurementActivityCategory {
   if (category === "Works") return "Works";
-  if (category === "Consultancy" || category === "Consultancy Services") {
+  if (
+    category === "Consultancy" ||
+    category === "Consultancy Services" ||
+    category === "Consulting Services"
+  ) {
     return "Consultancy Services";
   }
-  if (category === "Non-Consulting" || category === "Non-Consulting Services") {
+  if (
+    category === "Non-Consulting" ||
+    category === "Non-Consulting Services" ||
+    category === "Non- Consulting Services"
+  ) {
     return "Non-Consulting Services";
   }
   return "Goods";
 }
 
 export function getAllProcurementMethodOptions(): readonly ProcurementMethodOption[] {
-  const options = [...procurementMethodOptions];
+  const options = [
+    ...procurementMethodOptions,
+    ...legacyProcurementMethodOptions,
+  ];
 
   try {
     const dynamicLookups = getInitialLookups("PROCUREMENT_METHOD");
@@ -340,9 +381,12 @@ export function getAllProcurementMethodOptions(): readonly ProcurementMethodOpti
   return options;
 }
 
-export function methodsForCategory(category: ProcurementActivityCategory) {
-  return getAllProcurementMethodOptions().filter((method) =>
-    method.appliesTo.includes(category),
+export function methodsForCategory(
+  category: ProcurementActivityCategory | string,
+) {
+  const normalized = normalizeActivityCategory(category as string);
+  return procurementMethodOptions.filter((method) =>
+    method.appliesTo.includes(normalized),
   );
 }
 
@@ -386,15 +430,26 @@ export function resolveProcurementMethodOption(
   // 5. Common acronym / prefix mappings
   if (needle.startsWith("rfb") || needle.includes("bids")) {
     return needle.includes("inter")
-      ? allOptions.find((opt) => opt.key === "rfb-international")
-      : allOptions.find((opt) => opt.key === "rfb-national");
+      ? allOptions.find((opt) => opt.key === "rfb-international") ||
+          allOptions.find((opt) => opt.key === "rfb")
+      : needle.includes("nat")
+        ? allOptions.find((opt) => opt.key === "rfb-national") ||
+          allOptions.find((opt) => opt.key === "rfb")
+        : allOptions.find((opt) => opt.key === "rfb") ||
+          allOptions.find((opt) => opt.key === "rfb-national");
   }
   if (
     needle.startsWith("rfq") ||
     needle.includes("quotation") ||
     needle.includes("shopping")
   ) {
-    return allOptions.find((opt) => opt.key === "rfq-shopping");
+    return (
+      allOptions.find((opt) => opt.key === "rfq") ||
+      allOptions.find((opt) => opt.key === "rfq-shopping")
+    );
+  }
+  if (needle.startsWith("rfp") || needle.includes("proposal")) {
+    return allOptions.find((opt) => opt.key === "rfp");
   }
   if (needle.includes("direct")) {
     return allOptions.find((opt) => opt.key === "direct");
@@ -410,6 +465,9 @@ export function resolveProcurementMethodOption(
   }
   if (needle.includes("lcs")) {
     return allOptions.find((opt) => opt.key === "lcs");
+  }
+  if (needle.includes("qbs")) {
+    return allOptions.find((opt) => opt.key === "qbs");
   }
   if (needle.includes("cqs")) {
     return allOptions.find((opt) => opt.key === "cqs");
@@ -440,9 +498,24 @@ export function resolveMethodKey(
   return opt ? opt.key : "";
 }
 
-export function roadmapForMethod(methodKeyOrLabel: string) {
+export function roadmapForMethod(methodKeyOrLabel: string, category?: string) {
   const method = resolveProcurementMethodOption(methodKeyOrLabel);
-  return method ? roadmapTemplates[method.roadmap] : [];
+  if (!method) return [];
+  const stages = roadmapTemplates[method.roadmap];
+  const isConsulting =
+    category === "Consultancy Services" ||
+    category === "Consultancy" ||
+    category === "Consulting Services" ||
+    method.appliesTo.includes("Consultancy Services");
+  if (isConsulting) {
+    return stages.map((stage) =>
+      stage.name === "Invitation to Bidders" ||
+      stage.name === "Invitation to Identified / Selected Consultant"
+        ? { ...stage, name: "Invitation to Consultant" }
+        : stage,
+    );
+  }
+  return stages;
 }
 
 export function activityReferenceFor(
@@ -474,10 +547,14 @@ export function activityReferenceFor(
     fbs: "FBS",
     indv: "INDV",
     lcs: "LCS",
+    qbs: "QBS",
     qcbs: "QCBS",
+    rfb: "RFB",
     "rfb-international": "RFB",
     "rfb-national": "RFB",
+    rfq: "RFQ",
     "rfq-shopping": "RFQ",
+    rfp: "RFP",
     "un-agency": "UN",
   };
   const methodSegment = methodSegmentMap[methodKey] ?? "TBD";

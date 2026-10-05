@@ -64,40 +64,44 @@ describe("CreateProcurementActivityView", () => {
   });
 
   it("filters procurement methods by the inherited plan category", () => {
-    const goodsMethods = methodsForCategory("Goods").map(
-      (method) => method.key,
-    );
-    const worksMethods = methodsForCategory("Works").map(
-      (method) => method.key,
-    );
-    const consultancyMethods = methodsForCategory("Consultancy Services").map(
-      (method) => method.key,
+    const goodsMethods = methodsForCategory("Goods").map((m) => m.label);
+    const worksMethods = methodsForCategory("Works").map((m) => m.label);
+    const nonConsultingMethods = methodsForCategory(
+      "Non-Consulting Services",
+    ).map((m) => m.label);
+    const consultancyMethods = methodsForCategory("Consulting Services").map(
+      (m) => m.label,
     );
 
-    expect(goodsMethods).toContain("rfb-international");
-    expect(goodsMethods).toContain("rfq-shopping");
-    expect(goodsMethods).not.toContain("qcbs");
+    expect(goodsMethods).toEqual([
+      "Request for Bids (RFB)",
+      "Request for Quotations (RFQ)",
+      "Direct Selection, Request",
+      "Request for Proposals (RFP)",
+    ]);
 
-    expect(worksMethods).toContain("rfb-international");
-    expect(worksMethods).toContain("rfb-national");
-    expect(worksMethods).toContain("rfq-shopping");
-    expect(worksMethods).not.toContain("qcbs");
-    expect(worksMethods).not.toContain("cqs");
-    expect(worksMethods).not.toContain("indv");
-    expect(worksMethods).not.toContain("sss");
-    expect(worksMethods).not.toContain("pm-sss");
+    expect(worksMethods).toEqual([
+      "Request for Bids (RFB)",
+      "Request for Quotations (RFQ)",
+      "Direct Selection, Request",
+      "Request for Proposals (RFP)",
+    ]);
 
-    expect(consultancyMethods).toContain("qcbs");
-    expect(consultancyMethods).toContain("indv");
-    expect(consultancyMethods).not.toContain("rfb-national");
-    expect(consultancyMethods).not.toContain("rfb-international");
+    expect(nonConsultingMethods).toEqual([
+      "Request for Bids (RFB)",
+      "Request for Quotations (RFQ)",
+      "Direct Selection, Request",
+      "Request for Proposals (RFP)",
+    ]);
 
-    const allOptions = methodsForCategory("Goods");
-    const unAgencyOption = allOptions.find((opt) => opt.key === "un-agency");
-    expect(unAgencyOption?.label).toBe("UN Agency");
-    expect(allOptions.map((opt) => opt.label)).not.toContain(
-      "UN Agency / UNOPS Direct",
-    );
+    expect(consultancyMethods).toEqual([
+      "Quality- and Cost-Based Selection (QCBS)",
+      "Fixed Budget Selection (FBS)",
+      "Least-Cost Selection (LCS)",
+      "Quality-Based Selection (QBS)",
+      "Consultant's Qualifications Selection (CQS)",
+      "Individual Consultant Selection (INDV)",
+    ]);
   });
 
   it("generates method-specific roadmap stages and an activity reference", () => {
@@ -107,6 +111,32 @@ describe("CreateProcurementActivityView", () => {
     expect(rfbRoadmap[0]?.name).toBe("Draft Pre-qualification Documents");
     expect(rfbRoadmap.at(-1)?.name).toBe("Contract Termination");
     expect(consultancyRoadmap).toHaveLength(15);
+    const individualRoadmap = roadmapForMethod("indv");
+    expect(
+      individualRoadmap.some((s) => s.name === "Invitation to Consultant"),
+    ).toBe(true);
+    expect(
+      individualRoadmap.some((s) => s.name === "Invitation to Bidders"),
+    ).toBe(false);
+
+    const directConsultancyRoadmap = roadmapForMethod(
+      "direct",
+      "Consultancy Services",
+    );
+    expect(
+      directConsultancyRoadmap.some(
+        (s) => s.name === "Invitation to Consultant",
+      ),
+    ).toBe(true);
+    expect(
+      directConsultancyRoadmap.some((s) => s.name === "Invitation to Bidders"),
+    ).toBe(false);
+
+    const directWorksRoadmap = roadmapForMethod("direct", "Works");
+    expect(
+      directWorksRoadmap.some((s) => s.name === "Invitation to Bidders"),
+    ).toBe(true);
+
     expect(
       activityReferenceFor(project, plan, "Works", "rfb-international", 123456),
     ).toBe("ET-MoA-123457-CW-RFB");
@@ -144,7 +174,7 @@ describe("CreateProcurementActivityView", () => {
     );
 
     // Header and banner indicate edit mode
-    expect(markup).toContain("Revise Procurement Activity");
+    expect(markup).toContain("Edit Procurement Activity");
     expect(markup).toContain("Editing Activity");
     expect(markup).toContain("ET-MOA-100200-GO-RFB");
     expect(markup).toContain("Save Changes");
@@ -694,7 +724,7 @@ describe("CreateProcurementActivityView", () => {
     // Header and editing banner
     expect(markup).toContain("Editing Activity:");
     expect(markup).toContain("ET-MOA-456789-GO-RFB");
-    expect(markup).toContain("Revise Procurement Activity");
+    expect(markup).toContain("Edit Procurement Activity");
     expect(markup).toContain("Save Changes");
 
     // Step 1 controls initialized from activity
@@ -740,5 +770,103 @@ describe("CreateProcurementActivityView", () => {
     expect(step2Markup).toContain("750000");
     expect(step2Markup).toContain("USD");
     expect(step2Markup).toContain("World Bank (IDA)");
+  });
+
+  it("preserves all entered and selected data during edit mode", () => {
+    const fullActivity: ProcurementActivitySummary = {
+      category: "Works",
+      currentStage: "Preparation of Specification",
+      description: "Construction of Irrigation Canal Phase 1",
+      estimatedAmount: 12_500_000,
+      currency: "ETB",
+      method: "RFB - National",
+      reference: "ET-MOA-CW-001",
+      status: "Draft",
+      fundingSource: "World Bank",
+      details: {
+        form: {
+          activityDescription: "Construction of Irrigation Canal Phase 1",
+          classificationCode: "72141103",
+          comments: "High priority works package.",
+          contractType: "Lump Sum",
+          currency: "ETB",
+          domesticPreference: "Yes",
+          estimatedAmount: "12500000",
+          evaluationOptionCode: "",
+          fundingSource: "World Bank",
+          highRiskCode: "",
+          inProcess: true,
+          invitationReference: "MOA/WORKS/2026/01",
+          latitude: "9.14",
+          location: "Oromia",
+          longitude: "38.75",
+          lotRequired: true,
+          marketApproach: "Open - National",
+          method: "rfb-national",
+          oversightClassification: "",
+          pricingBasis: "Bill of Quantities (BOQ)",
+          procurementDocumentType: "Request for Bids - Small Works SPD",
+          procurementProcess: "Single Stage One Envelope",
+          qualificationApproach: "Post-qualification",
+          requiresUnAgency: false,
+          reviewType: "Prior Review",
+          scopeNotes: "Includes secondary canals and intake gates.",
+          specificMethod: "National Competitive Bidding",
+          subcomponent: "Subcomponent 1.2",
+        },
+        additionalReferences: [
+          { id: "1", type: "STEP Reference", value: "WB-STEP-998877" },
+        ],
+        componentAllocations: [
+          { id: "Irrigation Infrastructure", percent: "100", selected: true },
+        ],
+        financingAllocations: [
+          { id: "IDA-6200", percent: "100", selected: true },
+        ],
+        lots: [
+          {
+            id: 1,
+            number: "1",
+            description: "Main Canal Section",
+            amount: "7500000",
+          },
+          {
+            id: 2,
+            number: "2",
+            description: "Secondary Canal Section",
+            amount: "5000000",
+          },
+        ],
+        roadmap: [
+          {
+            name: "Preparation of Specification",
+            days: "14",
+            gregorianDate: "2026-08-01",
+            ethiopianDate: "25-Hamle-2018",
+            notApplicable: false,
+            allowNotApplicable: false,
+            remarks: "Specs ready",
+            status: "Not Started",
+          },
+        ],
+      },
+    };
+
+    const markup = renderToStaticMarkup(
+      <CreateProcurementActivityView
+        initialActivity={fullActivity}
+        plan={{ ...plan, category: "Works" }}
+        project={project}
+      />,
+    );
+
+    // Verify all key labels, banner, and values remain
+    expect(markup).toContain("Edit Procurement Activity");
+    expect(markup).toContain("ET-MOA-CW-001");
+    expect(markup).toContain("Save Changes");
+    expect(markup).toContain("Open - National");
+    expect(markup).toContain("Post-qualification");
+    expect(markup).toContain("Prior Review");
+    expect(markup).toContain("Single Stage One Envelope");
   });
 });

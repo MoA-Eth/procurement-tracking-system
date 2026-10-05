@@ -237,15 +237,35 @@ export function addSavedActivityRecord(
   records: readonly SavedOfficerActivityRecord[],
   record: SavedOfficerActivityRecord,
 ) {
-  const withoutExisting = records.filter(
-    (existing) =>
-      existing.projectCode !== record.projectCode ||
-      existing.planReference !== record.planReference ||
-      (existing.activity.reference !== record.activity.reference &&
-        (!existing.activity.id ||
-          !record.activity.id ||
-          existing.activity.id !== record.activity.id)),
-  );
+  const norm = (s?: string) => (s || "").trim().toLowerCase();
+  const recProj = norm(record.projectCode);
+  const recPlan = norm(record.planReference);
+  const recRef = norm(record.activity.reference);
+  const recId = norm(record.activity.id || (record.activity as any).activityId);
+
+  const withoutExisting = records.filter((existing) => {
+    const exProj = norm(existing.projectCode);
+    const exPlan = norm(existing.planReference);
+    const exRef = norm(existing.activity.reference);
+    const exId = norm(
+      existing.activity.id || (existing.activity as any).activityId,
+    );
+
+    const matchesProj = !exProj || !recProj || exProj === recProj;
+    const matchesPlan = !exPlan || !recPlan || exPlan === recPlan;
+    const matchesAct =
+      (Boolean(recId) && Boolean(exId) && recId === exId) ||
+      (Boolean(recRef) && Boolean(exRef) && recRef === exRef);
+
+    if (matchesProj && matchesPlan && matchesAct) {
+      return false;
+    }
+    if (matchesProj && matchesAct) {
+      return false;
+    }
+
+    return true;
+  });
 
   return [...withoutExisting, record];
 }
@@ -597,6 +617,17 @@ export function mapBackendActivityToProcurementActivitySummary(
     createdAt: ba.createdAt,
     updatedAt: ba.updatedAt,
     details: {
+      additionalReferences:
+        Array.isArray(ba.additionalReferences) &&
+        ba.additionalReferences.length > 0
+          ? ba.additionalReferences.map((r: any, idx: number) => ({
+              id: String(r.id || idx + 1),
+              type: r.type || "STEP Reference",
+              value: r.value || "",
+            }))
+          : ba.bidReferenceNo
+            ? [{ id: "1", type: "STEP Reference", value: ba.bidReferenceNo }]
+            : [],
       componentAllocations: (ba.components || []).map((c: any) => ({
         id: c.component || "comp-1",
         name: c.component || "",
@@ -615,6 +646,18 @@ export function mapBackendActivityToProcurementActivitySummary(
       })),
       form: {
         activityDescription: ba.description || "",
+        additionalReferences:
+          Array.isArray(ba.additionalReferences) &&
+          ba.additionalReferences.length > 0
+            ? ba.additionalReferences.map((r: any, idx: number) => ({
+                id: String(r.id || idx + 1),
+                type: r.type || "STEP Reference",
+                value: r.value || "",
+              }))
+            : ba.bidReferenceNo
+              ? [{ id: "1", type: "STEP Reference", value: ba.bidReferenceNo }]
+              : [],
+        stepReference: ba.bidReferenceNo || "",
         classificationCode: ba.procurementClassificationCode || "",
         comments: ba.remarks || "",
         contractType: ba.contractType || "Lump Sum",

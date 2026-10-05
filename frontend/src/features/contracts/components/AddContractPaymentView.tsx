@@ -27,6 +27,7 @@ interface PaymentFormState {
   amount: string;
   date: ContractDateValue;
   paymentType: ContractPaymentType | "";
+  otherPaymentType: string;
   reference: string;
   remarks: string;
 }
@@ -48,10 +49,12 @@ const textareaClasses =
 
 export function AddContractPaymentView({
   contract,
+  fromOpen,
   fromTracker,
   onSave,
 }: {
   contract: OfficerContract;
+  fromOpen?: boolean;
   fromTracker?: boolean;
   onSave: (payment: OfficerContractPayment) => void;
 }) {
@@ -60,6 +63,7 @@ export function AddContractPaymentView({
     amount: "",
     date: { ethiopian: "", gregorian: "" },
     paymentType: "",
+    otherPaymentType: "",
     reference: "",
     remarks: "",
   });
@@ -80,18 +84,26 @@ export function AddContractPaymentView({
   const hasRemark = form.remarks.trim().length > 0;
   const balanceCheckPassed = !isExtraPayment || hasRemark;
   const typeComplete = Boolean(form.paymentType);
+  const otherComplete =
+    form.paymentType !== "Other" || form.otherPaymentType.trim().length > 0;
   const dateComplete = Boolean(form.date.gregorian);
   const canSave =
-    typeComplete && amountValid && balanceCheckPassed && dateComplete;
+    typeComplete &&
+    otherComplete &&
+    amountValid &&
+    balanceCheckPassed &&
+    dateComplete;
   const formErrorMessage = !typeComplete
     ? "Payment type is required."
-    : !amountValid
-      ? "Enter a zero or positive payment amount."
-      : !balanceCheckPassed
-        ? "Extra payment exceeding contract balance requires an explanatory remark."
-        : !dateComplete
-          ? "Select the payment date."
-          : "Fill all required fields to record payment.";
+    : !otherComplete
+      ? "Specify the name of this other payment type."
+      : !amountValid
+        ? "Enter a zero or positive payment amount."
+        : !balanceCheckPassed
+          ? "Extra payment exceeding contract balance requires an explanatory remark."
+          : !dateComplete
+            ? "Select the payment date."
+            : "Fill all required fields to record payment.";
   const updatedTotalPaid = contractTotalPaid + (amountValid ? amount : 0);
   const updatedBalance = Math.max(0, contractCurrentAmount - updatedTotalPaid);
   const overrunAmount = Math.max(0, updatedTotalPaid - contractCurrentAmount);
@@ -110,8 +122,11 @@ export function AddContractPaymentView({
     onSave({
       amount,
       contractNumber: contract.contractNumber,
+      currency: contract.currency || "ETB",
       date: form.date,
       id: `payment-${Date.now()}`,
+      otherPaymentType:
+        form.paymentType === "Other" ? form.otherPaymentType.trim() : undefined,
       paymentType: form.paymentType,
       reference: form.reference.trim() || undefined,
       remarks: form.remarks.trim() || undefined,
@@ -141,6 +156,19 @@ export function AddContractPaymentView({
                 {fromTracker ? "Activity Tracker" : "Contracts"}
               </Link>
             </li>
+            {fromOpen ? (
+              <>
+                <li aria-hidden="true">/</li>
+                <li>
+                  <Link
+                    className="hover:text-[#0A3C2F]"
+                    href={`/workspace/contracts?mode=open&contract=${encodeURIComponent(contract.contractNumber)}${fromTracker ? "&from=tracker" : ""}`}
+                  >
+                    {contract.contractNumber}
+                  </Link>
+                </li>
+              </>
+            ) : null}
             <li aria-hidden="true">/</li>
             <li aria-current="page" className="font-semibold text-slate-800">
               Add Payment
@@ -204,6 +232,28 @@ export function AddContractPaymentView({
                     ))}
                   </select>
                 </Field>
+
+                {form.paymentType === "Other" ? (
+                  <Field
+                    error={
+                      attempted && !otherComplete
+                        ? "Specify the name of this other payment type."
+                        : undefined
+                    }
+                    hint="Specify the category or purpose of this disbursement."
+                    label="Specify Other Payment Type Name"
+                    required
+                  >
+                    <input
+                      className={inputClasses}
+                      onChange={(event) =>
+                        updateField("otherPaymentType", event.target.value)
+                      }
+                      placeholder="e.g. Mobilization Advance, Site Handover"
+                      value={form.otherPaymentType}
+                    />
+                  </Field>
+                ) : null}
 
                 <Field
                   error={
@@ -361,7 +411,16 @@ export function AddContractPaymentView({
             Check Entries
           </div>
           <div className="space-y-3 p-3">
-            <ChecklistItem complete={typeComplete} label="Payment type" />
+            <ChecklistItem
+              complete={typeComplete && otherComplete}
+              label={
+                form.paymentType === "Other"
+                  ? otherComplete
+                    ? `Other: ${form.otherPaymentType.trim()}`
+                    : "Specify other payment type"
+                  : "Payment type"
+              }
+            />
             <ChecklistItem
               complete={amountValid}
               label="Actual payment amount"
@@ -428,15 +487,23 @@ export function AddContractPaymentView({
           <Link
             className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"
             href={
-              fromTracker
-                ? `/workspace/contracts?contract=${encodeURIComponent(
+              fromOpen
+                ? `/workspace/contracts?mode=open&contract=${encodeURIComponent(
                     contract.contractNumber,
-                  )}&from=tracker`
-                : "/workspace/contracts"
+                  )}${fromTracker ? "&from=tracker" : ""}`
+                : fromTracker
+                  ? `/workspace/contracts?contract=${encodeURIComponent(
+                      contract.contractNumber,
+                    )}&from=tracker`
+                  : "/workspace/contracts"
             }
           >
             <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
-            {fromTracker ? "Back to Tracker" : "Back"}
+            {fromOpen
+              ? "Back to Contract"
+              : fromTracker
+                ? "Back to Tracker"
+                : "Back"}
           </Link>
           <button
             className="inline-flex h-9 items-center gap-2 rounded-md border border-[#00552c] bg-[#006837] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006837]"

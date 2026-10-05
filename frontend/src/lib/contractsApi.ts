@@ -97,6 +97,7 @@ export interface RecordPaymentInput {
 
 import { apiClient, directApiFetch, ApiClientError } from "./apiClient";
 import { downloadReportFile, saveReportFile } from "./reportsApi";
+import type { ContractPaymentType } from "@/features/contracts/data/officerPayments";
 
 export interface ImportContractsResult {
   message?: string;
@@ -260,6 +261,28 @@ export async function createContractAmendment(
   return res.data || res;
 }
 
+export function mapBackendPaymentType(pt?: string | null): ContractPaymentType {
+  if (!pt) return "Other";
+  switch (pt.toUpperCase()) {
+    case "ADVANCE":
+      return "Advance";
+    case "INTERIM_1":
+      return "1st / Interim";
+    case "INTERIM_2":
+      return "2nd / Interim";
+    case "FINAL":
+      return "Final";
+    case "RETENTION":
+      return "Retention Payment";
+    case "RETENTION_PAYMENT":
+      return "Retention Payment";
+    case "RETENTION_WITHHOLDING":
+      return "Retention Withholding";
+    default:
+      return "Other";
+  }
+}
+
 export function mapBackendContractToOfficerContract(bc: BackendContract): any {
   const totalValue = Number(bc.totalValue) || 0;
   const paidAmount = Number(bc.paidAmount) || 0;
@@ -330,7 +353,11 @@ export function mapBackendContractToOfficerContract(bc: BackendContract): any {
       netOfVat: bc.contractNetOfVat || totalValue,
       amendments: (bc.amendments || []).map((a) => ({
         id: a.amendmentNo,
-        amount: a.variationAmount,
+        amount: Number(a.variationAmount) || 0,
+        reason: a.reason,
+        effectiveDate: a.effectiveDate || undefined,
+        approvalRef: a.approvalRef || undefined,
+        notes: a.notes || undefined,
       })),
     },
   };

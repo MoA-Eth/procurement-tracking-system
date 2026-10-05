@@ -107,4 +107,59 @@ describe("RegisterContractView", () => {
     expect(markup).toContain("JPY - Japanese Yen");
     expect(markup).toContain("UA - Unit of Account");
   });
+
+  it("renders Back to Plan and Procurement Plan breadcrumb when fromProjects is true", () => {
+    const markup = renderToStaticMarkup(
+      <RegisterContractView
+        existingContracts={[]}
+        fromProjects={true}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("Procurement Plan");
+    expect(markup).toContain("Back to Plan");
+  });
+
+  it("includes draft plan activity when requestedActivityReference matches", () => {
+    const draftPlanProject: OfficerProject = {
+      ...mockProject,
+      plans: [
+        {
+          activities: 1,
+          budgetYear: "2016 EFY",
+          category: "Goods",
+          completedActivities: 0,
+          currency: "ETB",
+          delayedActivities: 0,
+          estimatedValue: 1_000_000,
+          inProgressActivities: 1,
+          name: "Draft Plan",
+          planActivities: [
+            {
+              category: "Goods" as const,
+              currentStage: "Draft RFQ",
+              description: "Special Draft Activity",
+              estimatedAmount: 1_000_000,
+              method: "RFQ",
+              reference: "ACT-DRAFT-001",
+              status: "Draft" as const,
+            },
+          ],
+          reference: "PP-DRAFT-01",
+          status: "Draft",
+        },
+      ],
+    };
+
+    const eligible = buildEligibleActivities(
+      [draftPlanProject],
+      [],
+      "ACT-DRAFT-001",
+    );
+
+    expect(eligible.some((e) => e.activity.reference === "ACT-DRAFT-001")).toBe(
+      true,
+    );
+  });
 });
