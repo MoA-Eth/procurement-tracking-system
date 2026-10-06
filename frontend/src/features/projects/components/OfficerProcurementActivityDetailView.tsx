@@ -23,7 +23,10 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { EditActivityModal } from "@/features/activities/components/EditActivityModal";
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
-import { PhaseDelayBreakdownModal } from "./PhaseDelayBreakdownModal";
+import {
+  PhaseDelayBreakdownModal,
+  calculateRealActivityDelay,
+} from "./PhaseDelayBreakdownModal";
 import { getPlanVersionHistory } from "@/features/plans/data/planRevisions";
 
 interface DetailValue {
@@ -503,22 +506,33 @@ export function OfficerProcurementActivityDetailView({
       <PhaseDelayBreakdownModal
         isOpen={isDelayModalOpen}
         onClose={() => setIsDelayModalOpen(false)}
-        data={{
-          reference: activity.reference,
-          title: activity.description || activity.reference,
-          category: activity.category,
-          method: activity.method,
-          totalDelayDays:
-            (activity as any).delayDays || (activity as any).daysOverdue || 12,
-          stages:
+        data={(() => {
+          const actStages =
             (activity as any).stages ||
-            (details as any)?.roadmapStages ||
-            (details as any)?.stages ||
-            [],
-          activityHref: trackerHref,
-          planReference: plan.reference,
-          projectCode: project.code,
-        }}
+            details?.roadmap ||
+            (activity as any).roadmap ||
+            [];
+          const rawDelay =
+            (activity as any).delayDays !== undefined &&
+            (activity as any).delayDays !== null
+              ? Number((activity as any).delayDays)
+              : (activity as any).daysOverdue !== undefined &&
+                  (activity as any).daysOverdue !== null
+                ? Number((activity as any).daysOverdue)
+                : calculateRealActivityDelay(actStages);
+
+          return {
+            reference: activity.reference,
+            title: activity.description || activity.reference,
+            category: activity.category,
+            method: activity.method,
+            totalDelayDays: rawDelay,
+            stages: actStages,
+            activityHref: trackerHref,
+            planReference: plan.reference,
+            projectCode: project.code,
+          };
+        })()}
       />
     </div>
   );

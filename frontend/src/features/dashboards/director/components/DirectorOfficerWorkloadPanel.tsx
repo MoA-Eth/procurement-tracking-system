@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   AlertTriangle,
@@ -15,7 +15,11 @@ import Link from "next/link";
 import { fetchProjects } from "@/lib/projectsApi";
 import { fetchActivities } from "@/lib/activitiesApi";
 import { fetchOfficers } from "@/lib/lookupsApi";
-import { PhaseDelayBreakdownModal } from "@/features/projects/components/PhaseDelayBreakdownModal";
+import {
+  PhaseDelayBreakdownModal,
+  calculateRealActivityDelay,
+  computePhaseMetrics,
+} from "@/features/projects/components/PhaseDelayBreakdownModal";
 
 // Module-level cache to avoid redundant API calls on sidebar navigation
 let _cachedWorkloadData: OfficerWorkloadSummary[] | null = null;
@@ -166,6 +170,73 @@ export function DirectorOfficerWorkloadPanel() {
             if (!summary.projectCodes.includes(proj.code)) {
               summary.projectCount += 1;
               summary.projectCodes.push(proj.code);
+            }
+          });
+        });
+
+        // Map activities to officers and calculate real delays
+        const projectOfficersMap = new Map<string, string[]>();
+        projects.forEach((proj: any) => {
+          const code = (proj.code || "").toUpperCase();
+          if (!code) return;
+          const userIds: string[] = [];
+          if (Array.isArray(proj.members)) {
+            proj.members.forEach((m: any) => {
+              const u = m.user || m;
+              if (u?.id) userIds.push(u.id);
+            });
+          }
+          if (userIds.length === 0 && Array.isArray(proj.officers)) {
+            proj.officers.forEach((o: any) => {
+              const u = o.user || o;
+              if (u?.id) userIds.push(u.id);
+            });
+          }
+          if (userIds.length === 0 && Array.isArray(proj.assignedOfficers)) {
+            proj.assignedOfficers.forEach((o: any) => {
+              if (o?.id) userIds.push(o.id);
+            });
+          }
+          projectOfficersMap.set(code, userIds);
+        });
+
+        const now = Date.now();
+        activities.forEach((act: any) => {
+          const projCode = (
+            act.plan?.project?.code ||
+            act.projectCode ||
+            ""
+          ).toUpperCase();
+          const stages = act.stages || act.details?.roadmap || [];
+          const actDelay = calculateRealActivityDelay(stages);
+          const assignedOfficerIds = projectOfficersMap.get(projCode) || [];
+
+          const targetOfficerIds = new Set<string>(assignedOfficerIds);
+          if (act.createdById && officerMap.has(act.createdById)) {
+            targetOfficerIds.add(act.createdById);
+          }
+
+          targetOfficerIds.forEach((offId) => {
+            const summary = officerMap.get(offId);
+            if (!summary) return;
+            summary.totalActivitiesCount += 1;
+            if (actDelay > 0) {
+              summary.delayedActivitiesCount += 1;
+              summary.totalDelayDays += actDelay;
+              const metrics = stages.map((st: any) =>
+                computePhaseMetrics(st, now),
+              );
+              const delayedMetric =
+                metrics.find((m: any) => (m.delayDays || 0) > 0) || metrics[0];
+              summary.delayedItems.push({
+                activityRef: act.reference || act.id,
+                description: act.description || act.reference,
+                delayDays: actDelay,
+                stageName: delayedMetric?.name || "Procurement Stage",
+                delayReason:
+                  delayedMetric?.remarks || "Milestone target date exceeded",
+                stages,
+              });
             }
           });
         });

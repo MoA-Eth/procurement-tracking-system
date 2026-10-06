@@ -43,6 +43,7 @@ import { exportPlanActivitiesToExcel } from "@/features/projects/utils/projectEx
 import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
 import {
   PhaseDelayBreakdownModal,
+  calculateRealActivityDelay,
   type PhaseDelayModalData,
 } from "./PhaseDelayBreakdownModal";
 import { CreateAdditionalPlanModal } from "@/features/plans/components/CreateAdditionalPlanModal";
@@ -119,18 +120,23 @@ export function OfficerProcurementPlanDetailView({
   const emptyNoticeRef = useRef<HTMLElement>(null);
 
   const handleSelectActivityDelay = (act: PlanActivity) => {
-    const rawDelay = (act as any).delayDays || (act as any).daysOverdue || 7;
+    const actStages =
+      (act as any).stages || act.details?.roadmap || (act as any).roadmap || [];
+    const rawDelay =
+      (act as any).delayDays !== undefined && (act as any).delayDays !== null
+        ? Number((act as any).delayDays)
+        : (act as any).daysOverdue !== undefined &&
+            (act as any).daysOverdue !== null
+          ? Number((act as any).daysOverdue)
+          : calculateRealActivityDelay(actStages);
+
     setDelayModalData({
       reference: act.reference,
       title: act.description || act.reference,
       category: act.category,
       method: act.method,
-      totalDelayDays: Number(rawDelay) || 7,
-      stages:
-        (act as any).stages ||
-        (act.details as any)?.roadmapStages ||
-        (act.details as any)?.stages ||
-        [],
+      totalDelayDays: rawDelay,
+      stages: actStages,
       activityHref:
         "/workspace/projects?project=" +
         encodeURIComponent(project.code) +
@@ -1333,11 +1339,17 @@ function ActivityRow({
   onSelectDelay?: (activity: PlanActivity) => void;
   registerContractHref?: string;
 }) {
+  const rowStages =
+    (activity as any).stages ||
+    activity.details?.roadmap ||
+    (activity as any).roadmap ||
+    [];
   const isDelayed =
     activity.status === "Delayed" ||
     (activity as any).status === "DELAYED" ||
     Boolean((activity as any).delayDays) ||
-    Boolean((activity as any).daysOverdue);
+    Boolean((activity as any).daysOverdue) ||
+    calculateRealActivityDelay(rowStages) > 0;
 
   return (
     <tr className="even:bg-[#fbfcff] hover:bg-[#f7fbf9] transition-colors">

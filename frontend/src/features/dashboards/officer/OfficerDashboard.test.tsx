@@ -7,6 +7,10 @@ import {
   formatDelayedActivityAlert,
   formatDirectorNote,
   formatTimeAgo,
+  mapOfficerProjectsList,
+  extractLiveDelayedActivities,
+  calculateOverviewStatusItems,
+  generateDynamicAlerts,
 } from "./OfficerDashboard";
 import type { AuthUser } from "@/lib/authTypes";
 
@@ -227,5 +231,207 @@ describe("Alerts formatting helpers - relevance & anti-repetition", () => {
     // Null timestamp or null currentTime
     expect(formatTimeAgo(null, now)).toBe("");
     expect(formatTimeAgo(twoHoursAgo, null)).toBe("");
+  });
+});
+
+describe("Real Data Synchronization - Officer Dashboard & Alerts Center", () => {
+  it("mapOfficerProjectsList accurately computes active plans from assignedPlans", () => {
+    const mockProjects: any[] = [
+      {
+        id: "proj-1",
+        code: "PRJ-24-001",
+        name: "Livestock Feed Project",
+        fundingSource: { label: "World Bank (IDA)", code: "FS_WB" },
+      },
+      {
+        id: "proj-2",
+        code: "PRJ-24-002",
+        name: "Horticulture Development",
+        fundingSource: { label: "AfDB", code: "FS_AFDB" },
+      },
+    ];
+
+    const mockPlans: any[] = [
+      { id: "plan-1", projectId: "proj-1", title: "Plan 1" },
+      { id: "plan-2", projectId: "proj-1", title: "Plan 2" },
+      { id: "plan-3", project: { code: "PRJ-24-002" }, title: "Plan 3" },
+    ];
+
+    const mapped = mapOfficerProjectsList(mockProjects, mockPlans);
+
+    expect(mapped[0].activePlans).toBe(2);
+    expect(mapped[1].activePlans).toBe(1);
+  });
+
+  it("extractLiveDelayedActivities extracts delayed activities and merges stage tracking", () => {
+    const now = new Date("2026-09-04T08:00:00Z").getTime();
+    const mockPlans: any[] = [
+      {
+        id: "plan-1",
+        project: { code: "PRJ-24-001" },
+        activities: [
+          {
+            id: "act-normal",
+            reference: "ACT-ON-TRACK",
+            status: "IN_PROGRESS",
+            stages: [
+              {
+                id: "st-1",
+                name: "Draft Specs",
+                status: "COMPLETED",
+                plannedEndDate: "2026-08-01",
+                actualEndDate: "2026-08-01",
+              },
+            ],
+          },
+          {
+            id: "act-delayed-by-date",
+            reference: "ACT-OVERDUE-STAGE",
+            status: "IN_PROGRESS",
+            stages: [
+              {
+                id: "st-2",
+                name: "Tender Floating",
+                status: "IN_PROGRESS",
+                currentTargetEndDate: "2026-08-20T00:00:00Z",
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const extraActivities: any[] = [
+      {
+        id: "act-extra-delayed",
+        reference: "ACT-SAVED-DRAFT-DELAYED",
+        status: "Delayed",
+        planReference: "plan-1",
+        stages: [
+          {
+            id: "st-3",
+            name: "Bid Evaluation",
+            status: "DELAYED",
+            remarks: "Pending technical committee quorum",
+          },
+        ],
+      },
+    ];
+
+    const trackingRecords: any[] = [
+      {
+        activityReference: "ACT-OVERDUE-STAGE",
+        stages: [
+          {
+            stageName: "Tender Floating",
+            status: "In Progress",
+            remarks: "Supplier request for deadline extension",
+          },
+        ],
+      },
+    ];
+
+    const liveDelayed = extractLiveDelayedActivities(
+      mockPlans,
+      now,
+      extraActivities,
+      trackingRecords,
+    );
+
+    expect(liveDelayed.length).toBe(2);
+    const refs = liveDelayed.map((d) => d.act.reference);
+    expect(refs).toContain("ACT-OVERDUE-STAGE");
+    expect(refs).toContain("ACT-SAVED-DRAFT-DELAYED");
+
+    // Tracking remarks were merged into the overdue stage
+    const overdueAct = liveDelayed.find(
+      (d) => d.act.reference === "ACT-OVERDUE-STAGE",
+    );
+    expect(overdueAct?.act.stages[0].remarks).toBe(
+      "Supplier request for deadline extension",
+    );
+  });
+
+  it("calculateOverviewStatusItems accurately tallies draft, submitted, returned, and approved plans", () => {
+    const mockPlans: any[] = [
+      { id: "p1", status: "DRAFT" },
+      { id: "p2", status: "Draft" },
+      { id: "p3", status: "SUBMITTED" },
+      { id: "p4", status: "WITH_COMMITTEE" },
+      { id: "p5", status: "REJECTED" },
+      { id: "p6", status: "APPROVED" },
+    ];
+
+    const items = calculateOverviewStatusItems(3, mockPlans, 2);
+
+    expect(items.find((i) => i.label === "Assigned projects")?.value).toBe(3);
+    expect(items.find((i) => i.label === "Draft plans")?.value).toBe(2);
+    expect(items.find((i) => i.label === "Submitted plans")?.value).toBe(2);
+    expect(items.find((i) => i.label === "Returned plans")?.value).toBe(1);
+    expect(items.find((i) => i.label === "Finally approved")?.value).toBe(1);
+    expect(items.find((i) => i.label === "Delayed activities")?.value).toBe(2);
+  });
+
+  it("generateDynamicAlerts includes live backend notifications alongside plan and activity alerts", () => {
+    const mockPlans: any[] = [
+      {
+        id: "plan-ret",
+        title: "Seed Procurement Plan",
+        status: "REJECTED",
+        rejectionReason: "Please adjust delivery timelines",
+        updatedAt: "2026-09-04T10:00:00Z",
+        project: { code: "PRJ-24-001" },
+      },
+    ];
+
+    const mockDelayedActs: any[] = [
+      {
+        act: {
+          id: "act-d1",
+          reference: "MOA-GOODS-001",
+          description: "Supply of Harvester Tractors",
+          stages: [
+            {
+              name: "Bid Opening",
+              status: "DELAYED",
+              plannedEndDate: "2026-08-01",
+            },
+          ],
+        },
+        plan: { project: { code: "PRJ-24-001" } },
+      },
+    ];
+
+    const mockNotifications: any[] = [
+      {
+        id: "notif-101",
+        title: "Contract CON-MOA-2026-001 Signed",
+        message: "Contract signed and active for implementation",
+        type: "contract",
+        priority: "normal",
+        timestamp: "10m ago",
+        link: "/workspace/contracts",
+      },
+    ];
+
+    const alerts = generateDynamicAlerts(
+      mockPlans,
+      mockDelayedActs,
+      new Date("2026-09-04T12:00:00Z").getTime(),
+      mockNotifications,
+    );
+
+    expect(alerts.length).toBe(3);
+
+    const tones = alerts.map((a) => a.tone);
+    expect(tones).toContain("returned");
+    expect(tones).toContain("delayed");
+    expect(tones).toContain("upcoming");
+
+    const contractAlert = alerts.find((a) => a.id === "notif-notif-101");
+    expect(contractAlert?.referenceLine).toBe(
+      "Contract CON-MOA-2026-001 Signed",
+    );
+    expect(contractAlert?.href).toBe("/workspace/contracts");
   });
 });

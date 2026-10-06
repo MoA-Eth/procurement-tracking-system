@@ -2,6 +2,8 @@ import type { BackendPlan } from "@/lib/plansApi";
 import type { BackendProject } from "@/lib/projectsApi";
 import { isProjectAssignedToOfficer } from "@/lib/projectsApi";
 import type { AuthUser } from "@/lib/authTypes";
+import type { SystemNotification } from "@/lib/alertsApi";
+import { calculateRealActivityDelay } from "@/features/projects/components/PhaseDelayBreakdownModal";
 import type { OfficerAlert } from "./officerData";
 
 export function formatTimeAgo(
@@ -124,18 +126,25 @@ export function formatDelayedActivityAlert(
   projectCode?: string | null,
   currentTime: number | null = null,
 ): OfficerAlert {
-  const delayedStage = (act.stages || []).find(
+  const actStages =
+    act.stages || (act as any).details?.roadmap || (act as any).roadmap || [];
+
+  const delayedStage = actStages.find(
     (st: any) =>
       st.status === "DELAYED" ||
+      st.status === "Delayed" ||
       (currentTime !== null &&
         !st.isNotApplicable &&
+        !st.notApplicable &&
         st.status !== "COMPLETED" &&
-        ((st.currentTargetStartDate &&
-          new Date(st.currentTargetStartDate).getTime() < currentTime) ||
-          (st.currentTargetEndDate &&
-            new Date(st.currentTargetEndDate).getTime() < currentTime) ||
+        st.status !== "Completed" &&
+        st.status !== "Not Applicable" &&
+        ((st.currentTargetEndDate &&
+          new Date(st.currentTargetEndDate).getTime() < currentTime) ||
           (st.plannedEndDate &&
             new Date(st.plannedEndDate).getTime() < currentTime) ||
+          (st.currentTargetStartDate &&
+            new Date(st.currentTargetStartDate).getTime() < currentTime) ||
           (st.plannedStartDate &&
             new Date(st.plannedStartDate).getTime() < currentTime))),
   );
@@ -164,6 +173,14 @@ export function formatDelayedActivityAlert(
     }
   }
 
+  // Factor in real phase delay across stages if available
+  if (actStages.length > 0) {
+    const realStageDelay = calculateRealActivityDelay(actStages);
+    if (realStageDelay > delayDays) {
+      delayDays = realStageDelay;
+    }
+  }
+
   const delayReason =
     delayedStage?.remarks ||
     delayedStage?.reason ||
@@ -188,7 +205,7 @@ export function formatDelayedActivityAlert(
     href: `/workspace/activity-tracker?activity=${encodeURIComponent(act.reference || act.id)}`,
     tone: "delayed",
     dateTime: targetDate || new Date().toISOString(),
-    stages: act.stages || [],
+    stages: actStages,
     delayDays,
     activityDescription: act.description || stageLabel,
     delayedStage: stageLabel,
@@ -210,14 +227,35 @@ export function filterAssignedProjects(
   });
 }
 
-export function mapOfficerProjectsList(assignedProjects: BackendProject[]) {
-  return assignedProjects.map((p) => ({
-    id: p.id,
-    code: p.code,
-    name: p.name,
-    fundingSource: p.fundingSource?.label || p.fundingSource?.code || "—",
-    activePlans: p.plans ? p.plans.length : 0,
-  }));
+export function mapOfficerProjectsList(
+  assignedProjects: BackendProject[],
+  assignedPlans: BackendPlan[] = [],
+) {
+  return assignedProjects.map((p) => {
+    const pId = (p.id || "").toLowerCase().trim();
+    const pCode = (p.code || "").toLowerCase().trim();
+    const matchingPlans = assignedPlans.filter((plan) => {
+      const planProjId = (plan.projectId || plan.project?.id || "")
+        .toLowerCase()
+        .trim();
+      const planProjCode = (plan.project?.code || "").toLowerCase().trim();
+      return (pId && planProjId === pId) || (pCode && planProjCode === pCode);
+    });
+    const activePlans =
+      matchingPlans.length > 0
+        ? matchingPlans.length
+        : p.plans
+          ? p.plans.length
+          : 0;
+
+    return {
+      id: p.id,
+      code: p.code,
+      name: p.name,
+      fundingSource: p.fundingSource?.label || p.fundingSource?.code || "—",
+      activePlans,
+    };
+  });
 }
 
 export function filterAssignedPlans(
@@ -229,47 +267,167 @@ export function filterAssignedPlans(
     assignedProjects.map((p) => p.id).filter(Boolean),
   );
   const assignedCodes = new Set(
-    assignedProjects.map((p) => p.code.toLowerCase()),
+    assignedProjects.map((p) => (p.code || "").toLowerCase()).filter(Boolean),
   );
   return plans.filter(
     (p) =>
       (p.projectId && assignedIds.has(p.projectId)) ||
       (p.project?.id && assignedIds.has(p.project.id)) ||
-      (p.project?.code && assignedCodes.has(p.project.code.toLowerCase())),
+      (p.project?.code &&
+        assignedCodes.has((p.project.code || "").toLowerCase())),
   );
 }
 
 export function extractLiveDelayedActivities(
   assignedPlans: BackendPlan[],
   currentTime: number | null,
+  extraActivities: any[] = [],
+  trackingRecords: any[] = [],
 ): { act: any; plan: BackendPlan }[] {
   const list: { act: any; plan: BackendPlan }[] = [];
+  const seenRefs = new Set<string>();
+
+  const processActivity = (a: any, p: BackendPlan) => {
+    const refKey = (a.reference || a.code || a.id || "").toLowerCase().trim();
+    if (!refKey || seenRefs.has(refKey)) return;
+
+    // Check if tracking record exists for this activity
+    const tracking = trackingRecords.find(
+      (tr: any) =>
+        (tr.activityReference || "").toLowerCase().trim() === refKey ||
+        (a.id &&
+          (tr.activityReference || "").toLowerCase().trim() ===
+            a.id.toLowerCase().trim()),
+    );
+
+    // Merge stages from a.stages, a.details.roadmap, a.roadmap
+    let actStages: any[] = [
+      ...(a.stages || (a as any).details?.roadmap || (a as any).roadmap || []),
+    ];
+
+    // If tracking record has stage details, merge actual dates and revisions
+    if (
+      tracking &&
+      Array.isArray(tracking.stages) &&
+      tracking.stages.length > 0
+    ) {
+      actStages = actStages.map((st: any) => {
+        const trStage = tracking.stages.find(
+          (ts: any) =>
+            (ts.stageName || "").toLowerCase().trim() ===
+            (st.stageType?.label || st.name || st.stageName || "")
+              .toLowerCase()
+              .trim(),
+        );
+        if (trStage) {
+          return {
+            ...st,
+            status:
+              trStage.status === "Completed"
+                ? "COMPLETED"
+                : trStage.status === "In Progress"
+                  ? "IN_PROGRESS"
+                  : st.status,
+            actualEndDate: trStage.actualDate?.gregorian || st.actualEndDate,
+            remarks: trStage.remarks || st.remarks,
+            revisions: trStage.revisions || st.revisions,
+          };
+        }
+        return st;
+      });
+    }
+
+    const realDelay = calculateRealActivityDelay(actStages);
+
+    const hasDelayedStage = actStages.some(
+      (st: any) =>
+        st.status === "DELAYED" ||
+        st.status === "Delayed" ||
+        (currentTime !== null &&
+          !st.isNotApplicable &&
+          !st.notApplicable &&
+          st.status !== "COMPLETED" &&
+          st.status !== "Completed" &&
+          st.status !== "Not Applicable" &&
+          ((st.currentTargetStartDate &&
+            new Date(st.currentTargetStartDate).getTime() < currentTime) ||
+            (st.currentTargetEndDate &&
+              new Date(st.currentTargetEndDate).getTime() < currentTime) ||
+            (st.plannedEndDate &&
+              new Date(st.plannedEndDate).getTime() < currentTime) ||
+            (st.plannedStartDate &&
+              new Date(st.plannedStartDate).getTime() < currentTime))),
+    );
+
+    const isDelayed =
+      a.status === "DELAYED" ||
+      a.status === "Delayed" ||
+      (a as any).performanceStatus === "DELAYED" ||
+      Number((a as any).daysOverdue || (a as any).delayDays) > 0 ||
+      realDelay > 0 ||
+      hasDelayedStage;
+
+    if (isDelayed) {
+      seenRefs.add(refKey);
+      list.push({
+        act: {
+          ...a,
+          stages: actStages,
+          delayDays:
+            realDelay > 0
+              ? realDelay
+              : Number((a as any).delayDays || (a as any).daysOverdue) || 0,
+        },
+        plan: p,
+      });
+    }
+  };
+
+  // 1. Process activities directly inside assigned plans
   for (const p of assignedPlans) {
     for (const a of p.activities || []) {
-      const hasDelayedStage = (a.stages || []).some(
-        (st: any) =>
-          st.status === "DELAYED" ||
-          (currentTime !== null &&
-            !st.isNotApplicable &&
-            st.status !== "COMPLETED" &&
-            ((st.currentTargetStartDate &&
-              new Date(st.currentTargetStartDate).getTime() < currentTime) ||
-              (st.currentTargetEndDate &&
-                new Date(st.currentTargetEndDate).getTime() < currentTime) ||
-              (st.plannedEndDate &&
-                new Date(st.plannedEndDate).getTime() < currentTime) ||
-              (st.plannedStartDate &&
-                new Date(st.plannedStartDate).getTime() < currentTime))),
-      );
-      if (
-        a.status === "DELAYED" ||
-        (a as any).performanceStatus === "DELAYED" ||
-        hasDelayedStage
-      ) {
-        list.push({ act: a, plan: p });
-      }
+      processActivity(a, p);
     }
   }
+
+  // 2. Process extra activities (from /api/activities and local activity drafts)
+  for (const extra of extraActivities) {
+    const matchingPlan = assignedPlans.find((p) => {
+      const pId = (p.id || "").toLowerCase().trim();
+      const pTitle = (p.title || "").toLowerCase().trim();
+      const pCode = (p.project?.code || p.projectId || "").toLowerCase().trim();
+
+      const extraPlanId = (
+        extra.planId ||
+        extra.plan?.id ||
+        extra.planReference ||
+        ""
+      )
+        .toLowerCase()
+        .trim();
+      const extraPlanTitle = (extra.plan?.title || extra.planReference || "")
+        .toLowerCase()
+        .trim();
+      const extraProjCode = (
+        extra.plan?.project?.code ||
+        extra.projectCode ||
+        ""
+      )
+        .toLowerCase()
+        .trim();
+
+      return (
+        (pId && extraPlanId === pId) ||
+        (pTitle && extraPlanTitle === pTitle) ||
+        (pCode && extraProjCode === pCode)
+      );
+    });
+
+    if (matchingPlan) {
+      processActivity(extra, matchingPlan);
+    }
+  }
+
   return list;
 }
 
@@ -286,7 +444,10 @@ export function calculateOverviewStatusItems(
   ).length;
   const submittedCount = assignedPlans.filter(
     (p) =>
-      p.status === "SUBMITTED" || (p as any).status === "Submitted to Director",
+      p.status === "SUBMITTED" ||
+      (p as any).status === "Submitted to Director" ||
+      (p as any).status === "WITH_COMMITTEE" ||
+      (p as any).status === "Under Committee Review",
   ).length;
   const approvedCount = assignedPlans.filter(
     (p) => p.status === "APPROVED" || (p as any).status === "Finally Approved",
@@ -330,10 +491,12 @@ export function generateDynamicAlerts(
   assignedPlans: BackendPlan[],
   liveDelayedActivities: { act: any; plan: BackendPlan }[],
   currentTime: number | null,
+  systemNotifications: SystemNotification[] = [],
 ): OfficerAlert[] {
   const list: OfficerAlert[] = [];
+  const seenAlertIds = new Set<string>();
 
-  // Returned plan alerts
+  // 1. Returned plan alerts
   const returnedPlans = assignedPlans.filter(
     (p) => p.status === "REJECTED" || (p as any).status === "Returned",
   );
@@ -344,9 +507,11 @@ export function generateDynamicAlerts(
       returned.activities?.length,
     );
     const timeAgo = formatTimeAgo(returned.updatedAt, currentTime);
+    const alertId = `returned-${returned.id}`;
 
+    seenAlertIds.add(alertId);
     list.push({
-      id: `returned-${returned.id}`,
+      id: alertId,
       statusLine: "Returned for Revision",
       referenceLine: refLine,
       detailLine: `Director note: ${directorNote}`,
@@ -359,27 +524,81 @@ export function generateDynamicAlerts(
     });
   }
 
-  // Delayed activity alerts
+  // 2. Delayed activity alerts
   for (const { act, plan } of liveDelayedActivities) {
-    list.push(formatDelayedActivityAlert(act, plan.project?.code, currentTime));
+    const alert = formatDelayedActivityAlert(
+      act,
+      plan.project?.code,
+      currentTime,
+    );
+    if (!seenAlertIds.has(alert.id)) {
+      seenAlertIds.add(alert.id);
+      list.push(alert);
+    }
   }
 
-  // Approved plan alerts
+  // 3. Approved plan alerts
   const approvedPlans = assignedPlans.filter(
     (p) => p.status === "APPROVED" || (p as any).status === "Finally Approved",
   );
   for (const approved of approvedPlans) {
     const refLine = formatPlanReference(approved.project?.code, approved.title);
+    const alertId = `approved-${approved.id}`;
+
+    if (!seenAlertIds.has(alertId)) {
+      seenAlertIds.add(alertId);
+      list.push({
+        id: alertId,
+        statusLine: "Finally Approved",
+        referenceLine: refLine,
+        detailLine: "Ready for procurement activity execution",
+        actionLabel: "View plan",
+        href: `/workspace/projects?project=${encodeURIComponent(approved.project?.code || "")}&plan=${encodeURIComponent(approved.id)}`,
+        tone: "approved",
+        dateTime: approved.updatedAt || new Date().toISOString(),
+      });
+    }
+  }
+
+  // 4. Live System / Backend Notifications from /api/alerts
+  for (const notif of systemNotifications) {
+    const notifAlertId = `notif-${notif.id}`;
+    if (seenAlertIds.has(notifAlertId)) continue;
+
+    // Don't duplicate plan alerts if we already have them
+    const notifTitle = (notif.title || "").toLowerCase();
+    const isPlanAlert =
+      notif.type === "plan" ||
+      notifTitle.includes("plan") ||
+      (notif.link && notif.link.includes("plan"));
+    if (
+      isPlanAlert &&
+      Array.from(seenAlertIds).some((id) =>
+        id.includes(notif.id.replace("alert-", "")),
+      )
+    ) {
+      continue;
+    }
+
+    seenAlertIds.add(notifAlertId);
+    const isUrgent = notif.priority === "urgent";
+    const isApproved =
+      notif.type === "approval" || notifTitle.includes("approved");
 
     list.push({
-      id: `approved-${approved.id}`,
-      statusLine: "Finally Approved",
-      referenceLine: refLine,
-      detailLine: "Ready for procurement activity execution",
-      actionLabel: "View plan",
-      href: `/workspace/projects?project=${encodeURIComponent(approved.project?.code || "")}&plan=${encodeURIComponent(approved.id)}`,
-      tone: "approved",
-      dateTime: approved.updatedAt || new Date().toISOString(),
+      id: notifAlertId,
+      statusLine: isUrgent
+        ? "Action Required"
+        : isApproved
+          ? "Approved"
+          : notif.title,
+      referenceLine: notif.title,
+      detailLine: notif.message,
+      actionLabel: notif.actionLabel || "View",
+      href: notif.link || "/workspace",
+      tone: isApproved ? "approved" : isUrgent ? "returned" : "upcoming",
+      timeAgo: notif.timestamp,
+      dateTime: notif.readAt || new Date().toISOString(),
     });
   }
 
