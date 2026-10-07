@@ -3192,9 +3192,9 @@ export function RelatedInformationStep({
                       Funding Sources & Native Currency Breakdown
                     </h4>
                     <p className="text-xs text-slate-600 mt-0.5">
-                      Register the exact fund amount in each source&apos;s native
-                      currency. Enter an optional conversion rate to compute the
-                      total in {form.currency || "ETB"}.
+                      Register the exact fund amount in each source&apos;s
+                      native currency. Enter an optional conversion rate to
+                      compute the total in {form.currency || "ETB"}.
                     </p>
                   </div>
                   <button
