@@ -182,6 +182,7 @@ export function PlanReviewDirectoryTable({
   // Filter project groups by search & filters
   const filteredProjectGroups = useMemo(() => {
     return projectGroups.filter((grp) => {
+      if (grp.pendingPlans.length === 0) return false;
       const q = searchTerm.toLowerCase().trim();
       const matchesSearch =
         !q ||
