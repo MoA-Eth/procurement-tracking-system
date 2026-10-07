@@ -1,3 +1,4 @@
+import { samePlanIdentity } from "./planAvailability";
 import type {
   OfficerProject,
   ProcurementCategory,
@@ -79,17 +80,8 @@ export function mergeSavedPlans(
     );
     if (projectRecords.length === 0) return project;
 
-    const recordByRef = new Map<string, ProcurementPlanSummary>();
-    const recordByName = new Map<string, ProcurementPlanSummary>();
-    projectRecords.forEach((record) => {
-      recordByRef.set(record.plan.reference.toLowerCase(), record.plan);
-      recordByName.set(record.plan.name.toLowerCase(), record.plan);
-    });
-
     const mergedPlans = project.plans.map((plan) => {
-      const saved =
-        recordByRef.get(plan.reference.toLowerCase()) ??
-        recordByName.get(plan.name.toLowerCase());
+      const saved = projectRecords.find(record => samePlanIdentity(record.plan, plan))?.plan;
 
       if (!saved) return plan;
 
@@ -163,20 +155,9 @@ export function mergeSavedPlans(
       };
     });
 
-    const existingRefs = new Set(
-      mergedPlans.map((plan) => plan.reference.toLowerCase()),
-    );
-    const existingNames = new Set(
-      mergedPlans.map((plan) => plan.name.toLowerCase()),
-    );
-
     const newPlans = projectRecords
-      .map((record) => record.plan)
-      .filter(
-        (plan) =>
-          !existingRefs.has(plan.reference.toLowerCase()) &&
-          !existingNames.has(plan.name.toLowerCase()),
-      );
+      .map(record => record.plan)
+      .filter(plan => !mergedPlans.some(existing => samePlanIdentity(existing, plan)));
 
     return {
       ...project,
@@ -245,9 +226,7 @@ export function upsertSavedPlanRecord(
           record.projectCode?.toLowerCase() ||
           existing.projectCode?.toLowerCase() ===
             String((record.plan as any).projectId || "").toLowerCase()) &&
-        (existing.plan.reference.toLowerCase() ===
-          record.plan.reference.toLowerCase() ||
-          existing.plan.name.toLowerCase() === record.plan.name.toLowerCase())
+        samePlanIdentity(existing.plan, record.plan)
       ),
   );
   return [...withoutExisting, record];
