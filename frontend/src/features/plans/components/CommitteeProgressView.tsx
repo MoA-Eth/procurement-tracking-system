@@ -50,6 +50,10 @@ import {
   OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
   parseSavedActivityRecords,
 } from "@/features/projects/data/officerActivityDrafts";
+import {
+  recordPlanVersionEvent,
+  getCurrentPlanVersionNumber,
+} from "../data/planRevisions";
 
 export interface CommitteeMemberVote {
   id: string;
@@ -827,6 +831,24 @@ export function CommitteeProgressView({
         instructions,
         currentUser?.id,
       );
+
+      recordPlanVersionEvent({
+        planId: planToReturn.id,
+        planReference: planToReturn.planNumber || planToReturn.id,
+        planName: planToReturn.planTitle || planToReturn.planNumber,
+        projectCode: planToReturn.projectCode,
+        versionNumber: getCurrentPlanVersionNumber(planToReturn.id),
+        action: "RETURNED",
+        actionLabel: "Plan Returned by Committee for Revision",
+        changedBy:
+          currentUser?.name || currentUser?.email || "Endorsement Committee",
+        changedByRole: "Endorsement Committee",
+        reason: instructions,
+        committeeReview: {
+          decision: "REJECTED",
+          comments: instructions,
+        },
+      });
 
       setItems((prevItems) =>
         prevItems.map((item) =>
@@ -1801,11 +1823,7 @@ export function CommitteeProgressView({
                           <tr
                             key={act.id || idx}
                             id={`committee-activity-row-${ref}`}
-                            className={`hover:bg-slate-50 transition-colors ${
-                              isFlaggedInVotes
-                                ? "bg-rose-50/70 border-l-4 border-l-rose-500"
-                                : ""
-                            }`}
+                            className="hover:bg-slate-50 transition-colors"
                           >
                             <td className="py-2.5 px-3 text-center font-mono text-slate-400">
                               {idx + 1}
@@ -2193,22 +2211,6 @@ export function CommitteeProgressView({
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </button>
-
-                            {isDirector &&
-                              item.committeeStatus === "Rejected" &&
-                              item.rawStatus !== "RETURNED_FOR_REVISION" && (
-                                <button
-                                  onClick={() => {
-                                    setRevisionModalPlan(item);
-                                    setRevisionInstructions("");
-                                  }}
-                                  title="Return plan to Officer for revision"
-                                  className="flex h-7 items-center gap-1 px-2.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer text-xs font-medium"
-                                >
-                                  <RotateCcw className="h-3 w-3" />
-                                  <span>Return</span>
-                                </button>
-                              )}
                           </div>
                         </td>
                       </tr>
@@ -2351,22 +2353,6 @@ export function CommitteeProgressView({
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </button>
-
-                            {isDirector &&
-                              item.managementStatus === "Rejected" &&
-                              item.rawStatus !== "RETURNED_FOR_REVISION" && (
-                                <button
-                                  onClick={() => {
-                                    setRevisionModalPlan(item);
-                                    setRevisionInstructions("");
-                                  }}
-                                  title="Return plan to Officer for revision"
-                                  className="flex h-7 items-center gap-1 px-2.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition-colors cursor-pointer text-xs font-medium"
-                                >
-                                  <RotateCcw className="h-3 w-3" />
-                                  <span>Return</span>
-                                </button>
-                              )}
                           </div>
                         </td>
                       </tr>

@@ -68,6 +68,22 @@ export function PlanForReviewView({
               }
             : undefined
         }
+        onApproveCancellation={
+          user.role === "DIRECTOR"
+            ? (p, comment) => {
+                review.handleApprovePlanCancellation(p, comment);
+                review.closeActivitiesPlan();
+              }
+            : undefined
+        }
+        onRejectCancellation={
+          user.role === "DIRECTOR"
+            ? (p, comment) => {
+                review.handleRejectPlanCancellation(p, comment);
+                review.closeActivitiesPlan();
+              }
+            : undefined
+        }
         onCommitteeVote={
           user.role === "ENDORSING_COMMITTEE" && from !== "vote-progress"
             ? (p, decision, remarks, rejectionDetails) => {
@@ -153,6 +169,16 @@ export function PlanForReviewView({
             ? review.handleReturnPlan
             : undefined
         }
+        onApproveCancellation={
+          user.role === "DIRECTOR"
+            ? review.handleApprovePlanCancellation
+            : undefined
+        }
+        onRejectCancellation={
+          user.role === "DIRECTOR"
+            ? review.handleRejectPlanCancellation
+            : undefined
+        }
         onCommitteeVote={
           user.role === "ENDORSING_COMMITTEE" && from !== "vote-progress"
             ? review.handleCommitteeVote
@@ -195,6 +221,9 @@ export function PlanForReviewView({
       regionFilter={review.regionFilter}
       setRegionFilter={review.setRegionFilter}
       filteredPlans={review.filteredPlans}
+      allPlans={review.plans}
+      selectedProjectCode={review.selectedProjectCode}
+      onSelectProject={review.setSelectedProjectCode}
       loading={review.loading}
       onSelectPlan={(plan) => review.openActivitiesPlan(plan)}
       historyModalPlan={review.historyModalPlan}
@@ -204,6 +233,9 @@ export function PlanForReviewView({
       committeeDeadlineDate={review.committeeDeadlineDate}
       setCommitteeDeadlineDate={review.setCommitteeDeadlineDate}
       onApprovePlan={review.handleApprovePlan}
+      onReturnPlan={review.handleReturnPlan}
+      onBatchReviewPlans={review.handleBatchReviewPlans}
+      getProjectForPlan={review.getProjectForPlan}
     />
   );
 }

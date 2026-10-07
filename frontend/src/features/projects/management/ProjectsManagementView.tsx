@@ -627,6 +627,7 @@ export function ProjectsManagementView({
         recordPlanVersionEvent({
           planId: savedPlan.id,
           planReference: savedPlan.reference || savedPlan.planName,
+          planName: savedPlan.planName,
           projectCode: savedPlan.projectCode,
           versionNumber: getCurrentPlanVersionNumber(savedPlan.id),
           action: "APPROVED_DIRECTOR",
@@ -635,6 +636,13 @@ export function ProjectsManagementView({
           changedByRole: "Director",
           reason:
             "Plan approved by Director and forwarded to Endorsement Committee.",
+          directorReview: {
+            directorName: "Director",
+            directorRole: "Director",
+            reviewedAt: new Date().toISOString(),
+            decision: "APPROVED",
+            feedback: "Approved and forwarded to Committee.",
+          },
         });
         showToast(
           `Plan "${savedPlan.planName}" approved by Director and forwarded to Endorsing Committee!`,
@@ -657,6 +665,7 @@ export function ProjectsManagementView({
         recordPlanVersionEvent({
           planId: savedPlan.id,
           planReference: savedPlan.reference || savedPlan.planName,
+          planName: savedPlan.planName,
           projectCode: savedPlan.projectCode,
           versionNumber: getCurrentPlanVersionNumber(savedPlan.id),
           action: "RETURNED",
@@ -665,6 +674,15 @@ export function ProjectsManagementView({
           changedByRole: "Director",
           reason:
             savedPlan.rejectionReason || "Returned by Director for revisions.",
+          directorReview: {
+            directorName: "Director",
+            directorRole: "Director",
+            reviewedAt: new Date().toISOString(),
+            decision: "RETURNED",
+            feedback:
+              savedPlan.rejectionReason ||
+              "Returned by Director for revisions.",
+          },
         });
         showToast(
           `Plan "${savedPlan.planName}" returned to Procurement Officer with feedback.`,
@@ -818,6 +836,7 @@ export function ProjectsManagementView({
                     recordPlanVersionEvent({
                       planId: p.id,
                       planReference: p.reference || p.planName,
+                      planName: p.planName,
                       projectCode: p.projectCode,
                       versionNumber: getCurrentPlanVersionNumber(p.id),
                       action: "APPROVED_DIRECTOR",
@@ -827,6 +846,13 @@ export function ProjectsManagementView({
                       changedByRole: "Director",
                       reason:
                         "Plan approved by Director and forwarded to Endorsement Committee.",
+                      directorReview: {
+                        directorName: "Director",
+                        directorRole: "Director",
+                        reviewedAt: new Date().toISOString(),
+                        decision: "APPROVED",
+                        feedback: "Approved and forwarded to Committee.",
+                      },
                     });
                     showToast(
                       `Plan "${p.planName}" approved by Director and forwarded to Endorsing Committee!`,
@@ -857,6 +883,7 @@ export function ProjectsManagementView({
                     recordPlanVersionEvent({
                       planId: p.id,
                       planReference: p.reference || p.planName,
+                      planName: p.planName,
                       projectCode: p.projectCode,
                       versionNumber: getCurrentPlanVersionNumber(p.id),
                       action: "RETURNED",
@@ -864,6 +891,14 @@ export function ProjectsManagementView({
                       changedBy: "Director",
                       changedByRole: "Director",
                       reason: remarks || "Returned by Director for revisions.",
+                      directorReview: {
+                        directorName: "Director",
+                        directorRole: "Director",
+                        reviewedAt: new Date().toISOString(),
+                        decision: "RETURNED",
+                        feedback:
+                          remarks || "Returned by Director for revisions.",
+                      },
                     });
                     showToast(
                       `Plan "${p.planName}" returned to Officer for revision.`,

@@ -11,6 +11,8 @@ import {
   addPlanComment,
   mapBackendPlanToFrontend,
   type BackendPlan,
+  approvePlanCancellation,
+  rejectPlanCancellation,
 } from "../../../../lib/plansApi";
 import type { AuthUser } from "../../../../lib/authTypes";
 import {
@@ -214,6 +216,15 @@ export function usePlanForReview({
   const [budgetYearFilter, setBudgetYearFilter] = useState<string>("ALL");
   const [regionFilter, setRegionFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [selectedProjectCode, setSelectedProjectCode] = useState<string | null>(
+    () => {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("project") || null;
+      }
+      return null;
+    },
+  );
 
   // Selection states
   const [selectedPlanForReview, setSelectedPlanForReview] =
@@ -391,10 +402,12 @@ export function usePlanForReview({
     } else {
       isAwaitingReview =
         p.status === "Submitted to Director" ||
+        p.status === "Cancellation Requested" ||
         p.status === "Returned" ||
         p.status === "Returned for Revision" ||
         p.status === "Committee Rejected" ||
         (p as any).status === "SUBMITTED" ||
+        (p as any).status === "CANCELLATION_REQUESTED" ||
         (p as any).status === "RETURNED_FOR_REVISION" ||
         (p as any).status === "REJECTED" ||
         (p as any).status === "COMMITTEE_REJECTED";
@@ -601,17 +614,17 @@ export function usePlanForReview({
     plan: ProcurementPlan,
     deadlineDate?: string,
   ) => {
+    const targetDate = deadlineDate || committeeDeadlineDate;
+    const days = targetDate
+      ? Math.max(
+          1,
+          Math.round(
+            (new Date(targetDate).getTime() - new Date().getTime()) /
+              (1000 * 60 * 60 * 24),
+          ),
+        )
+      : 7;
     try {
-      const targetDate = deadlineDate || committeeDeadlineDate;
-      const days = targetDate
-        ? Math.max(
-            1,
-            Math.round(
-              (new Date(targetDate).getTime() - new Date().getTime()) /
-                (1000 * 60 * 60 * 24),
-            ),
-          )
-        : 7;
       await sendPlanToCommittee(plan.id, targetDate, days);
     } catch (err) {
       console.warn("Backend sendPlanToCommittee note:", err);
@@ -623,16 +636,52 @@ export function usePlanForReview({
       "Under Review",
     );
 
+    const directorName = user.displayName || user.email || "Director";
     recordPlanVersionEvent({
       planId: plan.id,
       planReference: plan.reference || plan.planName,
+      planName: plan.planName,
       projectCode: plan.projectCode,
       versionNumber: getCurrentPlanVersionNumber(plan.id),
-      action: "SENT_TO_COMMITTEE",
-      actionLabel: "Plan Endorsed & Sent to Committee",
-      changedBy: user.displayName || user.email || "Director",
+      action: "APPROVED_DIRECTOR",
+      actionLabel: "Plan Approved by Director & Sent to Committee",
+      changedBy: directorName,
       changedByRole: "Director",
-      reason: "Approved and submitted for Endorsement Committee review.",
+      reason:
+        returnRemarks.trim() ||
+        "Plan approved by Director and forwarded to Endorsement Committee with 7-day review window.",
+      directorReview: {
+        directorName,
+        directorRole: "Director",
+        reviewedAt: new Date().toISOString(),
+        decision: "APPROVED",
+        feedback:
+          returnRemarks.trim() || "Approved and forwarded to Committee.",
+        committeeDeadline: targetDate,
+        daysAllotted: days,
+      },
+      projectDetails: {
+        code: plan.projectCode,
+      },
+      planDetails: {
+        planName: plan.planName,
+        planReference: plan.reference,
+        budgetYear: plan.budgetYear,
+        category: plan.category,
+        status: "Committee Review",
+        estimatedTotal: Number(plan.estimatedValue || plan.estimatedTotal) || 0,
+        currency: "ETB",
+        activitiesCount: (plan.activities || []).length,
+      },
+      activities: (plan.activities || []).map((a: any) => ({
+        id: a.id,
+        activityRefNo: a.activityRefNo || a.reference || a.id,
+        description: a.description,
+        method: a.method,
+        estimatedAmount: Number(a.estimatedAmount || a.estimatedBudget) || 0,
+        currency: a.currency || "ETB",
+        status: "Under Review",
+      })),
     });
 
     // Notify Officer if Director approved with comment/remarks (Req 2)
@@ -718,16 +767,47 @@ export function usePlanForReview({
       reasonText,
     );
 
+    const directorName = user.displayName || user.email || "Director";
     recordPlanVersionEvent({
       planId: plan.id,
       planReference: plan.reference || plan.planName,
+      planName: plan.planName,
       projectCode: plan.projectCode,
       versionNumber: getCurrentPlanVersionNumber(plan.id),
       action: "RETURNED",
       actionLabel: "Plan Returned by Director for Revision",
-      changedBy: user.displayName || user.email || "Director",
+      changedBy: directorName,
       changedByRole: "Director",
       reason: reasonText,
+      directorReview: {
+        directorName,
+        directorRole: "Director",
+        reviewedAt: new Date().toISOString(),
+        decision: "RETURNED",
+        feedback: reasonText,
+      },
+      projectDetails: {
+        code: plan.projectCode,
+      },
+      planDetails: {
+        planName: plan.planName,
+        planReference: plan.reference,
+        budgetYear: plan.budgetYear,
+        category: plan.category,
+        status: "Returned for Revision",
+        estimatedTotal: Number(plan.estimatedValue || plan.estimatedTotal) || 0,
+        currency: "ETB",
+        activitiesCount: (plan.activities || []).length,
+      },
+      activities: (plan.activities || []).map((a: any) => ({
+        id: a.id,
+        activityRefNo: a.activityRefNo || a.reference || a.id,
+        description: a.description,
+        method: a.method,
+        estimatedAmount: Number(a.estimatedAmount || a.estimatedBudget) || 0,
+        currency: a.currency || "ETB",
+        status: "Returned",
+      })),
     });
 
     await loadPlans();
@@ -736,6 +816,275 @@ export function usePlanForReview({
     showToast(
       `Plan "${plan.planName}" returned to Procurement Officer for revision.`,
     );
+  };
+
+  // Director Decision: Approve Cancellation Request
+  const handleApprovePlanCancellation = async (
+    plan: ProcurementPlan,
+    comment?: string,
+  ) => {
+    try {
+      await approvePlanCancellation(plan.id, comment);
+    } catch (err) {
+      console.warn("Backend approvePlanCancellation note:", err);
+    }
+
+    updateLocalStoragePlanAndActivities(
+      plan,
+      "Cancelled",
+      "Cancelled",
+      plan.cancellationReason || "Plan cancelled by Director.",
+    );
+
+    const directorName = user.displayName || user.email || "Director";
+    recordPlanVersionEvent({
+      planId: plan.id,
+      planReference: plan.reference || plan.planName,
+      planName: plan.planName,
+      projectCode: plan.projectCode,
+      versionNumber: getCurrentPlanVersionNumber(plan.id),
+      action: "PLAN_CANCELLED",
+      actionLabel: "Plan Cancelled by Director",
+      changedBy: directorName,
+      changedByRole: "Director",
+      reason: plan.cancellationReason || "Plan cancelled upon officer request.",
+      directorReview: {
+        directorName,
+        directorRole: "Director",
+        reviewedAt: new Date().toISOString(),
+        decision: "RETURNED",
+        feedback: comment || plan.cancellationReason,
+      },
+    });
+
+    await loadPlans();
+    setSelectedPlanForReview(null);
+    setReturnRemarks("");
+    showToast(
+      `Procurement Plan "${plan.planName}" has been successfully cancelled.`,
+    );
+  };
+
+  // Director Decision: Decline Cancellation Request
+  const handleRejectPlanCancellation = async (
+    plan: ProcurementPlan,
+    comment?: string,
+  ) => {
+    try {
+      await rejectPlanCancellation(plan.id, comment);
+    } catch (err) {
+      console.warn("Backend rejectPlanCancellation note:", err);
+    }
+
+    updateLocalStoragePlanAndActivities(
+      plan,
+      "Finally Approved",
+      undefined,
+      comment,
+    );
+
+    const directorName = user.displayName || user.email || "Director";
+    recordPlanVersionEvent({
+      planId: plan.id,
+      planReference: plan.reference || plan.planName,
+      planName: plan.planName,
+      projectCode: plan.projectCode,
+      versionNumber: getCurrentPlanVersionNumber(plan.id),
+      action: "CANCELLATION_REJECTED",
+      actionLabel: "Cancellation Request Declined by Director",
+      changedBy: directorName,
+      changedByRole: "Director",
+      reason:
+        comment ||
+        "Cancellation request was declined. Plan remains finally approved.",
+    });
+
+    await loadPlans();
+    setSelectedPlanForReview(null);
+    setReturnRemarks("");
+    showToast(
+      `Cancellation request for plan "${plan.planName}" was declined. Plan remains Approved.`,
+    );
+  };
+
+  // Director Decision: Batch or Partial Review with Mandatory Feedback
+  const handleBatchReviewPlans = async ({
+    approvedPlanIds,
+    unapprovedComments,
+    deadlineDate,
+  }: {
+    approvedPlanIds: string[];
+    unapprovedComments: Record<string, string>;
+    deadlineDate?: string;
+  }) => {
+    const targetDate = deadlineDate || committeeDeadlineDate;
+    const days = targetDate
+      ? Math.max(
+          1,
+          Math.round(
+            (new Date(targetDate).getTime() - new Date().getTime()) /
+              (1000 * 60 * 60 * 24),
+          ),
+        )
+      : 7;
+
+    // 1. Process Approved Plans -> Send to Committee
+    for (const planId of approvedPlanIds) {
+      const plan = plans.find((p) => p.id === planId);
+      if (!plan) continue;
+
+      try {
+        await sendPlanToCommittee(plan.id, targetDate, days);
+      } catch (err) {
+        console.warn("sendPlanToCommittee batch note:", err);
+      }
+
+      updateLocalStoragePlanAndActivities(
+        plan,
+        "Committee Review",
+        "Under Review",
+      );
+
+      const directorName = user.displayName || user.email || "Director";
+      recordPlanVersionEvent({
+        planId: plan.id,
+        planReference: plan.reference || plan.planName,
+        planName: plan.planName,
+        projectCode: plan.projectCode,
+        versionNumber: getCurrentPlanVersionNumber(plan.id),
+        action: "APPROVED_DIRECTOR",
+        actionLabel: "Plan Approved by Director & Sent to Committee",
+        changedBy: directorName,
+        changedByRole: "Director",
+        reason:
+          "Plan approved by Director and forwarded to Endorsement Committee.",
+        directorReview: {
+          directorName,
+          directorRole: "Director",
+          reviewedAt: new Date().toISOString(),
+          decision: "APPROVED",
+          feedback: "Approved in batch review and forwarded to Committee.",
+          committeeDeadline: targetDate,
+          daysAllotted: days,
+        },
+        projectDetails: {
+          code: plan.projectCode,
+        },
+        planDetails: {
+          planName: plan.planName,
+          planReference: plan.reference,
+          budgetYear: plan.budgetYear,
+          category: plan.category,
+          status: "Committee Review",
+          estimatedTotal:
+            Number(plan.estimatedValue || plan.estimatedTotal) || 0,
+          currency: "ETB",
+          activitiesCount: (plan.activities || []).length,
+        },
+        activities: (plan.activities || []).map((a: any) => ({
+          id: a.id,
+          activityRefNo: a.activityRefNo || a.reference || a.id,
+          description: a.description,
+          method: a.method,
+          estimatedAmount: Number(a.estimatedAmount || a.estimatedBudget) || 0,
+          currency: a.currency || "ETB",
+          status: "Under Review",
+        })),
+      });
+    }
+
+    // 2. Process Unapproved / Returned Plans with Feedback
+    for (const [planId, comment] of Object.entries(unapprovedComments)) {
+      const plan = plans.find((p) => p.id === planId);
+      if (!plan) continue;
+
+      const reasonText = comment.trim() || "Returned by Director for revision.";
+      try {
+        await rejectPlan(plan.id, reasonText);
+      } catch (err) {
+        console.warn("rejectPlan batch note:", err);
+      }
+
+      updateLocalStoragePlanAndActivities(
+        plan,
+        "Returned",
+        "Returned",
+        reasonText,
+      );
+
+      const directorName = user.displayName || user.email || "Director";
+      recordPlanVersionEvent({
+        planId: plan.id,
+        planReference: plan.reference || plan.planName,
+        planName: plan.planName,
+        projectCode: plan.projectCode,
+        versionNumber: getCurrentPlanVersionNumber(plan.id),
+        action: "RETURNED",
+        actionLabel: "Plan Returned by Director for Revision",
+        changedBy: directorName,
+        changedByRole: "Director",
+        reason: reasonText,
+        directorReview: {
+          directorName,
+          directorRole: "Director",
+          reviewedAt: new Date().toISOString(),
+          decision: "RETURNED",
+          feedback: reasonText,
+        },
+        projectDetails: {
+          code: plan.projectCode,
+        },
+        planDetails: {
+          planName: plan.planName,
+          planReference: plan.reference,
+          budgetYear: plan.budgetYear,
+          category: plan.category,
+          status: "Returned for Revision",
+          estimatedTotal:
+            Number(plan.estimatedValue || plan.estimatedTotal) || 0,
+          currency: "ETB",
+          activitiesCount: (plan.activities || []).length,
+        },
+        activities: (plan.activities || []).map((a: any) => ({
+          id: a.id,
+          activityRefNo: a.activityRefNo || a.reference || a.id,
+          description: a.description,
+          method: a.method,
+          estimatedAmount: Number(a.estimatedAmount || a.estimatedBudget) || 0,
+          currency: a.currency || "ETB",
+          status: "Returned",
+        })),
+      });
+
+      createLocalAlert({
+        title: `Plan Returned for Revision: ${plan.planName}`,
+        message: `Director returned plan "${plan.planName}". Instructions: "${reasonText}"`,
+        type: "DECISION",
+        severity: "HIGH",
+        targetRole: "OFFICER",
+        link: "/workspace/projects",
+      });
+    }
+
+    await loadPlans();
+    setSelectedPlanForReview(null);
+    setReturnRemarks("");
+
+    const approvedCount = approvedPlanIds.length;
+    const returnedCount = Object.keys(unapprovedComments).length;
+    if (approvedCount > 0 && returnedCount > 0) {
+      showToast(
+        `${approvedCount} ${approvedCount === 1 ? "plan" : "plans"} forwarded to Committee, and ${returnedCount} ${returnedCount === 1 ? "plan" : "plans"} returned to Officer with revision instructions.`,
+      );
+    } else if (approvedCount > 0) {
+      showToast(
+        `All ${approvedCount} ${approvedCount === 1 ? "plan" : "plans"} approved and forwarded to Endorsement Committee!`,
+      );
+    } else if (returnedCount > 0) {
+      showToast(
+        `${returnedCount} ${returnedCount === 1 ? "plan" : "plans"} returned to Officer for revision.`,
+      );
+    }
   };
 
   // Committee Decision: Vote Approve or Reject
@@ -1001,6 +1350,9 @@ export function usePlanForReview({
     handleActivityUpdate,
     handleApprovePlan,
     handleReturnPlan,
+    handleApprovePlanCancellation,
+    handleRejectPlanCancellation,
+    handleBatchReviewPlans,
     handleCommitteeVote,
     handleManagementDecision,
     handleAddActivityComment,
@@ -1016,5 +1368,7 @@ export function usePlanForReview({
     closeSelectedPlanForReview,
     closeEditingPlan,
     openActivitiesPlan,
+    selectedProjectCode,
+    setSelectedProjectCode,
   };
 }

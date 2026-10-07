@@ -12,7 +12,9 @@ export type PlanStatus =
   | "Committee Rejected"
   | "Management Approved"
   | "Management Rejected"
-  | "Returned for Revision";
+  | "Returned for Revision"
+  | "Cancellation Requested"
+  | "Cancelled";
 
 export interface ProcurementPlan {
   id: string;
@@ -64,6 +66,11 @@ export interface ProcurementPlan {
   planType?: "ANNUAL" | "ADDITIONAL";
   additionalPlanReason?: string;
   parentActivities?: any[];
+  cancellationReason?: string;
+  cancellationRequestedAt?: string;
+  cancellationRequestedBy?: string;
+  cancellationApprovedAt?: string;
+  cancellationApprovedBy?: string;
 }
 
 export function isAdditionalPlan(plan?: ProcurementPlan | null): boolean {

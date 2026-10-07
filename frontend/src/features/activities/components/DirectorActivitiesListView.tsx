@@ -66,6 +66,8 @@ interface DirectorActivitiesListViewProps {
   onBackClick: () => void;
   onApprovePlan?: (plan: ProcurementPlan) => void;
   onReturnPlan?: (plan: ProcurementPlan, remarks: string) => void;
+  onApproveCancellation?: (plan: ProcurementPlan, comment?: string) => void;
+  onRejectCancellation?: (plan: ProcurementPlan, comment?: string) => void;
   onCommitteeVote?: (
     plan: ProcurementPlan,
     decision: "APPROVE" | "REJECT",
@@ -361,6 +363,8 @@ export function DirectorActivitiesListView({
   onBackClick,
   onApprovePlan,
   onReturnPlan,
+  onApproveCancellation,
+  onRejectCancellation,
   onCommitteeVote,
   onManagementDecision,
   onAddActivityComment,
@@ -368,6 +372,11 @@ export function DirectorActivitiesListView({
   const isCommittee = userRole === "ENDORSING_COMMITTEE";
   const isManagement = userRole === "MANAGEMENT";
   const isDirector = userRole === "DIRECTOR";
+  const isCancellationRequested =
+    plan.status === "Cancellation Requested" ||
+    (plan as any).status === "CANCELLATION_REQUESTED";
+  const isCancelled =
+    plan.status === "Cancelled" || (plan as any).status === "CANCELLED";
   const isManagementReviewEligible =
     isManagement &&
     Boolean(onManagementDecision) &&
@@ -384,10 +393,12 @@ export function DirectorActivitiesListView({
       (plan as any).status === "WITH_COMMITTEE");
   const isDirectorActionEligible =
     isDirector &&
-    Boolean(onApprovePlan && onReturnPlan) &&
     from !== "vote-progress" &&
     parentSection !== "vote-progress" &&
-    (plan.status === "Submitted to Director" || plan.status === "Returned");
+    ((Boolean(onApprovePlan && onReturnPlan) &&
+      (plan.status === "Submitted to Director" ||
+        plan.status === "Returned")) ||
+      (isCancellationRequested && Boolean(onApproveCancellation)));
   const isEditable =
     isDirector &&
     parentSection === "plan-for-review" &&
@@ -1933,6 +1944,17 @@ export function DirectorActivitiesListView({
                 <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-300">
                   v{planVersion}
                 </span>
+                <span
+                  className={`rounded-md px-2 py-0.5 text-[11px] font-semibold border ${
+                    isCancelled
+                      ? "text-rose-800 bg-rose-50 border-rose-200"
+                      : isCancellationRequested
+                        ? "text-amber-800 bg-amber-50 border-amber-200"
+                        : "text-slate-700 bg-slate-100 border-slate-300"
+                  }`}
+                >
+                  {plan.status}
+                </span>
               </div>
 
               <button
@@ -1987,6 +2009,66 @@ export function DirectorActivitiesListView({
               </span>
             </div>
           </section>
+
+          {/* Cancellation Requested Alert Banner */}
+          {isCancellationRequested && (
+            <section className="rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-white p-5 shadow-sm space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 border border-amber-300">
+                  <AlertCircle className="h-5 w-5 text-amber-700" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold text-amber-950">
+                      Plan Cancellation Requested by Procurement Officer
+                    </h3>
+                    <span className="rounded-full bg-amber-200/80 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900 border border-amber-300">
+                      Awaiting Director Decision
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-900/80 mt-1">
+                    The procurement officer requested that this plan be
+                    cancelled following final approval.
+                  </p>
+                  {plan.cancellationReason && (
+                    <div className="mt-2 text-xs text-amber-950 bg-white/90 rounded-lg p-3 border border-amber-200">
+                      <span className="font-semibold block mb-0.5">
+                        Officer&apos;s Cancellation Reason:
+                      </span>
+                      <p className="whitespace-pre-wrap">
+                        {plan.cancellationReason}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Cancelled Banner */}
+          {isCancelled && (
+            <section className="rounded-2xl border-2 border-rose-300 bg-gradient-to-r from-rose-50/90 via-red-50/50 to-white p-5 shadow-sm space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-800 border border-rose-300">
+                  <XCircle className="h-5 w-5 text-rose-700" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-rose-950">
+                    This Procurement Plan Has Been Cancelled
+                  </h3>
+                  <p className="text-xs text-rose-900/80 mt-1">
+                    This plan was cancelled by the Director and is no longer
+                    active for procurement execution.
+                  </p>
+                  {plan.cancellationReason && (
+                    <p className="text-xs text-rose-900 mt-1 italic">
+                      Reason: &ldquo;{plan.cancellationReason}&rdquo;
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Additional Plan Justification Callout Banner */}
           {(plan.planType === "ADDITIONAL" || Boolean(plan.parentPlanId)) && (
@@ -2294,10 +2376,8 @@ export function DirectorActivitiesListView({
                           onClick={() => setSelectedActivity(act)}
                           className={`transition-all duration-200 cursor-pointer ${
                             isTargeted
-                              ? "bg-rose-100/90 ring-2 ring-rose-500 shadow-xs border-l-4 border-l-rose-600"
-                              : isFlagged
-                                ? "bg-rose-50/80 hover:bg-rose-100/70 border-l-4 border-l-rose-600"
-                                : "hover:bg-slate-50/80"
+                              ? "bg-slate-100/90 ring-2 ring-slate-400 shadow-xs"
+                              : "hover:bg-slate-50/80"
                           }`}
                         >
                           <td className="py-3 px-3.5 font-mono text-slate-500 font-medium text-xs text-center">
@@ -2719,30 +2799,72 @@ export function DirectorActivitiesListView({
                 </button>
               </div>
             </section>
-          ) : isDirectorActionEligible && onApprovePlan && onReturnPlan ? (
+          ) : isDirectorActionEligible ? (
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5 mt-6">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
                 <h3 className="text-sm font-semibold text-slate-900">
-                  Director Decision & Workflow Actions
+                  {isCancellationRequested
+                    ? "Director Decision - Plan Cancellation Request"
+                    : "Director Decision & Workflow Actions"}
                 </h3>
               </div>
 
+              {isCancellationRequested && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-rose-800 text-xs font-bold">
+                    <AlertCircle className="h-4 w-4 text-rose-600" />
+                    <span>Procurement Officer Requested Plan Cancellation</span>
+                  </div>
+                  {plan.cancellationReason && (
+                    <div className="text-xs text-rose-900 bg-white/80 rounded-lg p-3 border border-rose-100">
+                      <span className="font-semibold text-rose-950 block mb-1">
+                        Cancellation Reason:
+                      </span>
+                      <p className="whitespace-pre-wrap">
+                        {plan.cancellationReason}
+                      </p>
+                    </div>
+                  )}
+                  {plan.cancellationRequestedAt && (
+                    <p className="text-[11px] text-rose-700">
+                      Requested on:{" "}
+                      {new Date(plan.cancellationRequestedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-800">
-                  Revision Notes
-                  <span className="ml-1 text-rose-500 text-[10px] font-semibold">
-                    (Required to return to Officer)
-                  </span>
+                  {isCancellationRequested ? (
+                    <>
+                      Director Decision Remarks
+                      <span className="ml-1 text-slate-500 text-[10px] font-normal">
+                        (Optional comments recorded in version history)
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Revision Notes
+                      <span className="ml-1 text-rose-500 text-[10px] font-semibold">
+                        (Required to return to Officer)
+                      </span>
+                    </>
+                  )}
                 </label>
                 <textarea
                   rows={3}
                   value={directorReturnRemarks}
                   onChange={(e) => setDirectorReturnRemarks(e.target.value)}
-                  placeholder="Specify required corrections, missing documents or revision notes for the Procurement Officer..."
+                  placeholder={
+                    isCancellationRequested
+                      ? "Enter optional director notes or justification for this cancellation decision..."
+                      : "Specify required corrections, missing documents or revision notes for the Procurement Officer..."
+                  }
                   className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
                 />
-                {!directorReturnRemarks.trim() && (
+                {!isCancellationRequested && !directorReturnRemarks.trim() && (
                   <p className="text-[10px] text-slate-400 font-medium">
                     Revision notes are required before returning a plan to the
                     Procurement Officer.
@@ -2750,30 +2872,58 @@ export function DirectorActivitiesListView({
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => onApprovePlan(plan)}
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  <Send className="h-4 w-4 text-emerald-200" />
-                  <span>Approve &amp; Send to Committee</span>
-                </button>
+              {isCancellationRequested ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onApproveCancellation &&
+                      onApproveCancellation(plan, directorReturnRemarks)
+                    }
+                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-rose-700 text-white hover:bg-rose-800 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  >
+                    <XCircle className="h-4 w-4 text-rose-200" />
+                    <span>Approve Cancellation (Cancel Plan)</span>
+                  </button>
 
-                <button
-                  type="button"
-                  disabled={!directorReturnRemarks.trim()}
-                  onClick={() => onReturnPlan(plan, directorReturnRemarks)}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-semibold transition-colors ${
-                    directorReturnRemarks.trim()
-                      ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
-                      : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
-                  }`}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  <span>Return to Officer for Revision</span>
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onRejectCancellation &&
+                      onRejectCancellation(plan, directorReturnRemarks)
+                    }
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="h-4 w-4 text-slate-500" />
+                    <span>Decline Request (Keep Plan Approved)</span>
+                  </button>
+                </div>
+              ) : onApprovePlan && onReturnPlan ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => onApprovePlan(plan)}
+                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  >
+                    <Send className="h-4 w-4 text-emerald-200" />
+                    <span>Approve &amp; Send to Committee</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={!directorReturnRemarks.trim()}
+                    onClick={() => onReturnPlan(plan, directorReturnRemarks)}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-semibold transition-colors ${
+                      directorReturnRemarks.trim()
+                        ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
+                        : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
+                    }`}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    <span>Return to Officer for Revision</span>
+                  </button>
+                </div>
+              ) : null}
             </section>
           ) : null}
         </div>
@@ -2786,6 +2936,9 @@ export function DirectorActivitiesListView({
         planId={plan.id}
         planName={plan.planName}
         projectCode={project?.code || plan.projectCode || "BREFONS"}
+        plan={plan}
+        project={project}
+        activities={activities}
       />
     </div>
   );

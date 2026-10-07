@@ -635,6 +635,82 @@ describe("CreateProcurementActivityView", () => {
     expect(markup).not.toContain("Treasury");
   });
 
+  it("renders Exchange Rate (to ETB) field when a foreign currency is selected", () => {
+    const multiSourceProject: OfficerProject = {
+      ...project,
+      fundingSource: "World Bank (IDA)",
+    };
+
+    const dummyContext = {
+      activityReference: "ET-MoA-000001-GO-RFB",
+      category: "Goods" as const,
+      plan: {
+        ...plan,
+        name: "Test Plan",
+        category: "Goods" as const,
+      },
+      project: multiSourceProject,
+    };
+
+    const foreignCurrencyForm = {
+      activityDescription: "Test Description",
+      classificationCode: "",
+      comments: "",
+      commercialPractices: "",
+      contractType: "",
+      currency: "USD",
+      domesticPreference: "",
+      estimatedAmount: "250000",
+      evaluationOptionCode: "",
+      exchangeRate: "125",
+      fundingSource: "World Bank (IDA)",
+      highRiskCode: "",
+      inProcess: false,
+      invitationReference: "",
+      latitude: "",
+      location: "",
+      longitude: "",
+      lotRequired: false,
+      marketApproach: "",
+      method: "rfb-national",
+      oversightClassification: "",
+      pricingBasis: "",
+      procurementDocumentType: "",
+      procurementProcess: "",
+      qualificationApproach: "",
+      requiresUnAgency: false,
+      reviewType: "",
+      scopeNotes: "",
+      specificMethod: "",
+      subcomponent: "",
+    };
+
+    const markup = renderToStaticMarkup(
+      <RelatedInformationStep
+        additionalReferences={[]}
+        attempted={false}
+        context={dummyContext}
+        currencyOptions={[
+          { code: "ETB", label: "ETB (Ethiopian Birr)" },
+          { code: "USD", label: "USD ($)" },
+        ]}
+        financingAllocations={[]}
+        form={foreignCurrencyForm}
+        lots={[]}
+        onAddAdditionalReference={() => {}}
+        onChange={() => {}}
+        onFinancingChange={() => {}}
+        onLotsChange={() => {}}
+        onRemoveAdditionalReference={() => {}}
+        onUpdateAdditionalReference={() => {}}
+      />,
+    );
+
+    expect(markup).toContain("Exchange Rate (to ETB)");
+    expect(markup).toContain("125");
+    expect(markup).toContain("ETB equivalent");
+  });
+
   it("renders in edit mode and preserves custom activity data when editing", () => {
     const activityToEdit: ProcurementActivitySummary = {
       category: "Goods",
@@ -868,5 +944,208 @@ describe("CreateProcurementActivityView", () => {
     expect(markup).toContain("Post-qualification");
     expect(markup).toContain("Prior Review");
     expect(markup).toContain("Single Stage One Envelope");
+  });
+
+  it("renders single funding source mode by default with budget structure switcher", () => {
+    const dummyContext = {
+      activityReference: "ET-MoA-000001-GO-RFB",
+      category: "Goods" as const,
+      plan,
+      project,
+    };
+    const dummyForm = {
+      activityDescription: "Supply of tractors",
+      classificationCode: "",
+      comments: "",
+      contractType: "",
+      currency: "ETB",
+      domesticPreference: "",
+      estimatedAmount: "5800000",
+      evaluationOptionCode: "",
+      fundingSource: "Primary Loan/Grant Allocation",
+      highRiskCode: "",
+      inProcess: false,
+      invitationReference: "",
+      latitude: "",
+      location: "",
+      longitude: "",
+      lotRequired: false,
+      marketApproach: "",
+      method: "rfb-national",
+      oversightClassification: "",
+      pricingBasis: "",
+      procurementDocumentType: "",
+      procurementProcess: "",
+      qualificationApproach: "",
+      requiresUnAgency: false,
+      reviewType: "",
+      scopeNotes: "",
+      specificMethod: "",
+      subcomponent: "",
+      hasMultiFunding: false,
+      fundingContributions: [],
+    };
+
+    const markup = renderToStaticMarkup(
+      <RelatedInformationStep
+        additionalReferences={[]}
+        attempted={false}
+        context={dummyContext}
+        currencyOptions={[{ code: "ETB", label: "ETB - Ethiopian Birr" }]}
+        financingAllocations={[]}
+        form={dummyForm}
+        lots={[]}
+        onAddAdditionalReference={() => {}}
+        onChange={() => {}}
+        onFinancingChange={() => {}}
+        onLotsChange={() => {}}
+        onRemoveAdditionalReference={() => {}}
+        onUpdateAdditionalReference={() => {}}
+      />,
+    );
+
+    expect(markup).toContain("Budget &amp; Funding Structure");
+    expect(markup).toContain("Single Funding Source");
+    expect(markup).toContain("Multiple Sources (Co-Financing)");
+    expect(markup).toContain("Primary Loan/Grant Allocation");
+    expect(markup).toContain("5800000");
+  });
+
+  it("renders multi-source funding breakdown with native currencies and computes total equivalent based on conversion rates", () => {
+    const dummyContext = {
+      activityReference: "ET-MoA-000002-GO-RFB",
+      category: "Goods" as const,
+      plan,
+      project,
+    };
+    const multiFundingForm = {
+      activityDescription: "Heavy Machinery Procurement",
+      classificationCode: "",
+      comments: "",
+      contractType: "",
+      currency: "ETB",
+      domesticPreference: "",
+      estimatedAmount: "5800000",
+      evaluationOptionCode: "",
+      fundingSource: "World Bank IDA Grant / Government Counterpart",
+      highRiskCode: "",
+      inProcess: false,
+      invitationReference: "",
+      latitude: "",
+      location: "",
+      longitude: "",
+      lotRequired: false,
+      marketApproach: "",
+      method: "rfb-national",
+      oversightClassification: "",
+      pricingBasis: "",
+      procurementDocumentType: "",
+      procurementProcess: "",
+      qualificationApproach: "",
+      requiresUnAgency: false,
+      reviewType: "",
+      scopeNotes: "",
+      specificMethod: "",
+      subcomponent: "",
+      hasMultiFunding: true,
+      fundingContributions: [
+        {
+          id: "c-1",
+          fundingSource: "World Bank IDA Grant",
+          amount: "40000",
+          currency: "USD",
+          exchangeRate: "125",
+        },
+        {
+          id: "c-2",
+          fundingSource: "Government Counterpart",
+          amount: "800000",
+          currency: "ETB",
+          exchangeRate: "1",
+        },
+      ],
+    };
+
+    const markup = renderToStaticMarkup(
+      <RelatedInformationStep
+        additionalReferences={[]}
+        attempted={false}
+        context={dummyContext}
+        currencyOptions={[
+          { code: "ETB", label: "ETB - Ethiopian Birr" },
+          { code: "USD", label: "USD - US Dollar" },
+        ]}
+        financingAllocations={[]}
+        form={multiFundingForm}
+        lots={[]}
+        onAddAdditionalReference={() => {}}
+        onChange={() => {}}
+        onFinancingChange={() => {}}
+        onLotsChange={() => {}}
+        onRemoveAdditionalReference={() => {}}
+        onUpdateAdditionalReference={() => {}}
+      />,
+    );
+
+    // Verify multi-funding breakdown header and auto-total badge
+    expect(markup).toContain("Funding Sources &amp; Native Currency Breakdown");
+    expect(markup).toContain("Auto-Total");
+    expect(markup).toContain("Total Computed Activity Budget");
+
+    // Verify native amounts and currencies
+    expect(markup).toContain("World Bank IDA Grant");
+    expect(markup).toContain("Government Counterpart");
+    expect(markup).toContain("40,000.00 USD");
+    expect(markup).toContain("800,000.00 ETB");
+
+    // Verify computed equivalents:
+    // 40,000 USD * 125 = 5,000,000.00 ETB
+    // 800,000 ETB * 1 = 800,000.00 ETB
+    // Total = 5,800,000.00 ETB
+    expect(markup).toContain("5,000,000.00 ETB");
+    expect(markup).toContain("800,000.00 ETB");
+    expect(markup).toContain("5,800,000.00");
+  });
+
+  it("renders full supplementary submission flow with parent plan context and mandatory justification card when isAdditionalPlan is true", () => {
+    const markup = renderToStaticMarkup(
+      <CreateProcurementActivityView
+        isAdditionalPlan={true}
+        parentPlan={plan}
+        plan={plan}
+        project={project}
+      />,
+    );
+
+    // Verify full non-modal page headers and supplementary badge
+    expect(markup).toContain(
+      "Create Additional Procurement Plan &amp; Activity",
+    );
+    expect(markup).toContain("Supplementary Submission");
+    expect(markup).toContain(
+      "Submit an additional procurement activity for this approved plan along with mandatory justification.",
+    );
+
+    // Verify parent plan context banner
+    expect(markup).toContain("Approved Parent Plan:");
+    expect(markup).toContain(plan.name);
+    expect(markup).toContain(plan.reference);
+    expect(markup).toContain(plan.budgetYear);
+
+    // Verify mandatory justification reason section
+    expect(markup).toContain(
+      "Justification: Why was this activity not submitted with the original plan / batch?",
+    );
+    expect(markup).toContain("Visible to Director &amp; Committee");
+    expect(markup).toContain(
+      "This explanation will be prominently displayed on the Director and Endorsement Committee review boards.",
+    );
+    expect(markup).toContain("0 chars (min 10)");
+
+    // Verify it follows the exact same 4-step activity structure
+    expect(markup).toContain("Key Details");
+    expect(markup).toContain("Related Information");
+    expect(markup).toContain("Additional Details");
+    expect(markup).toContain("Roadmap");
   });
 });

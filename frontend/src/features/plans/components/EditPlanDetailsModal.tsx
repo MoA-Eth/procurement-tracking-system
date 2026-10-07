@@ -114,6 +114,7 @@ export function EditPlanDetailsModal({
       recordPlanVersionEvent({
         planId: plan.id || plan.reference,
         planReference: plan.reference,
+        planName: name.trim(),
         projectCode,
         versionNumber: nextVersion,
         action: "PLAN_REVISED",

@@ -23,6 +23,7 @@ import {
   type ProcurementPlanDraftInput,
   type SavedOfficerPlanRecord,
   upsertSavedPlanRecord,
+  saveOfficerPlanDraft,
 } from "@/features/projects/data/officerPlanDrafts";
 import {
   type OfficerProject,
@@ -139,7 +140,12 @@ export function OfficerProjectsView({
 }: {
   currentUser?: AuthUser;
   fromTracker?: boolean;
-  mode?: "create-activity" | "create-plan" | "edit-activity" | "edit-plan";
+  mode?:
+    | "create-activity"
+    | "create-additional-activity"
+    | "create-plan"
+    | "edit-activity"
+    | "edit-plan";
   selectedActivityReference?: string;
   selectedPlanReference?: string;
   selectedProjectCode?: string;
@@ -982,6 +988,167 @@ export function OfficerProjectsView({
     );
   }
 
+  async function handleCreateAdditionalPlanAndActivity({
+    additionalPlanReason,
+    activity,
+  }: {
+    additionalPlanReason: string;
+    activity: ProcurementActivitySummary;
+  }) {
+    if (!selectedProject || !selectedPlan) return;
+
+    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    const additionalPlanRef = `${selectedPlan.reference}-ADD-${randomSuffix}`;
+    const defaultPlanName = `[Additional] ${selectedPlan.name || selectedPlan.reference} - Supplementary`;
+    const officerName =
+      effectiveUser?.displayName ||
+      (effectiveUser as any)?.name ||
+      "Procurement Officer";
+
+    const newActivity: ProcurementActivitySummary = {
+      ...activity,
+      status: "Submitted to Director",
+      createdByName: officerName,
+      updatedByName: officerName,
+    };
+
+    const additionalPlan: ProcurementPlanSummary = {
+      ...selectedPlan,
+      id: `add-plan-${Date.now()}`,
+      reference: additionalPlanRef,
+      name: defaultPlanName,
+      parentPlanId: selectedPlan.id || selectedPlan.reference,
+      parentPlanReference: selectedPlan.reference,
+      parentPlanName: selectedPlan.name,
+      planType: "ADDITIONAL",
+      additionalPlanReason: additionalPlanReason,
+      status: "Submitted to Director",
+      activities: 1,
+      completedActivities: 0,
+      inProgressActivities: 0,
+      delayedActivities: 0,
+      estimatedValue: Number(activity.estimatedAmount || 0),
+      planActivities: [newActivity],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdByName: officerName,
+      updatedByName: officerName,
+    };
+
+    saveOfficerPlanDraft(selectedProject.code, additionalPlan);
+
+    const nextActivityRecords = addSavedActivityRecord(savedActivityRecords, {
+      activity: newActivity,
+      planReference: additionalPlanRef,
+      projectCode: selectedProject.code,
+    });
+    setSavedActivityRecords(nextActivityRecords);
+    window.localStorage.setItem(
+      OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+      JSON.stringify(nextActivityRecords),
+    );
+
+    const nextPlanRecords = upsertSavedPlanRecord(savedPlanRecords, {
+      plan: additionalPlan,
+      projectCode: selectedProject.code,
+    });
+    setSavedPlanRecords(nextPlanRecords);
+    window.localStorage.setItem(
+      OFFICER_PLAN_DRAFTS_STORAGE_KEY,
+      JSON.stringify(nextPlanRecords),
+    );
+
+    recordPlanVersionEvent({
+      planId: additionalPlan.id || additionalPlan.reference,
+      planReference: additionalPlan.reference,
+      projectCode: selectedProject.code,
+      versionNumber: 1,
+      action: "SUBMITTED",
+      actionLabel: "Additional Plan Submitted with Justification",
+      changedBy: officerName,
+      changedByRole: "Procurement Officer",
+      reason: `Additional Plan submitted: ${additionalPlanReason}`,
+    });
+
+    try {
+      let targetProjectId =
+        selectedProject.id &&
+        selectedProject.id.includes("-") &&
+        selectedProject.id.length > 20
+          ? selectedProject.id
+          : backendProjects.find(
+              (bp) =>
+                bp.code.toLowerCase() === selectedProject.code.toLowerCase() ||
+                bp.id === selectedProject.id ||
+                bp.name.toLowerCase() === selectedProject.name.toLowerCase(),
+            )?.id;
+
+      if (!targetProjectId) {
+        try {
+          const freshProjects = await fetchProjects();
+          const match = freshProjects.find(
+            (bp: any) =>
+              bp.code?.toLowerCase() === selectedProject.code.toLowerCase() ||
+              bp.id === selectedProject.id ||
+              bp.name?.toLowerCase() === selectedProject.name.toLowerCase(),
+          );
+          if (match?.id) targetProjectId = match.id;
+        } catch {}
+      }
+
+      if (targetProjectId) {
+        let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" =
+          "GOODS";
+        if (selectedPlan.category === "Works") catEnum = "WORKS";
+        else if (selectedPlan.category === "Consultancy Services")
+          catEnum = "CONSULTANCY";
+        else if (selectedPlan.category === "Non-Consulting Services")
+          catEnum = "NON_CONSULTING";
+
+        const now = new Date();
+        const oneYearLater = new Date(
+          now.getTime() + 365 * 24 * 60 * 60 * 1000,
+        );
+
+        const matchingParentBackendPlan = backendPlans.find(
+          (bp) =>
+            bp.id === selectedPlan.id ||
+            bp.id === selectedPlan.reference ||
+            bp.title.toLowerCase().trim() ===
+              selectedPlan.name.toLowerCase().trim() ||
+            bp.title.toLowerCase().trim() ===
+              selectedPlan.reference.toLowerCase().trim(),
+        );
+
+        const createdBackendPlan = await createPlan({
+          projectId: targetProjectId,
+          title: defaultPlanName,
+          budgetYear: selectedPlan.budgetYear,
+          procurementCategory: catEnum,
+          organization: selectedProject.organizationRegion || "Federal / FPCU",
+          description: `Supplementary plan: ${additionalPlanReason}`,
+          periodStart: now.toISOString(),
+          periodEnd: oneYearLater.toISOString(),
+          parentPlanId: matchingParentBackendPlan?.id || undefined,
+          planType: "ADDITIONAL",
+          additionalPlanReason: additionalPlanReason,
+        });
+
+        if (createdBackendPlan?.id) {
+          try {
+            await submitPlanForReview(createdBackendPlan.id);
+          } catch {}
+        }
+      }
+    } catch (backendErr) {
+      console.warn("Backend additional plan sync note:", backendErr);
+    }
+
+    invalidatePlansCache();
+    await loadData();
+    handlePlanUpdated(additionalPlan);
+  }
+
   async function saveActivity(activity: ProcurementActivitySummary) {
     if (!selectedProject || !selectedPlan) return;
 
@@ -1463,36 +1630,36 @@ export function OfficerProjectsView({
     }
   }
 
-  async function submitPlanToDirector(planReference?: string, reason?: string) {
-    if (!selectedProject || !selectedPlan) return;
+  async function submitSinglePlanInternal(
+    targetPlan: ProcurementPlanSummary,
+    planActs: readonly ProcurementActivitySummary[],
+    reason?: string,
+  ) {
+    if (!selectedProject) return;
 
     const totalActs =
-      (selectedPlanActivities?.length ?? 0) > 0
-        ? selectedPlanActivities.length
-        : (selectedPlan.activities ?? 0);
+      (planActs.length > 0 ? planActs.length : targetPlan.activities) ?? 0;
     if (totalActs === 0) {
       throw new Error(
-        "Cannot submit an empty plan. The plan must contain at least one procurement activity before submission to the Director.",
+        `Cannot submit empty plan "${targetPlan.name}". The plan must contain at least one procurement activity before submission to the Director.`,
       );
     }
 
     // 1. Resolve matching backend plan UUID
     const matchingBackendPlan = backendPlans.find(
       (bp) =>
-        bp.id === selectedPlan.id ||
-        bp.id === selectedPlan.reference ||
+        bp.id === targetPlan.id ||
+        bp.id === targetPlan.reference ||
         bp.title.toLowerCase().trim() ===
-          selectedPlan.name.toLowerCase().trim() ||
+          targetPlan.name.toLowerCase().trim() ||
         bp.title.toLowerCase().trim() ===
-          selectedPlan.reference.toLowerCase().trim(),
+          targetPlan.reference.toLowerCase().trim(),
     );
 
     let planIdToSubmit =
       matchingBackendPlan?.id ||
-      (selectedPlan.id &&
-      selectedPlan.id.includes("-") &&
-      selectedPlan.id.length > 20
-        ? selectedPlan.id
+      (targetPlan.id && targetPlan.id.includes("-") && targetPlan.id.length > 20
+        ? targetPlan.id
         : undefined);
 
     if (!planIdToSubmit) {
@@ -1533,21 +1700,21 @@ export function OfficerProjectsView({
 
       let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" =
         "GOODS";
-      if (selectedPlan.category === "Works") catEnum = "WORKS";
-      else if (selectedPlan.category === "Consultancy Services")
+      if (targetPlan.category === "Works") catEnum = "WORKS";
+      else if (targetPlan.category === "Consultancy Services")
         catEnum = "CONSULTANCY";
-      else if (selectedPlan.category === "Non-Consulting Services")
+      else if (targetPlan.category === "Non-Consulting Services")
         catEnum = "NON_CONSULTING";
 
       const created = await createPlan({
         projectId: targetProjectId,
-        title: selectedPlan.name.trim(),
-        budgetYear: selectedPlan.budgetYear,
+        title: targetPlan.name.trim(),
+        budgetYear: targetPlan.budgetYear,
         procurementCategory: catEnum,
-        organization: selectedPlan.organizationRegion || "Federal / FPCU",
-        description: selectedPlan.description || undefined,
-        periodStart: selectedPlan.planPeriod?.from?.gregorian || "2025-07-08",
-        periodEnd: selectedPlan.planPeriod?.to?.gregorian || "2026-07-07",
+        organization: targetPlan.organizationRegion || "Federal / FPCU",
+        description: targetPlan.description || undefined,
+        periodStart: targetPlan.planPeriod?.from?.gregorian || "2025-07-08",
+        periodEnd: targetPlan.planPeriod?.to?.gregorian || "2026-07-07",
       });
 
       if (!created || !created.id) {
@@ -1571,7 +1738,7 @@ export function OfficerProjectsView({
         existingBackendActs.map((a) => (a.description || "").toLowerCase()),
       );
 
-      for (const act of selectedPlanActivities) {
+      for (const act of planActs) {
         if (
           existingRefs.has((act.reference || "").toLowerCase()) ||
           existingDescs.has((act.description || "").toLowerCase())
@@ -1603,7 +1770,7 @@ export function OfficerProjectsView({
           procurementMethodId: resolvedMethodId,
           description: act.description || "Activity description",
           estimatedBudget: Number(act.estimatedAmount) || 500000,
-          currency: selectedPlan.currency || "ETB",
+          currency: targetPlan.currency || "ETB",
           stages: customStages.length > 0 ? customStages : undefined,
           fundings: [
             {
@@ -1621,8 +1788,7 @@ export function OfficerProjectsView({
       console.warn("Activity sync before submit note:", syncErr);
     }
 
-    // 3. Submit on backend — use PATCH status:SUBMITTED as primary because the
-    //    dedicated /submit endpoint rejects DRAFT plans with a voting-round error.
+    // 3. Submit on backend — use PATCH status:SUBMITTED as primary
     let submitResult: any = null;
     try {
       submitResult = await updatePlan(planIdToSubmit, { status: "SUBMITTED" });
@@ -1633,43 +1799,117 @@ export function OfficerProjectsView({
       );
     }
     if (!submitResult || !submitResult.id) {
-      // Fallback to the dedicated submit endpoint
       submitResult = await submitPlanForReview(planIdToSubmit);
     }
     if (!submitResult) {
       throw new Error("Server failed to confirm plan submission to Director.");
     }
 
-    // 4. Update local state and persistence ONLY upon verified backend submission
+    // 4. Update local state and persistence
     const updatedPlan: ProcurementPlanSummary = {
-      ...selectedPlan,
+      ...targetPlan,
       id: planIdToSubmit,
-      reference: selectedPlan.reference || planIdToSubmit,
+      reference: targetPlan.reference || planIdToSubmit,
       status: "Submitted to Director",
-      activities: selectedPlanActivities.length || selectedPlan.activities,
-      planActivities: selectedPlanActivities,
+      activities: planActs.length || targetPlan.activities,
+      planActivities: planActs,
     };
 
-    const nextRecords = upsertSavedPlanRecord(savedPlanRecords, {
-      plan: updatedPlan,
-      projectCode: selectedProject.code,
+    setSavedPlanRecords((prev) => {
+      const nextRecords = upsertSavedPlanRecord(prev, {
+        plan: updatedPlan,
+        projectCode: selectedProject.code,
+      });
+      window.localStorage.setItem(
+        OFFICER_PLAN_DRAFTS_STORAGE_KEY,
+        JSON.stringify(nextRecords),
+      );
+      return nextRecords;
     });
 
-    setSavedPlanRecords(nextRecords);
-    window.localStorage.setItem(
-      OFFICER_PLAN_DRAFTS_STORAGE_KEY,
-      JSON.stringify(nextRecords),
-    );
+    const isReturned = (targetPlan.status || "")
+      .toLowerCase()
+      .includes("returned");
+
+    const officerName =
+      effectiveUser?.displayName ||
+      (effectiveUser as any)?.name ||
+      "Procurement Officer";
+
+    const mappedActs = (planActs || []).map((act: any) => ({
+      id: act.id,
+      activityRefNo: act.activityRefNo || act.reference || act.id || "ACT-REF",
+      description: act.description || "Activity description",
+      method:
+        act.method || act.procurementMethod?.label || "Procurement Method",
+      marketApproach: act.marketApproach || "Open - National",
+      reviewType: act.reviewType || "Prior",
+      estimatedAmount: Number(act.estimatedAmount || act.estimatedBudget) || 0,
+      currency: act.currency || targetPlan.currency || "ETB",
+      status: act.status || "Submitted to Director",
+    }));
+
+    const planSnapshot = {
+      planName: targetPlan.name || targetPlan.reference,
+      planReference: targetPlan.reference,
+      budgetYear: targetPlan.budgetYear,
+      category: targetPlan.category,
+      status: isReturned ? "Resubmitted to Director" : "Submitted to Director",
+      estimatedTotal: targetPlan.estimatedValue || 0,
+      currency: targetPlan.currency || "ETB",
+      activitiesCount: mappedActs.length,
+      activities: mappedActs,
+    };
+
+    recordPlanVersionEvent({
+      planId: planIdToSubmit,
+      planReference: targetPlan.reference || planIdToSubmit,
+      planName: targetPlan.name,
+      projectCode: selectedProject.code,
+      projectName: selectedProject.name,
+      versionNumber: isReturned ? 2 : 1,
+      action: isReturned ? "RESUBMITTED" : "SUBMITTED",
+      actionLabel: isReturned
+        ? "Plan Resubmitted to Director"
+        : "Plan Submitted for Director Review",
+      changedBy: officerName,
+      changedByRole: "Procurement Officer",
+      reason:
+        reason ||
+        (isReturned
+          ? "Resubmitted with revisions addressing Director feedback."
+          : "Submitted for review."),
+      officerSubmission: {
+        officerName,
+        officerRole: "Procurement Officer",
+        officerEmail: effectiveUser?.email,
+        submittedAt: new Date().toISOString(),
+        submissionNotes:
+          reason ||
+          (isReturned
+            ? "Resubmitted with revisions addressing feedback"
+            : "Submitted for director review"),
+      },
+      projectDetails: {
+        code: selectedProject.code,
+        name: selectedProject.name,
+        organizationRegion: selectedProject.organizationRegion,
+        fundingSource: selectedProject.fundingSource,
+      },
+      planDetails: planSnapshot,
+      activities: mappedActs,
+      snapshot: planSnapshot,
+    });
 
     // Optimistically update backendPlans state
     setBackendPlans((prev) =>
       prev.map((bp) => {
         if (
           bp.id === planIdToSubmit ||
-          bp.id === selectedPlan.reference ||
-          bp.id === selectedPlan.id ||
-          bp.title === selectedPlan.reference ||
-          bp.title === selectedPlan.name
+          bp.id === targetPlan.reference ||
+          bp.id === targetPlan.id ||
+          bp.title === targetPlan.reference ||
+          bp.title === targetPlan.name
         ) {
           return {
             ...bp,
@@ -1679,7 +1919,44 @@ export function OfficerProjectsView({
         return bp;
       }),
     );
+  }
 
+  async function submitPlanToDirector(planReference?: string, reason?: string) {
+    if (!selectedProject || !selectedPlan) return;
+    await submitSinglePlanInternal(
+      selectedPlan,
+      selectedPlanActivities,
+      reason,
+    );
+    await loadData();
+  }
+
+  async function handleBatchSubmitPlansToDirector(
+    planReferences: string[],
+    revisionReason?: string,
+  ) {
+    if (!selectedProject || planReferences.length === 0) return;
+    for (const ref of planReferences) {
+      const p = selectedProject.plans.find(
+        (item) =>
+          item.reference.toLowerCase() === ref.toLowerCase() ||
+          item.id === ref ||
+          item.name.toLowerCase() === ref.toLowerCase(),
+      );
+      if (!p) continue;
+      const acts =
+        p.planActivities && p.planActivities.length > 0
+          ? p.planActivities
+          : savedActivityRecords
+              .filter(
+                (r) =>
+                  r.planReference?.toLowerCase() ===
+                    p.reference.toLowerCase() || r.planReference === p.id,
+              )
+              .map((r) => r.activity);
+      await submitSinglePlanInternal(p, acts, revisionReason);
+    }
+    invalidatePlansCache();
     await loadData();
   }
 
@@ -1951,7 +2228,9 @@ export function OfficerProjectsView({
   if (
     selectedProject &&
     selectedPlan &&
-    (mode === "create-activity" || mode === "edit-activity")
+    (mode === "create-activity" ||
+      mode === "create-additional-activity" ||
+      mode === "edit-activity")
   ) {
     if (
       mode === "edit-activity" &&
@@ -1979,7 +2258,9 @@ export function OfficerProjectsView({
             ? selectedActivity?.reference ||
               selectedActivityReference ||
               "edit-activity"
-            : "create-activity"
+            : mode === "create-additional-activity"
+              ? "create-additional-activity"
+              : "create-activity"
         }
         existingActivityCount={
           selectedPlan.activities + selectedPlanActivities.length
@@ -1987,7 +2268,12 @@ export function OfficerProjectsView({
         initialActivity={
           mode === "edit-activity" ? selectedActivity : undefined
         }
+        isAdditionalPlan={mode === "create-additional-activity"}
+        parentPlan={
+          mode === "create-additional-activity" ? selectedPlan : undefined
+        }
         onSaveActivity={saveActivity}
+        onSubmitAdditionalPlan={handleCreateAdditionalPlanAndActivity}
         plan={selectedPlan}
         project={selectedProject}
       />
@@ -2026,6 +2312,7 @@ export function OfficerProjectsView({
     return (
       <OfficerProjectDetailView
         onImportPlans={handleBulkImportPlans}
+        onSubmitPlans={handleBatchSubmitPlansToDirector}
         project={selectedProject}
       />
     );

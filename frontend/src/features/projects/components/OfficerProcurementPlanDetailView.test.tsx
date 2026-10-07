@@ -83,7 +83,7 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).toContain("Not Started");
   });
 
-  it("displays the Plan is ready for review banner and Submit to Director action for draft plans", () => {
+  it("does not display single-plan submit banner for draft plans since submissions are done in batch", () => {
     const draftPlan: ProcurementPlanSummary = {
       ...mockPlan,
       status: "Draft",
@@ -95,11 +95,11 @@ describe("OfficerProcurementPlanDetailView", () => {
       />,
     );
 
-    expect(markup).toContain("Plan is ready for review");
-    expect(markup).toContain(
+    expect(markup).not.toContain("Plan is ready for review");
+    expect(markup).not.toContain(
       "All activities have been drafted. Submit to the Director for final approval.",
     );
-    expect(markup).toContain("Submit to Director");
+    expect(markup).not.toContain("Submit to Director");
   });
 
   it("displays submitted status banner when plan is submitted to director", () => {
@@ -164,8 +164,8 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).not.toContain(
       "An empty plan or a plan without an activity will not be submitted",
     );
-    expect(markup).toContain("Submit to Director");
-    expect(markup).toContain("Plan is ready for review");
+    expect(markup).not.toContain("Submit to Director");
+    expect(markup).not.toContain("Plan is ready for review");
   });
 
   it("renders Register Contract button for individual activities in the table", () => {
@@ -181,5 +181,121 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).toContain(
       "/workspace/contracts?mode=register&amp;project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;activity=ET-MoA-000001-GO-RFQ&amp;from=projects",
     );
+  });
+
+  it("renders Add Activity link pointing to create-additional-activity mode when plan is approved", () => {
+    const approvedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Approved",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={approvedPlan}
+        project={mockProject}
+        savedActivities={[sampleActivity]}
+      />,
+    );
+
+    // Verify Add Activity link is rendered with non-modal create-additional-activity route
+    expect(markup).toContain("Add Activity");
+    expect(markup).toContain(
+      "/workspace/projects?project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;mode=create-additional-activity",
+    );
+  });
+
+  it("renders Add Activity link pointing to create-activity mode when plan is draft", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[sampleActivity]}
+      />,
+    );
+
+    // Verify Add Activity link is rendered with create-activity route
+    expect(markup).toContain("Add Activity");
+    expect(markup).toContain(
+      "/workspace/projects?project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;mode=create-activity",
+    );
+  });
+
+  it("renders Add Activity link pointing to create-additional-activity mode with justification when plan is under Committee Review", () => {
+    const committeePlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Committee Review",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={committeePlan}
+        project={mockProject}
+        savedActivities={[sampleActivity]}
+      />,
+    );
+
+    // Once a plan is submitted (e.g. in Committee Review), adding an activity creates an additional plan requiring justification
+    expect(markup).toContain("Add Activity");
+    expect(markup).toContain(
+      "/workspace/projects?project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;mode=create-additional-activity",
+    );
+  });
+
+  it("renders 'Request Cancellation' button when plan is Finally Approved", () => {
+    const approvedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Finally Approved",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={approvedPlan}
+        project={mockProject}
+        savedActivities={[sampleActivity]}
+      />,
+    );
+
+    expect(markup).toContain("Request Cancellation");
+  });
+
+  it("renders pending banner when plan is Cancellation Requested", () => {
+    const requestedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Cancellation Requested",
+      cancellationReason: "Found budget overlap with project alpha",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={requestedPlan}
+        project={mockProject}
+        savedActivities={[sampleActivity]}
+      />,
+    );
+
+    expect(markup).toContain(
+      "Cancellation Requested — Awaiting Director Review",
+    );
+    expect(markup).toContain("Found budget overlap with project alpha");
+  });
+
+  it("renders cancelled banner and prevents adding activities when plan is Cancelled", () => {
+    const cancelledPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Cancelled",
+      cancellationReason: "Plan terminated by management decree",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={cancelledPlan}
+        project={mockProject}
+        savedActivities={[sampleActivity]}
+      />,
+    );
+
+    expect(markup).toContain("Procurement Plan Cancelled");
+    expect(markup).toContain("Plan terminated by management decree");
+    expect(markup).not.toContain("mode=create-activity");
+    expect(markup).not.toContain("mode=create-additional-activity");
   });
 });

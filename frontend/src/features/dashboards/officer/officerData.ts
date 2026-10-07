@@ -16,6 +16,8 @@ export interface OfficerAlert {
   activityDescription?: string;
   delayedStage?: string;
   delayReason?: string;
+  category?: string;
+  method?: string;
 }
 
 export const alertToneClasses: Record<

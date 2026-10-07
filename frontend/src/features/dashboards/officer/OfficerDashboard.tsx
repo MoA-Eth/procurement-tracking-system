@@ -36,6 +36,8 @@ export function OfficerDashboard({ user }: { user: AuthUser }) {
       reference: alert.referenceLine,
       title:
         alert.activityDescription || alert.detailLine || alert.referenceLine,
+      category: alert.category,
+      method: alert.method,
       totalDelayDays: alert.delayDays ?? 0,
       stages: alert.stages || [],
       activityHref: alert.href,

@@ -6,7 +6,9 @@ export type ProcurementPlanStatus =
   | "Finally Approved"
   | "Returned"
   | "Returned for Revision"
-  | "Submitted to Director";
+  | "Submitted to Director"
+  | "Cancellation Requested"
+  | "Cancelled";
 export type ProcurementCategory =
   "Goods" | "Works" | "Non-Consulting Services" | "Consultancy Services";
 
@@ -57,6 +59,11 @@ export interface ProcurementPlanSummary {
   parentPlanName?: string;
   planType?: "ANNUAL" | "ADDITIONAL";
   additionalPlanReason?: string;
+  cancellationReason?: string;
+  cancellationRequestedAt?: string;
+  cancellationRequestedBy?: string;
+  cancellationApprovedAt?: string;
+  cancellationApprovedBy?: string;
 }
 
 export interface OfficerProject {

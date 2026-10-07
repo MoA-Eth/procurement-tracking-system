@@ -25,6 +25,7 @@ import {
   updateLookup,
   deleteLookup,
   subscribeToLookups,
+  FALLBACK_LOOKUPS,
   type LookupItem,
 } from "@/lib/lookupsApi";
 
@@ -117,6 +118,24 @@ const TAB_PLACEHOLDERS: Record<TabType, { code: string; label: string }> = {
   },
 };
 
+function getInitialTabCounts(): Record<TabType, number> {
+  const counts: Record<TabType, number> = {
+    PROJECT_CODE: 0,
+    SECTOR: 0,
+    FUNDING_SOURCE: 0,
+    FUNDING_TYPE: 0,
+    PROCUREMENT_METHOD: 0,
+    CURRENCY: 0,
+  };
+  (FALLBACK_LOOKUPS || []).forEach((item) => {
+    const t = (item.type || "").toUpperCase() as TabType;
+    if (typeof counts[t] === "number") {
+      counts[t]++;
+    }
+  });
+  return counts;
+}
+
 export function SettingsManagementView({
   currentUser: _currentUser,
 }: SettingsManagementViewProps) {
@@ -127,14 +146,8 @@ export function SettingsManagementView({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Tab live counts
-  const [tabCounts, setTabCounts] = useState<Record<TabType, number>>({
-    PROJECT_CODE: 0,
-    SECTOR: 0,
-    FUNDING_SOURCE: 0,
-    FUNDING_TYPE: 0,
-    PROCUREMENT_METHOD: 0,
-    CURRENCY: 0,
-  });
+  const [tabCounts, setTabCounts] =
+    useState<Record<TabType, number>>(getInitialTabCounts);
 
   // Form states (Add)
   const [showAddForm, setShowAddForm] = useState(false);
@@ -166,6 +179,10 @@ export function SettingsManagementView({
       setLoading(true);
       const data = await fetchLookups(activeTab);
       setLookups(data);
+      setTabCounts((prev) => ({
+        ...prev,
+        [activeTab]: data.length,
+      }));
     } catch {
       setLookups([]);
     } finally {
@@ -185,10 +202,12 @@ export function SettingsManagementView({
         CURRENCY: 0,
       };
       all.forEach((item) => {
-        if (counts[item.type as TabType] !== undefined) {
-          counts[item.type as TabType]++;
+        const itemType = (item.type || "").toUpperCase() as TabType;
+        if (typeof counts[itemType] === "number") {
+          counts[itemType]++;
         }
       });
+      setTabCounts(counts);
     } catch {
       // Fallback
     }
@@ -335,6 +354,7 @@ export function SettingsManagementView({
       return;
     await deleteLookup(item.id);
     setLookups((prev) => prev.filter((l) => l.id !== item.id));
+    loadAllCounts();
     showToast(`Removed "${item.code}".`);
   };
 

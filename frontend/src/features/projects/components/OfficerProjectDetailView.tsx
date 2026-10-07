@@ -4,8 +4,10 @@ import { useState } from "react";
 import { StatusText } from "../../../components/dashboard/StatusText";
 import type { OfficerProject } from "@/features/projects/data/officerProjects";
 import {
+  AlertCircle,
   Building2,
   CalendarRange,
+  CheckCircle2,
   Download,
   FileText,
   HandCoins,
@@ -13,8 +15,10 @@ import {
   Landmark,
   MapPin,
   Plus,
+  Send,
   Upload,
   UserRound,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { formatGregorianDate } from "@/features/projects/utils/ethiopianCalendar";
@@ -44,11 +48,77 @@ function formatProjectPeriod(project: OfficerProject): string | undefined {
 export function OfficerProjectDetailView({
   project,
   onImportPlans,
+  onSubmitPlans,
 }: {
   project: OfficerProject;
   onImportPlans?: (imported: ProcurementPlanSummary[]) => Promise<void> | void;
+  onSubmitPlans?: (
+    planReferences: string[],
+    revisionReason?: string,
+  ) => Promise<void> | void;
 }) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedPlanRefs, setSelectedPlanRefs] = useState<string[]>([]);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [revisionNotes, setRevisionNotes] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+
+  const isPlanEligible = (plan: ProcurementPlanSummary) => {
+    const s = (plan.status || "").toLowerCase();
+    const isDraftOrReturned =
+      s === "draft" ||
+      s === "returned" ||
+      s === "returned for revision" ||
+      s === "returned_for_revision";
+    const actCount = plan.activities || plan.planActivities?.length || 0;
+    return isDraftOrReturned && actCount > 0;
+  };
+
+  const eligiblePlans = project.plans.filter(isPlanEligible);
+  const isAllEligibleSelected =
+    eligiblePlans.length > 0 &&
+    eligiblePlans.every((p) => selectedPlanRefs.includes(p.reference));
+
+  const handleToggleSelectAll = () => {
+    if (isAllEligibleSelected) {
+      setSelectedPlanRefs([]);
+    } else {
+      setSelectedPlanRefs(eligiblePlans.map((p) => p.reference));
+    }
+  };
+
+  const handleTogglePlan = (ref: string) => {
+    setSelectedPlanRefs((prev) =>
+      prev.includes(ref) ? prev.filter((r) => r !== ref) : [...prev, ref],
+    );
+  };
+
+  const handleConfirmBatchSubmit = async () => {
+    if (!onSubmitPlans || selectedPlanRefs.length === 0) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+    try {
+      await onSubmitPlans(selectedPlanRefs, revisionNotes.trim() || undefined);
+      setSubmitSuccess(
+        `Successfully submitted ${selectedPlanRefs.length} ${
+          selectedPlanRefs.length === 1 ? "plan" : "plans"
+        } to the Director for review!`,
+      );
+      setSelectedPlanRefs([]);
+      setIsSubmitModalOpen(false);
+      setRevisionNotes("");
+    } catch (err: any) {
+      setSubmitError(
+        err?.message ||
+          "Failed to submit selected plans. Please check your network and try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const overviewFacts: Array<{
     icon: typeof Info;
@@ -223,8 +293,33 @@ export function OfficerProjectDetailView({
         ) : null}
       </section>
 
+      {/* ── BATCH SUBMIT SUCCESS NOTIFICATION ─────────────────────── */}
+      {submitSuccess && (
+        <div
+          role="status"
+          className="flex items-start gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-950 shadow-xs animate-in fade-in"
+        >
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+          <div className="flex-1 space-y-1">
+            <h3 className="text-xs font-semibold text-emerald-950">
+              Plans Submitted for Director Review
+            </h3>
+            <p className="text-xs leading-relaxed text-emerald-800">
+              {submitSuccess}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSubmitSuccess(null)}
+            className="text-emerald-700 hover:text-emerald-950"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       <section className="min-h-104 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs">
-        <div className="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3.5">
           <div className="flex items-center gap-2">
             <FileText
               aria-hidden="true"
@@ -232,36 +327,95 @@ export function OfficerProjectDetailView({
             />
             <h2 className="font-semibold text-[#16253d]">Procurement Plans</h2>
           </div>
-          <span className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
-            {project.plans.length} plans
-          </span>
+          <div className="flex items-center gap-2.5">
+            {selectedPlanRefs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitError(null);
+                  setIsSubmitModalOpen(true);
+                }}
+                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[#0A3C2F] px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer"
+              >
+                <Send className="h-3.5 w-3.5" />
+                <span>
+                  Submit Selected for Review ({selectedPlanRefs.length})
+                </span>
+              </button>
+            )}
+            <span className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600">
+              {project.plans.length} plans
+            </span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-208 border-collapse text-left">
             <thead>
               <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
-                <th className="w-[38%] px-5 py-3.5" scope="col">
+                <th className="w-12 px-3.5 py-3.5 text-center" scope="col">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all eligible plans"
+                    checked={isAllEligibleSelected}
+                    onChange={handleToggleSelectAll}
+                    disabled={eligiblePlans.length === 0}
+                    className="h-4 w-4 rounded border-slate-300 text-[#0A3C2F] focus:ring-[#0A3C2F] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  />
+                </th>
+                <th className="w-[34%] px-5 py-3.5" scope="col">
                   Plan name / reference
                 </th>
                 <th className="w-[12%] px-5 py-3.5" scope="col">
                   Fiscal year
                 </th>
-                <th className="w-[27%] px-5 py-3.5" scope="col">
+                <th className="w-[25%] px-5 py-3.5" scope="col">
                   Category
                 </th>
                 <th className="w-[10%] px-5 py-3.5 text-center" scope="col">
                   Activities
                 </th>
-                <th className="w-[13%] px-5 py-3.5" scope="col">
+                <th className="w-[15%] px-5 py-3.5" scope="col">
                   Status
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {project.plans.map((plan) => {
+                const eligible = isPlanEligible(plan);
+                const isSelected = selectedPlanRefs.includes(plan.reference);
+                const s = (plan.status || "").toLowerCase();
+                const isDraftOrReturned =
+                  s === "draft" ||
+                  s === "returned" ||
+                  s === "returned for revision" ||
+                  s === "returned_for_revision";
+                const actCount =
+                  plan.activities || plan.planActivities?.length || 0;
+                const disableReason = !isDraftOrReturned
+                  ? `Plan status is "${plan.status}" (already under review or approved)`
+                  : actCount === 0
+                    ? "Add at least 1 activity before submitting"
+                    : "";
+
                 return (
-                  <tr key={plan.reference} className="hover:bg-slate-50">
+                  <tr
+                    key={plan.reference}
+                    className={`hover:bg-slate-50 transition-colors ${
+                      isSelected ? "bg-emerald-50/40" : ""
+                    }`}
+                  >
+                    <td className="w-12 px-3.5 py-4 text-center">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select plan ${plan.name}`}
+                        checked={isSelected}
+                        disabled={!eligible}
+                        title={disableReason || undefined}
+                        onChange={() => handleTogglePlan(plan.reference)}
+                        className="h-4 w-4 rounded border-slate-300 text-[#0A3C2F] focus:ring-[#0A3C2F] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      />
+                    </td>
                     <td className="px-5 py-4">
                       <Link
                         className="font-semibold text-[#1261a8] underline-offset-4 hover:text-[#0A3C2F] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
@@ -302,6 +456,131 @@ export function OfficerProjectDetailView({
           </table>
         </div>
       </section>
+
+      {/* ── BATCH SUBMISSION MODAL ── */}
+      {isSubmitModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in"
+        >
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 bg-slate-50">
+              <div className="flex items-center gap-2">
+                <Send className="h-4.5 w-4.5 text-[#0A3C2F]" />
+                <h3 className="font-semibold text-[#16253d] text-base">
+                  Submit Plans for Review
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSubmitModalOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="h-4.5 w-4.5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              {submitError && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-rose-300 bg-rose-50 p-3 text-xs text-rose-900">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
+                  <p>{submitError}</p>
+                </div>
+              )}
+
+              <p className="text-xs text-slate-600 leading-relaxed">
+                You are about to submit the following{" "}
+                <strong className="text-slate-800 font-semibold">
+                  {selectedPlanRefs.length}{" "}
+                  {selectedPlanRefs.length === 1 ? "plan" : "plans"}
+                </strong>{" "}
+                from project{" "}
+                <strong className="text-slate-800 font-semibold">
+                  {project.name}
+                </strong>{" "}
+                to the Procurement Director for formal review.
+              </p>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 divide-y divide-slate-200/80">
+                {selectedPlanRefs.map((ref) => {
+                  const p = project.plans.find(
+                    (item) => item.reference === ref,
+                  );
+                  if (!p) return null;
+                  return (
+                    <div
+                      key={ref}
+                      className="py-2 first:pt-0 last:pb-0 flex items-center justify-between text-xs"
+                    >
+                      <div className="min-w-0 pr-3">
+                        <p className="font-semibold text-slate-800 truncate">
+                          {p.name}
+                        </p>
+                        <p className="font-mono text-[10px] text-slate-400">
+                          {p.reference} • {p.category}
+                        </p>
+                      </div>
+                      <span className="shrink-0 font-medium text-slate-600 bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px]">
+                        {p.activities || p.planActivities?.length || 0}{" "}
+                        activities
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {selectedPlanRefs.some((ref) => {
+                const p = project.plans.find((item) => item.reference === ref);
+                const s = (p?.status || "").toLowerCase();
+                return s.includes("returned");
+              }) && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Resubmission / Revision Notes (Optional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={revisionNotes}
+                    onChange={(e) => setRevisionNotes(e.target.value)}
+                    placeholder="Describe the adjustments made to address the Director's feedback..."
+                    className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-800 focus:border-[#0A3C2F] focus:outline-none focus:ring-1 focus:ring-[#0A3C2F]"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 border-t border-slate-200 bg-slate-50 px-5 py-3.5">
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => setIsSubmitModalOpen(false)}
+                className="h-9 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={handleConfirmBatchSubmit}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-60"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-3.5 w-3.5" />
+                    <span>Confirm &amp; Submit</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <PlanExcelImportModal
         isOpen={isImportModalOpen}

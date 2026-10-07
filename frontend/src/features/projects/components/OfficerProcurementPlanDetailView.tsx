@@ -14,8 +14,6 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Download,
   Plus,
   Search,
@@ -30,9 +28,12 @@ import {
   FileSignature,
   Clock,
   X,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState, useEffect } from "react";
+import { requestPlanCancellation } from "@/lib/plansApi";
 import {
   getCurrentPlanVersionNumber,
   getPlanVersionHistory,
@@ -46,8 +47,6 @@ import {
   calculateRealActivityDelay,
   type PhaseDelayModalData,
 } from "./PhaseDelayBreakdownModal";
-import { CreateAdditionalPlanModal } from "@/features/plans/components/CreateAdditionalPlanModal";
-import { saveOfficerPlanDraft } from "@/features/projects/data/officerPlanDrafts";
 
 type ActivityStatus = ProcurementActivityStatus;
 
@@ -104,20 +103,96 @@ export function OfficerProcurementPlanDetailView({
     activePlanStatus === "Returned for Revision" ||
     (activePlanStatus as string) === "RETURNED_FOR_REVISION";
 
+  const isDraftOrReturned =
+    activePlanStatus === "Draft" ||
+    (activePlanStatus as string) === "DRAFT" ||
+    currentPlan.status === "Draft" ||
+    (currentPlan.status as string) === "DRAFT" ||
+    isReturned;
+
+  const isFinallyApproved =
+    activePlanStatus === "Finally Approved" ||
+    activePlanStatus === "Approved" ||
+    (activePlanStatus as string) === "APPROVED" ||
+    (activePlanStatus as string) === "MANAGEMENT_APPROVED";
+
+  const isCancellationRequested =
+    activePlanStatus === "Cancellation Requested" ||
+    (activePlanStatus as string) === "CANCELLATION_REQUESTED";
+
+  const isCancelled =
+    activePlanStatus === "Cancelled" ||
+    (activePlanStatus as string) === "CANCELLED";
+
   // Modals state
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isEditPlanOpen, setIsEditPlanOpen] = useState(false);
   const [isImportExcelOpen, setIsImportExcelOpen] = useState(false);
   const [delayModalData, setDelayModalData] =
     useState<PhaseDelayModalData | null>(null);
-  const [isCreateAdditionalPlanOpen, setIsCreateAdditionalPlanOpen] =
-    useState(false);
   const [editingActivity, setEditingActivity] =
     useState<ProcurementActivitySummary | null>(null);
   const [isConfirmSubmitOpen, setIsConfirmSubmitOpen] = useState(false);
   const [resubmitReason, setResubmitReason] = useState("");
   const [emptyPlanNotice, setEmptyPlanNotice] = useState<string | null>(null);
   const emptyNoticeRef = useRef<HTMLElement>(null);
+
+  // Cancellation Modal state
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [isRequestingCancellation, setIsRequestingCancellation] =
+    useState(false);
+  const [cancellationError, setCancellationError] = useState<string | null>(
+    null,
+  );
+
+  const handleRequestCancellation = async () => {
+    if (!cancellationReason.trim()) return;
+    setIsRequestingCancellation(true);
+    setCancellationError(null);
+    try {
+      if (currentPlan.id) {
+        try {
+          await requestPlanCancellation(
+            currentPlan.id,
+            cancellationReason.trim(),
+          );
+        } catch (apiErr: any) {
+          console.warn("Backend requestPlanCancellation warning:", apiErr);
+        }
+      }
+
+      const updatedPlan: ProcurementPlanSummary = {
+        ...currentPlan,
+        status: "Cancellation Requested",
+        cancellationReason: cancellationReason.trim(),
+        cancellationRequestedAt: new Date().toISOString(),
+      };
+      setCurrentPlan(updatedPlan);
+      onUpdatePlan?.(updatedPlan);
+
+      recordPlanVersionEvent({
+        planId: currentPlan.id || currentPlan.reference,
+        planReference: currentPlan.reference,
+        projectCode: project.code,
+        versionNumber: versionNumber,
+        action: "CANCELLATION_REQUESTED",
+        actionLabel: "Plan Cancellation Requested",
+        changedBy: "Procurement Officer",
+        changedByRole: "Procurement Officer",
+        reason: cancellationReason.trim(),
+      });
+
+      setIsCancelModalOpen(false);
+      setCancellationReason("");
+    } catch (err: any) {
+      setCancellationError(
+        err?.message || "Failed to submit plan cancellation request",
+      );
+    } finally {
+      setIsRequestingCancellation(false);
+    }
+  };
 
   const handleSelectActivityDelay = (act: PlanActivity) => {
     const actStages =
@@ -130,11 +205,21 @@ export function OfficerProcurementPlanDetailView({
           ? Number((act as any).daysOverdue)
           : calculateRealActivityDelay(actStages);
 
+    const resolvedCat =
+      act.category ||
+      currentPlan.category ||
+      (act as any).details?.form?.category;
+    const resolvedMeth =
+      act.method ||
+      (act as any).details?.form?.method ||
+      (act as any).procurementMethod?.label ||
+      (act as any).procurementMethod;
+
     setDelayModalData({
       reference: act.reference,
       title: act.description || act.reference,
-      category: act.category,
-      method: act.method,
+      category: resolvedCat,
+      method: resolvedMeth,
       totalDelayDays: rawDelay,
       stages: actStages,
       activityHref:
@@ -150,7 +235,6 @@ export function OfficerProcurementPlanDetailView({
   };
 
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [currentPage, setCurrentPage] = useState(1);
   const [methodFilter, setMethodFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | ActivityStatus>(
@@ -243,20 +327,7 @@ export function OfficerProcurementPlanDetailView({
     });
   }, [activities, categoryFilter, methodFilter, searchQuery, statusFilter]);
 
-  const pageSize = 5;
-  const pageCount = Math.max(
-    1,
-    Math.ceil(filteredActivities.length / pageSize),
-  );
-  const safePage = Math.min(currentPage, pageCount);
-  const firstResult = filteredActivities.length
-    ? (safePage - 1) * pageSize + 1
-    : 0;
-  const lastResult = Math.min(safePage * pageSize, filteredActivities.length);
-  const visibleActivities = filteredActivities.slice(
-    (safePage - 1) * pageSize,
-    safePage * pageSize,
-  );
+  const visibleActivities = filteredActivities;
   const projectHref = `/workspace/projects?project=${encodeURIComponent(
     project.code,
   )}`;
@@ -352,64 +423,6 @@ export function OfficerProcurementPlanDetailView({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCreateAdditionalPlan = async (additionalPlanData: {
-    planName: string;
-    parentPlanId?: string;
-    parentPlanReference: string;
-    parentPlanName: string;
-    additionalPlanReason: string;
-    newActivity: Partial<ProcurementActivitySummary>;
-  }) => {
-    const randomSuffix = Math.floor(100 + Math.random() * 900);
-    const additionalPlanRef = `${currentPlan.reference}-ADD-${randomSuffix}`;
-    const additionalPlan: ProcurementPlanSummary = {
-      ...currentPlan,
-      id: `add-plan-${Date.now()}`,
-      reference: additionalPlanRef,
-      name: additionalPlanData.planName,
-      parentPlanId: currentPlan.id || currentPlan.reference,
-      parentPlanReference: currentPlan.reference,
-      parentPlanName: currentPlan.name,
-      planType: "ADDITIONAL",
-      additionalPlanReason: additionalPlanData.additionalPlanReason,
-      status: "Submitted to Director",
-      activities: 1,
-      completedActivities: 0,
-      inProgressActivities: 0,
-      delayedActivities: 0,
-      estimatedValue: Number(
-        additionalPlanData.newActivity.estimatedAmount || 0,
-      ),
-      planActivities: [
-        {
-          ...(additionalPlanData.newActivity as ProcurementActivitySummary),
-          status: "Submitted to Director",
-        },
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    saveOfficerPlanDraft(project.code, additionalPlan);
-
-    recordPlanVersionEvent({
-      planId: additionalPlan.id || additionalPlan.reference,
-      planReference: additionalPlan.reference,
-      projectCode: project.code,
-      versionNumber: 1,
-      action: "SUBMITTED",
-      actionLabel: "Additional Plan Submitted with Justification",
-      changedBy: currentPlan.createdByName || "Procurement Officer",
-      changedByRole: "Procurement Officer",
-      reason: `Additional Plan submitted: ${additionalPlanData.additionalPlanReason}`,
-    });
-
-    onUpdatePlan?.(additionalPlan);
-    alert(
-      `Additional plan "${additionalPlan.name}" submitted to Director with justification.`,
-    );
   };
 
   function exportActivities() {
@@ -571,50 +584,70 @@ export function OfficerProcurementPlanDetailView({
               Export Excel
             </button>
 
-            <button
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
-              onClick={() => setIsImportExcelOpen(true)}
-              type="button"
-            >
-              <Upload aria-hidden="true" className="h-3.5 w-3.5" />
-              Import Excel
-            </button>
-
-            {/* Add Activity Button (Enabled if Draft or Returned) */}
-            {(activePlanStatus === "Draft" || isReturned) && (
-              <Link
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] shadow-xs transition"
-                href={
-                  "/workspace/projects?project=" +
-                  encodeURIComponent(project.code) +
-                  "&plan=" +
-                  encodeURIComponent(currentPlan.reference) +
-                  "&mode=create-activity"
-                }
-              >
-                <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-                New Activity
-              </Link>
-            )}
-
-            {/* Create Additional Plan Button (Enabled when Plan is Finally Approved or Approved) */}
-            {(activePlanStatus === "Finally Approved" ||
-              activePlanStatus === "Approved" ||
-              currentPlan.status === "Finally Approved" ||
-              currentPlan.status === "Approved") && (
+            {/* Request Cancellation Button (visible when Finally Approved) */}
+            {isFinallyApproved && (
               <button
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-rose-300 bg-white px-3 text-xs font-semibold text-rose-700 shadow-2xs hover:bg-rose-50 hover:border-rose-400 transition cursor-pointer"
+                onClick={() => {
+                  setCancellationError(null);
+                  setCancellationReason("");
+                  setIsCancelModalOpen(true);
+                }}
                 type="button"
-                onClick={() => setIsCreateAdditionalPlanOpen(true)}
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] shadow-xs transition cursor-pointer"
-                title="Create an additional/supplementary plan to add new activities with required justification"
+                title="Request cancellation for this finally approved plan"
               >
-                <Plus
-                  aria-hidden="true"
-                  className="h-3.5 w-3.5 text-emerald-200"
-                />
-                <span>+ Create Additional Plan</span>
+                <XCircle className="h-3.5 w-3.5 text-rose-600" />
+                <span>Request Cancellation</span>
               </button>
             )}
+
+            {!isCancelled && (
+              <button
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+                onClick={() => setIsImportExcelOpen(true)}
+                type="button"
+              >
+                <Upload aria-hidden="true" className="h-3.5 w-3.5" />
+                Import Excel
+              </button>
+            )}
+
+            {/* Add Activity Button (Always Visible unless Cancelled: normal activity for draft/returned, additional plan & activity with justification once submitted) */}
+            {!isCancelled &&
+              (isDraftOrReturned ? (
+                <Link
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] shadow-xs transition cursor-pointer"
+                  href={
+                    "/workspace/projects?project=" +
+                    encodeURIComponent(project.code) +
+                    "&plan=" +
+                    encodeURIComponent(currentPlan.reference) +
+                    "&mode=create-activity"
+                  }
+                  title="Add procurement activity to this draft plan"
+                >
+                  <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+                  <span>Add Activity</span>
+                </Link>
+              ) : (
+                <Link
+                  href={
+                    "/workspace/projects?project=" +
+                    encodeURIComponent(project.code) +
+                    "&plan=" +
+                    encodeURIComponent(currentPlan.reference) +
+                    "&mode=create-additional-activity"
+                  }
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] shadow-xs transition cursor-pointer"
+                  title="Create an additional procurement plan & activity with mandatory justification"
+                >
+                  <Plus
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 text-emerald-200"
+                  />
+                  <span>Add Activity</span>
+                </Link>
+              ))}
           </div>
         </div>
       </header>
@@ -786,50 +819,6 @@ export function OfficerProcurementPlanDetailView({
         </section>
       )}
 
-      {/* ── DRAFT READY FOR SUBMISSION SECTION ─────────────────────── */}
-      {activePlanStatus === "Draft" && (
-        <section
-          aria-label="Submit plan for review"
-          className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[#0A3C2F] border border-emerald-200">
-              <CheckCircle2
-                aria-hidden="true"
-                className="h-5 w-5 text-[#0A3C2F]"
-              />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-[#10243f]">
-                Plan is ready for review
-              </h2>
-              <p className="text-xs text-slate-500">
-                All activities have been drafted. Submit to the Director for
-                final approval.
-              </p>
-            </div>
-          </div>
-          <button
-            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-2xs hover:bg-[#083025] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            disabled={isSubmitting}
-            onClick={handleOpenSubmitModal}
-            type="button"
-          >
-            {isSubmitting ? (
-              <>
-                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                <span>Submitting to Database...</span>
-              </>
-            ) : (
-              <>
-                <span>Submit to Director</span>
-                <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
-              </>
-            )}
-          </button>
-        </section>
-      )}
-
       {/* ── UNSYNCED LOCAL DRAFT WARNING ───────────────────────────── */}
       {activePlanStatus === "Submitted to Director" && !isSyncedToDatabase && (
         <section
@@ -914,6 +903,84 @@ export function OfficerProcurementPlanDetailView({
         </section>
       )}
 
+      {/* ── CANCELLATION REQUESTED BANNER ────────────────────────────── */}
+      {isCancellationRequested && (
+        <section
+          aria-label="Plan cancellation requested"
+          className="flex items-center justify-between gap-3.5 rounded-xl border border-amber-300 bg-amber-50/80 p-4 shadow-2xs"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+              <AlertTriangle className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-semibold text-amber-950">
+                  Cancellation Requested — Awaiting Director Review
+                </h2>
+                <span className="rounded bg-amber-200/80 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900">
+                  Under Review
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-amber-800">
+                {currentPlan.cancellationReason
+                  ? `Reason: "${currentPlan.cancellationReason}"`
+                  : "You have submitted a request to cancel this plan. Waiting for Director review."}
+              </p>
+            </div>
+          </div>
+          {hasPlanRevisions && (
+            <button
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 shadow-2xs hover:bg-amber-50 transition cursor-pointer"
+              onClick={() => setIsVersionHistoryOpen(true)}
+              type="button"
+            >
+              <History className="h-3.5 w-3.5 text-amber-800" />
+              Audit Trail
+            </button>
+          )}
+        </section>
+      )}
+
+      {/* ── CANCELLED STATUS BANNER ──────────────────────────────────── */}
+      {isCancelled && (
+        <section
+          aria-label="Plan cancelled banner"
+          className="flex items-center justify-between gap-3.5 rounded-xl border border-rose-300 bg-rose-50 p-4 shadow-2xs"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700 border border-rose-300">
+              <XCircle className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-semibold text-rose-950">
+                  Procurement Plan Cancelled
+                </h2>
+                <span className="rounded bg-rose-200 px-1.5 py-0.5 text-[10px] font-bold text-rose-900">
+                  Cancelled
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-rose-800">
+                {currentPlan.cancellationReason
+                  ? `This plan was cancelled by the Director. Reason: "${currentPlan.cancellationReason}"`
+                  : "This procurement plan has been formally cancelled by the Director and cannot be implemented."}
+              </p>
+            </div>
+          </div>
+          {hasPlanRevisions && (
+            <button
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-800 shadow-2xs hover:bg-rose-100/60 transition cursor-pointer"
+              onClick={() => setIsVersionHistoryOpen(true)}
+              type="button"
+            >
+              <History className="h-3.5 w-3.5 text-rose-700" />
+              Audit Trail
+            </button>
+          )}
+        </section>
+      )}
+
       {/* ── ACTIVITIES TABLE ────────────────────────────────────────── */}
       <section
         aria-labelledby="activities-title"
@@ -938,10 +1005,7 @@ export function OfficerProcurementPlanDetailView({
                 <input
                   className="min-w-0 flex-1 border-0 bg-transparent p-0 text-xs text-slate-800 outline-none placeholder:text-slate-400"
                   id="activity-search"
-                  onChange={(event) => {
-                    setSearchQuery(event.target.value);
-                    setCurrentPage(1);
-                  }}
+                  onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search activities..."
                   ref={searchInputRef}
                   type="search"
@@ -954,10 +1018,7 @@ export function OfficerProcurementPlanDetailView({
               <span className="sr-only">Filter activities by category</span>
               <select
                 className="h-9 w-full appearance-none rounded-md border border-slate-300 bg-white py-0 pr-9 pl-3 text-xs font-medium text-slate-700 outline-none hover:border-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 sm:w-auto sm:min-w-36"
-                onChange={(event) => {
-                  setCategoryFilter(event.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(event) => setCategoryFilter(event.target.value)}
                 value={categoryFilter}
               >
                 <option value="All">All Categories</option>
@@ -977,10 +1038,7 @@ export function OfficerProcurementPlanDetailView({
               <span className="sr-only">Filter activities by method</span>
               <select
                 className="h-9 w-full appearance-none rounded-md border border-slate-300 bg-white py-0 pr-9 pl-3 text-xs font-medium text-slate-700 outline-none hover:border-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 sm:w-auto sm:min-w-36"
-                onChange={(event) => {
-                  setMethodFilter(event.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(event) => setMethodFilter(event.target.value)}
                 value={methodFilter}
               >
                 <option value="All">All Methods</option>
@@ -1000,10 +1058,9 @@ export function OfficerProcurementPlanDetailView({
               <span className="sr-only">Filter activities by status</span>
               <select
                 className="h-9 w-full appearance-none rounded-md border border-slate-300 bg-white py-0 pr-9 pl-3 text-xs font-medium text-slate-700 outline-none hover:border-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 sm:w-auto sm:min-w-32"
-                onChange={(event) => {
-                  setStatusFilter(event.target.value as "All" | ActivityStatus);
-                  setCurrentPage(1);
-                }}
+                onChange={(event) =>
+                  setStatusFilter(event.target.value as "All" | ActivityStatus)
+                }
                 value={statusFilter}
               >
                 <option value="All">All Statuses</option>
@@ -1020,9 +1077,9 @@ export function OfficerProcurementPlanDetailView({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[620px] overflow-y-auto border-b border-slate-200">
           <table className="w-full table-fixed border-collapse text-left">
-            <thead>
+            <thead className="sticky top-0 z-10 shadow-xs">
               <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
                 <th className="w-[10%] px-2 py-3" scope="col">
                   Ref
@@ -1105,40 +1162,20 @@ export function OfficerProcurementPlanDetailView({
           </table>
         </div>
 
-        <footer className="flex flex-col gap-3 border-t border-slate-200 bg-[#fbfcfd] px-4 py-3 text-[10px] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-          <p aria-live="polite">
-            Showing {firstResult} to {lastResult} of {filteredActivities.length}{" "}
-            results
-          </p>
-          <div aria-label="Activity pagination" className="flex items-center">
-            <PaginationButton
-              ariaLabel="Previous activity page"
-              disabled={safePage === 1}
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-            >
-              <ChevronLeft aria-hidden="true" className="h-3.5 w-3.5" />
-            </PaginationButton>
-            {Array.from({ length: pageCount }, (_, index) => index + 1).map(
-              (page) => (
-                <PaginationButton
-                  key={page}
-                  active={safePage === page}
-                  ariaLabel={`Activity page ${page}`}
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </PaginationButton>
-              ),
+        <footer className="flex flex-col gap-2 bg-[#fbfcfd] px-4 py-3 text-[11px] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p aria-live="polite" className="font-medium text-slate-700">
+            Showing all {filteredActivities.length}{" "}
+            {filteredActivities.length === 1 ? "activity" : "activities"}
+            {filteredActivities.length !== activities.length && (
+              <span className="text-slate-400 font-normal">
+                {" "}
+                (filtered from {activities.length} total)
+              </span>
             )}
-            <PaginationButton
-              ariaLabel="Next activity page"
-              disabled={safePage === pageCount}
-              onClick={() =>
-                setCurrentPage((page) => Math.min(pageCount, page + 1))
-              }
-            >
-              <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />
-            </PaginationButton>
+          </p>
+          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>All activities on one page • Scrollable list</span>
           </div>
         </footer>
       </section>
@@ -1151,6 +1188,9 @@ export function OfficerProcurementPlanDetailView({
         planId={currentPlan.id || currentPlan.reference}
         planName={currentPlan.name}
         projectCode={project.code}
+        plan={currentPlan}
+        project={project}
+        activities={currentPlan.planActivities || []}
       />
 
       <ExcelImportModal
@@ -1165,16 +1205,6 @@ export function OfficerProcurementPlanDetailView({
         isOpen={Boolean(delayModalData)}
         onClose={() => setDelayModalData(null)}
         data={delayModalData}
-      />
-
-      <CreateAdditionalPlanModal
-        isOpen={isCreateAdditionalPlanOpen}
-        onClose={() => setIsCreateAdditionalPlanOpen(false)}
-        parentPlan={currentPlan}
-        projectCode={project.code}
-        projectName={project.name}
-        assignedOfficerName={currentPlan.createdByName}
-        onSubmit={handleCreateAdditionalPlan}
       />
 
       {/* ── CONFIRM SUBMISSION TO DIRECTOR MODAL ─────────────────────── */}
@@ -1318,6 +1348,144 @@ export function OfficerProcurementPlanDetailView({
           </div>
         </div>
       )}
+
+      {/* ── REQUEST PLAN CANCELLATION MODAL ─────────────────────────── */}
+      {isCancelModalOpen && (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in"
+          role="dialog"
+        >
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-rose-100 bg-rose-50/60 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-600 text-white shadow-xs">
+                  <XCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-rose-950">
+                    Request Plan Cancellation
+                  </h3>
+                  <p className="text-[11px] text-rose-700">
+                    Submit request to Director with justification
+                  </p>
+                </div>
+              </div>
+              <button
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white hover:text-slate-700 transition"
+                onClick={() => {
+                  if (!isRequestingCancellation) {
+                    setIsCancelModalOpen(false);
+                    setCancellationReason("");
+                    setCancellationError(null);
+                  }
+                }}
+                type="button"
+                disabled={isRequestingCancellation}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                This plan is currently <strong>Finally Approved</strong>. If
+                this plan contains errors or cannot be implemented, provide a
+                detailed reason below to request formal cancellation from the
+                Director.
+              </p>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between items-center text-slate-600">
+                  <span className="text-slate-500 font-medium">Plan Name:</span>
+                  <span className="font-semibold text-slate-900 text-right truncate max-w-[260px]">
+                    {currentPlan.name}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span className="text-slate-500 font-medium">Reference:</span>
+                  <span className="font-mono font-semibold text-slate-900">
+                    {currentPlan.reference}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span className="text-slate-500 font-medium">
+                    Activities:
+                  </span>
+                  <span className="font-semibold text-slate-900">
+                    {activities.length}{" "}
+                    {activities.length === 1 ? "activity" : "activities"}
+                  </span>
+                </div>
+              </div>
+
+              {cancellationError && (
+                <div className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-xs text-rose-800">
+                  {cancellationError}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="cancellation-reason"
+                  className="block text-xs font-semibold text-slate-700"
+                >
+                  Cancellation Reason <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  id="cancellation-reason"
+                  className="w-full rounded-lg border border-slate-300 p-2.5 text-xs text-slate-800 outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-600 disabled:bg-slate-50"
+                  placeholder="State specifically why this plan cannot be implemented (e.g. Scope change, budgetary reallocation, or duplicated item)..."
+                  rows={4}
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  disabled={isRequestingCancellation}
+                  required
+                />
+                <p className="text-[11px] text-slate-500">
+                  This reason will be recorded in the version history audit
+                  trail and sent to the Director for review.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 bg-slate-50 px-6 py-3.5">
+              <button
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                disabled={isRequestingCancellation}
+                onClick={() => {
+                  setIsCancelModalOpen(false);
+                  setCancellationReason("");
+                  setCancellationError(null);
+                }}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={
+                  isRequestingCancellation || !cancellationReason.trim()
+                }
+                onClick={handleRequestCancellation}
+                type="button"
+              >
+                {isRequestingCancellation ? (
+                  <>
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Submitting Request...</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-3.5 w-3.5" />
+                    <span>Submit Cancellation Request</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1446,36 +1614,6 @@ function ActivityRow({
         </div>
       </td>
     </tr>
-  );
-}
-
-function PaginationButton({
-  active = false,
-  ariaLabel,
-  children,
-  disabled = false,
-  onClick,
-}: {
-  active?: boolean;
-  ariaLabel: string;
-  children: React.ReactNode;
-  disabled?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      aria-label={ariaLabel}
-      className={`flex h-7 min-w-7 items-center justify-center border-y border-r border-slate-300 px-2 text-[10px] first:rounded-l first:border-l last:rounded-r ${
-        active
-          ? "border-[#0A3C2F] bg-[#0A3C2F] font-semibold text-white"
-          : "bg-white text-slate-600 hover:bg-slate-50 disabled:text-slate-300"
-      }`}
-      disabled={disabled}
-      onClick={onClick}
-      type="button"
-    >
-      {children}
-    </button>
   );
 }
 

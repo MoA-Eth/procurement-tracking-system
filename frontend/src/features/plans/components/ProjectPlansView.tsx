@@ -63,6 +63,8 @@ const STATUS_BADGES: Record<string, { bg: string; text: string }> = {
   "Committee Review": { bg: "bg-purple-100", text: "text-purple-800" },
   Returned: { bg: "bg-rose-100", text: "text-rose-800" },
   "Finally Approved": { bg: "bg-emerald-100", text: "text-emerald-800" },
+  Cancelled: { bg: "bg-rose-100", text: "text-rose-800" },
+  "Cancellation Requested": { bg: "bg-amber-100", text: "text-amber-800" },
 };
 
 export function ProjectPlansView({

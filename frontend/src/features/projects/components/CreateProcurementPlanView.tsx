@@ -35,6 +35,7 @@ import {
 import Link from "next/link";
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
@@ -228,6 +229,26 @@ export const procurementCategories = [
   },
 ] as const;
 
+export function generateEfyBudgetYearOptions(
+  baseYear = 2018,
+  span = 100,
+): Array<{ value: string; label: string }> {
+  const options: Array<{ value: string; label: string }> = [];
+  const maxYear = baseYear + span;
+  const minYear = baseYear - span;
+
+  for (let y = maxYear; y >= minYear; y--) {
+    options.push({
+      value: String(y),
+      label: `${y} EFY (${y + 7}/${y + 8})`,
+    });
+  }
+  return options;
+}
+
+export const EFY_BUDGET_YEAR_OPTIONS: Array<{ value: string; label: string }> =
+  generateEfyBudgetYearOptions(2018, 100);
+
 export function suggestedPlanName(
   project: OfficerProject,
   category: ProcurementCategory,
@@ -276,6 +297,18 @@ export function CreateProcurementPlanView({
   const [form, setForm] = useState<PlanFormState>(() =>
     extractPlanFormData(initialPlan, project),
   );
+  const [isCustomYear, setIsCustomYear] = useState(false);
+
+  const budgetYearOptions = useMemo(() => {
+    const options = [...EFY_BUDGET_YEAR_OPTIONS];
+    if (form.budgetYear && !options.some((o) => o.value === form.budgetYear)) {
+      options.unshift({
+        value: form.budgetYear,
+        label: `${form.budgetYear} EFY`,
+      });
+    }
+    return options;
+  }, [form.budgetYear]);
 
   useEffect(() => {
     if (!initialPlan) return;
@@ -664,6 +697,15 @@ export function CreateProcurementPlanView({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <CompactFormField
+                action={
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomYear((prev) => !prev)}
+                    className="text-[11px] font-semibold text-[#0A3C2F] hover:text-[#083025] hover:underline transition-colors cursor-pointer"
+                  >
+                    {isCustomYear ? "Select from list" : "Enter custom year"}
+                  </button>
+                }
                 errorMessage={
                   budgetYearError ? "Budget year is required." : undefined
                 }
@@ -671,49 +713,46 @@ export function CreateProcurementPlanView({
                 label="Budget Year (EFY)"
                 required
               >
-                <input
-                  className={compactFieldClasses}
-                  id="budgetYear"
-                  inputMode="numeric"
-                  maxLength={4}
-                  onChange={(event) => {
-                    const digitsOnly = event.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 4);
-                    updateField("budgetYear", digitsOnly);
-                  }}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === "Backspace" ||
-                      event.key === "Delete" ||
-                      event.key === "Tab" ||
-                      event.key === "Escape" ||
-                      event.key === "Enter" ||
-                      event.key.startsWith("Arrow") ||
-                      event.key === "Home" ||
-                      event.key === "End" ||
-                      event.ctrlKey ||
-                      event.metaKey
-                    ) {
-                      return;
-                    }
-                    if (!/^[0-9]$/.test(event.key)) {
-                      event.preventDefault();
-                    }
-                  }}
-                  onPaste={(event) => {
-                    event.preventDefault();
-                    const pasteText = event.clipboardData.getData("text");
-                    const digitsOnly = pasteText.replace(/\D/g, "").slice(0, 4);
-                    if (digitsOnly) {
+                {isCustomYear ? (
+                  <input
+                    className={compactFieldClasses}
+                    id="budgetYear"
+                    inputMode="numeric"
+                    maxLength={4}
+                    name="budgetYear"
+                    onChange={(event) => {
+                      const digitsOnly = event.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 4);
                       updateField("budgetYear", digitsOnly);
-                    }
-                  }}
-                  pattern="[0-9]*"
-                  placeholder="e.g. 2017"
-                  type="text"
-                  value={form.budgetYear}
-                />
+                    }}
+                    placeholder="e.g. 2018"
+                    type="text"
+                    value={form.budgetYear}
+                  />
+                ) : (
+                  <div className="relative">
+                    <select
+                      className={`${compactFieldClasses} appearance-none pr-9`}
+                      id="budgetYear"
+                      name="budgetYear"
+                      onChange={(event) =>
+                        updateField("budgetYear", event.target.value)
+                      }
+                      value={form.budgetYear}
+                    >
+                      {budgetYearOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400"
+                    />
+                  </div>
+                )}
               </CompactFormField>
 
               <CompactFormField
@@ -988,12 +1027,14 @@ function LockedInput({
 }
 
 function CompactFormField({
+  action,
   children,
   errorMessage,
   htmlFor,
   label,
   required = false,
 }: {
+  action?: ReactNode;
   children: ReactNode;
   errorMessage?: string;
   htmlFor: string;
@@ -1004,15 +1045,18 @@ function CompactFormField({
 
   return (
     <div>
-      <label
-        className={`mb-2 block text-xs font-semibold ${
-          error ? "text-red-600" : "text-slate-700"
-        }`}
-        htmlFor={htmlFor}
-      >
-        {label}
-        {required ? <span className="ml-1 text-red-600">*</span> : null}
-      </label>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <label
+          className={`block text-xs font-semibold ${
+            error ? "text-red-600" : "text-slate-700"
+          }`}
+          htmlFor={htmlFor}
+        >
+          {label}
+          {required ? <span className="ml-1 text-red-600">*</span> : null}
+        </label>
+        {action}
+      </div>
       {children}
       {errorMessage ? (
         <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600 font-medium">

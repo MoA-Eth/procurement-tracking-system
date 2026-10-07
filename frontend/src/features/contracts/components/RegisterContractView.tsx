@@ -73,6 +73,7 @@ interface ContractFormState {
   awardDate: ContractDateValue;
   contractNumber: string;
   currency: ContractCurrency;
+  exchangeRate: string;
   organizationRegion: string;
   originalAmount: string;
   plannedCompletionDate: ContractDateValue;
@@ -239,6 +240,7 @@ export function RegisterContractView({
     awardDate: emptyDate(),
     contractNumber: nextContractNumber(existingContracts),
     currency: "ETB",
+    exchangeRate: "",
     organizationRegion: "",
     originalAmount: "",
     plannedCompletionDate: emptyDate(),
@@ -363,6 +365,10 @@ export function RegisterContractView({
     0,
   );
   const finalAmount = originalAmount + amendmentTotal;
+  const isForeignCurrency = Boolean(
+    form.currency && form.currency.trim().toUpperCase() !== "ETB",
+  );
+  const exchangeRateNum = toAmount(form.exchangeRate);
   const numberIsUnique = !existingContracts.some(
     (contract) =>
       contract.contractNumber.trim().toLowerCase() ===
@@ -468,6 +474,8 @@ export function RegisterContractView({
       currency: (context?.plan.currency ||
         context?.project.baseCurrency ||
         current.currency) as ContractCurrency,
+      exchangeRate:
+        context?.activity.details?.form?.exchangeRate || current.exchangeRate,
       organizationRegion:
         context?.plan.organizationRegion ||
         context?.project.organizationRegion ||
@@ -522,6 +530,14 @@ export function RegisterContractView({
           })),
         amountWithVat: originalAmount,
         awardDate: form.awardDate.gregorian ? form.awardDate : undefined,
+        exchangeRate:
+          isForeignCurrency && exchangeRateNum > 0
+            ? exchangeRateNum
+            : undefined,
+        equivalentAmountETB:
+          isForeignCurrency && exchangeRateNum > 0
+            ? finalAmount * exchangeRateNum
+            : undefined,
         netOfVat,
         organizationRegion: form.organizationRegion.trim() || undefined,
         planReference: selectedContext.plan.reference,
@@ -736,7 +752,13 @@ export function RegisterContractView({
             icon={<CircleDollarSign aria-hidden="true" className="h-4 w-4" />}
             title="Financial Details"
           >
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div
+              className={`grid gap-4 ${
+                isForeignCurrency
+                  ? "sm:grid-cols-2 lg:grid-cols-4"
+                  : "sm:grid-cols-3"
+              }`}
+            >
               <Field
                 error={
                   attempted && !(originalAmount > 0)
@@ -808,6 +830,45 @@ export function RegisterContractView({
                   </span>
                 </div>
               </Field>
+              {isForeignCurrency && (
+                <Field
+                  hint={
+                    exchangeRateNum > 0
+                      ? `Rate: 1 ${form.currency} = ${exchangeRateNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ETB`
+                      : "Conversion rate to ETB (optional)"
+                  }
+                  label="Exchange Rate (to ETB)"
+                >
+                  <div className="relative">
+                    <input
+                      className={
+                        inputClasses +
+                        " pr-12 text-right font-mono tabular-nums"
+                      }
+                      min="0"
+                      onChange={(event) =>
+                        updateField("exchangeRate", event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "ArrowUp" ||
+                          event.key === "ArrowDown"
+                        ) {
+                          event.preventDefault();
+                        }
+                      }}
+                      onWheel={(event) => event.currentTarget.blur()}
+                      placeholder="e.g. 125.00"
+                      step="0.0001"
+                      type="number"
+                      value={form.exchangeRate}
+                    />
+                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[11px] font-semibold text-slate-500">
+                      ETB
+                    </span>
+                  </div>
+                </Field>
+              )}
             </div>
 
             <div className="mt-4 grid gap-px overflow-hidden rounded-md border border-slate-200 bg-slate-200 sm:grid-cols-4">
@@ -833,6 +894,46 @@ export function RegisterContractView({
                 value={finalAmount}
               />
             </div>
+
+            {isForeignCurrency && exchangeRateNum > 0 && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50/70 px-4 py-2.5 text-xs text-[#0A3C2F]">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0A3C2F] text-[9px] font-bold text-white">
+                    ETB
+                  </span>
+                  <span className="font-semibold">
+                    Estimated ETB Equivalent (1 {form.currency} ={" "}
+                    {exchangeRateNum.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 4,
+                    })}{" "}
+                    ETB):
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-4 text-xs font-mono font-medium">
+                  <span>
+                    Net:{" "}
+                    <strong className="text-slate-800">
+                      {formatAmount(netOfVat * exchangeRateNum)} ETB
+                    </strong>
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span>
+                    VAT:{" "}
+                    <strong className="text-slate-800">
+                      {formatAmount(vatAmount * exchangeRateNum)} ETB
+                    </strong>
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-[#0A3C2F]">
+                    Final Total:{" "}
+                    <strong className="font-bold text-emerald-900">
+                      {formatAmount(finalAmount * exchangeRateNum)} ETB
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            )}
 
             <div className="mt-5 border-t border-slate-200 pt-4">
               <div className="flex items-center justify-between gap-3">

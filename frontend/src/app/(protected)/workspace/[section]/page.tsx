@@ -62,6 +62,7 @@ export default async function WorkspaceSectionPage({
     const mode =
       query.mode === "create-plan" ||
       query.mode === "create-activity" ||
+      query.mode === "create-additional-activity" ||
       query.mode === "edit-plan" ||
       query.mode === "edit-activity"
         ? query.mode

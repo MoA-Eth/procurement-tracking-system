@@ -202,6 +202,7 @@ export function EditActivityModal({
       recordPlanVersionEvent({
         planId: plan.id || plan.reference,
         planReference: plan.reference,
+        planName: plan.name || (plan as any).planName,
         projectCode,
         versionNumber: nextVersion,
         action: "ACTIVITY_REVISED",
@@ -210,6 +211,15 @@ export function EditActivityModal({
         changedByRole: userRole,
         activityReference: activity.reference,
         activityDescription: description.trim(),
+        activityDetails: {
+          activityRefNo: activity.reference,
+          description: description.trim(),
+          method,
+          estimatedAmount: numAmount,
+          currency,
+          marketApproach,
+          reviewType,
+        },
         reason:
           revisionReason.trim() ||
           "Updated activity budget and specifications per revision feedback.",

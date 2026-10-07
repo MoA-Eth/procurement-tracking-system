@@ -62,12 +62,21 @@ export interface ProcurementActivityRoadmapStage {
   }[];
 }
 
+export interface FundingContribution {
+  id: string;
+  fundingSource: string;
+  amount: string;
+  currency: string;
+  exchangeRate?: string;
+}
+
 export interface ProcurementActivityFormValues {
   activityDescription: string;
   classificationCode: string;
   comments: string;
   contractType: string;
   currency: string;
+  exchangeRate?: string;
   domesticPreference: string;
   estimatedAmount: string;
   evaluationOptionCode: string;
@@ -93,6 +102,8 @@ export interface ProcurementActivityFormValues {
   subcomponent: string;
   additionalReferences?: AdditionalReference[];
   stepReference?: string;
+  hasMultiFunding?: boolean;
+  fundingContributions?: FundingContribution[];
 }
 
 export interface AdditionalReference {
@@ -106,6 +117,7 @@ export interface ProcurementActivityDetails {
   componentAllocations: ProcurementActivityAllocation[];
   financingAllocations: ProcurementActivityAllocation[];
   form: ProcurementActivityFormValues;
+  fundingContributions?: FundingContribution[];
   lots: ProcurementActivityLot[];
   roadmap: ProcurementActivityRoadmapStage[];
 }
@@ -125,6 +137,8 @@ export interface ProcurementActivitySummary {
   status: ProcurementActivityStatus;
   currency?: string;
   fundingSource?: string;
+  fundingContributions?: FundingContribution[];
+  hasMultiFunding?: boolean;
   createdById?: string;
   createdByName?: string;
   updatedById?: string;
@@ -338,10 +352,26 @@ function isProcurementActivityDetails(
     details.componentAllocations.every(isActivityAllocation) &&
     Array.isArray(details.financingAllocations) &&
     details.financingAllocations.every(isActivityAllocation) &&
+    (details.fundingContributions === undefined ||
+      (Array.isArray(details.fundingContributions) &&
+        details.fundingContributions.every(isFundingContribution))) &&
     Array.isArray(details.lots) &&
     details.lots.every(isActivityLot) &&
     Array.isArray(details.roadmap) &&
     details.roadmap.every(isActivityRoadmapStage)
+  );
+}
+
+function isFundingContribution(value: unknown): value is FundingContribution {
+  if (!value || typeof value !== "object") return false;
+  const contrib = value as Partial<FundingContribution>;
+  return (
+    typeof contrib.id === "string" &&
+    typeof contrib.fundingSource === "string" &&
+    typeof contrib.amount === "string" &&
+    typeof contrib.currency === "string" &&
+    (contrib.exchangeRate === undefined ||
+      typeof contrib.exchangeRate === "string")
   );
 }
 
@@ -355,6 +385,13 @@ function isProcurementActivityFormValues(
     activityFormStringFields.every(
       (field) => typeof form[field] === "string",
     ) &&
+    (form.exchangeRate === undefined ||
+      typeof form.exchangeRate === "string") &&
+    (form.hasMultiFunding === undefined ||
+      typeof form.hasMultiFunding === "boolean") &&
+    (form.fundingContributions === undefined ||
+      (Array.isArray(form.fundingContributions) &&
+        form.fundingContributions.every(isFundingContribution))) &&
     typeof form.inProcess === "boolean" &&
     typeof form.lotRequired === "boolean" &&
     typeof form.requiresUnAgency === "boolean"

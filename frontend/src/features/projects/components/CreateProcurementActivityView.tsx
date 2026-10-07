@@ -10,6 +10,7 @@ import type {
 } from "../data/officerProjects";
 import type {
   AdditionalReference,
+  FundingContribution,
   ProcurementActivityAllocation as Allocation,
   ProcurementActivityFormValues as ActivityFormState,
   ProcurementActivityLot as LotEntry,
@@ -56,6 +57,8 @@ import {
   Trash2,
   Loader2,
   X,
+  Layers,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, useEffect, useRef, type ReactNode } from "react";
@@ -98,15 +101,24 @@ export function isCompetitiveMethod(method?: string): boolean {
 export function CreateProcurementActivityView({
   existingActivityCount,
   initialActivity,
+  isAdditionalPlan = false,
   onSaveActivity,
+  onSubmitAdditionalPlan,
+  parentPlan,
   plan,
   project,
 }: {
   existingActivityCount?: number;
   initialActivity?: ProcurementActivitySummary;
+  isAdditionalPlan?: boolean;
   onSaveActivity?: (
     activity: ProcurementActivitySummary,
   ) => void | Promise<void>;
+  onSubmitAdditionalPlan?: (data: {
+    additionalPlanReason: string;
+    activity: ProcurementActivitySummary;
+  }) => void | Promise<void>;
+  parentPlan?: ProcurementPlanSummary;
   plan: ProcurementPlanSummary;
   project: OfficerProject;
 }) {
@@ -123,6 +135,7 @@ export function CreateProcurementActivityView({
   });
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [additionalPlanReason, setAdditionalPlanReason] = useState<string>("");
 
   const initialMethodKey = resolveMethodKey(
     initialActivity?.details?.form?.method ||
@@ -271,19 +284,37 @@ export function CreateProcurementActivityView({
   const preferenceApplies =
     usesRfb && (category === "Goods" || category === "Works");
 
+  const justificationInvalid = Boolean(
+    isAdditionalPlan && additionalPlanReason.trim().length < 10,
+  );
+
   const stepOneInvalid =
+    justificationInvalid ||
     !form.method ||
     (usesCompetition && !form.marketApproach) ||
     (usesRfb && !form.qualificationApproach) ||
     (preferenceApplies && !form.domesticPreference) ||
     (usesRfb && !form.procurementProcess) ||
     (consultancy && Boolean(form.method) && !form.contractType);
+  const multiFundingInvalid = Boolean(
+    form.hasMultiFunding &&
+    (!form.fundingContributions ||
+      form.fundingContributions.length === 0 ||
+      form.fundingContributions.some(
+        (c) =>
+          !c.fundingSource.trim() ||
+          !c.currency.trim() ||
+          !(Number(c.amount) > 0),
+      )),
+  );
+
   const stepTwoInvalid =
     !form.activityDescription.trim() ||
     !(Number(form.estimatedAmount) > 0) ||
     !form.currency ||
     !form.fundingSource ||
     (category === "Works" && !form.pricingBasis) ||
+    multiFundingInvalid ||
     (form.lotRequired &&
       lots.some(
         (lot) =>
@@ -301,6 +332,7 @@ export function CreateProcurementActivityView({
   const roadmapOrderErrors = countRoadmapOrderErrors(roadmap);
   const issueCounts: Record<WizardStep, number> = {
     1: [
+      justificationInvalid,
       !form.method,
       usesCompetition && !form.marketApproach,
       usesRfb && !form.qualificationApproach,
@@ -314,6 +346,7 @@ export function CreateProcurementActivityView({
       !form.currency,
       !form.fundingSource,
       category === "Works" && !form.pricingBasis,
+      multiFundingInvalid,
       form.lotRequired &&
         lots.some(
           (lot) =>
@@ -450,7 +483,7 @@ export function CreateProcurementActivityView({
           cleanAdditionalRefs[0]?.value.trim() ||
           "";
 
-        await onSaveActivity({
+        const constructedActivity: ProcurementActivitySummary = {
           ...(initialActivity
             ? {
                 id: initialActivity.id,
@@ -475,21 +508,48 @@ export function CreateProcurementActivityView({
             })),
             form: {
               ...form,
+              hasMultiFunding: form.hasMultiFunding,
+              fundingContributions: form.hasMultiFunding
+                ? (form.fundingContributions || []).filter(
+                    (c) => c.fundingSource.trim() || Number(c.amount) > 0,
+                  )
+                : undefined,
               additionalReferences: cleanAdditionalRefs,
               stepReference: primaryStepRef,
             },
+            fundingContributions: form.hasMultiFunding
+              ? (form.fundingContributions || []).filter(
+                  (c) => c.fundingSource.trim() || Number(c.amount) > 0,
+                )
+              : undefined,
             lots: form.lotRequired ? lots.map((lot) => ({ ...lot })) : [],
             roadmap: roadmap.map((stage) => ({ ...stage })),
           },
           currency: form.currency || plan.currency || "ETB",
           fundingSource: form.fundingSource || undefined,
+          fundingContributions: form.hasMultiFunding
+            ? (form.fundingContributions || []).filter(
+                (c) => c.fundingSource.trim() || Number(c.amount) > 0,
+              )
+            : undefined,
+          hasMultiFunding: form.hasMultiFunding,
           estimatedAmount: Number(form.estimatedAmount),
           method: selectedMethod?.label ?? form.method,
           reference: activityReference,
           status: form.inProcess
             ? "In Progress"
-            : initialActivity?.status || "Not Started",
-        });
+            : initialActivity?.status ||
+              (isAdditionalPlan ? "Submitted to Director" : "Not Started"),
+        };
+
+        if (isAdditionalPlan && onSubmitAdditionalPlan) {
+          await onSubmitAdditionalPlan({
+            additionalPlanReason: additionalPlanReason.trim(),
+            activity: constructedActivity,
+          });
+        } else if (onSaveActivity) {
+          await onSaveActivity(constructedActivity);
+        }
       }
       setSaved(true);
       window.scrollTo({ behavior: "smooth", top: 0 });
@@ -555,10 +615,58 @@ export function CreateProcurementActivityView({
     <div className="mx-auto w-full max-w-[74rem] pb-6">
       <ActivityBreadcrumb
         initialActivity={initialActivity}
+        isAdditionalPlan={isAdditionalPlan}
         plan={plan}
         planHref={planHref}
         project={project}
       />
+
+      {isAdditionalPlan && (
+        <div className="mt-3 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/90 via-teal-50/40 to-white p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-xs pb-1">
+            <span className="font-semibold text-emerald-950 flex items-center gap-1.5">
+              <Layers className="h-4 w-4 text-emerald-700" />
+              {(parentPlan || plan).status === "Approved" ||
+              (parentPlan || plan).status === "Finally Approved"
+                ? "Approved Parent Plan:"
+                : "Parent Procurement Plan:"}
+            </span>
+            <span className="rounded bg-emerald-200/80 px-2.5 py-0.5 font-bold text-emerald-900 text-[10px]">
+              {(parentPlan || plan).status || "Submitted"}
+            </span>
+          </div>
+          <p className="text-sm font-semibold text-slate-800">
+            {(parentPlan || plan).name}
+          </p>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 pt-1.5 border-t border-emerald-100/80 mt-2">
+            <span>
+              Project:{" "}
+              <strong className="text-slate-800">{project.code}</strong>
+            </span>
+            <span>•</span>
+            <span>
+              Category:{" "}
+              <strong className="text-slate-800">
+                {(parentPlan || plan).category}
+              </strong>
+            </span>
+            <span>•</span>
+            <span>
+              Fiscal Year:{" "}
+              <strong className="text-slate-800">
+                {(parentPlan || plan).budgetYear}
+              </strong>
+            </span>
+            <span>•</span>
+            <span>
+              Reference:{" "}
+              <strong className="font-mono text-slate-800">
+                {(parentPlan || plan).reference}
+              </strong>
+            </span>
+          </div>
+        </div>
+      )}
 
       {isEditing && (
         <div className="mt-3 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-white p-4 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
@@ -600,10 +708,18 @@ export function CreateProcurementActivityView({
       <header className="mt-3 rounded-lg border border-slate-300 bg-white px-5 py-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-semibold tracking-tight text-[#16243a]">
-            {isEditing
-              ? "Edit Procurement Activity"
-              : "Add Procurement Activity"}
+            {isAdditionalPlan
+              ? "Create Additional Procurement Plan & Activity"
+              : isEditing
+                ? "Edit Procurement Activity"
+                : "Add Procurement Activity"}
           </h1>
+          {isAdditionalPlan && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 border border-emerald-300">
+              <Sparkles className="h-3 w-3 text-emerald-600" />
+              Supplementary Submission
+            </span>
+          )}
           {isEditing && (
             <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
               {activityReference}
@@ -611,7 +727,9 @@ export function CreateProcurementActivityView({
           )}
         </div>
         <p className="mt-1 text-[10px] leading-4 text-slate-500">
-          Step {step}: {stepDescriptions[step]}
+          {isAdditionalPlan
+            ? "Submit an additional procurement activity for this approved plan along with mandatory justification."
+            : `Step ${step}: ${stepDescriptions[step]}`}
         </p>
         <WizardProgress
           currentStep={step}
@@ -621,17 +739,24 @@ export function CreateProcurementActivityView({
       </header>
 
       {saved ? (
-        <SavedPanel activityReference={activityReference} planHref={planHref} />
+        <SavedPanel
+          activityReference={activityReference}
+          isAdditionalPlan={isAdditionalPlan}
+          planHref={planHref}
+        />
       ) : (
         <>
           <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
             <main className="min-w-0">
               {step === 1 ? (
                 <KeyDetailsStep
+                  additionalPlanReason={additionalPlanReason}
                   attempted={attemptedSteps[1]}
                   category={activityCategory}
                   form={form}
+                  isAdditionalPlan={isAdditionalPlan}
                   methodOptions={methodOptions}
+                  onAdditionalPlanReasonChange={setAdditionalPlanReason}
                   onCategoryChange={(newCat) => {
                     setActivityCategory(newCat);
                     const available = methodsForCategory(newCat);
@@ -641,6 +766,7 @@ export function CreateProcurementActivityView({
                   }}
                   onChange={updateField}
                   onMethodChange={selectMethod}
+                  parentPlan={parentPlan || plan}
                   project={project}
                   usesCompetition={usesCompetition}
                 />
@@ -692,6 +818,7 @@ export function CreateProcurementActivityView({
           </div>
 
           <WizardFooter
+            isAdditionalPlan={isAdditionalPlan}
             isEditing={isEditing}
             isSaving={isSaving}
             onBack={goBack}
@@ -768,6 +895,12 @@ function createInitialForm(
         plan.currency ||
         project.baseCurrency ||
         "ETB",
+      exchangeRate:
+        d?.exchangeRate ||
+        (anyAct.exchangeRate !== undefined
+          ? String(anyAct.exchangeRate)
+          : "") ||
+        "",
       domesticPreference:
         d?.domesticPreference === "Yes" ||
         d?.domesticPreference === "true" ||
@@ -884,6 +1017,31 @@ function createInitialForm(
         anyAct.subcomponent ||
         anyAct.components?.[0]?.subcomponent ||
         "",
+      hasMultiFunding: Boolean(
+        d?.hasMultiFunding ||
+        (d?.fundingContributions && d.fundingContributions.length > 1) ||
+        (initialActivity.details?.fundingContributions &&
+          initialActivity.details.fundingContributions.length > 1) ||
+        (initialActivity.fundingContributions &&
+          initialActivity.fundingContributions.length > 1),
+      ),
+      fundingContributions: (() => {
+        const raw =
+          d?.fundingContributions ||
+          initialActivity.details?.fundingContributions ||
+          initialActivity.fundingContributions;
+        if (Array.isArray(raw) && raw.length > 0) {
+          return raw.map((c) => ({
+            id: c.id || `contrib-${Math.random().toString(36).slice(2, 7)}`,
+            fundingSource: c.fundingSource || "",
+            amount: String(c.amount ?? ""),
+            currency: c.currency || "ETB",
+            exchangeRate:
+              c.exchangeRate !== undefined ? String(c.exchangeRate) : "",
+          }));
+        }
+        return [];
+      })(),
     };
   }
 
@@ -893,6 +1051,7 @@ function createInitialForm(
     comments: "",
     contractType: "",
     currency: "",
+    exchangeRate: "",
     domesticPreference: "",
     estimatedAmount: "",
     evaluationOptionCode: "",
@@ -917,6 +1076,8 @@ function createInitialForm(
     scopeNotes: "",
     specificMethod: "",
     subcomponent: "",
+    hasMultiFunding: false,
+    fundingContributions: [],
   };
 }
 
@@ -1140,11 +1301,13 @@ function allocationTotalIsValid(allocations: readonly Allocation[]) {
 
 function ActivityBreadcrumb({
   initialActivity,
+  isAdditionalPlan = false,
   plan,
   planHref,
   project,
 }: {
   initialActivity?: ProcurementActivitySummary;
+  isAdditionalPlan?: boolean;
   plan: ProcurementPlanSummary;
   planHref: string;
   project: OfficerProject;
@@ -1163,7 +1326,7 @@ function ActivityBreadcrumb({
             Projects
           </Link>
         </li>
-        <li aria-hidden="true">/</li>
+        <li>/</li>
         <li>
           <Link
             className="hover:text-[#0A3C2F]"
@@ -1185,7 +1348,11 @@ function ActivityBreadcrumb({
         </li>
         <li aria-hidden="true">/</li>
         <li aria-current="page" className="font-semibold text-slate-800">
-          {initialActivity ? "Edit Activity" : "Add Activity"}
+          {isAdditionalPlan
+            ? "Create Additional Plan & Activity"
+            : initialActivity
+              ? "Edit Activity"
+              : "Add Activity"}
         </li>
       </ol>
     </nav>
@@ -1604,6 +1771,7 @@ function YesNoChoice({
 }
 
 function WizardFooter({
+  isAdditionalPlan = false,
   isEditing = false,
   isSaving = false,
   onBack,
@@ -1612,6 +1780,7 @@ function WizardFooter({
   planHref,
   step,
 }: {
+  isAdditionalPlan?: boolean;
   isEditing?: boolean;
   isSaving?: boolean;
   onBack: () => void;
@@ -1663,7 +1832,9 @@ function WizardFooter({
           className={
             "inline-flex h-10 items-center justify-center gap-2 rounded-md px-5 text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed " +
             (step === 4
-              ? "bg-[#006837] text-white hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
+              ? isAdditionalPlan
+                ? "bg-[#0A3C2F] text-white hover:bg-[#072F25] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
+                : "bg-[#006837] text-white hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
               : isEditing
                 ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
                 : "bg-[#006837] text-white hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]")
@@ -1676,6 +1847,8 @@ function WizardFooter({
             <>
               {isSaving ? (
                 <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : isAdditionalPlan ? (
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
               ) : (
                 <Save aria-hidden="true" className="h-4 w-4" />
               )}
@@ -1683,7 +1856,9 @@ function WizardFooter({
                 ? "Saving..."
                 : isEditing
                   ? "Save Activity Changes"
-                  : "Save Procurement Activity"}
+                  : isAdditionalPlan
+                    ? "Submit Additional Plan to Director"
+                    : "Save Procurement Activity"}
             </>
           ) : (
             <>
@@ -1699,9 +1874,11 @@ function WizardFooter({
 
 function SavedPanel({
   activityReference,
+  isAdditionalPlan = false,
   planHref,
 }: {
   activityReference: string;
+  isAdditionalPlan?: boolean;
   planHref: string;
 }) {
   return (
@@ -1711,11 +1888,14 @@ function SavedPanel({
         className="mx-auto h-10 w-10 text-[#0A3C2F]"
       />
       <h2 className="mt-3 text-lg font-semibold text-[#10243f]">
-        Procurement activity saved
+        {isAdditionalPlan
+          ? "Additional Procurement Plan & Activity Submitted"
+          : "Procurement activity saved"}
       </h2>
       <p className="mx-auto mt-2 max-w-lg text-xs leading-5 text-slate-600">
-        Activity {activityReference} has been prepared with its method-specific
-        roadmap and is ready for the next workflow action.
+        {isAdditionalPlan
+          ? `Supplementary submission for Activity ${activityReference} has been created and submitted to the Director for review and committee endorsement.`
+          : `Activity ${activityReference} has been prepared with its method-specific roadmap and is ready for the next workflow action.`}
       </p>
       <Link
         className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#006837] px-5 text-xs font-semibold text-white hover:bg-[#00552c]"
@@ -1729,23 +1909,31 @@ function SavedPanel({
 }
 
 function KeyDetailsStep({
+  additionalPlanReason,
   attempted,
   category,
   form,
+  isAdditionalPlan = false,
   methodOptions,
+  onAdditionalPlanReasonChange,
   onCategoryChange,
   onChange,
   onMethodChange,
+  parentPlan,
   project,
   usesCompetition,
 }: {
+  additionalPlanReason?: string;
   attempted: boolean;
   category: ProcurementActivityCategory;
   form: ActivityFormState;
+  isAdditionalPlan?: boolean;
   methodOptions: ReturnType<typeof methodsForCategory>;
+  onAdditionalPlanReasonChange?: (reason: string) => void;
   onCategoryChange?: (category: ProcurementActivityCategory) => void;
   onChange: UpdateActivityField;
   onMethodChange: (value: string) => void;
+  parentPlan?: ProcurementPlanSummary;
   project: OfficerProject;
   usesCompetition: boolean;
 }) {
@@ -1778,345 +1966,424 @@ function KeyDetailsStep({
           ]
         : ["Request for Quotations (Non Bank-SPD)"];
 
+  const justificationHasError = Boolean(
+    isAdditionalPlan &&
+    attempted &&
+    (!additionalPlanReason || additionalPlanReason.trim().length < 10),
+  );
+
   return (
-    <FormSection
-      description="The category stays within the procurement plan. Method-dependent controls appear after a method is selected."
-      icon={<ClipboardList aria-hidden="true" className="h-4 w-4" />}
-      title="Procurement Method & Controls"
-    >
-      {attempted &&
-      (!form.method ||
-        (usesCompetition && !form.marketApproach) ||
-        (usesRfb && !form.qualificationApproach) ||
-        (preferenceApplies && !form.domesticPreference) ||
-        (usesRfb && !form.procurementProcess) ||
-        (consultancy && Boolean(form.method) && !form.contractType)) ? (
-        <div
-          className="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700"
-          role="alert"
-        >
-          <CircleAlert
-            aria-hidden="true"
-            className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
-          />
-          <span>
-            Please complete the required procurement controls highlighted below
-            before continuing.
-          </span>
-        </div>
-      ) : null}
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field
-          hint="Inherited from the procurement plan and cannot be changed here."
-          label="Procurement Category"
-        >
-          <div
-            className={
-              inputClasses + " flex items-center justify-between bg-slate-50"
-            }
-          >
-            <span className="font-semibold">{category}</span>
-            <LockKeyhole
-              aria-hidden="true"
-              className="h-3.5 w-3.5 text-slate-400"
-            />
+    <div className="space-y-4">
+      {/* Mandatory Justification Card for Supplementary Submission */}
+      {isAdditionalPlan && (
+        <section className="rounded-xl border border-emerald-200/90 bg-gradient-to-r from-emerald-50/50 via-teal-50/20 to-white p-4 sm:p-5 space-y-3 shadow-2xs">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label
+              htmlFor="additional-plan-justification"
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-900"
+            >
+              <FileText className="h-4 w-4 text-[#0A3C2F]" />
+              <span>
+                Justification: Why was this activity not submitted with the
+                original plan / batch?{" "}
+              </span>
+              <span className="text-rose-600">*</span>
+            </label>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#0A3C2F] bg-emerald-50/90 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+              Visible to Director &amp; Committee
+            </span>
           </div>
-        </Field>
-
-        <Field
-          error={
-            attempted && !form.method
-              ? "Select a procurement method."
-              : undefined
-          }
-          label="Procurement Method"
-          required
-        >
-          <SelectControl
-            hasError={attempted && !form.method}
-            onChange={onMethodChange}
-            value={form.method}
-          >
-            <option value="">Select method</option>
-            {methodOptions.map((method) => (
-              <option key={method.key} value={method.key}>
-                {method.label}
-              </option>
-            ))}
-            {form.method &&
-            !methodOptions.some((m) => m.key === form.method) &&
-            selectedMethod ? (
-              <option key={selectedMethod.key} value={selectedMethod.key}>
-                {selectedMethod.label}
-              </option>
-            ) : null}
-          </SelectControl>
-        </Field>
-
-        {form.method ? (
-          <Field
-            hint="Optional narrower approach supplied by the configured donor framework."
-            label="Specific Method / Particular Approach"
-          >
-            <input
-              className={inputClasses}
-              onChange={(event) =>
-                onChange("specificMethod", event.target.value)
-              }
-              placeholder="Enter configured sub-method, if applicable"
-              value={form.specificMethod}
-            />
-          </Field>
-        ) : null}
-
-        {usesCompetition ? (
-          <Field
-            error={
-              attempted && !form.marketApproach
-                ? "Select a market approach."
-                : undefined
-            }
-            label="Market Approach"
+          <textarea
+            id="additional-plan-justification"
             required
-          >
-            <SelectControl
-              hasError={attempted && !form.marketApproach}
-              onChange={(value) => onChange("marketApproach", value)}
-              value={form.marketApproach}
-            >
-              <option value="">Select approach</option>
-              <option value="Open - International">Open - International</option>
-              <option value="Open - National">Open - National</option>
-              <option value="Limited">Limited</option>
-              <option value="Direct">Direct</option>
-              {form.method === "rfq-shopping" || form.method === "rfq" ? (
-                <option value="Shopping">Shopping</option>
-              ) : null}
-              {form.marketApproach &&
-              ![
-                "Open - International",
-                "Open - National",
-                "Limited",
-                "Direct",
-                "Shopping",
-              ].includes(form.marketApproach) ? (
-                <option value={form.marketApproach}>
-                  {form.marketApproach}
-                </option>
-              ) : null}
-            </SelectControl>
-          </Field>
-        ) : null}
-
-        {usesRfb ? (
-          <Field
-            error={
-              attempted && !form.qualificationApproach
-                ? "Select a qualification approach."
-                : undefined
+            rows={3}
+            value={additionalPlanReason || ""}
+            onChange={(e) => onAdditionalPlanReasonChange?.(e.target.value)}
+            placeholder="Explain the operational necessity or reason why this item was not included in the original collection of plans submitted to the Director (e.g. newly allocated contingency funds, urgent institutional expansion, unforeseen project requirements)..."
+            className={
+              "w-full rounded-lg border bg-white p-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 outline-none transition " +
+              (justificationHasError
+                ? "border-rose-500 bg-rose-50/20 ring-1 ring-rose-500"
+                : "border-slate-300 hover:border-slate-400")
             }
-            label="Qualification Approach"
-            required
-          >
-            <SelectControl
-              hasError={attempted && !form.qualificationApproach}
-              onChange={(value) => onChange("qualificationApproach", value)}
-              value={form.qualificationApproach}
-            >
-              <option value="">Select qualification</option>
-              <option>Prequalification</option>
-              <option>Post-qualification</option>
-            </SelectControl>
-          </Field>
-        ) : null}
-
-        {preferenceApplies ? (
-          <Field
-            error={
-              attempted && !form.domesticPreference
-                ? "Select domestic/regional preference."
-                : undefined
-            }
-            label="Domestic / Regional Preference"
-            required
-          >
-            <SelectControl
-              hasError={attempted && !form.domesticPreference}
-              onChange={(value) => onChange("domesticPreference", value)}
-              value={form.domesticPreference}
-            >
-              <option value="">Select preference</option>
-              <option>Yes</option>
-              <option>No</option>
-            </SelectControl>
-          </Field>
-        ) : null}
-
-        {form.method ? (
-          <Field label="Review Type">
-            <SelectControl
-              onChange={(value) => onChange("reviewType", value)}
-              value={
-                form.reviewType.toLowerCase().includes("prior")
-                  ? "Prior Review"
-                  : form.reviewType.toLowerCase().includes("post")
-                    ? "Post Review"
-                    : form.reviewType
-              }
-            >
-              <option value="">Select review type</option>
-              <option value="Prior Review">Prior Review</option>
-              <option value="Post Review">Post Review</option>
-              {form.reviewType &&
-              !["Prior Review", "Post Review"].includes(form.reviewType) ? (
-                <option value={form.reviewType}>{form.reviewType}</option>
-              ) : null}
-            </SelectControl>
-          </Field>
-        ) : null}
-
-        {form.method ? (
-          <Field
-            hint="Audit remains a separate configurable legacy oversight value."
-            label="Oversight Classification"
-          >
-            <SelectControl
-              onChange={(value) => onChange("oversightClassification", value)}
-              value={form.oversightClassification}
-            >
-              <option value="">Not specified</option>
-              <option>Audit</option>
-            </SelectControl>
-          </Field>
-        ) : null}
-
-        {usesRfb ? (
-          <Field
-            error={
-              attempted && !form.procurementProcess
-                ? "Select a procurement process."
-                : undefined
-            }
-            label="Procurement Process"
-            required
-          >
-            <SelectControl
-              hasError={attempted && !form.procurementProcess}
-              onChange={(value) => onChange("procurementProcess", value)}
-              value={form.procurementProcess}
-            >
-              <option value="">Select configured process</option>
-              <option>Single Stage One Envelope</option>
-              <option>Single Stage - One Envelope</option>
-              <option>1 Envelope (Single Stage 1 Env)</option>
-              <option>Two Stage Two Envelope</option>
-              {form.procurementProcess &&
-              ![
-                "Single Stage One Envelope",
-                "Single Stage - One Envelope",
-                "1 Envelope (Single Stage 1 Env)",
-                "Two Stage Two Envelope",
-              ].includes(form.procurementProcess) ? (
-                <option value={form.procurementProcess}>
-                  {form.procurementProcess}
-                </option>
-              ) : null}
-            </SelectControl>
-          </Field>
-        ) : null}
-
-        {!consultancy && form.method ? (
-          <Field label="Procurement Document Type">
-            <SelectControl
-              onChange={(value) => onChange("procurementDocumentType", value)}
-              value={form.procurementDocumentType}
-            >
-              <option value="">Select document type</option>
-              {documentTypes.map((documentType) => (
-                <option key={documentType}>{documentType}</option>
-              ))}
-              {form.procurementDocumentType &&
-              !documentTypes.includes(form.procurementDocumentType) ? (
-                <option value={form.procurementDocumentType}>
-                  {form.procurementDocumentType}
-                </option>
-              ) : null}
-            </SelectControl>
-          </Field>
-        ) : null}
-
-        {consultancy && form.method ? (
-          <Field
-            error={
-              attempted && !form.contractType
-                ? "Select a contract type."
-                : undefined
-            }
-            label="Contract Type"
-            required
-          >
-            <SelectControl
-              hasError={attempted && !form.contractType}
-              onChange={(value) => onChange("contractType", value)}
-              value={form.contractType}
-            >
-              <option value="">Select contract type</option>
-              <option>Lump Sum</option>
-              <option>Time Based</option>
-            </SelectControl>
-          </Field>
-        ) : null}
-
-        {donorFields && form.method ? (
-          <Field
-            hint="Optional donor code; not enforced until the code mapping is confirmed."
-            label="High SEA/SH Risk"
-          >
-            <input
-              className={inputClasses}
-              onChange={(event) => onChange("highRiskCode", event.target.value)}
-              placeholder="Optional configured code"
-              value={form.highRiskCode}
-            />
-          </Field>
-        ) : null}
-      </div>
-
-      {form.method ? (
-        <div className="mt-5 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-2">
-          <YesNoChoice
-            label="Requires UN Agency Contracting"
-            onChange={(value) => onChange("requiresUnAgency", value)}
-            value={form.requiresUnAgency}
           />
-          <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-md border border-slate-300 bg-[#fbfcfd] px-3">
-            <input
-              checked={form.inProcess}
-              className="h-4 w-4 accent-[#0A3C2F]"
-              onChange={(event) => onChange("inProcess", event.target.checked)}
-              type="checkbox"
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <p>
+              This explanation will be prominently displayed on the Director and
+              Endorsement Committee review boards.
+            </p>
+            <span
+              className={
+                (additionalPlanReason?.trim().length || 0) < 10
+                  ? "text-slate-500 font-medium"
+                  : "text-[#0A3C2F] font-bold"
+              }
+            >
+              {additionalPlanReason?.trim().length || 0} chars (min 10)
+            </span>
+          </div>
+          {justificationHasError && (
+            <div
+              role="alert"
+              className="flex items-center gap-1.5 rounded-lg bg-rose-50 border border-rose-200 p-2 text-xs font-semibold text-rose-700 animate-in fade-in"
+            >
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
+              <span>
+                Please provide a thorough justification (at least 10 characters)
+                explaining why this activity was not included with the original
+                procurement plan.
+              </span>
+            </div>
+          )}
+        </section>
+      )}
+
+      <FormSection
+        description="The category stays within the procurement plan. Method-dependent controls appear after a method is selected."
+        icon={<ClipboardList aria-hidden="true" className="h-4 w-4" />}
+        title="Procurement Method & Controls"
+      >
+        {attempted &&
+        (!form.method ||
+          (usesCompetition && !form.marketApproach) ||
+          (usesRfb && !form.qualificationApproach) ||
+          (preferenceApplies && !form.domesticPreference) ||
+          (usesRfb && !form.procurementProcess) ||
+          (consultancy && Boolean(form.method) && !form.contractType)) ? (
+          <div
+            className="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700"
+            role="alert"
+          >
+            <CircleAlert
+              aria-hidden="true"
+              className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
             />
             <span>
-              <span className="block text-[10px] font-semibold text-slate-700">
-                Activity already in process
-              </span>
-              <span className="block text-[9px] text-slate-500">
-                Use only when migrating an existing procurement activity.
-              </span>
+              Please complete the required procurement controls highlighted
+              below before continuing.
             </span>
-          </label>
-        </div>
-      ) : null}
+          </div>
+        ) : null}
 
-      {selectedMethod ? (
-        <div className="mt-4 flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[10px] leading-4 text-[#0A3C2F]">
-          <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          The {selectedMethod.label} roadmap template will be generated in Step
-          4.
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field
+            hint="Inherited from the procurement plan and cannot be changed here."
+            label="Procurement Category"
+          >
+            <div
+              className={
+                inputClasses + " flex items-center justify-between bg-slate-50"
+              }
+            >
+              <span className="font-semibold">{category}</span>
+              <LockKeyhole
+                aria-hidden="true"
+                className="h-3.5 w-3.5 text-slate-400"
+              />
+            </div>
+          </Field>
+
+          <Field
+            error={
+              attempted && !form.method
+                ? "Select a procurement method."
+                : undefined
+            }
+            label="Procurement Method"
+            required
+          >
+            <SelectControl
+              hasError={attempted && !form.method}
+              onChange={onMethodChange}
+              value={form.method}
+            >
+              <option value="">Select method</option>
+              {methodOptions.map((method) => (
+                <option key={method.key} value={method.key}>
+                  {method.label}
+                </option>
+              ))}
+              {form.method &&
+              !methodOptions.some((m) => m.key === form.method) &&
+              selectedMethod ? (
+                <option key={selectedMethod.key} value={selectedMethod.key}>
+                  {selectedMethod.label}
+                </option>
+              ) : null}
+            </SelectControl>
+          </Field>
+
+          {form.method ? (
+            <Field
+              hint="Optional narrower approach supplied by the configured donor framework."
+              label="Specific Method / Particular Approach"
+            >
+              <input
+                className={inputClasses}
+                onChange={(event) =>
+                  onChange("specificMethod", event.target.value)
+                }
+                placeholder="Enter configured sub-method, if applicable"
+                value={form.specificMethod}
+              />
+            </Field>
+          ) : null}
+
+          {usesCompetition ? (
+            <Field
+              error={
+                attempted && !form.marketApproach
+                  ? "Select a market approach."
+                  : undefined
+              }
+              label="Market Approach"
+              required
+            >
+              <SelectControl
+                hasError={attempted && !form.marketApproach}
+                onChange={(value) => onChange("marketApproach", value)}
+                value={form.marketApproach}
+              >
+                <option value="">Select approach</option>
+                <option value="Open - International">
+                  Open - International
+                </option>
+                <option value="Open - National">Open - National</option>
+                <option value="Limited">Limited</option>
+                <option value="Direct">Direct</option>
+                {form.method === "rfq-shopping" || form.method === "rfq" ? (
+                  <option value="Shopping">Shopping</option>
+                ) : null}
+                {form.marketApproach &&
+                ![
+                  "Open - International",
+                  "Open - National",
+                  "Limited",
+                  "Direct",
+                  "Shopping",
+                ].includes(form.marketApproach) ? (
+                  <option value={form.marketApproach}>
+                    {form.marketApproach}
+                  </option>
+                ) : null}
+              </SelectControl>
+            </Field>
+          ) : null}
+
+          {usesRfb ? (
+            <Field
+              error={
+                attempted && !form.qualificationApproach
+                  ? "Select a qualification approach."
+                  : undefined
+              }
+              label="Qualification Approach"
+              required
+            >
+              <SelectControl
+                hasError={attempted && !form.qualificationApproach}
+                onChange={(value) => onChange("qualificationApproach", value)}
+                value={form.qualificationApproach}
+              >
+                <option value="">Select qualification</option>
+                <option>Prequalification</option>
+                <option>Post-qualification</option>
+              </SelectControl>
+            </Field>
+          ) : null}
+
+          {preferenceApplies ? (
+            <Field
+              error={
+                attempted && !form.domesticPreference
+                  ? "Select domestic/regional preference."
+                  : undefined
+              }
+              label="Domestic / Regional Preference"
+              required
+            >
+              <SelectControl
+                hasError={attempted && !form.domesticPreference}
+                onChange={(value) => onChange("domesticPreference", value)}
+                value={form.domesticPreference}
+              >
+                <option value="">Select preference</option>
+                <option>Yes</option>
+                <option>No</option>
+              </SelectControl>
+            </Field>
+          ) : null}
+
+          {form.method ? (
+            <Field label="Review Type">
+              <SelectControl
+                onChange={(value) => onChange("reviewType", value)}
+                value={
+                  form.reviewType.toLowerCase().includes("prior")
+                    ? "Prior Review"
+                    : form.reviewType.toLowerCase().includes("post")
+                      ? "Post Review"
+                      : form.reviewType
+                }
+              >
+                <option value="">Select review type</option>
+                <option value="Prior Review">Prior Review</option>
+                <option value="Post Review">Post Review</option>
+                {form.reviewType &&
+                !["Prior Review", "Post Review"].includes(form.reviewType) ? (
+                  <option value={form.reviewType}>{form.reviewType}</option>
+                ) : null}
+              </SelectControl>
+            </Field>
+          ) : null}
+
+          {form.method ? (
+            <Field
+              hint="Audit remains a separate configurable legacy oversight value."
+              label="Oversight Classification"
+            >
+              <SelectControl
+                onChange={(value) => onChange("oversightClassification", value)}
+                value={form.oversightClassification}
+              >
+                <option value="">Not specified</option>
+                <option>Audit</option>
+              </SelectControl>
+            </Field>
+          ) : null}
+
+          {usesRfb ? (
+            <Field
+              error={
+                attempted && !form.procurementProcess
+                  ? "Select a procurement process."
+                  : undefined
+              }
+              label="Procurement Process"
+              required
+            >
+              <SelectControl
+                hasError={attempted && !form.procurementProcess}
+                onChange={(value) => onChange("procurementProcess", value)}
+                value={form.procurementProcess}
+              >
+                <option value="">Select configured process</option>
+                <option>Single Stage One Envelope</option>
+                <option>Single Stage - One Envelope</option>
+                <option>1 Envelope (Single Stage 1 Env)</option>
+                <option>Two Stage Two Envelope</option>
+                {form.procurementProcess &&
+                ![
+                  "Single Stage One Envelope",
+                  "Single Stage - One Envelope",
+                  "1 Envelope (Single Stage 1 Env)",
+                  "Two Stage Two Envelope",
+                ].includes(form.procurementProcess) ? (
+                  <option value={form.procurementProcess}>
+                    {form.procurementProcess}
+                  </option>
+                ) : null}
+              </SelectControl>
+            </Field>
+          ) : null}
+
+          {!consultancy && form.method ? (
+            <Field label="Procurement Document Type">
+              <SelectControl
+                onChange={(value) => onChange("procurementDocumentType", value)}
+                value={form.procurementDocumentType}
+              >
+                <option value="">Select document type</option>
+                {documentTypes.map((documentType) => (
+                  <option key={documentType}>{documentType}</option>
+                ))}
+                {form.procurementDocumentType &&
+                !documentTypes.includes(form.procurementDocumentType) ? (
+                  <option value={form.procurementDocumentType}>
+                    {form.procurementDocumentType}
+                  </option>
+                ) : null}
+              </SelectControl>
+            </Field>
+          ) : null}
+
+          {consultancy && form.method ? (
+            <Field
+              error={
+                attempted && !form.contractType
+                  ? "Select a contract type."
+                  : undefined
+              }
+              label="Contract Type"
+              required
+            >
+              <SelectControl
+                hasError={attempted && !form.contractType}
+                onChange={(value) => onChange("contractType", value)}
+                value={form.contractType}
+              >
+                <option value="">Select contract type</option>
+                <option>Lump Sum</option>
+                <option>Time Based</option>
+              </SelectControl>
+            </Field>
+          ) : null}
+
+          {donorFields && form.method ? (
+            <Field
+              hint="Optional donor code; not enforced until the code mapping is confirmed."
+              label="High SEA/SH Risk"
+            >
+              <input
+                className={inputClasses}
+                onChange={(event) =>
+                  onChange("highRiskCode", event.target.value)
+                }
+                placeholder="Optional configured code"
+                value={form.highRiskCode}
+              />
+            </Field>
+          ) : null}
         </div>
-      ) : null}
-    </FormSection>
+
+        {form.method ? (
+          <div className="mt-5 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-2">
+            <YesNoChoice
+              label="Requires UN Agency Contracting"
+              onChange={(value) => onChange("requiresUnAgency", value)}
+              value={form.requiresUnAgency}
+            />
+            <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-md border border-slate-300 bg-[#fbfcfd] px-3">
+              <input
+                checked={form.inProcess}
+                className="h-4 w-4 accent-[#0A3C2F]"
+                onChange={(event) =>
+                  onChange("inProcess", event.target.checked)
+                }
+                type="checkbox"
+              />
+              <span>
+                <span className="block text-[10px] font-semibold text-slate-700">
+                  Activity already in process
+                </span>
+                <span className="block text-[9px] text-slate-500">
+                  Use only when migrating an existing procurement activity.
+                </span>
+              </span>
+            </label>
+          </div>
+        ) : null}
+
+        {selectedMethod ? (
+          <div className="mt-4 flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[10px] leading-4 text-[#0A3C2F]">
+            <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            The {selectedMethod.label} roadmap template will be generated in
+            Step 4.
+          </div>
+        ) : null}
+      </FormSection>
+    </div>
   );
 }
 
@@ -2179,6 +2446,182 @@ export function RelatedInformationStep({
   const [newCurrencyName, setNewCurrencyName] = useState("");
   const [currencyError, setCurrencyError] = useState<string | null>(null);
   const [isSubmittingCurrency, setIsSubmittingCurrency] = useState(false);
+  const [customSourceRows, setCustomSourceRows] = useState<
+    Record<string, boolean>
+  >({});
+  const [activeCurrencyContribId, setActiveCurrencyContribId] = useState<
+    string | null
+  >(null);
+
+  const contributions: FundingContribution[] = useMemo(() => {
+    if (form.fundingContributions && form.fundingContributions.length > 0) {
+      return form.fundingContributions;
+    }
+    return [
+      {
+        id: "contrib-1",
+        fundingSource: form.fundingSource || inheritedFundingSources[0] || "",
+        amount: form.estimatedAmount || "",
+        currency: form.currency || "ETB",
+        exchangeRate: form.exchangeRate || "",
+      },
+    ];
+  }, [
+    form.fundingContributions,
+    form.fundingSource,
+    form.estimatedAmount,
+    form.currency,
+    form.exchangeRate,
+    inheritedFundingSources,
+  ]);
+
+  const totalComputed = useMemo(() => {
+    const target = (form.currency || "ETB").trim().toUpperCase();
+    return contributions.reduce((sum, item) => {
+      const amt = Number(item.amount) || 0;
+      const cur = (item.currency || target).trim().toUpperCase();
+      const isSame = cur === target;
+      const rateNum = Number(item.exchangeRate);
+      const effectiveRate = isSame ? 1 : rateNum > 0 ? rateNum : 1;
+      return sum + amt * effectiveRate;
+    }, 0);
+  }, [contributions, form.currency]);
+
+  const multiFundingInvalid = useMemo(() => {
+    return Boolean(
+      form.hasMultiFunding &&
+      (!form.fundingContributions ||
+        form.fundingContributions.length === 0 ||
+        form.fundingContributions.some(
+          (c) =>
+            !c.fundingSource.trim() ||
+            !c.currency.trim() ||
+            !(Number(c.amount) > 0),
+        )),
+    );
+  }, [form.hasMultiFunding, form.fundingContributions]);
+
+  function recalculateMultiFunding(
+    items: FundingContribution[],
+    targetCurrency: string,
+  ) {
+    const target = (targetCurrency || "ETB").trim().toUpperCase();
+    let total = 0;
+    for (const item of items) {
+      const amt = Number(item.amount) || 0;
+      const cur = (item.currency || target).trim().toUpperCase();
+      const isSame = cur === target;
+      const rateNum = Number(item.exchangeRate);
+      const effectiveRate = isSame ? 1 : rateNum > 0 ? rateNum : 1;
+      total += amt * effectiveRate;
+    }
+
+    const roundedTotal =
+      total > 0
+        ? (Math.round(total * 100) / 100).toString()
+        : total === 0 && items.some((i) => i.amount.trim() === "0")
+          ? "0"
+          : "";
+    onChange("estimatedAmount", roundedTotal);
+
+    const sources = Array.from(
+      new Set(items.map((i) => i.fundingSource.trim()).filter(Boolean)),
+    );
+    if (sources.length > 0) {
+      onChange("fundingSource", sources.join(" / "));
+    }
+  }
+
+  function handleToggleMultiFunding(enable: boolean) {
+    if (enable) {
+      const existing = form.fundingContributions || [];
+      const currentSources = inheritedFundingSources;
+      let nextList = existing;
+      if (nextList.length === 0) {
+        nextList = [
+          {
+            id: `contrib-${Date.now()}-1`,
+            fundingSource: form.fundingSource || currentSources[0] || "",
+            amount: form.estimatedAmount || "",
+            currency: form.currency || "ETB",
+            exchangeRate: form.exchangeRate || "",
+          },
+        ];
+      }
+      onChange("hasMultiFunding", true);
+      onChange("fundingContributions", nextList);
+      recalculateMultiFunding(nextList, form.currency || "ETB");
+    } else {
+      onChange("hasMultiFunding", false);
+    }
+  }
+
+  function handleUpdateContribution(
+    id: string,
+    field: keyof FundingContribution,
+    val: string,
+  ) {
+    const currentList =
+      form.fundingContributions && form.fundingContributions.length > 0
+        ? form.fundingContributions
+        : contributions;
+
+    const nextList = currentList.map((item) => {
+      if (item.id !== id) return item;
+      return { ...item, [field]: val };
+    });
+
+    onChange("fundingContributions", nextList);
+    recalculateMultiFunding(nextList, form.currency || "ETB");
+  }
+
+  function handleAddContribution() {
+    const currentList =
+      form.fundingContributions && form.fundingContributions.length > 0
+        ? form.fundingContributions
+        : contributions;
+
+    const usedSources = new Set(currentList.map((c) => c.fundingSource));
+    const nextDefaultSource =
+      inheritedFundingSources.find((s) => !usedSources.has(s)) ||
+      inheritedFundingSources[0] ||
+      "";
+
+    const newItem: FundingContribution = {
+      id: `contrib-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      fundingSource: nextDefaultSource,
+      amount: "",
+      currency: form.currency || "ETB",
+      exchangeRate: "",
+    };
+
+    const nextList = [...currentList, newItem];
+    onChange("fundingContributions", nextList);
+    recalculateMultiFunding(nextList, form.currency || "ETB");
+  }
+
+  function handleRemoveContribution(id: string) {
+    const currentList =
+      form.fundingContributions && form.fundingContributions.length > 0
+        ? form.fundingContributions
+        : contributions;
+
+    if (currentList.length <= 1) return;
+    const nextList = currentList.filter((c) => c.id !== id);
+    onChange("fundingContributions", nextList);
+    recalculateMultiFunding(nextList, form.currency || "ETB");
+  }
+
+  function handleTargetCurrencyChange(newTarget: string) {
+    onChange("currency", newTarget);
+    if (form.hasMultiFunding) {
+      const currentList =
+        form.fundingContributions && form.fundingContributions.length > 0
+          ? form.fundingContributions
+          : contributions;
+      recalculateMultiFunding(currentList, newTarget);
+    }
+  }
 
   async function handleAddCurrencySubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -2199,7 +2642,16 @@ export function RelatedInformationStep({
               `${cleanCode} (${cleanName})`.toLowerCase()),
       )
     ) {
-      onChange("currency", cleanCode);
+      if (activeCurrencyContribId) {
+        handleUpdateContribution(
+          activeCurrencyContribId,
+          "currency",
+          cleanCode,
+        );
+        setActiveCurrencyContribId(null);
+      } else {
+        handleTargetCurrencyChange(cleanCode);
+      }
       setShowAddCurrencyModal(false);
       setNewCurrencyCode("");
       setNewCurrencyName("");
@@ -2219,7 +2671,16 @@ export function RelatedInformationStep({
         label: displayLabel,
       });
 
-      onChange("currency", created.code);
+      if (activeCurrencyContribId) {
+        handleUpdateContribution(
+          activeCurrencyContribId,
+          "currency",
+          created.code,
+        );
+        setActiveCurrencyContribId(null);
+      } else {
+        handleTargetCurrencyChange(created.code);
+      }
       setNewCurrencyCode("");
       setNewCurrencyName("");
       setShowAddCurrencyModal(false);
@@ -2268,6 +2729,15 @@ export function RelatedInformationStep({
           !form.currency ||
           !form.fundingSource ||
           (category === "Works" && !form.pricingBasis) ||
+          (form.hasMultiFunding &&
+            (!form.fundingContributions ||
+              form.fundingContributions.length === 0 ||
+              form.fundingContributions.some(
+                (c) =>
+                  !c.fundingSource.trim() ||
+                  !c.currency.trim() ||
+                  !(Number(c.amount) > 0),
+              ))) ||
           (form.lotRequired &&
             lots.some(
               (lot) =>
@@ -2426,110 +2896,695 @@ export function RelatedInformationStep({
             </Field>
           </div>
 
-          <Field
-            error={
-              attempted && !(Number(form.estimatedAmount) > 0)
-                ? "Enter an estimated amount greater than zero."
-                : undefined
-            }
-            label="Estimated Amount"
-            required
-          >
-            <input
-              aria-invalid={
-                attempted && !(Number(form.estimatedAmount) > 0)
-                  ? "true"
-                  : undefined
-              }
-              className={
-                inputClasses +
-                (attempted && !(Number(form.estimatedAmount) > 0)
-                  ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
-                  : "")
-              }
-              min="0"
-              onChange={(event) =>
-                onChange("estimatedAmount", event.target.value)
-              }
-              onKeyDown={(event) => {
-                if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-                  event.preventDefault();
-                }
-              }}
-              onWheel={(event) => event.currentTarget.blur()}
-              placeholder="0.00"
-              step="0.01"
-              type="number"
-              value={form.estimatedAmount}
-            />
-          </Field>
+          {/* Budget & Funding Structure Toggle Header */}
+          <div className="md:col-span-2 xl:col-span-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 pb-1 border-t border-slate-200">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Landmark className="h-3.5 w-3.5 text-emerald-700" />
+                Budget & Funding Structure
+              </span>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Allocate budget using a single project funding source or
+                register exact amounts across multiple funding sources with
+                their native currencies.
+              </p>
+            </div>
+            <div className="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs font-medium self-start sm:self-auto shadow-xs">
+              <button
+                type="button"
+                onClick={() => handleToggleMultiFunding(false)}
+                className={`px-3 py-1.5 rounded-md transition-all ${
+                  !form.hasMultiFunding
+                    ? "bg-white text-emerald-800 font-semibold shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Single Funding Source
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleMultiFunding(true)}
+                className={`px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5 ${
+                  form.hasMultiFunding
+                    ? "bg-white text-emerald-800 font-semibold shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span>Multiple Sources (Co-Financing)</span>
+              </button>
+            </div>
+          </div>
 
-          <Field
-            error={
-              attempted && !form.currency
-                ? "Select a currency for this activity."
-                : undefined
-            }
-            label="Currency"
-            required
-          >
-            <SelectControl
-              hasError={attempted && !form.currency}
-              onChange={(value) => {
-                if (value === "__add_new_currency__") {
-                  setCurrencyError(null);
-                  setShowAddCurrencyModal(true);
-                  return;
+          {!form.hasMultiFunding ? (
+            <>
+              <Field
+                error={
+                  attempted && !(Number(form.estimatedAmount) > 0)
+                    ? "Enter an estimated amount greater than zero."
+                    : undefined
                 }
-                onChange("currency", value);
-              }}
-              value={form.currency}
-            >
-              <option value="">Select currency</option>
-              {currencyOptions.map((cur) => (
-                <option key={cur.code} value={cur.code}>
-                  {cur.label}
-                </option>
-              ))}
-              {form.currency &&
-              !currencyOptions.some((cur) => cur.code === form.currency) ? (
-                <option value={form.currency}>{form.currency}</option>
+                hint={
+                  form.currency &&
+                  form.currency.trim().toUpperCase() !== "ETB" &&
+                  Number(form.estimatedAmount) > 0 &&
+                  Number(form.exchangeRate) > 0
+                    ? `≈ ${(Number(form.estimatedAmount) * Number(form.exchangeRate)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB equivalent`
+                    : undefined
+                }
+                label="Estimated Amount"
+                required
+              >
+                <input
+                  aria-invalid={
+                    attempted && !(Number(form.estimatedAmount) > 0)
+                      ? "true"
+                      : undefined
+                  }
+                  className={
+                    inputClasses +
+                    (attempted && !(Number(form.estimatedAmount) > 0)
+                      ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
+                      : "")
+                  }
+                  min="0"
+                  onChange={(event) =>
+                    onChange("estimatedAmount", event.target.value)
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                      event.preventDefault();
+                    }
+                  }}
+                  onWheel={(event) => event.currentTarget.blur()}
+                  placeholder="0.00"
+                  step="0.01"
+                  type="number"
+                  value={form.estimatedAmount}
+                />
+              </Field>
+
+              <Field
+                error={
+                  attempted && !form.currency
+                    ? "Select a currency for this activity."
+                    : undefined
+                }
+                label="Currency"
+                required
+              >
+                <SelectControl
+                  hasError={attempted && !form.currency}
+                  onChange={(value) => {
+                    if (value === "__add_new_currency__") {
+                      setActiveCurrencyContribId(null);
+                      setCurrencyError(null);
+                      setShowAddCurrencyModal(true);
+                      return;
+                    }
+                    onChange("currency", value);
+                  }}
+                  value={form.currency}
+                >
+                  <option value="">Select currency</option>
+                  {currencyOptions.map((cur) => (
+                    <option key={cur.code} value={cur.code}>
+                      {cur.label}
+                    </option>
+                  ))}
+                  {form.currency &&
+                  !currencyOptions.some((cur) => cur.code === form.currency) ? (
+                    <option value={form.currency}>{form.currency}</option>
+                  ) : null}
+                  <option value="__add_new_currency__">
+                    + Add currency if not listed...
+                  </option>
+                </SelectControl>
+              </Field>
+
+              {form.currency && form.currency.trim().toUpperCase() !== "ETB" ? (
+                <Field
+                  hint={
+                    Number(form.estimatedAmount) > 0 &&
+                    Number(form.exchangeRate) > 0
+                      ? `Rate: 1 ${form.currency} = ${Number(form.exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ETB`
+                      : `Conversion rate to Ethiopian Birr (1 ${form.currency} = ... ETB).`
+                  }
+                  label="Exchange Rate (to ETB)"
+                >
+                  <div className="relative">
+                    <input
+                      className={
+                        inputClasses +
+                        " pr-12 text-right font-mono tabular-nums"
+                      }
+                      min="0"
+                      onChange={(event) =>
+                        onChange("exchangeRate", event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "ArrowUp" ||
+                          event.key === "ArrowDown"
+                        ) {
+                          event.preventDefault();
+                        }
+                      }}
+                      onWheel={(event) => event.currentTarget.blur()}
+                      placeholder="e.g. 125.00"
+                      step="0.0001"
+                      type="number"
+                      value={form.exchangeRate || ""}
+                    />
+                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[11px] font-semibold text-slate-500">
+                      ETB
+                    </span>
+                  </div>
+                </Field>
               ) : null}
-              <option value="__add_new_currency__">
-                + Add currency if not listed...
-              </option>
-            </SelectControl>
-          </Field>
 
-          <Field
-            error={
-              attempted && !form.fundingSource
-                ? "Select a funding source for this activity."
-                : undefined
-            }
-            hint={
-              inheritedFundingSources.length > 1
-                ? "Auto-inherited from project. Select the funding source that finances this activity."
-                : "Auto-inherited from project."
-            }
-            label="Funding Source"
-            required
-          >
-            <SelectControl
-              hasError={attempted && !form.fundingSource}
-              onChange={(value) => onChange("fundingSource", value)}
-              value={form.fundingSource}
-            >
-              {inheritedFundingSources.length > 1 && !form.fundingSource && (
-                <option value="">Select funding source</option>
-              )}
-              {inheritedFundingSources.map((source) => (
-                <option key={source} value={source}>
-                  {source}
-                </option>
-              ))}
-            </SelectControl>
-          </Field>
+              <Field
+                error={
+                  attempted && !form.fundingSource
+                    ? "Select a funding source for this activity."
+                    : undefined
+                }
+                hint={
+                  inheritedFundingSources.length > 1
+                    ? "Auto-inherited from project. Select the funding source that finances this activity."
+                    : "Auto-inherited from project."
+                }
+                label="Funding Source"
+                required
+              >
+                <SelectControl
+                  hasError={attempted && !form.fundingSource}
+                  onChange={(value) => onChange("fundingSource", value)}
+                  value={form.fundingSource}
+                >
+                  {inheritedFundingSources.length > 1 &&
+                    !form.fundingSource && (
+                      <option value="">Select funding source</option>
+                    )}
+                  {inheritedFundingSources.map((source) => (
+                    <option key={source} value={source}>
+                      {source}
+                    </option>
+                  ))}
+                </SelectControl>
+              </Field>
+            </>
+          ) : (
+            <>
+              <Field
+                error={
+                  attempted && !form.currency
+                    ? "Select activity base reporting currency."
+                    : undefined
+                }
+                hint="Main reporting currency. Total budget is computed in this currency."
+                label="Activity Base Reporting Currency"
+                required
+              >
+                <SelectControl
+                  hasError={attempted && !form.currency}
+                  onChange={(value) => {
+                    if (value === "__add_new_currency__") {
+                      setActiveCurrencyContribId(null);
+                      setCurrencyError(null);
+                      setShowAddCurrencyModal(true);
+                      return;
+                    }
+                    handleTargetCurrencyChange(value);
+                  }}
+                  value={form.currency}
+                >
+                  <option value="">Select reporting currency</option>
+                  {currencyOptions.map((cur) => (
+                    <option key={cur.code} value={cur.code}>
+                      {cur.label}
+                    </option>
+                  ))}
+                  {form.currency &&
+                  !currencyOptions.some((cur) => cur.code === form.currency) ? (
+                    <option value={form.currency}>{form.currency}</option>
+                  ) : null}
+                  <option value="__add_new_currency__">
+                    + Add currency if not listed...
+                  </option>
+                </SelectControl>
+              </Field>
+
+              <Field
+                error={
+                  attempted && !(Number(form.estimatedAmount) > 0)
+                    ? "Enter native funds greater than zero below."
+                    : undefined
+                }
+                hint="Auto-computed in real time from all funding contributions below."
+                label={`Total Estimated Amount (${form.currency || "ETB"})`}
+                required
+              >
+                <div className="relative">
+                  <input
+                    aria-label="Total estimated amount auto-calculated"
+                    className={
+                      inputClasses +
+                      " bg-emerald-50/40 text-emerald-950 font-bold font-mono pr-28 border-emerald-300 cursor-not-allowed"
+                    }
+                    readOnly
+                    type="text"
+                    value={
+                      totalComputed > 0
+                        ? totalComputed.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : "0.00"
+                    }
+                  />
+                  <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 inline-flex items-center gap-1 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Auto-Total
+                  </span>
+                </div>
+              </Field>
+
+              <Field
+                hint="Derived from the active funding contributions registered below."
+                label="Combined Funding Sources"
+              >
+                <div
+                  className={
+                    inputClasses +
+                    " bg-slate-50 text-slate-700 text-xs truncate"
+                  }
+                >
+                  {form.fundingSource || "Multiple Funding Sources"}
+                </div>
+              </Field>
+
+              {/* Multi-Source Funding Breakdown Card */}
+              <div className="md:col-span-2 xl:col-span-3 rounded-xl border border-emerald-200/90 bg-emerald-50/20 p-4 space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
+                      <CircleDollarSign className="h-4 w-4 text-emerald-700" />
+                      Funding Sources & Native Currency Breakdown
+                    </h4>
+                    <p className="text-xs text-slate-600 mt-0.5">
+                      Register the exact fund amount in each source&apos;s native
+                      currency. Enter an optional conversion rate to compute the
+                      total in {form.currency || "ETB"}.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddContribution}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-xs border border-emerald-300 hover:bg-emerald-50 transition-colors self-start sm:self-auto"
+                  >
+                    <Plus className="h-3.5 w-3.5 text-emerald-700" />
+                    Add Funding Source
+                  </button>
+                </div>
+
+                {attempted && multiFundingInvalid ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-red-50 p-2.5 text-xs text-red-700 border border-red-200">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                    <span>
+                      Please select a funding source and specify an amount
+                      greater than zero for all registered funding sources.
+                    </span>
+                  </div>
+                ) : null}
+
+                <div className="space-y-3">
+                  {contributions.map((contrib, idx) => {
+                    const isSameCurrency =
+                      contrib.currency &&
+                      form.currency &&
+                      contrib.currency.trim().toUpperCase() ===
+                        form.currency.trim().toUpperCase();
+                    const rateNum = Number(contrib.exchangeRate);
+                    const effectiveRate = isSameCurrency
+                      ? 1
+                      : rateNum > 0
+                        ? rateNum
+                        : 1;
+                    const equiv = (Number(contrib.amount) || 0) * effectiveRate;
+                    const hasRowError =
+                      attempted &&
+                      (!contrib.fundingSource.trim() ||
+                        !(Number(contrib.amount) > 0));
+
+                    return (
+                      <div
+                        key={contrib.id}
+                        className={`rounded-xl border bg-white p-3.5 shadow-xs transition-all ${
+                          hasRowError
+                            ? "border-red-300 bg-red-50/20"
+                            : "border-slate-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                          <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                            Funding Source #{idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveContribution(contrib.id)}
+                            disabled={contributions.length <= 1}
+                            className={`p-1.5 rounded-md transition-colors ${
+                              contributions.length <= 1
+                                ? "text-slate-300 cursor-not-allowed"
+                                : "text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            }`}
+                            title={
+                              contributions.length <= 1
+                                ? "At least one funding source is required"
+                                : "Remove this funding source"
+                            }
+                            aria-label="Remove this funding source"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-start">
+                          {/* Funding Source (col-span-4) */}
+                          <div className="lg:col-span-4 flex flex-col">
+                            <label className="text-[11px] font-semibold text-slate-700 mb-1">
+                              Funding Source{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            {customSourceRows[contrib.id] ? (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  aria-label="Custom funding source"
+                                  className={
+                                    inputClasses +
+                                    " text-xs" +
+                                    (attempted && !contrib.fundingSource.trim()
+                                      ? " !border-red-500 !bg-red-50/20"
+                                      : "")
+                                  }
+                                  onChange={(e) =>
+                                    handleUpdateContribution(
+                                      contrib.id,
+                                      "fundingSource",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="Enter funding source name"
+                                  type="text"
+                                  value={contrib.fundingSource}
+                                />
+                                <button
+                                  aria-label="Select from list"
+                                  className="rounded-lg border border-slate-300 p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 text-xs shrink-0"
+                                  onClick={() =>
+                                    setCustomSourceRows((prev) => ({
+                                      ...prev,
+                                      [contrib.id]: false,
+                                    }))
+                                  }
+                                  title="Select from list"
+                                  type="button"
+                                >
+                                  <ListChecks className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <SelectControl
+                                hasError={
+                                  attempted && !contrib.fundingSource.trim()
+                                }
+                                onChange={(val) => {
+                                  if (val === "__custom__") {
+                                    setCustomSourceRows((prev) => ({
+                                      ...prev,
+                                      [contrib.id]: true,
+                                    }));
+                                    handleUpdateContribution(
+                                      contrib.id,
+                                      "fundingSource",
+                                      "",
+                                    );
+                                    return;
+                                  }
+                                  handleUpdateContribution(
+                                    contrib.id,
+                                    "fundingSource",
+                                    val,
+                                  );
+                                }}
+                                value={contrib.fundingSource}
+                              >
+                                <option value="">Select funding source</option>
+                                {inheritedFundingSources.map((s) => (
+                                  <option key={s} value={s}>
+                                    {s}
+                                  </option>
+                                ))}
+                                {contrib.fundingSource &&
+                                !inheritedFundingSources.includes(
+                                  contrib.fundingSource,
+                                ) ? (
+                                  <option value={contrib.fundingSource}>
+                                    {contrib.fundingSource}
+                                  </option>
+                                ) : null}
+                                <option value="__custom__">
+                                  + Enter custom funding source...
+                                </option>
+                              </SelectControl>
+                            )}
+                          </div>
+
+                          {/* Native Currency (col-span-2) */}
+                          <div className="lg:col-span-2 flex flex-col">
+                            <label className="text-[11px] font-semibold text-slate-700 mb-1">
+                              Native Currency{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <SelectControl
+                              hasError={attempted && !contrib.currency}
+                              onChange={(val) => {
+                                if (val === "__add_new_currency__") {
+                                  setActiveCurrencyContribId(contrib.id);
+                                  setCurrencyError(null);
+                                  setShowAddCurrencyModal(true);
+                                  return;
+                                }
+                                handleUpdateContribution(
+                                  contrib.id,
+                                  "currency",
+                                  val,
+                                );
+                              }}
+                              value={contrib.currency}
+                            >
+                              <option value="">Select currency</option>
+                              {currencyOptions.map((cur) => (
+                                <option key={cur.code} value={cur.code}>
+                                  {cur.code}
+                                </option>
+                              ))}
+                              {contrib.currency &&
+                              !currencyOptions.some(
+                                (c) => c.code === contrib.currency,
+                              ) ? (
+                                <option value={contrib.currency}>
+                                  {contrib.currency}
+                                </option>
+                              ) : null}
+                              <option value="__add_new_currency__">
+                                + Add...
+                              </option>
+                            </SelectControl>
+                          </div>
+
+                          {/* Exact Amount in Native Currency (col-span-3) */}
+                          <div className="lg:col-span-3 flex flex-col">
+                            <label className="text-[11px] font-semibold text-slate-700 mb-1">
+                              Amount ({contrib.currency || "Native"}){" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              aria-label={`Exact amount in ${contrib.currency}`}
+                              className={
+                                inputClasses +
+                                " text-xs font-mono tabular-nums" +
+                                (attempted && !(Number(contrib.amount) > 0)
+                                  ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500"
+                                  : "")
+                              }
+                              min="0"
+                              onChange={(e) =>
+                                handleUpdateContribution(
+                                  contrib.id,
+                                  "amount",
+                                  e.target.value,
+                                )
+                              }
+                              onKeyDown={(e) => {
+                                if (
+                                  e.key === "ArrowUp" ||
+                                  e.key === "ArrowDown"
+                                ) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              onWheel={(e) => e.currentTarget.blur()}
+                              placeholder="0.00"
+                              step="0.01"
+                              type="number"
+                              value={contrib.amount}
+                            />
+                          </div>
+
+                          {/* Conversion Rate (col-span-3) */}
+                          <div className="lg:col-span-3 flex flex-col">
+                            <label className="text-[11px] font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                              <span>Conversion Rate</span>
+                              {!isSameCurrency ? (
+                                <span className="text-[10px] font-normal text-slate-500">
+                                  optional
+                                </span>
+                              ) : null}
+                            </label>
+                            {isSameCurrency ? (
+                              <div className="flex items-center h-[38px] px-3 rounded-lg border border-slate-200 bg-slate-50 text-xs font-medium text-slate-600">
+                                1.00{" "}
+                                <span className="ml-1 text-[10px] text-slate-500">
+                                  (Base {form.currency || "ETB"})
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="relative">
+                                <input
+                                  aria-label={`Conversion rate from ${contrib.currency} to ${form.currency || "ETB"}`}
+                                  className={
+                                    inputClasses +
+                                    " pr-12 text-right font-mono tabular-nums text-xs"
+                                  }
+                                  min="0"
+                                  onChange={(e) =>
+                                    handleUpdateContribution(
+                                      contrib.id,
+                                      "exchangeRate",
+                                      e.target.value,
+                                    )
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (
+                                      e.key === "ArrowUp" ||
+                                      e.key === "ArrowDown"
+                                    ) {
+                                      e.preventDefault();
+                                    }
+                                  }}
+                                  onWheel={(e) => e.currentTarget.blur()}
+                                  placeholder="e.g. 125.00"
+                                  step="0.0001"
+                                  type="number"
+                                  value={contrib.exchangeRate || ""}
+                                />
+                                <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-[10px] font-bold text-slate-500">
+                                  {form.currency || "ETB"}
+                                </span>
+                              </div>
+                            )}
+                            {!isSameCurrency ? (
+                              <span className="text-[10px] text-slate-500 mt-0.5">
+                                {Number(contrib.exchangeRate) > 0
+                                  ? `1 ${contrib.currency} = ${Number(contrib.exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${form.currency || "ETB"}`
+                                  : `1:1 applied if omitted`}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        {/* Converted Equivalent live row footer */}
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-600">
+                              Registered:
+                            </span>
+                            <span className="font-mono font-medium text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                              {Number(contrib.amount) > 0
+                                ? Number(contrib.amount).toLocaleString(
+                                    undefined,
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    },
+                                  )
+                                : "0.00"}{" "}
+                              {contrib.currency || "Native"}
+                            </span>
+                            {!isSameCurrency &&
+                            Number(contrib.exchangeRate) > 0 ? (
+                              <span className="text-[11px] text-slate-500">
+                                ×{" "}
+                                {Number(contrib.exchangeRate).toLocaleString()}{" "}
+                                rate
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-1.5 font-semibold text-emerald-800">
+                            <span className="text-slate-500 font-normal">
+                              Converted:
+                            </span>
+                            <span className="font-mono text-sm">
+                              {equiv.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              {form.currency || "ETB"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Grand Total Summary Box */}
+                <div className="rounded-xl bg-gradient-to-r from-emerald-100/70 to-teal-100/50 border border-emerald-300/80 p-4 shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-700" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-950">
+                          Total Computed Activity Budget
+                        </span>
+                      </div>
+                      <p className="text-xs text-emerald-900/80 mt-1">
+                        Computed automatically from {contributions.length}{" "}
+                        funding source{contributions.length > 1 ? "s" : ""}{" "}
+                        based on native currency amounts and entered conversion
+                        rates.
+                      </p>
+                    </div>
+                    <div className="text-left sm:text-right shrink-0">
+                      <span className="text-xs font-semibold text-emerald-900/80 block">
+                        Total Converted Budget:
+                      </span>
+                      <span className="text-2xl font-extrabold text-emerald-950 font-mono tracking-tight">
+                        {totalComputed.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        <span className="text-sm font-bold text-emerald-800">
+                          {form.currency || "ETB"}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
           {category === "Works" ? (
             <Field

@@ -210,6 +210,12 @@ export function formatDelayedActivityAlert(
     activityDescription: act.description || stageLabel,
     delayedStage: stageLabel,
     delayReason,
+    category: (act as any).category || (act as any).plan?.category || undefined,
+    method:
+      (act as any).method ||
+      (act as any).procurementMethod?.label ||
+      (act as any).procurementMethod ||
+      undefined,
   };
 }
 

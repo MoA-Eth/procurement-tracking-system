@@ -14,6 +14,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatGregorianDate } from "../utils/ethiopianCalendar";
+import {
+  resolveProcurementMethodOption,
+  resolveMethodKey,
+  roadmapForMethod,
+} from "../data/procurementActivityConfig";
 
 export interface PhaseDelayItem {
   id?: string;
@@ -90,16 +95,6 @@ export function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
     extractDateStr(stage.currentTargetEndDate) ||
     extractDateStr(stage.gregorianDate) ||
     null;
-  const targetEnd =
-    extractDateStr(stage.currentTargetEndDate) ||
-    extractDateStr(stage.plannedEndDate) ||
-    extractDateStr(stage.gregorianDate) ||
-    null;
-  const actualStart = extractDateStr(stage.actualStartDate) || null;
-  const actualEnd =
-    extractDateStr(stage.actualEndDate) ||
-    extractDateStr(stage.actualDate) ||
-    null;
 
   // Compute planned days
   let plannedDuration = 14;
@@ -114,6 +109,36 @@ export function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
       plannedDuration = Math.max(1, Math.round((pEndMs - pStartMs) / 86400000));
     }
   }
+
+  let finalPlannedStart = plannedStart;
+  let finalPlannedEnd = plannedEnd;
+  if (!isNA && !finalPlannedStart && !finalPlannedEnd) {
+    const seq =
+      typeof stage.sequence === "number" ? Math.max(0, stage.sequence - 1) : 0;
+    const baseAnchor = new Date("2026-05-08T00:00:00Z");
+    const dStart = new Date(baseAnchor.getTime() + seq * 14 * 86400000);
+    const dEnd = new Date(dStart.getTime() + plannedDuration * 86400000);
+    finalPlannedStart = dStart.toISOString().slice(0, 10);
+    finalPlannedEnd = dEnd.toISOString().slice(0, 10);
+  } else if (!isNA && !finalPlannedStart && finalPlannedEnd) {
+    const pEndMs = new Date(finalPlannedEnd).getTime();
+    if (!isNaN(pEndMs)) {
+      finalPlannedStart = new Date(pEndMs - plannedDuration * 86400000)
+        .toISOString()
+        .slice(0, 10);
+    }
+  }
+
+  const targetEnd =
+    extractDateStr(stage.currentTargetEndDate) ||
+    extractDateStr(stage.plannedEndDate) ||
+    extractDateStr(stage.gregorianDate) ||
+    finalPlannedEnd;
+  const actualStart = extractDateStr(stage.actualStartDate) || null;
+  const actualEnd =
+    extractDateStr(stage.actualEndDate) ||
+    extractDateStr(stage.actualDate) ||
+    null;
 
   // Determine stage execution status
   const rawStatus = (stage.status || "").toUpperCase();
@@ -203,11 +228,11 @@ export function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
     sequence: stage.sequence,
     status,
     notApplicable: isNA,
-    plannedStartDate: plannedStart,
-    plannedEndDate: plannedEnd,
+    plannedStartDate: finalPlannedStart,
+    plannedEndDate: finalPlannedEnd,
     actualStartDate: actualStart,
     actualEndDate: actualEnd,
-    plannedDurationDays: plannedDuration,
+    plannedDurationDays: isNA ? undefined : plannedDuration,
     actualDurationDays: actualDuration,
     delayDays,
     remarks: stage.remarks || stage.comment || "",
@@ -233,11 +258,163 @@ export function PhaseDelayBreakdownModal({
   data,
 }: PhaseDelayBreakdownModalProps) {
   const [now] = useState(() => Date.now());
+  const [filterView, setFilterView] = useState<"active" | "all">("active");
+
+  const resolvedCategory = useMemo(() => {
+    if (data?.category && data.category.trim()) return data.category;
+    const ref = (data?.reference || "").toUpperCase();
+    if (
+      ref.includes("-GO-") ||
+      ref.includes("/GO/") ||
+      ref.includes("_GO_") ||
+      ref.includes("/G-")
+    )
+      return "Goods";
+    if (
+      ref.includes("-CW-") ||
+      ref.includes("-W-") ||
+      ref.includes("/CW/") ||
+      ref.includes("/W/") ||
+      ref.includes("/W-")
+    )
+      return "Works";
+    if (
+      ref.includes("-CS-") ||
+      ref.includes("-C-") ||
+      ref.includes("/CS/") ||
+      ref.includes("/C/") ||
+      ref.includes("/C-") ||
+      ref.includes("QCBS")
+    )
+      return "Consultancy Services";
+    if (ref.includes("-NC-") || ref.includes("/NC/") || ref.includes("_NC_"))
+      return "Non-Consulting Services";
+    return undefined;
+  }, [data?.category, data?.reference]);
+
+  const resolvedMethod = useMemo(() => {
+    const raw = data?.method || "";
+    if (raw) {
+      const opt = resolveProcurementMethodOption(raw);
+      if (opt?.label) return opt.label;
+      return raw;
+    }
+    const ref = (data?.reference || "").toUpperCase();
+    if (ref.includes("-RFB") || ref.includes("/RFB"))
+      return "Request for Bids (RFB)";
+    if (ref.includes("-RFQ") || ref.includes("/RFQ"))
+      return "Request for Quotations (RFQ)";
+    if (ref.includes("-QCBS") || ref.includes("/QCBS"))
+      return "Quality- and Cost-Based Selection (QCBS)";
+    if (ref.includes("-DIR") || ref.includes("/DIR")) return "Direct Selection";
+    if (ref.includes("-LCS") || ref.includes("/LCS"))
+      return "Least-Cost Selection (LCS)";
+    if (ref.includes("-FBS") || ref.includes("/FBS"))
+      return "Fixed-Budget Selection (FBS)";
+    if (ref.includes("-CQS") || ref.includes("/CQS"))
+      return "Consultant's Qualifications (CQS)";
+    if (
+      ref.includes("-INDV") ||
+      ref.includes("/INDV") ||
+      ref.includes("-ICS") ||
+      ref.includes("/ICS")
+    )
+      return "Individual Consultant Selection";
+    return undefined;
+  }, [data?.method, data?.reference]);
+
   const phaseItems: PhaseDelayItem[] = useMemo(() => {
-    const stages = data?.stages;
-    if (!data || !stages || stages.length === 0) return [];
-    return stages.map((st) => computePhaseMetrics(st, now));
-  }, [data, now]);
+    if (!data) return [];
+    let stages = data.stages;
+
+    // Explicit empty array should maintain empty state (e.g. for testing)
+    if (Array.isArray(stages) && stages.length === 0) {
+      return [];
+    }
+
+    // If stages not provided, create template roadmap based on method
+    if (!stages) {
+      const mKey = resolveMethodKey(resolvedMethod || data.method || "");
+      const tpl = roadmapForMethod(mKey);
+      if (tpl && tpl.length > 0) {
+        stages = tpl.map((t, idx) => ({
+          name: t.name,
+          sequence: idx + 1,
+          plannedDays: 14,
+          days: "14",
+          notApplicable: Boolean(t.allowNotApplicable),
+          status: t.allowNotApplicable ? "Not Applicable" : "Not Started",
+        }));
+      } else {
+        return [];
+      }
+    }
+
+    // Merge tracking records from local storage if present
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem(
+          "moa-pts:officer-activity-tracking:v2",
+        );
+        if (raw) {
+          const records = JSON.parse(raw);
+          const refKey = (data.reference || "").toLowerCase().trim();
+          const tr = records.find(
+            (r: any) =>
+              (r.activityReference || "").toLowerCase().trim() === refKey,
+          );
+          if (tr && Array.isArray(tr.stages) && tr.stages.length > 0) {
+            stages = stages.map((st: any) => {
+              const trStage = tr.stages.find(
+                (ts: any) =>
+                  (ts.stageName || "").toLowerCase().trim() ===
+                  (st.stageType?.label || st.name || st.stageName || "")
+                    .toLowerCase()
+                    .trim(),
+              );
+              if (trStage) {
+                return {
+                  ...st,
+                  status:
+                    trStage.status === "Completed"
+                      ? "COMPLETED"
+                      : trStage.status === "In Progress"
+                        ? "IN_PROGRESS"
+                        : st.status,
+                  actualEndDate:
+                    trStage.actualDate?.gregorian || st.actualEndDate,
+                  remarks: trStage.remarks || st.remarks,
+                  revisions: trStage.revisions || st.revisions,
+                };
+              }
+              return st;
+            });
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    let applicableSeq = 0;
+    return stages.map((st, idx) => {
+      const isNA = Boolean(
+        st.notApplicable ||
+        st.isNotApplicable ||
+        (typeof st.status === "string" &&
+          st.status.toUpperCase() === "NOT APPLICABLE"),
+      );
+      const seqIndex = isNA ? idx : applicableSeq++;
+      return computePhaseMetrics(
+        {
+          ...st,
+          sequence:
+            typeof st.sequence === "number" ? st.sequence : seqIndex + 1,
+        },
+        now,
+      );
+    });
+  }, [data, now, resolvedMethod]);
 
   if (!isOpen || !data) return null;
 
@@ -275,6 +452,12 @@ export function PhaseDelayBreakdownModal({
       ? Math.round((completedCount / totalApplicableCount) * 100)
       : 0;
 
+  const hasNotApplicable = phaseItems.some((p) => p.notApplicable);
+  const displayedPhases =
+    filterView === "active" && hasNotApplicable && totalApplicableCount > 0
+      ? phaseItems.filter((p) => !p.notApplicable)
+      : phaseItems;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
       <div className="w-full max-w-4xl bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden my-6 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
@@ -293,14 +476,14 @@ export function PhaseDelayBreakdownModal({
                   On Track
                 </span>
               )}
-              {data.category && (
+              {resolvedCategory && (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-white/15 text-white border border-white/20">
-                  {data.category}
+                  {resolvedCategory}
                 </span>
               )}
-              {data.method && (
+              {resolvedMethod && (
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-white/15 text-white border border-white/20">
-                  {data.method}
+                  {resolvedMethod}
                 </span>
               )}
             </div>
@@ -389,14 +572,14 @@ export function PhaseDelayBreakdownModal({
             <div
               className={`p-4 rounded-xl border flex items-start gap-3.5 transition-all shadow-xs ${
                 bottleneckStage
-                  ? "bg-gradient-to-br from-amber-50/80 via-white to-amber-50/30 border-amber-200/80"
+                  ? "bg-gradient-to-br from-rose-50/70 via-white to-rose-50/20 border-rose-200/80"
                   : "bg-gradient-to-br from-slate-50/80 via-white to-slate-50/30 border-slate-200/80"
               }`}
             >
               <div
                 className={`h-9 w-9 rounded-xl shrink-0 flex items-center justify-center ring-1 ${
                   bottleneckStage
-                    ? "bg-amber-100/90 text-amber-700 ring-amber-200/70"
+                    ? "bg-rose-100/90 text-rose-700 ring-rose-200/70"
                     : "bg-slate-100 text-slate-600 ring-slate-200/70"
                 }`}
               >
@@ -405,7 +588,7 @@ export function PhaseDelayBreakdownModal({
               <div className="min-w-0 flex-1">
                 <p
                   className={`text-[10px] font-bold uppercase tracking-[0.08em] ${
-                    bottleneckStage ? "text-amber-800" : "text-slate-600"
+                    bottleneckStage ? "text-rose-800" : "text-slate-600"
                   }`}
                 >
                   Primary Bottleneck
@@ -415,7 +598,7 @@ export function PhaseDelayBreakdownModal({
                 </p>
                 <p
                   className={`text-[11px] mt-0.5 font-medium ${
-                    bottleneckStage ? "text-amber-700" : "text-slate-500"
+                    bottleneckStage ? "text-rose-700" : "text-slate-500"
                   }`}
                 >
                   {bottleneckStage
@@ -457,16 +640,47 @@ export function PhaseDelayBreakdownModal({
 
           {/* Phase-by-Phase Table */}
           <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
-            <div className="px-5 py-3.5 bg-slate-50/90 border-b border-slate-200/80 flex items-center justify-between">
+            <div className="px-5 py-3.5 bg-slate-50/90 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#0A3C2F]" />
                 <h3 className="text-xs font-bold text-[#0f172a] uppercase tracking-wider">
-                  Phase-by-Phase Process Schedule & Delay
+                  Phase-by-Phase Process Schedule &amp; Delay
                 </h3>
               </div>
-              <span className="text-[11px] text-slate-500 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-slate-200/80 shadow-2xs">
-                {phaseItems.length} sequential processes
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {hasNotApplicable && totalApplicableCount > 0 && (
+                  <div className="inline-flex items-center rounded-lg bg-slate-200/70 p-0.5 text-[11px] font-semibold text-slate-600">
+                    <button
+                      type="button"
+                      onClick={() => setFilterView("active")}
+                      className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                        filterView === "active"
+                          ? "bg-white text-[#0A3C2F] shadow-2xs font-bold"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Active Phases ({totalApplicableCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFilterView("all")}
+                      className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                        filterView === "all"
+                          ? "bg-white text-[#0A3C2F] shadow-2xs font-bold"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      All Stages ({phaseItems.length})
+                    </button>
+                  </div>
+                )}
+                <span className="text-[11px] text-slate-500 font-semibold bg-white px-2.5 py-0.5 rounded-full border border-slate-200/80 shadow-2xs">
+                  {displayedPhases.length}{" "}
+                  {filterView === "active" && hasNotApplicable
+                    ? "active phases"
+                    : "sequential processes"}
+                </span>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -501,7 +715,7 @@ export function PhaseDelayBreakdownModal({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {phaseItems.length === 0 ? (
+                  {displayedPhases.length === 0 ? (
                     <tr>
                       <td
                         colSpan={6}
@@ -520,7 +734,7 @@ export function PhaseDelayBreakdownModal({
                       </td>
                     </tr>
                   ) : (
-                    phaseItems.map((phase, idx) => {
+                    displayedPhases.map((phase, idx) => {
                       const isDelayed = (phase.delayDays || 0) > 0;
                       const isCompleted =
                         phase.status === "Completed" ||

@@ -1029,7 +1029,7 @@ export function MyDecisionsView({
                                 act.activityRefNo || act.id,
                               )
                             }
-                            className="bg-rose-50/80 hover:bg-rose-100/70 border-l-4 border-l-rose-600 transition-all duration-200 cursor-pointer"
+                            className="hover:bg-slate-50 transition-colors cursor-pointer"
                           >
                             <td className="py-3 px-3.5 text-center font-sans tabular-nums text-slate-400 font-medium">
                               {index + 1}

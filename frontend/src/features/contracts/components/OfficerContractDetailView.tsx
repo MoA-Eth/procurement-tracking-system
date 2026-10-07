@@ -469,6 +469,20 @@ export function OfficerContractDetailView({
             </span>
           </div>
 
+          {contract.details?.exchangeRate ? (
+            <div>
+              <span className="text-slate-500 block">Exchange Rate to ETB</span>
+              <span className="font-medium text-slate-900 mt-0.5 block">
+                1 {currency} = {formatAmount(contract.details.exchangeRate)} ETB
+                {contract.details.equivalentAmountETB ? (
+                  <span className="text-slate-500 ml-1 font-mono text-[11px]">
+                    (≈ {formatAmount(contract.details.equivalentAmountETB)} ETB)
+                  </span>
+                ) : null}
+              </span>
+            </div>
+          ) : null}
+
           {contract.details?.activityReference ? (
             <div>
               <span className="text-slate-500 block">

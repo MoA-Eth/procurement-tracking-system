@@ -19,6 +19,7 @@ import {
   Lock,
   Sparkles,
   MessageSquare,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { type ProcurementPlan, parseRejectionDetails } from "../../plansData";
@@ -51,6 +52,8 @@ export interface PlanFullScreenReviewViewProps {
   setReturnRemarks: (remarks: string) => void;
   onApprovePlan?: (plan: ProcurementPlan, deadline?: string) => void;
   onReturnPlan?: (plan: ProcurementPlan, remarks?: string) => void;
+  onApproveCancellation?: (plan: ProcurementPlan, comment?: string) => void;
+  onRejectCancellation?: (plan: ProcurementPlan, comment?: string) => void;
   onCommitteeVote?: (
     plan: ProcurementPlan,
     decision: "APPROVE" | "REJECT",
@@ -90,6 +93,8 @@ export function PlanFullScreenReviewView({
   setReturnRemarks,
   onApprovePlan,
   onReturnPlan,
+  onApproveCancellation,
+  onRejectCancellation,
   onCommitteeVote,
   onManagementDecision,
   isCommitteeRejectionModalOpen,
@@ -98,6 +103,12 @@ export function PlanFullScreenReviewView({
   isChairAuthorized = false,
   onChairAuthorize,
 }: PlanFullScreenReviewViewProps) {
+  const isCancellationRequested =
+    plan.status === "Cancellation Requested" ||
+    (plan as any).status === "CANCELLATION_REQUESTED";
+  const isCancelled =
+    plan.status === "Cancelled" || (plan as any).status === "CANCELLED";
+
   // Effective activities to display (combines current plan's activities with any already approved parent activities)
   const effectiveActivities: ProcurementActivity[] = useMemo(() => {
     const base: ProcurementActivity[] =
@@ -239,12 +250,80 @@ export function PlanFullScreenReviewView({
               <History className="h-3.5 w-3.5 text-[#0A3C2F]" />
               Version History (v{getCurrentPlanVersionNumber(plan.id)})
             </button>
-            <span className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+            <span
+              className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+                isCancelled
+                  ? "text-rose-800 bg-rose-50 border-rose-200"
+                  : isCancellationRequested
+                    ? "text-amber-800 bg-amber-50 border-amber-200"
+                    : "text-amber-800 bg-amber-50 border-amber-200"
+              }`}
+            >
               {plan.status}
             </span>
           </div>
         </div>
       </section>
+
+      {/* Cancellation Requested Alert Banner */}
+      {isCancellationRequested && (
+        <section className="rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50/90 via-orange-50/50 to-white p-5 shadow-sm space-y-3 animate-in fade-in duration-200">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 border border-amber-300">
+              <AlertCircle className="h-5 w-5 text-amber-700" />
+            </div>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold text-amber-950">
+                  Plan Cancellation Requested by Procurement Officer
+                </h3>
+                <span className="rounded-full bg-amber-200/80 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900 border border-amber-300">
+                  Awaiting Director Decision
+                </span>
+              </div>
+              <p className="text-xs text-amber-900/80 mt-1">
+                The procurement officer requested that this plan be cancelled
+                following final approval.
+              </p>
+              {plan.cancellationReason && (
+                <div className="mt-2 text-xs text-amber-950 bg-white/90 rounded-lg p-3 border border-amber-200">
+                  <span className="font-semibold block mb-0.5">
+                    Officer&apos;s Cancellation Reason:
+                  </span>
+                  <p className="whitespace-pre-wrap">
+                    {plan.cancellationReason}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Cancelled Banner */}
+      {isCancelled && (
+        <section className="rounded-2xl border-2 border-rose-300 bg-gradient-to-r from-rose-50/90 via-red-50/50 to-white p-5 shadow-sm space-y-2 animate-in fade-in duration-200">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-800 border border-rose-300">
+              <XCircle className="h-5 w-5 text-rose-700" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-rose-950">
+                This Procurement Plan Has Been Cancelled
+              </h3>
+              <p className="text-xs text-rose-900/80 mt-1">
+                This plan was cancelled by the Director and is no longer active
+                for procurement execution.
+              </p>
+              {plan.cancellationReason && (
+                <p className="text-xs text-rose-900 mt-1 italic">
+                  Reason: &ldquo;{plan.cancellationReason}&rdquo;
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Additional Plan Justification Callout Banner */}
       {(plan.planType === "ADDITIONAL" ||
@@ -673,7 +752,9 @@ export function PlanFullScreenReviewView({
       {Boolean(
         (userRole === "ENDORSING_COMMITTEE" && Boolean(onCommitteeVote)) ||
         (userRole === "MANAGEMENT" && Boolean(onManagementDecision)) ||
-        (userRole === "DIRECTOR" && Boolean(onApprovePlan && onReturnPlan)),
+        (userRole === "DIRECTOR" &&
+          (Boolean(onApprovePlan && onReturnPlan) ||
+            (isCancellationRequested && Boolean(onApproveCancellation)))),
       ) && (
         <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -683,7 +764,9 @@ export function PlanFullScreenReviewView({
                 ? "Endorsement Committee Decision & Voting"
                 : userRole === "MANAGEMENT"
                   ? "Executive Management Decision & Authorization"
-                  : "Director Decision & Workflow Actions"}
+                  : isCancellationRequested
+                    ? "Director Decision - Plan Cancellation Request"
+                    : "Director Decision & Workflow Actions"}
             </h3>
           </div>
 
@@ -701,6 +784,13 @@ export function PlanFullScreenReviewView({
                   Executive Decision Notes / Directives
                   <span className="ml-1 text-rose-500 text-[10px] font-semibold">
                     (Required to reject)
+                  </span>
+                </>
+              ) : isCancellationRequested ? (
+                <>
+                  Director Decision Remarks
+                  <span className="ml-1 text-slate-500 text-[10px] font-normal">
+                    (Optional comments recorded in version history)
                   </span>
                 </>
               ) : (
@@ -721,7 +811,9 @@ export function PlanFullScreenReviewView({
                   ? "Enter your voting remarks or rejection reason (visible to Director)..."
                   : userRole === "MANAGEMENT"
                     ? "Enter executive review comments or directives..."
-                    : "Specify required corrections, missing documents or revision notes for the Procurement Officer..."
+                    : isCancellationRequested
+                      ? "Enter optional director notes or justification for this cancellation decision..."
+                      : "Specify required corrections, missing documents or revision notes for the Procurement Officer..."
               }
               className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
             />
@@ -737,6 +829,7 @@ export function PlanFullScreenReviewView({
             )}
             {userRole !== "ENDORSING_COMMITTEE" &&
               userRole !== "MANAGEMENT" &&
+              !isCancellationRequested &&
               !returnRemarks.trim() && (
                 <p className="text-[10px] text-slate-400 font-medium">
                   Revision notes are required before returning a plan to the
@@ -862,67 +955,109 @@ export function PlanFullScreenReviewView({
             </div>
           ) : userRole === "DIRECTOR" ? (
             <div className="space-y-4 pt-2 border-t border-slate-100">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-800">
-                  Committee Voting Deadline
-                  <span className="ml-1 text-slate-500 font-normal">
-                    (Used for backend automated email reminders)
-                  </span>
-                </label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    type="date"
-                    value={committeeDeadlineDate}
-                    onChange={(e) => setCommitteeDeadlineDate(e.target.value)}
-                    className="rounded-xl border border-slate-300 px-3.5 py-2 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
-                  />
-                  <div className="flex items-center gap-1">
-                    {[3, 7, 14].map((days) => (
-                      <button
-                        key={days}
-                        type="button"
-                        onClick={() => {
-                          const d = new Date();
-                          d.setDate(d.getDate() + days);
-                          setCommitteeDeadlineDate(
-                            d.toISOString().split("T")[0],
-                          );
-                        }}
-                        className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-semibold text-slate-700 transition-colors cursor-pointer"
-                      >
-                        +{days} Days
-                      </button>
-                    ))}
+              {isCancellationRequested ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-slate-600">
+                    The Procurement Officer has submitted a formal cancellation
+                    request for this plan. You may approve the request (which
+                    marks this plan and all non-completed activities as
+                    Cancelled) or decline the request (which restores the plan
+                    to Finally Approved status).
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onApproveCancellation &&
+                        onApproveCancellation(plan, returnRemarks)
+                      }
+                      className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-rose-700 text-white hover:bg-rose-800 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      <XCircle className="h-4 w-4 text-rose-200" />
+                      <span>Approve Cancellation (Cancel Plan)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onRejectCancellation &&
+                        onRejectCancellation(plan, returnRemarks)
+                      }
+                      className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="h-4 w-4 text-slate-500" />
+                      <span>Decline Request (Keep Plan Approved)</span>
+                    </button>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-800">
+                      Committee Voting Deadline
+                      <span className="ml-1 text-slate-500 font-normal">
+                        (Used for backend automated email reminders)
+                      </span>
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="date"
+                        value={committeeDeadlineDate}
+                        onChange={(e) =>
+                          setCommitteeDeadlineDate(e.target.value)
+                        }
+                        className="rounded-xl border border-slate-300 px-3.5 py-2 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
+                      />
+                      <div className="flex items-center gap-1">
+                        {[3, 7, 14].map((days) => (
+                          <button
+                            key={days}
+                            type="button"
+                            onClick={() => {
+                              const d = new Date();
+                              d.setDate(d.getDate() + days);
+                              setCommitteeDeadlineDate(
+                                d.toISOString().split("T")[0],
+                              );
+                            }}
+                            className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-[11px] font-semibold text-slate-700 transition-colors cursor-pointer"
+                          >
+                            +{days} Days
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() =>
-                    onApprovePlan && onApprovePlan(plan, committeeDeadlineDate)
-                  }
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  <Send className="h-4 w-4 text-[#A3E635]" />
-                  <span>Approve &amp; Send to Committee</span>
-                </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onApprovePlan &&
+                        onApprovePlan(plan, committeeDeadlineDate)
+                      }
+                      className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Send className="h-4 w-4 text-[#A3E635]" />
+                      <span>Approve &amp; Send to Committee</span>
+                    </button>
 
-                <button
-                  type="button"
-                  disabled={!returnRemarks.trim()}
-                  onClick={() => onReturnPlan && onReturnPlan(plan)}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-semibold transition-colors ${
-                    returnRemarks.trim()
-                      ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
-                      : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
-                  }`}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  <span>Return to Officer for Revision</span>
-                </button>
-              </div>
+                    <button
+                      type="button"
+                      disabled={!returnRemarks.trim()}
+                      onClick={() => onReturnPlan && onReturnPlan(plan)}
+                      className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-semibold transition-colors ${
+                        returnRemarks.trim()
+                          ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer"
+                          : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60"
+                      }`}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span>Return to Officer for Revision</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : null}
         </section>

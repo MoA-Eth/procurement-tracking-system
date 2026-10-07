@@ -42,6 +42,8 @@ interface OfficerWorkloadSummary {
     delayDays: number;
     delayReason: string;
     stages: any[];
+    category?: string;
+    method?: string;
   }>;
 }
 
@@ -57,6 +59,9 @@ export function DirectorOfficerWorkloadPanel() {
     totalDelayDays: number;
     stages: any[];
     reason?: string;
+    category?: string;
+    method?: string;
+    activityHref?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -236,6 +241,11 @@ export function DirectorOfficerWorkloadPanel() {
                 delayReason:
                   delayedMetric?.remarks || "Milestone target date exceeded",
                 stages,
+                category: act.category || act.plan?.category,
+                method:
+                  act.method ||
+                  (act as any).procurementMethod?.label ||
+                  (act as any).procurementMethod,
               });
             }
           });
@@ -410,6 +420,9 @@ export function DirectorOfficerWorkloadPanel() {
                                   totalDelayDays: d.delayDays,
                                   stages: d.stages,
                                   reason: d.delayReason,
+                                  category: d.category,
+                                  method: d.method,
+                                  activityHref: `/workspace/activity-tracker?activity=${encodeURIComponent(d.activityRef)}`,
                                 })
                               }
                               className="mt-1 inline-flex items-center gap-1 text-[9px] font-semibold text-rose-700 hover:underline cursor-pointer"
@@ -441,8 +454,11 @@ export function DirectorOfficerWorkloadPanel() {
           data={{
             reference: selectedDelayActivity.reference,
             title: selectedDelayActivity.title,
+            category: selectedDelayActivity.category,
+            method: selectedDelayActivity.method,
             totalDelayDays: selectedDelayActivity.totalDelayDays,
             stages: selectedDelayActivity.stages,
+            activityHref: selectedDelayActivity.activityHref,
           }}
         />
       )}

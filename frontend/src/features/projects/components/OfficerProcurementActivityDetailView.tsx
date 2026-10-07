@@ -395,6 +395,40 @@ export function OfficerProcurementActivityDetailView({
           <DetailGrid values={relatedInformation} />
         </div>
 
+        {details?.fundingContributions &&
+        details.fundingContributions.length > 0 ? (
+          <div className="mt-4">
+            <CompactTable
+              columns={[
+                "Funding Source",
+                "Native Fund Amount",
+                "Conversion Rate",
+                `Equivalent (${form?.currency || "ETB"})`,
+              ]}
+              rows={details.fundingContributions.map((contrib) => {
+                const targetCur = form?.currency || "ETB";
+                const isSame =
+                  contrib.currency?.trim().toUpperCase() ===
+                  targetCur.trim().toUpperCase();
+                const rateNum = Number(contrib.exchangeRate);
+                const effectiveRate = isSame ? 1 : rateNum > 0 ? rateNum : 1;
+                const equiv = (Number(contrib.amount) || 0) * effectiveRate;
+                return [
+                  contrib.fundingSource,
+                  `${formatAmount(Number(contrib.amount))} ${contrib.currency}`,
+                  isSame
+                    ? "1.00 (Native)"
+                    : rateNum > 0
+                      ? `1 ${contrib.currency} = ${rateNum} ${targetCur}`
+                      : "1.00 (1:1 applied)",
+                  `${formatAmount(equiv)} ${targetCur}`,
+                ];
+              })}
+              title="Funding Source Contributions & Currencies"
+            />
+          </div>
+        ) : null}
+
         {details?.lots.length ? (
           <CompactTable
             columns={[
@@ -485,6 +519,10 @@ export function OfficerProcurementActivityDetailView({
         planId={plan.id || plan.reference}
         planName={plan.name}
         projectCode={project.code}
+        plan={plan}
+        project={project}
+        activity={activity}
+        activities={details?.roadmap ? [activity] : []}
       />
 
       {isEditModalOpen && (
@@ -521,11 +559,21 @@ export function OfficerProcurementActivityDetailView({
                 ? Number((activity as any).daysOverdue)
                 : calculateRealActivityDelay(actStages);
 
+          const resolvedCat =
+            activity.category ||
+            plan.category ||
+            (details?.form as any)?.category;
+          const resolvedMeth =
+            activity.method ||
+            details?.form?.method ||
+            (activity as any).procurementMethod?.label ||
+            (activity as any).procurementMethod;
+
           return {
             reference: activity.reference,
             title: activity.description || activity.reference,
-            category: activity.category,
-            method: activity.method,
+            category: resolvedCat,
+            method: resolvedMeth,
             totalDelayDays: rawDelay,
             stages: actStages,
             activityHref: trackerHref,

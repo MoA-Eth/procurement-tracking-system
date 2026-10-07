@@ -128,6 +128,8 @@ export interface BackendPlan {
     | "RETURNED_FOR_REVISION"
     | "APPROVED"
     | "REJECTED"
+    | "CANCELLATION_REQUESTED"
+    | "CANCELLED"
     | string;
   committeeRound?: number;
   committeeVoteDeadline?: string | null;
@@ -142,6 +144,11 @@ export interface BackendPlan {
   gpnDate?: string | null;
   approvalDate?: string | null;
   rejectionReason?: string | null;
+  cancellationReason?: string | null;
+  cancellationRequestedAt?: string | null;
+  cancellationRequestedById?: string | null;
+  cancellationApprovedAt?: string | null;
+  cancellationApprovedById?: string | null;
   managementDecision?: "APPROVE" | "REJECT" | string | null;
   managementComment?: string | null;
   managementById?: string | null;
@@ -197,6 +204,9 @@ export interface CreatePlanInput {
   periodStart: string;
   periodEnd: string;
   gpnDate?: string;
+  parentPlanId?: string;
+  planType?: "ANNUAL" | "ADDITIONAL" | string;
+  additionalPlanReason?: string;
 }
 
 export interface UpdatePlanInput {
@@ -209,6 +219,9 @@ export interface UpdatePlanInput {
   periodEnd?: string;
   gpnDate?: string;
   status?: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
+  parentPlanId?: string;
+  planType?: "ANNUAL" | "ADDITIONAL" | string;
+  additionalPlanReason?: string;
 }
 
 import { apiClient } from "./apiClient";
@@ -438,6 +451,9 @@ export function mapBackendPlanToFrontend(
     status = "Management Rejected";
   else if (backendPlan.status === "RETURNED_FOR_REVISION")
     status = "Returned for Revision";
+  else if (backendPlan.status === "CANCELLATION_REQUESTED")
+    status = "Cancellation Requested";
+  else if (backendPlan.status === "CANCELLED") status = "Cancelled";
   else if (backendPlan.status === "REJECTED") status = "Returned";
   else if (backendPlan.status === "SUBMITTED") status = "Submitted to Director";
   else if (backendPlan.status === "DRAFT") status = "Draft";
@@ -609,6 +625,9 @@ export function mapBackendPlanToFrontend(
         ? "ADDITIONAL"
         : "ANNUAL",
     additionalPlanReason: backendPlan.additionalPlanReason || undefined,
+    cancellationReason: backendPlan.cancellationReason || undefined,
+    cancellationRequestedAt: backendPlan.cancellationRequestedAt || undefined,
+    cancellationApprovedAt: backendPlan.cancellationApprovedAt || undefined,
   };
 }
 
@@ -635,6 +654,9 @@ export function mapBackendPlanToOfficerPlanSummary(
     backendPlan.status === "MANAGEMENT_APPROVED"
   )
     status = "Finally Approved";
+  else if (backendPlan.status === "CANCELLATION_REQUESTED")
+    status = "Cancellation Requested";
+  else if (backendPlan.status === "CANCELLED") status = "Cancelled";
   else if (backendPlan.status === "RETURNED_FOR_REVISION")
     status = "Returned for Revision";
   else if (
@@ -998,5 +1020,35 @@ export function mapBackendPlanToOfficerPlanSummary(
             },
           }
         : undefined,
+    cancellationReason: backendPlan.cancellationReason || undefined,
+    cancellationRequestedAt: backendPlan.cancellationRequestedAt || undefined,
+    cancellationApprovedAt: backendPlan.cancellationApprovedAt || undefined,
   };
+}
+
+export async function requestPlanCancellation(
+  id: string,
+  reason: string,
+): Promise<BackendPlan> {
+  return apiClient.post<BackendPlan>(`/plans/${id}/request-cancellation`, {
+    reason,
+  });
+}
+
+export async function approvePlanCancellation(
+  id: string,
+  comment?: string,
+): Promise<BackendPlan> {
+  return apiClient.post<BackendPlan>(`/plans/${id}/approve-cancellation`, {
+    comment,
+  });
+}
+
+export async function rejectPlanCancellation(
+  id: string,
+  comment?: string,
+): Promise<BackendPlan> {
+  return apiClient.post<BackendPlan>(`/plans/${id}/reject-cancellation`, {
+    comment,
+  });
 }

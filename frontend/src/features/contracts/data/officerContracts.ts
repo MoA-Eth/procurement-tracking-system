@@ -41,6 +41,8 @@ export interface OfficerContractDetails {
   startDate?: ContractDateValue;
   subcomponent?: string;
   vatRate?: number;
+  exchangeRate?: number;
+  equivalentAmountETB?: number;
 }
 
 export interface OfficerContract {

@@ -126,7 +126,7 @@ describe("CreateProcurementPlanView", () => {
     expect(markup).toContain("2017");
   });
 
-  it("configures Budget Year (EFY) input with strict numeric constraints", () => {
+  it("configures Budget Year (EFY) as a dropdown selector with EFY options", () => {
     const markup = renderToStaticMarkup(
       <CreateProcurementPlanView
         onSavePlan={() => undefined}
@@ -134,10 +134,12 @@ describe("CreateProcurementPlanView", () => {
       />,
     );
 
+    expect(markup).toContain("<select");
     expect(markup).toContain('id="budgetYear"');
-    expect(markup).toContain('inputMode="numeric"');
-    expect(markup).toContain('pattern="[0-9]*"');
-    expect(markup).toContain('maxLength="4"');
+    expect(markup).toContain('name="budgetYear"');
+    expect(markup).toContain("2018 EFY");
+    expect(markup).toContain("2017 EFY");
+    expect(markup).toContain("Enter custom year");
   });
 
   it("locks the procurement category when the plan already has activities", () => {
