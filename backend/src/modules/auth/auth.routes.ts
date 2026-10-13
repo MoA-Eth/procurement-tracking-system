@@ -1,5 +1,6 @@
 import {
   Router,
+  type CookieOptions,
   type NextFunction,
   type Request,
   type RequestHandler,
@@ -112,8 +113,27 @@ const createPasswordSchema = z
     path: ['confirmPassword'],
   });
 
+function getFrontendBaseUrl(req?: Request): string {
+  const origin = req?.headers?.origin || req?.headers?.referer;
+  if (origin) {
+    try {
+      const parsed = new URL(origin);
+      if (
+        parsed.origin &&
+        !parsed.origin.includes('localhost') &&
+        env.FRONTEND_URL.includes('localhost')
+      ) {
+        return parsed.origin.replace(/\/$/, '');
+      }
+    } catch {
+      // Ignore URL parsing errors and fallback to configured FRONTEND_URL
+    }
+  }
+  return env.FRONTEND_URL.replace(/\/$/, '');
+}
+
 const createUserSchema = z.object({
-  email: z.email().max(254),
+  email: z.string().trim().toLowerCase().pipe(z.string().email().max(254)),
   displayName: z.string().trim().min(2).max(120),
   role: z
     .string()
@@ -185,15 +205,23 @@ function cookieValue(
   return undefined;
 }
 
-function setSessionCookie(res: Response, token: string, expiresAt: Date) {
-  res.cookie(env.SESSION_COOKIE_NAME, token, {
+function setSessionCookie(
+  res: Response,
+  token: string,
+  expiresAt: Date,
+  rememberMe: boolean = false,
+) {
+  const cookieOptions: CookieOptions = {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
     sameSite: 'strict',
     path: '/',
-    expires: expiresAt,
     priority: 'high',
-  });
+  };
+  if (rememberMe) {
+    cookieOptions.expires = expiresAt;
+  }
+  res.cookie(env.SESSION_COOKIE_NAME, token, cookieOptions);
 }
 
 function clearSessionCookie(res: Response) {
@@ -311,9 +339,11 @@ async function deliverUserInvitation(values: {
     'If you were not expecting this invitation, you can ignore this email.',
   ].join('\n');
 
+  const cleanEmail = values.email.trim().toLowerCase();
+
   if (isSmtpConfigured() || isMailerSendConfigured() || isBrevoConfigured()) {
     await sendEmail({
-      to: values.email,
+      to: cleanEmail,
       subject:
         'Invitation: Access your MoA Procurement Tracking System Account',
       text: textContent,
@@ -324,7 +354,7 @@ async function deliverUserInvitation(values: {
 
   if (env.NODE_ENV !== 'production') {
     logger.warn(
-      { email: values.email, invitationUrl: values.invitationUrl },
+      { email: cleanEmail, invitationUrl: values.invitationUrl },
       'Development user invitation link (Email provider not configured)',
     );
     return;
@@ -521,7 +551,12 @@ authRouter.post('/login', async (req, res) => {
     parsed.data.rememberMe,
     req,
   );
-  setSessionCookie(res, session.raw, session.expiresAt);
+  setSessionCookie(
+    res,
+    session.raw,
+    session.expiresAt,
+    Boolean(parsed.data.rememberMe),
+  );
   await audit('LOGIN_SUCCEEDED', true, req, {
     userId: user.id,
     email: user.email,
@@ -624,7 +659,11 @@ authRouter.post('/change-password', loadSession, async (req, res) => {
 });
 
 authRouter.post('/logout', async (req, res) => {
-  const raw = cookieValue(req.headers.cookie, env.SESSION_COOKIE_NAME);
+  const cookieToken = cookieValue(req.headers.cookie, env.SESSION_COOKIE_NAME);
+  const bearerToken = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7).trim()
+    : null;
+  const raw = cookieToken || bearerToken;
   if (raw) {
     const session = await prisma.session.findUnique({
       where: { tokenHash: hashToken(raw) },
@@ -993,7 +1032,7 @@ adminRouter.post('/users', async (req, res) => {
           },
         });
 
-        const invitationUrl = `${env.FRONTEND_URL.replace(/\/$/, '')}/create-password?token=${encodeURIComponent(token.raw)}`;
+        const invitationUrl = `${getFrontendBaseUrl(req)}/create-password?token=${encodeURIComponent(token.raw)}`;
 
         await deliverUserInvitation({
           email: updatedUser.email,
@@ -1014,6 +1053,10 @@ adminRouter.post('/users', async (req, res) => {
         res.status(201).json({
           message: `Invitation email sent successfully to ${updatedUser.email}.`,
           user: publicUser(updatedUser),
+          invitationLink: invitationUrl,
+          invitationExpiresAt: expiresFromNow(
+            env.USER_INVITATION_HOURS * 3_600_000,
+          ).toISOString(),
         });
         return;
       }
@@ -1046,7 +1089,7 @@ adminRouter.post('/users', async (req, res) => {
       },
     });
 
-    const invitationUrl = `${env.FRONTEND_URL.replace(/\/$/, '')}/create-password?token=${encodeURIComponent(token.raw)}`;
+    const invitationUrl = `${getFrontendBaseUrl(req)}/create-password?token=${encodeURIComponent(token.raw)}`;
 
     await deliverUserInvitation({
       email: user.email,
@@ -1064,6 +1107,10 @@ adminRouter.post('/users', async (req, res) => {
     res.status(201).json({
       message: `Invitation email sent successfully to ${user.email}.`,
       user: publicUser(user),
+      invitationLink: invitationUrl,
+      invitationExpiresAt: expiresFromNow(
+        env.USER_INVITATION_HOURS * 3_600_000,
+      ).toISOString(),
     });
   } catch (error) {
     // If user record was created in this request but email delivery failed, roll back user creation
@@ -1089,6 +1136,58 @@ adminRouter.post('/users', async (req, res) => {
         : 'The user invitation could not be completed.';
     res.status(500).json({ message: `Invitation failed: ${failureReason}` });
   }
+});
+
+adminRouter.get('/users/:id/invitation-link', async (req, res) => {
+  const userId = req.params.id;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      invitationTokens: {
+        where: {
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
+    },
+  });
+
+  if (!user) {
+    res.status(404).json({ message: 'User not found' });
+    return;
+  }
+
+  // Generate a fresh invitation token for the user
+  const token = generateOpaqueToken();
+  const expiresAt = expiresFromNow(env.USER_INVITATION_HOURS * 3_600_000);
+
+  if (user.invitationTokens.length > 0) {
+    await prisma.userInvitationToken.update({
+      where: { id: user.invitationTokens[0]!.id },
+      data: {
+        tokenHash: token.hash,
+        expiresAt,
+      },
+    });
+  } else {
+    await prisma.userInvitationToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: token.hash,
+        expiresAt,
+      },
+    });
+  }
+
+  const invitationUrl = `${getFrontendBaseUrl(req)}/create-password?token=${encodeURIComponent(token.raw)}`;
+
+  res.json({
+    invitationLink: invitationUrl,
+    expiresAt: expiresAt.toISOString(),
+    email: user.email,
+  });
 });
 
 export const protectedRouter = Router();

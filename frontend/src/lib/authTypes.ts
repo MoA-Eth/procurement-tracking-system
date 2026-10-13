@@ -15,6 +15,7 @@ export interface AuthSession {
   user: AuthUser;
   expiresAt: string;
   accessToken?: string;
+  rememberMe?: boolean;
 }
 
 export type ProvisionableRole = UserRole;

@@ -36,6 +36,8 @@ export async function streamAnnualProcurementPlan(
     currency,
     minAmount,
     maxAmount,
+    dateFrom,
+    dateTo,
     page,
     limit,
   } = query;
@@ -45,6 +47,14 @@ export async function streamAnnualProcurementPlan(
   const where = {
     isActive: true,
     ...(targetYear ? { budgetYear: targetYear } : {}),
+    ...(dateFrom || dateTo
+      ? {
+          periodStart: {
+            ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+            ...(dateTo ? { lte: new Date(dateTo) } : {}),
+          },
+        }
+      : {}),
     ...(isDirector ? {} : { createdBy: userId }),
     ...(projectId ? { projectId } : {}),
     ...(planId ? { id: planId } : {}),
@@ -99,7 +109,7 @@ export async function streamAnnualProcurementPlan(
           creator: { select: { displayName: true } },
           procurementMethod: { select: { label: true } },
           stages: { orderBy: { sequence: 'asc' } },
-          fundings: { select: { fundingSource: true } },
+          fundings: { select: { fundingSource: true, allocationPct: true } },
         },
         orderBy: { createdAt: 'desc' },
       },
@@ -144,7 +154,13 @@ export async function streamAnnualProcurementPlan(
 
       const fundingLabel =
         a.fundings.length > 0
-          ? a.fundings.map((f) => f.fundingSource).join(', ')
+          ? a.fundings
+              .map((f) =>
+                f.allocationPct != null
+                  ? `${f.fundingSource} (${f.allocationPct}%)`
+                  : f.fundingSource,
+              )
+              .join(', ')
           : plan.project.fundingSource.label;
 
       const actCurrency = a.currency || 'ETB';

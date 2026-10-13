@@ -249,7 +249,7 @@ export async function streamDelayedProcurement(
       activity: {
         include: {
           procurementMethod: { select: { label: true } },
-          fundings: { select: { fundingSource: true } },
+          fundings: { select: { fundingSource: true, allocationPct: true } },
           plan: {
             include: {
               project: {
@@ -324,7 +324,13 @@ export async function streamDelayedProcurement(
     const lastRev = s.revisions[0];
     const funding =
       s.activity.fundings.length > 0
-        ? s.activity.fundings.map((f) => f.fundingSource).join(', ')
+        ? s.activity.fundings
+            .map((f) =>
+              f.allocationPct != null
+                ? `${f.fundingSource} (${f.allocationPct}%)`
+                : f.fundingSource,
+            )
+            .join(', ')
         : s.activity.plan.project.fundingSource.label;
 
     sheet.addRow([
@@ -422,7 +428,7 @@ export async function streamQuarterlyDetailedProcurement(
         orderBy: { createdAt: 'desc' },
         take: 1,
       },
-      fundings: { select: { fundingSource: true } },
+      fundings: { select: { fundingSource: true, allocationPct: true } },
     },
     orderBy: { createdAt: 'desc' },
     skip: (page - 1) * limit,
@@ -435,6 +441,7 @@ export async function streamQuarterlyDetailedProcurement(
   const sheet = addSheet('Quarterly Detailed Procurement', [
     'No.',
     'Procurement Description',
+    'Category',
     'Procurement Method',
     'Winning Supplier / Contractor',
     'Winning / Award Amount',
@@ -459,7 +466,13 @@ export async function streamQuarterlyDetailedProcurement(
 
     const fundingSource =
       a.fundings.length > 0
-        ? a.fundings.map((f) => f.fundingSource).join(', ')
+        ? a.fundings
+            .map((f) =>
+              f.allocationPct != null
+                ? `${f.fundingSource} (${f.allocationPct}%)`
+                : f.fundingSource,
+            )
+            .join(', ')
         : a.plan.project.fundingSource.label;
 
     const poPvNumber =
@@ -475,6 +488,7 @@ export async function streamQuarterlyDetailedProcurement(
     sheet.addRow([
       rowNumber++,
       a.description || a.reference,
+      a.plan.procurementCategory ?? 'Goods',
       a.procurementMethod.label,
       primaryContract?.supplier?.name ?? 'Not Awarded',
       awardAmount,

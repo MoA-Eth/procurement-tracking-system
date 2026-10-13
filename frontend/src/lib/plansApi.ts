@@ -710,9 +710,6 @@ export function mapBackendPlanToOfficerPlanSummary(
         ),
       );
 
-      const baseDate = new Date("2026-09-05");
-      let activeOffset = 0;
-
       const roadmap =
         a.stages && a.stages.length > 0
           ? a.stages.map((st: any, idx: number) => {
@@ -743,11 +740,8 @@ export function mapBackendPlanToOfficerPlanSummary(
                 : rawPlannedDate;
 
               if (!isNA && !rawPlannedDate) {
-                const d = new Date(baseDate);
-                d.setDate(baseDate.getDate() + activeOffset * 24);
-                rawPlannedDate = d.toISOString().slice(0, 10);
-                rawTargetDate = rawPlannedDate;
-                activeOffset++;
+                rawPlannedDate = "";
+                rawTargetDate = "";
               }
 
               const rawActualDate =
@@ -830,13 +824,7 @@ export function mapBackendPlanToOfficerPlanSummary(
             })
           : templateRoadmap.map((tpl, idx) => {
               const isNA = Boolean(tpl.allowNotApplicable);
-              let dateStr = "";
-              if (!isNA) {
-                const d = new Date(baseDate);
-                d.setDate(baseDate.getDate() + activeOffset * 24);
-                dateStr = d.toISOString().slice(0, 10);
-                activeOffset++;
-              }
+              const dateStr = "";
               return {
                 id: `tpl-stage-${idx + 1}`,
                 sequence: idx + 1,

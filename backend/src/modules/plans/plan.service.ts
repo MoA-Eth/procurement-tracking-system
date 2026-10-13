@@ -84,7 +84,7 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
     }),
     prisma.user.findMany({
       where: {
-        authRole: { in: [UserRole.MANAGEMENT, UserRole.ENDORSING_COMMITTEE] },
+        authRole: UserRole.ENDORSING_COMMITTEE,
         isActive: true,
       },
       select: {
@@ -185,7 +185,7 @@ export const getPlanByIdService = async (id: string) => {
     }),
     prisma.user.findMany({
       where: {
-        authRole: { in: [UserRole.MANAGEMENT, UserRole.ENDORSING_COMMITTEE] },
+        authRole: UserRole.ENDORSING_COMMITTEE,
         isActive: true,
       },
       select: {
@@ -370,7 +370,7 @@ export const updatePlanService = async (
   data: Prisma.PlanUpdateInput,
   userId: string,
 ) => {
-  const { plan, user } = await prisma.$transaction(
+  const { plan, user, oldPlan } = await prisma.$transaction(
     async (tx: Prisma.TransactionClient) => {
       const oldPlan =
         (await tx.plan.findUnique({
@@ -498,11 +498,14 @@ export const updatePlanService = async (
         console.warn('logRevision update plan warning:', auditErr);
       }
 
-      return { plan, user };
+      return { plan, user, oldPlan };
     },
   );
 
-  if (user?.authRole === UserRole.DIRECTOR) {
+  if (
+    user?.authRole === UserRole.DIRECTOR &&
+    oldPlan.status !== PlanStatus.DRAFT
+  ) {
     const directorName = user.displayName || user.name || 'Director';
     notifyOfficersOnEntityChange({
       planId: plan.id,
@@ -702,7 +705,7 @@ export const sendToCommitteeService = async (
   try {
     const committeeMembers = await prisma.user.findMany({
       where: {
-        authRole: { in: [UserRole.MANAGEMENT, UserRole.ENDORSING_COMMITTEE] },
+        authRole: UserRole.ENDORSING_COMMITTEE,
         isActive: true,
       },
       select: { id: true, name: true, displayName: true, email: true },

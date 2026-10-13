@@ -170,6 +170,77 @@ describe("ReportFiltersPanel - Dynamic Filter Sets per Report Type", () => {
     expect(html).toContain("2 selected");
     expect(html).toContain("Sector");
   });
+
+  it("renders Dual Ethiopian and Gregorian date interval filter across all reports", () => {
+    const reportTypes = [
+      "annual-plan",
+      "plan-vs-actual",
+      "procurement-step",
+      "delayed-procurement",
+      "monthly-procurement",
+      "quarterly-summary",
+      "quarterly-detailed",
+      "contract-register",
+      "contract-payment",
+      "regional-sector-summary",
+      "project-summary",
+      "officer-summary",
+      "committee-approval",
+      "supplier-performance",
+    ] as const;
+
+    for (const rep of reportTypes) {
+      const html = renderToStaticMarkup(
+        <ReportFiltersPanel {...dummyProps} activeReport={rep} />,
+      );
+      expect(html).toContain("Date Range / Interval Filter");
+      expect(html).toContain("Ethiopian &amp; Gregorian Calendar");
+      expect(html).toContain("From Date (የመነሻ ቀን)");
+      expect(html).toContain("To Date (የመጨረሻ ቀን)");
+      expect(html).toContain("GREGORIAN");
+      expect(html).toContain("ETHIOPIAN");
+    }
+  });
+
+  it("shows Active Interval badge and Clear Date Interval button when date interval is selected", () => {
+    const html = renderToStaticMarkup(
+      <ReportFiltersPanel
+        {...dummyProps}
+        filters={{
+          ...DEFAULT_FILTERS,
+          fromDate: "2024-09-11",
+          toDate: "2025-09-05",
+          fromEthiopianDate: "01/01/2017",
+          toEthiopianDate: "30/12/2017",
+        }}
+        activeReport="annual-plan"
+      />,
+    );
+    expect(html).toContain("Interval Active");
+    expect(html).toContain("Clear Date Interval");
+  });
+
+  it("renders both Gregorian and Ethiopian formatted dates in ReportFiltersPanel when dates are set", () => {
+    const html = renderToStaticMarkup(
+      <ReportFiltersPanel
+        {...dummyProps}
+        filters={{
+          ...DEFAULT_FILTERS,
+          fromDate: "2024-09-11",
+          toDate: "2025-01-08",
+          fromEthiopianDate: "01-Meskerem-2017",
+          toEthiopianDate: "30-Tahsas-2017",
+        }}
+        activeReport="annual-plan"
+      />,
+    );
+    expect(html).toContain("11-September-2024");
+    expect(html).toContain("01-Meskerem-2017");
+    expect(html).toContain("08-January-2025");
+    expect(html).toContain("30-Tahsas-2017");
+    expect(html).toContain("Interval Active");
+    expect(html).toContain("Clear Date Interval");
+  });
 });
 
 describe("ReportTables - Dedicated Tables & Empty State", () => {
@@ -316,5 +387,75 @@ describe("ReportTables - Dedicated Tables & Empty State", () => {
     expect(html).toContain("Tikimt (October 2024)");
     expect(html).toContain("38 items");
     expect(html).toContain("USD 4,500,000");
+  });
+});
+
+describe("Date Interval Filtering Logic", () => {
+  it("filters Annual Plan rows based on spanning date intervals", () => {
+    const annualRows = [
+      {
+        id: "act-1",
+        projectCode: "PRJ-01",
+        planName: "Plan 2024",
+        refNo: "MOA/2024/G-01",
+        description: "Fertilizer procurement 2024",
+        category: "Goods",
+        method: "RFB - National",
+        estimatedAmount: 500000,
+        currency: "ETB",
+        fundingSource: "AfDB",
+        plannedStartDate: "2024-02-01",
+        plannedCompletionDate: "2024-06-30",
+        officer: "Officer Abebe",
+        status: "Approved",
+      },
+      {
+        id: "act-2",
+        projectCode: "PRJ-02",
+        planName: "Plan 2025",
+        refNo: "MOA/2025/W-01",
+        description: "Irrigation civil works 2025",
+        category: "Works",
+        method: "RFB - National",
+        estimatedAmount: 1200000,
+        currency: "ETB",
+        fundingSource: "World Bank",
+        plannedStartDate: "2025-01-15",
+        plannedCompletionDate: "2025-10-30",
+        officer: "Officer Chala",
+        status: "Approved",
+      },
+    ];
+
+    // Filter interval: 2024-01-01 to 2024-12-31
+    const fromDate = "2024-01-01";
+    const toDate = "2024-12-31";
+
+    const filtered = annualRows.filter((r) => {
+      const s = r.plannedStartDate;
+      const e = r.plannedCompletionDate;
+      return s <= toDate && e >= fromDate;
+    });
+
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0].id).toBe("act-1");
+    expect(filtered[0].refNo).toBe("MOA/2024/G-01");
+
+    const html = renderToStaticMarkup(
+      <ReportTables
+        activeReport="annual-plan"
+        annualPlanRows={filtered}
+        planVsActualRows={[]}
+        stepReportRows={[]}
+        delayedProcurementRows={[]}
+        monthlySummaryRows={[]}
+        contractPaymentRows={[]}
+        detailedProcurementRows={[]}
+        projectOfficerRows={[]}
+      />,
+    );
+
+    expect(html).toContain("Fertilizer procurement 2024");
+    expect(html).not.toContain("Irrigation civil works 2025");
   });
 });

@@ -22,12 +22,14 @@ export function normalizeToUserRole(role?: string): UserRole {
       return UserRole.DIRECTOR;
     case 'ManagementTeam':
     case 'MANAGEMENT':
+    case 'MANAGEMENT_TEAM':
       return UserRole.MANAGEMENT;
     case 'EndorsingCommittee':
     case 'ENDORSING_COMMITTEE':
       return UserRole.ENDORSING_COMMITTEE;
     case 'Administrator':
     case 'ADMIN':
+    case 'ADMINISTRATOR':
       return UserRole.ADMIN;
     default:
       return UserRole.OFFICER;

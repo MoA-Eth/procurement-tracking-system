@@ -139,14 +139,13 @@ export function formatDelayedActivityAlert(
         st.status !== "COMPLETED" &&
         st.status !== "Completed" &&
         st.status !== "Not Applicable" &&
+        st.status !== "NOT_STARTED" &&
+        st.status !== "Not Started" &&
+        st.status !== "Pending" &&
         ((st.currentTargetEndDate &&
           new Date(st.currentTargetEndDate).getTime() < currentTime) ||
           (st.plannedEndDate &&
-            new Date(st.plannedEndDate).getTime() < currentTime) ||
-          (st.currentTargetStartDate &&
-            new Date(st.currentTargetStartDate).getTime() < currentTime) ||
-          (st.plannedStartDate &&
-            new Date(st.plannedStartDate).getTime() < currentTime))),
+            new Date(st.plannedEndDate).getTime() < currentTime))),
   );
 
   const stageLabel =
@@ -159,11 +158,9 @@ export function formatDelayedActivityAlert(
 
   const targetDate =
     delayedStage?.currentTargetEndDate ||
-    delayedStage?.currentTargetStartDate ||
     delayedStage?.plannedEndDate ||
-    delayedStage?.plannedStartDate ||
-    act.periodEnd ||
-    act.updatedAt;
+    delayedStage?.actualEndDate ||
+    act.periodEnd;
 
   let delayDays = Number(act.daysOverdue || act.delayDays) || 0;
   if (targetDate && currentTime !== null) {
@@ -175,7 +172,10 @@ export function formatDelayedActivityAlert(
 
   // Factor in real phase delay across stages if available
   if (actStages.length > 0) {
-    const realStageDelay = calculateRealActivityDelay(actStages);
+    const realStageDelay = calculateRealActivityDelay(
+      actStages,
+      currentTime ?? Date.now(),
+    );
     if (realStageDelay > delayDays) {
       delayDays = realStageDelay;
     }
@@ -343,7 +343,27 @@ export function extractLiveDelayedActivities(
       });
     }
 
-    const realDelay = calculateRealActivityDelay(actStages);
+    // Activities in draft / submitted / review plans that are PLANNED have not begun execution
+    const isPlanApproved =
+      !p.status ||
+      p.status === "APPROVED" ||
+      p.status === "MANAGEMENT_APPROVED" ||
+      p.status === "UPDATE_REQUESTED";
+    const isActActive =
+      a.status === "IN_PROGRESS" ||
+      a.status === "In Progress" ||
+      a.status === "DELAYED" ||
+      a.status === "Delayed" ||
+      (a as any).performanceStatus === "DELAYED";
+
+    if (!isPlanApproved && !isActActive) {
+      return;
+    }
+
+    const realDelay = calculateRealActivityDelay(
+      actStages,
+      currentTime ?? Date.now(),
+    );
 
     const hasDelayedStage = actStages.some(
       (st: any) =>
@@ -355,21 +375,19 @@ export function extractLiveDelayedActivities(
           st.status !== "COMPLETED" &&
           st.status !== "Completed" &&
           st.status !== "Not Applicable" &&
-          ((st.currentTargetStartDate &&
-            new Date(st.currentTargetStartDate).getTime() < currentTime) ||
-            (st.currentTargetEndDate &&
-              new Date(st.currentTargetEndDate).getTime() < currentTime) ||
+          st.status !== "NOT_STARTED" &&
+          st.status !== "Not Started" &&
+          st.status !== "Pending" &&
+          ((st.currentTargetEndDate &&
+            new Date(st.currentTargetEndDate).getTime() < currentTime) ||
             (st.plannedEndDate &&
-              new Date(st.plannedEndDate).getTime() < currentTime) ||
-            (st.plannedStartDate &&
-              new Date(st.plannedStartDate).getTime() < currentTime))),
+              new Date(st.plannedEndDate).getTime() < currentTime))),
     );
 
     const isDelayed =
       a.status === "DELAYED" ||
       a.status === "Delayed" ||
       (a as any).performanceStatus === "DELAYED" ||
-      Number((a as any).daysOverdue || (a as any).delayDays) > 0 ||
       realDelay > 0 ||
       hasDelayedStage;
 
@@ -591,14 +609,35 @@ export function generateDynamicAlerts(
     const isApproved =
       notif.type === "approval" || notifTitle.includes("approved");
 
-    list.push({
-      id: notifAlertId,
-      statusLine: isUrgent
+    const rawTitle = notif.title || "";
+    let statusLineText = "Notification";
+    let referenceLineText = rawTitle;
+
+    if (rawTitle.includes(":")) {
+      const colonIdx = rawTitle.indexOf(":");
+      statusLineText = rawTitle.substring(0, colonIdx).trim();
+      referenceLineText = rawTitle.substring(colonIdx + 1).trim();
+    } else if (isUrgent) {
+      statusLineText = "Action Required";
+    } else if (isApproved) {
+      statusLineText = "Approved";
+    } else if (notif.type) {
+      statusLineText = notif.type.charAt(0).toUpperCase() + notif.type.slice(1);
+    }
+
+    if (!referenceLineText || referenceLineText === statusLineText) {
+      referenceLineText = rawTitle;
+      statusLineText = isUrgent
         ? "Action Required"
         : isApproved
           ? "Approved"
-          : notif.title,
-      referenceLine: notif.title,
+          : "Notification";
+    }
+
+    list.push({
+      id: notifAlertId,
+      statusLine: statusLineText,
+      referenceLine: referenceLineText,
       detailLine: notif.message,
       actionLabel: notif.actionLabel || "View",
       href: notif.link || "/workspace",

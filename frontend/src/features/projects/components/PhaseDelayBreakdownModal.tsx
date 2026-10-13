@@ -112,18 +112,17 @@ export function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
 
   let finalPlannedStart = plannedStart;
   let finalPlannedEnd = plannedEnd;
-  if (!isNA && !finalPlannedStart && !finalPlannedEnd) {
-    const seq =
-      typeof stage.sequence === "number" ? Math.max(0, stage.sequence - 1) : 0;
-    const baseAnchor = new Date("2026-05-08T00:00:00Z");
-    const dStart = new Date(baseAnchor.getTime() + seq * 14 * 86400000);
-    const dEnd = new Date(dStart.getTime() + plannedDuration * 86400000);
-    finalPlannedStart = dStart.toISOString().slice(0, 10);
-    finalPlannedEnd = dEnd.toISOString().slice(0, 10);
-  } else if (!isNA && !finalPlannedStart && finalPlannedEnd) {
+  if (!isNA && !finalPlannedStart && finalPlannedEnd) {
     const pEndMs = new Date(finalPlannedEnd).getTime();
     if (!isNaN(pEndMs)) {
       finalPlannedStart = new Date(pEndMs - plannedDuration * 86400000)
+        .toISOString()
+        .slice(0, 10);
+    }
+  } else if (!isNA && finalPlannedStart && !finalPlannedEnd) {
+    const pStartMs = new Date(finalPlannedStart).getTime();
+    if (!isNaN(pStartMs)) {
+      finalPlannedEnd = new Date(pStartMs + plannedDuration * 86400000)
         .toISOString()
         .slice(0, 10);
     }
@@ -133,7 +132,8 @@ export function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
     extractDateStr(stage.currentTargetEndDate) ||
     extractDateStr(stage.plannedEndDate) ||
     extractDateStr(stage.gregorianDate) ||
-    finalPlannedEnd;
+    finalPlannedEnd ||
+    null;
   const actualStart = extractDateStr(stage.actualStartDate) || null;
   const actualEnd =
     extractDateStr(stage.actualEndDate) ||
@@ -186,7 +186,7 @@ export function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
     } else {
       actualDuration = plannedDuration;
     }
-  } else if (isInProgress) {
+  } else if (isInProgress || rawStatus === "DELAYED") {
     if (targetEnd) {
       const targetEndMs = new Date(targetEnd).getTime();
       if (!isNaN(targetEndMs) && now > targetEndMs) {
@@ -239,9 +239,11 @@ export function computePhaseMetrics(stage: any, now: number): PhaseDelayItem {
   };
 }
 
-export function calculateRealActivityDelay(stages?: any[]): number {
+export function calculateRealActivityDelay(
+  stages?: any[],
+  now: number = Date.now(),
+): number {
   if (!Array.isArray(stages) || stages.length === 0) return 0;
-  const now = Date.now();
   let maxDelay = 0;
   for (const st of stages) {
     const metrics = computePhaseMetrics(st, now);
@@ -423,11 +425,7 @@ export function PhaseDelayBreakdownModal({
     0,
   );
   const displayTotalDelay =
-    (data.totalDelayDays ?? 0) > 0
-      ? data.totalDelayDays
-      : maxStageDelay > 0
-        ? maxStageDelay
-        : 0;
+    phaseItems.length > 0 ? maxStageDelay : (data.totalDelayDays ?? 0);
 
   // Identify primary bottleneck stage (only from stages with active delay)
   const delayedPhases = phaseItems.filter((item) => (item.delayDays || 0) > 0);

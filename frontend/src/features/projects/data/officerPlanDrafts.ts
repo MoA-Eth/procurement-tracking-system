@@ -81,7 +81,9 @@ export function mergeSavedPlans(
     if (projectRecords.length === 0) return project;
 
     const mergedPlans = project.plans.map((plan) => {
-      const saved = projectRecords.find(record => samePlanIdentity(record.plan, plan))?.plan;
+      const saved = projectRecords.find((record) =>
+        samePlanIdentity(record.plan, plan),
+      )?.plan;
 
       if (!saved) return plan;
 
@@ -156,8 +158,12 @@ export function mergeSavedPlans(
     });
 
     const newPlans = projectRecords
-      .map(record => record.plan)
-      .filter(plan => !mergedPlans.some(existing => samePlanIdentity(existing, plan)));
+      .map((record) => record.plan)
+      .filter(
+        (plan) =>
+          !mergedPlans.some((existing) => samePlanIdentity(existing, plan)) &&
+          !isTestOrJunkPlan(plan.reference, plan.name),
+      );
 
     return {
       ...project,

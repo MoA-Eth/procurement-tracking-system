@@ -8,6 +8,7 @@ import { OfficerProcurementPlanDetailView } from "@/features/projects/components
 import { OfficerProjectDetailView } from "@/features/projects/components/OfficerProjectDetailView";
 import {
   addSavedActivityRecord,
+  isTestOrJunkActivity,
   mapBackendActivityToProcurementActivitySummary,
   OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
   parseSavedActivityRecords,
@@ -276,6 +277,8 @@ export function OfficerProjectsView({
       if (actData.status === "fulfilled" && actData.value.length > 0) {
         const mappedDbRecords: SavedOfficerActivityRecord[] = actData.value
           .filter((ba: BackendActivity) => {
+            if (isTestOrJunkActivity(ba.reference, ba.description))
+              return false;
             if (!effectiveUser || assignedProjList.length === 0) return true;
             const parentPlan = fetchedPlans.find((p) => p.id === ba.planId);
             const projCode =
@@ -295,22 +298,15 @@ export function OfficerProjectsView({
             return (
               (projCode && assignedCodes.has(projCode.toLowerCase())) ||
               (projId && assignedIds.has(projId)) ||
-              (ba.planId && parentPlan && true)
+              Boolean(ba.planId && parentPlan)
             );
           })
           .map((ba: BackendActivity) => {
             const summary = mapBackendActivityToProcurementActivitySummary(ba);
             const parentPlan = fetchedPlans.find((p) => p.id === ba.planId);
-            const planRef =
-              parentPlan?.id ||
-              ba.planId ||
-              parentPlan?.title ||
-              ba.plan?.title ||
-              "";
+            const planRef = parentPlan?.id || ba.planId || "";
             const projCode =
-              parentPlan?.project?.code ||
-              ba.plan?.project?.code ||
-              "PRJ-24-001";
+              parentPlan?.project?.code || ba.plan?.project?.code || "";
             return {
               activity: summary,
               planReference: planRef,
@@ -494,18 +490,22 @@ export function OfficerProjectsView({
             project.id?.toLowerCase() ===
               selectedProjectCode.trim().toLowerCase()))),
   );
-  const selectedPlan = selectedProject?.plans.find(
-    (plan) =>
-      plan.reference === selectedPlanReference ||
-      (selectedPlanReference &&
-        (plan.reference.toLowerCase() ===
-          selectedPlanReference.trim().toLowerCase() ||
-          plan.name.toLowerCase() ===
+  const selectedPlan =
+    selectedProject?.plans.find(
+      (plan) =>
+        plan.reference === selectedPlanReference ||
+        (selectedPlanReference &&
+          (plan.reference.toLowerCase() ===
             selectedPlanReference.trim().toLowerCase() ||
-          (Boolean(plan.id) &&
-            plan.id?.toLowerCase() ===
-              selectedPlanReference.trim().toLowerCase()))),
-  );
+            (Boolean(plan.id) &&
+              plan.id?.toLowerCase() ===
+                selectedPlanReference.trim().toLowerCase()))),
+    ) ||
+    selectedProject?.plans.find(
+      (plan) =>
+        selectedPlanReference &&
+        plan.name.toLowerCase() === selectedPlanReference.trim().toLowerCase(),
+    );
 
   const selectedPlanActivities = useMemo(() => {
     if (!selectedPlan || !selectedProject) return [];
@@ -516,21 +516,24 @@ export function OfficerProjectsView({
 
     const matchingBackendPlan = backendPlans.find((bp) => {
       const bpId = (bp.id || "").toLowerCase().trim();
-      const bpTitle = (bp.title || "").toLowerCase().trim();
-      return (
-        (normRef && bpId === normRef) ||
-        (normId && bpId === normId) ||
-        (normRef && bpTitle === normRef) ||
-        (normName && bpTitle === normName)
-      );
+      return (normId && bpId === normId) || (normRef && bpId === normRef);
     });
 
-    const directBackendActivities = (matchingBackendPlan?.activities || []).map(
-      mapBackendActivityToProcurementActivitySummary,
-    );
+    const directBackendActivities = (matchingBackendPlan?.activities || [])
+      .filter((ba) => !isTestOrJunkActivity(ba.reference, ba.description))
+      .map(mapBackendActivityToProcurementActivitySummary);
 
     const matchingSaved = effectiveSavedActivityRecords
       .filter((record) => {
+        if (
+          isTestOrJunkActivity(
+            record.activity.reference,
+            record.activity.description,
+          )
+        ) {
+          return false;
+        }
+
         const recProj = (record.projectCode || "").toLowerCase().trim();
         const selCode = (selectedProject.code || "").toLowerCase().trim();
         const selShort = (selectedProject.shortName || "").toLowerCase().trim();
@@ -545,23 +548,39 @@ export function OfficerProjectsView({
 
         const recPlan = (record.planReference || "").toLowerCase().trim();
         const bpId = (matchingBackendPlan?.id || "").toLowerCase().trim();
-        const bpTitle = (matchingBackendPlan?.title || "").toLowerCase().trim();
 
-        return (
-          (normRef && recPlan === normRef) ||
-          (normName && recPlan === normName) ||
+        // Must strictly belong to this plan by unique ID or unique reference
+        const matchesPlan =
           (normId && recPlan === normId) ||
-          (bpId && recPlan === bpId) ||
-          (bpTitle && recPlan === bpTitle)
-        );
+          (normRef && recPlan === normRef) ||
+          (bpId && recPlan === bpId);
+
+        if (!matchesPlan) return false;
+
+        return true;
       })
       .map((record) => record.activity);
 
     const combined: ProcurementActivitySummary[] = [];
     if (selectedPlan.planActivities && selectedPlan.planActivities.length > 0) {
-      selectedPlan.planActivities.forEach((a) =>
-        upsertSummaryActivity(combined, a),
-      );
+      selectedPlan.planActivities
+        .filter((a) => !isTestOrJunkActivity(a.reference, a.description))
+        .filter((a: any) => {
+          const aPlanId = (a.planId || a.planReference || "")
+            .toLowerCase()
+            .trim();
+          if (
+            aPlanId &&
+            normId &&
+            aPlanId !== normId &&
+            normRef &&
+            aPlanId !== normRef
+          ) {
+            return false;
+          }
+          return true;
+        })
+        .forEach((a) => upsertSummaryActivity(combined, a));
     }
     directBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
     matchingSaved.forEach((a) => upsertSummaryActivity(combined, a));
@@ -590,7 +609,11 @@ export function OfficerProjectsView({
   const isPlanInBackend = useMemo(() => {
     if (!selectedPlan) return false;
     const id = planServerId(selectedPlan);
-    return Boolean(id && (availability[id] === "available" || backendPlans.some(bp => bp.id.toLowerCase() === id)));
+    return Boolean(
+      id &&
+        (availability[id] === "available" ||
+          backendPlans.some((bp) => (bp.id || "").toLowerCase() === id)),
+    );
   }, [backendPlans, selectedPlan, availability]);
 
   const selectedActivity = useMemo(() => {
@@ -629,10 +652,12 @@ export function OfficerProjectsView({
         aRef === rawLower ||
         (aId && (aId === decoded || aId === rawLower));
       const matchesParent =
-        rec.projectCode?.toLowerCase() === selectedProject.code.toLowerCase() ||
-        rec.planReference?.toLowerCase() ===
+        rec.projectCode?.toLowerCase() === selectedProject.code.toLowerCase() &&
+        (rec.planReference?.toLowerCase() ===
           selectedPlan.reference.toLowerCase() ||
-        rec.planReference?.toLowerCase() === selectedPlan.name.toLowerCase();
+          (Boolean(selectedPlan.id) &&
+            rec.planReference?.toLowerCase() ===
+              selectedPlan.id?.toLowerCase()));
       return matchesRef && matchesParent;
     });
     if (inSaved) return inSaved.activity;
@@ -862,73 +887,31 @@ export function OfficerProjectsView({
     }
 
     // MODE: CREATE NEW PLAN
-    const existingPlan = selectedProject.plans.find(
-      (plan) =>
-        plan.name.trim().toLowerCase() ===
-          input.planName.trim().toLowerCase() &&
-        plan.budgetYear === `${input.budgetYear} EFY` &&
-        plan.category === input.category,
-    );
+    // Always create a fresh, distinct plan in the database
+    const dbPlan = await createPlan({
+      projectId: targetProjectId,
+      title: input.planName.trim(),
+      budgetYear: `${input.budgetYear} EFY`,
+      procurementCategory: catEnum,
+      organization:
+        input.organizationRegion ||
+        selectedProject.organizationRegion ||
+        "Federal / FPCU",
+      description: input.remarks || undefined,
+      periodStart,
+      periodEnd,
+      gpnDate,
+    });
 
-    // Check if the plan is already registered on the backend database
-    const backendMatch = backendPlans.find(
-      (bp) =>
-        bp.id === existingPlan?.id ||
-        bp.id === existingPlan?.reference ||
-        (bp.title.toLowerCase().trim() ===
-          input.planName.trim().toLowerCase() &&
-          (bp.projectId === targetProjectId ||
-            bp.project?.id === targetProjectId ||
-            bp.project?.code?.toLowerCase() ===
-              selectedProject.code.toLowerCase())),
-    );
-
-    let dbPlan: BackendPlan;
-
-    if (backendMatch && backendMatch.id) {
-      try {
-        dbPlan = await updatePlan(backendMatch.id, {
-          title: input.planName.trim(),
-          budgetYear: `${input.budgetYear} EFY`,
-          procurementCategory: catEnum,
-          organization:
-            input.organizationRegion ||
-            selectedProject.organizationRegion ||
-            "Federal / FPCU",
-          description: input.remarks || undefined,
-          periodStart,
-          periodEnd,
-          gpnDate,
-        });
-      } catch {
-        dbPlan = backendMatch;
-      }
-    } else {
-      // Create new plan in backend database
-      dbPlan = await createPlan({
-        projectId: targetProjectId,
-        title: input.planName.trim(),
-        budgetYear: `${input.budgetYear} EFY`,
-        procurementCategory: catEnum,
-        organization:
-          input.organizationRegion ||
-          selectedProject.organizationRegion ||
-          "Federal / FPCU",
-        description: input.remarks || undefined,
-        periodStart,
-        periodEnd,
-        gpnDate,
-      });
-
-      if (!dbPlan || !dbPlan.id) {
-        throw new Error(
-          "Server failed to create the plan in the database. Please try again.",
-        );
-      }
+    if (!dbPlan || !dbPlan.id) {
+      throw new Error(
+        "Server failed to create the plan in the database. Please try again.",
+      );
     }
 
+    const baseDraft = createDraftPlan(selectedProject, input);
     const planForNavigation: ProcurementPlanSummary = {
-      ...(existingPlan || createDraftPlan(selectedProject, input)),
+      ...baseDraft,
       id: dbPlan.id,
       reference: dbPlan.id,
       name: dbPlan.title || input.planName.trim(),
@@ -953,6 +936,12 @@ export function OfficerProjectsView({
             ethiopian: input.generalProcurementNoticeDateEthiopian,
           }
         : undefined,
+      activities: 0,
+      completedActivities: 0,
+      inProgressActivities: 0,
+      delayedActivities: 0,
+      estimatedValue: 0,
+      planActivities: [],
       createdById: dbPlan.createdBy,
       createdByName:
         dbPlan.creator?.displayName ||
@@ -1117,13 +1106,7 @@ export function OfficerProjectsView({
         );
 
         const matchingParentBackendPlan = backendPlans.find(
-          (bp) =>
-            bp.id === selectedPlan.id ||
-            bp.id === selectedPlan.reference ||
-            bp.title.toLowerCase().trim() ===
-              selectedPlan.name.toLowerCase().trim() ||
-            bp.title.toLowerCase().trim() ===
-              selectedPlan.reference.toLowerCase().trim(),
+          (bp) => bp.id === selectedPlan.id || bp.id === selectedPlan.reference,
         );
 
         const createdBackendPlan = await createPlan({
@@ -1158,7 +1141,7 @@ export function OfficerProjectsView({
   async function saveActivity(activity: ProcurementActivitySummary) {
     if (!selectedProject || !selectedPlan) return;
 
-    const planRef = selectedPlan.reference;
+    const planRef = selectedPlan.id || selectedPlan.reference;
 
     // Check if this was an edit to an existing activity
     const existing = selectedPlanActivities.find(
@@ -1252,13 +1235,7 @@ export function OfficerProjectsView({
 
     // Async backend activity creation
     const matchingBackendPlan = backendPlans.find(
-      (bp) =>
-        bp.id === selectedPlan.id ||
-        bp.id === selectedPlan.reference ||
-        bp.title.toLowerCase().trim() ===
-          selectedPlan.name.toLowerCase().trim() ||
-        bp.title.toLowerCase().trim() ===
-          selectedPlan.reference.toLowerCase().trim(),
+      (bp) => bp.id === selectedPlan.id || bp.id === selectedPlan.reference,
     );
 
     let targetBackendPlanId =
@@ -2133,15 +2110,48 @@ export function OfficerProjectsView({
           const resolvedMethodId =
             await resolveProcurementMethodId(methodLabel);
 
+          const rawMethodApp =
+            activity.details?.form?.marketApproach || "OPEN_NATIONAL";
+          let marketApproach:
+            "OPEN_INTERNATIONAL" | "OPEN_NATIONAL" | "LIMITED" | "DIRECT" =
+            "OPEN_NATIONAL";
+          const normMA = String(rawMethodApp).toUpperCase();
+          if (normMA.includes("INTER")) marketApproach = "OPEN_INTERNATIONAL";
+          else if (normMA.includes("DIR")) marketApproach = "DIRECT";
+          else if (normMA.includes("LIM")) marketApproach = "LIMITED";
+
+          const rawRev = activity.details?.form?.reviewType || "POST";
+          const reviewType: "PRIOR" | "POST" = String(rawRev)
+            .toUpperCase()
+            .includes("PRIOR")
+            ? "PRIOR"
+            : "POST";
+
+          const rawCT = activity.details?.form?.contractType || "LUMP_SUM";
+          const contractType: "LUMP_SUM" | "TIME_BASED" = String(rawCT)
+            .toUpperCase()
+            .includes("TIME")
+            ? "TIME_BASED"
+            : "LUMP_SUM";
+
           await createActivity({
             planId: targetBackendPlanId,
+            reference: activity.reference,
             procurementMethodId: resolvedMethodId,
             description: activity.description || "Activity description",
             estimatedBudget: Number(activity.estimatedAmount) || 500000,
-            currency: selectedPlan.currency || "ETB",
+            currency:
+              activity.details?.form?.currency ||
+              selectedPlan.currency ||
+              "ETB",
+            marketApproach,
+            reviewType,
+            contractType,
+            lotRequired: Boolean(activity.details?.form?.lotRequired),
             fundings: [
               {
                 fundingSource:
+                  activity.details?.form?.fundingSource ||
                   selectedProject.fundingSource ||
                   "African Development Bank (AfDB)",
                 allocationPct: 100,

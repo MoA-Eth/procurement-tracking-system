@@ -76,7 +76,7 @@ export async function streamContractRegister(
       activity: {
         include: {
           procurementMethod: { select: { label: true } },
-          fundings: { select: { fundingSource: true } },
+          fundings: { select: { fundingSource: true, allocationPct: true } },
           plan: {
             select: {
               title: true,
@@ -159,7 +159,13 @@ export async function streamContractRegister(
 
     const fundingSource =
       c.activity?.fundings && c.activity.fundings.length > 0
-        ? c.activity.fundings.map((f) => f.fundingSource).join(', ')
+        ? c.activity.fundings
+            .map((f) =>
+              f.allocationPct != null
+                ? `${f.fundingSource} (${f.allocationPct}%)`
+                : f.fundingSource,
+            )
+            .join(', ')
         : c.activity?.plan?.project?.fundingSource?.label || '';
 
     sheet.addRow([

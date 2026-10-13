@@ -1,20 +1,41 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { getClientSession } from "@/lib/authApi";
+import { authTokenManager } from "@/lib/authTokenManager";
 import { tabSessionManager } from "@/lib/tabSessionManager";
+
 interface TabSessionGuardProps {
   children: ReactNode;
 }
+
 export function TabSessionGuard({ children }: TabSessionGuardProps) {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+
   useEffect(() => {
     if (tabSessionManager.hasTabSession()) {
       setIsAuthorized(true);
-    } else {
-      setIsAuthorized(false);
-      router.replace("/");
+      return;
     }
+
+    // Check if a valid remembered session exists from cookie
+    const clientSession = getClientSession();
+    if (
+      clientSession &&
+      clientSession.status === "AUTHENTICATED" &&
+      clientSession.user
+    ) {
+      tabSessionManager.setTabSession(clientSession);
+      if (clientSession.accessToken) {
+        authTokenManager.setToken(clientSession.accessToken);
+      }
+      setIsAuthorized(true);
+      return;
+    }
+
+    setIsAuthorized(false);
+    router.replace("/");
   }, [router]);
   if (isAuthorized === null || isAuthorized === false) {
     return (

@@ -44,20 +44,34 @@ function mapPrismaRoleToUserRole(role: string): UserRole {
 export const FRONTEND_SESSION_COOKIE =
   process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME || "moa_user_session";
 
-function writeSessionCookie(session: AuthSession): void {
+function writeSessionCookie(
+  session: AuthSession,
+  rememberMe: boolean = false,
+): void {
   if (typeof document === "undefined") return;
-  // Always use a session cookie (no max-age directive) so that closing the browser destroys the session cookie.
-  // Sensitive procurement information will strictly require re-entering the password on new sessions.
-  // "Remember Me" only persists the email address in local storage for login convenience.
+
+  const isHttps =
+    typeof location !== "undefined" && location.protocol === "https:";
+  const secureSuffix = isHttps ? "; Secure" : "";
+
+  let cookieAttributes = `path=/; SameSite=Lax${secureSuffix}`;
+  if (rememberMe) {
+    const maxAgeSeconds = 30 * 24 * 60 * 60; // 30 days
+    const expiresDate = session.expiresAt
+      ? new Date(session.expiresAt).toUTCString()
+      : new Date(Date.now() + maxAgeSeconds * 1000).toUTCString();
+    cookieAttributes += `; max-age=${maxAgeSeconds}; expires=${expiresDate}`;
+  }
+
   try {
     const jsonStr = JSON.stringify(session);
     const base64Str = btoa(unescape(encodeURIComponent(jsonStr)));
-    document.cookie = `${FRONTEND_SESSION_COOKIE}=${base64Str}; path=/; SameSite=Lax`;
-    document.cookie = `moa_session=${base64Str}; path=/; SameSite=Lax`;
+    document.cookie = `${FRONTEND_SESSION_COOKIE}=${base64Str}; ${cookieAttributes}`;
+    document.cookie = `moa_session=${base64Str}; ${cookieAttributes}`;
   } catch {
     const encoded = encodeURIComponent(JSON.stringify(session));
-    document.cookie = `${FRONTEND_SESSION_COOKIE}=${encoded}; path=/; SameSite=Lax`;
-    document.cookie = `moa_session=${encoded}; path=/; SameSite=Lax`;
+    document.cookie = `${FRONTEND_SESSION_COOKIE}=${encoded}; ${cookieAttributes}`;
+    document.cookie = `moa_session=${encoded}; ${cookieAttributes}`;
   }
 }
 
@@ -99,16 +113,24 @@ export async function authenticate(
       role,
     };
 
+    const sessionExpiresAt =
+      loginData.expiresAt ||
+      new Date(
+        Date.now() +
+          (rememberMe ? 30 * 24 * 60 * 60 * 1000 : 12 * 60 * 60 * 1000),
+      ).toISOString();
+
     const session: AuthSession = {
       status: rawUser.mustChangePassword
         ? "PASSWORD_CHANGE_REQUIRED"
         : "AUTHENTICATED",
       user,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      expiresAt: sessionExpiresAt,
       accessToken: token,
+      rememberMe,
     };
 
-    writeSessionCookie(session);
+    writeSessionCookie(session, rememberMe);
     tabSessionManager.setTabSession(session);
 
     return session;
@@ -281,32 +303,29 @@ export async function createInvitedUser(
         displayName: userObj.displayName || userObj.name || cleanDisplayName,
         role,
       },
-      invitationExpiresAt: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
+      invitationExpiresAt:
+        res.invitationExpiresAt ||
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       message:
         res.message || `Invitation email sent successfully to ${cleanEmail}.`,
-      invitationLink: res.invitationLink,
+      invitationLink: res.invitationLink || res.invitationUrl,
     };
   } catch (err) {
     if (err instanceof ApiClientError) {
       throw new AuthApiError(err.message);
     }
-    // Fallback response if offline
-    return {
-      user: {
-        id: `inv-${Date.now()}`,
-        email: cleanEmail,
-        username: cleanEmail.split("@")[0],
-        displayName: cleanDisplayName,
-        role,
-      },
-      invitationExpiresAt: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      message: `Invitation email sent successfully to ${cleanEmail}.`,
-    };
+    if (err instanceof Error) {
+      throw new AuthApiError(err.message);
+    }
+    throw new AuthApiError("Failed to deliver user invitation.");
   }
+}
+
+export async function getInvitationLink(userId: string): Promise<string> {
+  const res = await apiClient.get<{ invitationLink: string }>(
+    `/admin/users/${encodeURIComponent(userId)}/invitation-link`,
+  );
+  return res.invitationLink;
 }
 
 export async function signOut(): Promise<void> {
@@ -325,7 +344,19 @@ export async function signOut(): Promise<void> {
 
 export function getClientSession(): AuthSession | null {
   const tabSession = tabSessionManager.getTabSession();
-  if (tabSession) return tabSession;
+  if (tabSession) {
+    if (tabSession.expiresAt) {
+      const exp = new Date(tabSession.expiresAt).getTime();
+      if (Number.isFinite(exp) && exp <= Date.now()) {
+        tabSessionManager.clearTabSession();
+      } else {
+        return tabSession;
+      }
+    } else {
+      return tabSession;
+    }
+  }
+
   if (typeof document === "undefined") return null;
   const cookies = document.cookie.split(";").map((c) => c.trim());
   const targetNames = [FRONTEND_SESSION_COOKIE, "moa_session"];
@@ -335,12 +366,27 @@ export function getClientSession(): AuthSession | null {
       const val = match.slice(name.length + 1);
       const tryNormalize = (parsed: any): AuthSession | null => {
         if (parsed && parsed.user) {
+          if (parsed.expiresAt) {
+            const exp = new Date(parsed.expiresAt).getTime();
+            if (Number.isFinite(exp) && exp <= Date.now()) {
+              // Expired session - purge cookies cleanly
+              document.cookie = `${FRONTEND_SESSION_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+              document.cookie = `moa_session=; path=/; max-age=0; SameSite=Lax`;
+              return null;
+            }
+          }
           if (parsed.user.role || parsed.user.authRole) {
             parsed.user.role = normalizeUserRole(
               parsed.user.authRole || parsed.user.role,
             );
           }
-          return parsed as AuthSession;
+          const validSession = parsed as AuthSession;
+          // Hydrate in-memory token and tab session
+          if (validSession.accessToken) {
+            authTokenManager.setToken(validSession.accessToken);
+          }
+          tabSessionManager.setTabSession(validSession);
+          return validSession;
         }
         return null;
       };

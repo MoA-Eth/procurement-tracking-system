@@ -89,15 +89,18 @@ export function OfficerAlertsCenter({
                       </div>
 
                       {/* Line 2: Reference Code / Title */}
-                      <div
-                        className={`text-xs sm:text-sm font-semibold tracking-tight break-words [overflow-wrap:anywhere] [word-break:break-word] leading-snug group-hover:underline ${
-                          alert.tone === "returned"
-                            ? "text-[#10243f]"
-                            : "font-mono text-[#0A3C2F]"
-                        }`}
-                      >
-                        {alert.referenceLine}
-                      </div>
+                      {alert.referenceLine &&
+                        alert.referenceLine !== alert.statusLine && (
+                          <div
+                            className={`text-xs sm:text-sm font-semibold tracking-tight break-words [overflow-wrap:anywhere] [word-break:break-word] leading-snug group-hover:underline ${
+                              alert.tone === "returned"
+                                ? "text-[#10243f]"
+                                : "font-mono text-[#0A3C2F]"
+                            }`}
+                          >
+                            {alert.referenceLine}
+                          </div>
+                        )}
 
                       {/* Line 3: Stage / Detail or Director Note Box */}
                       {alert.directorNote ? (

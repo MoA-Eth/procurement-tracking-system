@@ -161,6 +161,82 @@ export class ExcelService {
     };
   }
 
+  addInstructionsSheet(
+    workbook: ExcelJS.Workbook,
+    title: string,
+    guidance: Array<{
+      field: string;
+      requirement: 'Required' | 'Optional';
+      type: string;
+      options?: string;
+      description: string;
+    }>,
+  ) {
+    const guideSheet = workbook.addWorksheet('Instructions & Field Guide');
+
+    guideSheet.mergeCells('A1:E1');
+    const titleCell = guideSheet.getCell('A1');
+    titleCell.value =
+      'MINISTRY OF AGRICULTURE (MoA) — PROCUREMENT TRACKING SYSTEM';
+    titleCell.font = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
+    titleCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: EXCEL_THEME_COLOR },
+    };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+    guideSheet.getRow(1).height = 28;
+
+    guideSheet.mergeCells('A2:E2');
+    const subtitleCell = guideSheet.getCell('A2');
+    subtitleCell.value = title;
+    subtitleCell.font = { bold: true, size: 11, color: { argb: 'FF1E293B' } };
+    subtitleCell.alignment = { vertical: 'middle', horizontal: 'left' };
+    guideSheet.getRow(2).height = 22;
+
+    const headers = [
+      'Field / Column Name',
+      'Requirement',
+      'Data Type',
+      'Allowed Values / Options',
+      'Description & Business Rules',
+    ];
+    const headerRow = guideSheet.getRow(4);
+    headerRow.values = headers;
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: EXCEL_THEME_COLOR },
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+    headerRow.height = 24;
+
+    guidance.forEach((g, idx) => {
+      const row = guideSheet.getRow(5 + idx);
+      row.values = [
+        g.field,
+        g.requirement,
+        g.type,
+        g.options || '—',
+        g.description,
+      ];
+      row.alignment = { vertical: 'middle', wrapText: true };
+      if (g.requirement === 'Required') {
+        row.getCell(2).font = { bold: true, color: { argb: 'FFB91C1C' } };
+      }
+      row.height = 22;
+    });
+
+    guideSheet.columns = [
+      { width: 32 },
+      { width: 16 },
+      { width: 20 },
+      { width: 38 },
+      { width: 65 },
+    ];
+  }
+
   // ─── Template Exports ──────────────────────────────────────────────────────
 
   async generateActivitiesTemplate(res: Response): Promise<void> {
@@ -168,15 +244,15 @@ export class ExcelService {
     const sheet = workbook.addWorksheet('Activities Upload');
 
     const headers = [
-      'Plan ID (Required)',
-      'Reference (Required)',
-      'Description',
-      'Category (Dropdown)',
-      'Method ID (Dropdown)',
-      'Estimated Budget',
-      'Currency (Dropdown)',
-      'Market Approach (Dropdown)',
-      'Review Type (Dropdown)',
+      'Plan ID or Title (Required)',
+      'Activity Reference (Required)',
+      'Description (Required)',
+      'Category (Required - Dropdown)',
+      'Method ID (Required - Dropdown)',
+      'Estimated Budget (ETB) (Required)',
+      'Currency (Optional - Dropdown)',
+      'Market Approach (Optional - Dropdown)',
+      'Review Type (Optional - Dropdown)',
     ];
 
     this.styleHeaderRow(sheet, headers);
@@ -187,6 +263,53 @@ export class ExcelService {
       select: { code: true },
     });
     const methodCodes = methods.map((m) => m.code);
+
+    const samplePlan = await prisma.plan.findFirst({
+      select: { id: true, title: true },
+    });
+    const samplePlanId = samplePlan ? samplePlan.title : 'PLAN-2025-01';
+
+    const sampleRows = [
+      [
+        samplePlanId,
+        'ET-MoA-001-GO-RFQ',
+        'Procurement of Soil Laboratory Equipment and Field Testing Kits',
+        'GOODS',
+        methodCodes[0] || 'RFQ',
+        1500000,
+        'ETB',
+        'NATIONAL',
+        'POST',
+      ],
+      [
+        samplePlanId,
+        'ET-MoA-002-CW-RFB',
+        'Construction and Rehabilitation of Regional Seed Inspection Center',
+        'WORKS',
+        methodCodes.find((c) => c.includes('RFB')) || methodCodes[0] || 'RFB',
+        12500000,
+        'ETB',
+        'NATIONAL',
+        'PRIOR',
+      ],
+      [
+        samplePlanId,
+        'ET-MoA-003-CS-QCBS',
+        'Consultancy Services for Environmental & Social Impact Assessment (ESIA)',
+        'CONSULTANCY',
+        methodCodes.find((c) => c.includes('QCBS')) || methodCodes[0] || 'QCBS',
+        3200000,
+        'ETB',
+        'INTERNATIONAL',
+        'PRIOR',
+      ],
+    ];
+
+    sampleRows.forEach((vals, idx) => {
+      const row = sheet.getRow(2 + idx);
+      row.values = vals;
+      row.height = 20;
+    });
 
     // Apply validations to 100 rows
     for (let r = 2; r <= 100; r++) {
@@ -222,6 +345,81 @@ export class ExcelService {
       // Review Type dropdown
       this.applyListValidation(row.getCell(9), ['PRIOR', 'POST']);
     }
+
+    this.addInstructionsSheet(
+      workbook,
+      'Procurement Activities Bulk Import Guide & Specifications',
+      [
+        {
+          field: 'Plan ID or Title (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Plan UUID, Reference, or exact Plan Title',
+          description:
+            'Identifies the procurement plan in the system to which this activity belongs.',
+        },
+        {
+          field: 'Activity Reference (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'e.g. ET-MoA-001-GO-RFQ',
+          description:
+            'Must be a unique activity identifier across the procurement system.',
+        },
+        {
+          field: 'Description (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Free text (clear procurement description)',
+          description:
+            'Full title and narrative specification of the activity.',
+        },
+        {
+          field: 'Category (Required - Dropdown)',
+          requirement: 'Required',
+          type: 'Dropdown',
+          options: 'GOODS, WORKS, CONSULTANCY, NON_CONSULTING',
+          description: 'High-level procurement classification standard.',
+        },
+        {
+          field: 'Method ID (Required - Dropdown)',
+          requirement: 'Required',
+          type: 'Dropdown',
+          options: methodCodes.join(', ') || 'RFQ, RFB, QCBS, etc.',
+          description: 'Approved procurement selection method code.',
+        },
+        {
+          field: 'Estimated Budget (ETB) (Required)',
+          requirement: 'Required',
+          type: 'Decimal / Number',
+          options: 'Positive number (>= 0)',
+          description:
+            'Planned financial allocation in ETB or indicated currency.',
+        },
+        {
+          field: 'Currency (Optional - Dropdown)',
+          requirement: 'Optional',
+          type: 'Dropdown',
+          options: 'ETB, USD, EUR (Default: ETB)',
+          description: 'Base financial transaction currency.',
+        },
+        {
+          field: 'Market Approach (Optional - Dropdown)',
+          requirement: 'Optional',
+          type: 'Dropdown',
+          options: 'NATIONAL, INTERNATIONAL, LIMITED, DIRECT',
+          description: 'Geographic market outreach.',
+        },
+        {
+          field: 'Review Type (Optional - Dropdown)',
+          requirement: 'Optional',
+          type: 'Dropdown',
+          options: 'PRIOR, POST',
+          description:
+            'Whether prior donor / director approval is required before contracting.',
+        },
+      ],
+    );
 
     res.setHeader(
       'Content-Type',
@@ -265,6 +463,38 @@ export class ExcelService {
 
     this.styleHeaderRow(sheet, headers);
 
+    const sampleContractRows = [
+      [
+        'PRJ-24-001',
+        'ET-MoA-001-GO-RFQ',
+        'Ethio Agritech Supplies PLC',
+        'Addis Ababa',
+        'MOA/AGP/CON/2025/01',
+        '2025-08-10',
+        '2025-08-15',
+        '2025-09-01',
+        '2026-03-31',
+        1500000,
+        0,
+        1500000,
+        0,
+        1500000,
+        'SIGNED',
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+      ],
+    ];
+
+    sampleContractRows.forEach((vals, idx) => {
+      const row = sheet.getRow(2 + idx);
+      row.values = vals;
+      row.height = 20;
+    });
+
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);
 
@@ -298,6 +528,55 @@ export class ExcelService {
       this.applyDecimalValidation(row.getCell(21)); // Retention Withholding
     }
 
+    this.addInstructionsSheet(
+      workbook,
+      'Procurement Contracts Bulk Import Guide & Specifications',
+      [
+        {
+          field: 'Project (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Project Code (e.g. PRJ-24-001)',
+          description: 'Parent project identifier.',
+        },
+        {
+          field: 'Activity (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Activity Reference (e.g. ET-MoA-001-GO-RFQ)',
+          description: 'Associated procurement activity reference.',
+        },
+        {
+          field: 'Supplier (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Registered Supplier Name',
+          description: 'Contracted vendor or firm.',
+        },
+        {
+          field: 'Contract Number (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Unique Contract Number',
+          description: 'Official legal contract reference code.',
+        },
+        {
+          field: 'Original Contract Amount (Required)',
+          requirement: 'Required',
+          type: 'Decimal / Number',
+          options: 'Amount >= 0',
+          description: 'Initial contract signed amount.',
+        },
+        {
+          field: 'Contract Status (Dropdown)',
+          requirement: 'Required',
+          type: 'Dropdown',
+          options: 'DRAFT, ACTIVE, COMPLETED, TERMINATED',
+          description: 'Current contractual lifecycle status.',
+        },
+      ],
+    );
+
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -324,12 +603,77 @@ export class ExcelService {
 
     this.styleHeaderRow(sheet, headers);
 
+    const sampleSupplierRows = [
+      [
+        'Ethio Seed & Grain Agro-Industry PLC',
+        '0023456789',
+        'info@ethioseed.et',
+        '+251 11 551 2345',
+        'ACTIVE',
+      ],
+      [
+        'Abyssinia Civil Works & Construction Enterprise',
+        '0034567890',
+        'contact@abyssiniaconst.et',
+        '+251 11 662 3456',
+        'ACTIVE',
+      ],
+    ];
+
+    sampleSupplierRows.forEach((vals, idx) => {
+      const row = sheet.getRow(2 + idx);
+      row.values = vals;
+      row.height = 20;
+    });
+
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);
 
       // Status dropdown
       this.applyListValidation(row.getCell(5), ['ACTIVE', 'INACTIVE']);
     }
+
+    this.addInstructionsSheet(
+      workbook,
+      'Suppliers & Contractors Bulk Import Guide',
+      [
+        {
+          field: 'Supplier Name (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Official registered entity name',
+          description: 'Legal registered business or consultant name.',
+        },
+        {
+          field: 'TIN Number (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: '10-digit Taxpayer Identification Number',
+          description: 'Unique Ethiopian TIN number.',
+        },
+        {
+          field: 'Email (Optional)',
+          requirement: 'Optional',
+          type: 'Text',
+          options: 'Valid email address',
+          description: 'Primary contact email.',
+        },
+        {
+          field: 'Phone (Optional)',
+          requirement: 'Optional',
+          type: 'Text',
+          options: 'Phone number format (+251...)',
+          description: 'Primary contact phone number.',
+        },
+        {
+          field: 'Status (Dropdown)',
+          requirement: 'Optional',
+          type: 'Dropdown',
+          options: 'ACTIVE, INACTIVE (Default: ACTIVE)',
+          description: 'Eligibility status in supplier directory.',
+        },
+      ],
+    );
 
     res.setHeader(
       'Content-Type',
@@ -426,12 +770,20 @@ export class ExcelService {
           );
         }
 
-        // Check plan exists
-        const plan = await prisma.plan.findUnique({
-          where: { id: planId },
+        // Check plan exists (by UUID, exact Title, or Title contains)
+        const plan = await prisma.plan.findFirst({
+          where: {
+            OR: [
+              { id: planId },
+              { title: { equals: planId, mode: 'insensitive' } },
+              { title: { contains: planId, mode: 'insensitive' } },
+            ],
+          },
         });
         if (!plan) {
-          throw new Error(`Plan ID '${planId}' not found at row ${rowNumber}.`);
+          throw new Error(
+            `Plan '${planId}' not found at row ${rowNumber}. Please provide a valid Plan UUID or registered Plan Title.`,
+          );
         }
 
         const estimatedBudget = Number(rawBudget) || 0;
@@ -449,7 +801,7 @@ export class ExcelService {
           await prisma.activity.update({
             where: { reference },
             data: {
-              planId,
+              planId: plan.id,
               description: description ?? null,
               procurementMethodId: method.id,
               estimatedBudget,
@@ -462,7 +814,7 @@ export class ExcelService {
         } else {
           await prisma.activity.create({
             data: {
-              planId,
+              planId: plan.id,
               reference,
               description: description ?? null,
               procurementMethodId: method.id,
@@ -1330,6 +1682,56 @@ export class ExcelService {
     });
     const sectorDropdowns = sectors.map((s) => s.label);
 
+    const defaultFs = fsDropdowns[0] || 'World Bank (WB)';
+    const defaultSec = sectorDropdowns[0] || 'Agriculture & Crop Production';
+
+    const sampleProjectRows = [
+      [
+        'MOA-AGP2',
+        'Second Agricultural Growth Program (AGP-II)',
+        'SAP-100245',
+        'Ethiopia',
+        'Ministry of Agriculture (MoA)',
+        'Federal / FPCU',
+        defaultFs,
+        'Loan / Grant',
+        defaultSec,
+        'ACTIVE',
+      ],
+      [
+        'MOA-LLRP',
+        'Lowlands Livelihood Resilience Project (LLRP)',
+        'SAP-100246',
+        'Ethiopia',
+        'Ministry of Agriculture (MoA)',
+        'Somali Regional Bureau',
+        defaultFs,
+        'Credit',
+        sectorDropdowns.find((s) => s.toLowerCase().includes('live')) ||
+          defaultSec,
+        'ACTIVE',
+      ],
+      [
+        'MOA-CALM',
+        'Climate Action through Landscape Management (CALM)',
+        'SAP-100247',
+        'Ethiopia',
+        'Ministry of Agriculture (MoA)',
+        'Oromia Regional Bureau',
+        fsDropdowns.find((f) => f.toLowerCase().includes('afdb')) || defaultFs,
+        'Grant',
+        sectorDropdowns.find((s) => s.toLowerCase().includes('nat')) ||
+          defaultSec,
+        'ACTIVE',
+      ],
+    ];
+
+    sampleProjectRows.forEach((vals, idx) => {
+      const row = sheet.getRow(2 + idx);
+      row.values = vals;
+      row.height = 20;
+    });
+
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);
 
@@ -1348,6 +1750,84 @@ export class ExcelService {
         'SUSPENDED',
       ]);
     }
+
+    this.addInstructionsSheet(
+      workbook,
+      'Development Projects Bulk Import Guide & Specifications',
+      [
+        {
+          field: 'Project Code (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Unique Project Code (e.g. MOA-AGP2, PRJ-24-001)',
+          description:
+            'Must be a unique code identifying the project or program.',
+        },
+        {
+          field: 'Project Name (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Official Project Title (minimum 5 characters)',
+          description: 'Official title of the development project.',
+        },
+        {
+          field: 'SAP Identification No (Optional)',
+          requirement: 'Optional',
+          type: 'Text',
+          options: 'e.g. SAP-100245',
+          description: 'Government IFMIS or ERP identifier.',
+        },
+        {
+          field: 'Country (Optional)',
+          requirement: 'Optional',
+          type: 'Text',
+          options: 'Default: Ethiopia',
+          description: 'Host country or sovereign territory.',
+        },
+        {
+          field: 'Executing Agency (Optional)',
+          requirement: 'Optional',
+          type: 'Text',
+          options: 'e.g. Ministry of Agriculture (MoA)',
+          description: 'Lead institutional executing ministry or commission.',
+        },
+        {
+          field: 'Organization (Optional)',
+          requirement: 'Optional',
+          type: 'Text',
+          options: 'e.g. Federal / FPCU, Regional Bureau',
+          description: 'Implementing secretariat or regional bureau.',
+        },
+        {
+          field: 'Funding Source ID (Dropdown)',
+          requirement: 'Required',
+          type: 'Dropdown',
+          options: fsDropdowns.join(', ') || 'World Bank, AfDB, GoE, etc.',
+          description: 'Multilateral financier or partner.',
+        },
+        {
+          field: 'Funding Type (Optional)',
+          requirement: 'Optional',
+          type: 'Text',
+          options: 'Loan, Credit, Grant, Budget',
+          description: 'Financial instrument classification.',
+        },
+        {
+          field: 'Sector ID (Dropdown)',
+          requirement: 'Required',
+          type: 'Dropdown',
+          options: sectorDropdowns.join(', ') || 'Agriculture, Livestock, etc.',
+          description: 'Economic sector focus.',
+        },
+        {
+          field: 'Status (Dropdown)',
+          requirement: 'Optional',
+          type: 'Dropdown',
+          options: 'Draft, ACTIVE, CLOSED, SUSPENDED',
+          description: 'Project lifecycle status (Default: ACTIVE).',
+        },
+      ],
+    );
 
     res.setHeader(
       'Content-Type',
@@ -1379,6 +1859,53 @@ export class ExcelService {
 
     this.styleHeaderRow(sheet, headers);
 
+    const samplePlan = await prisma.project.findFirst({
+      select: { code: true },
+    });
+    const sampleProjCode = samplePlan ? samplePlan.code : 'PRJ-24-001';
+
+    const samplePlanRows = [
+      [
+        sampleProjCode,
+        'Annual Agricultural Inputs & Machinery Procurement Plan',
+        '2018 EFY',
+        'GOODS',
+        'Federal / Ministry of Agriculture',
+        'Procurement plan for agricultural supplies, certified seeds, and machinery',
+        '2025-07-08',
+        '2026-07-07',
+        'DRAFT',
+      ],
+      [
+        sampleProjCode,
+        'Regional Irrigation Civil Works & Infrastructure Plan',
+        '2018 EFY',
+        'WORKS',
+        'Oromia Regional Bureau of Agriculture',
+        'Civil works, intake weir construction, and canal rehabilitation for smallholders',
+        '2025-08-01',
+        '2026-06-30',
+        'DRAFT',
+      ],
+      [
+        sampleProjCode,
+        'Advisory, Environmental Audit & Capacity Building Plan',
+        '2018 EFY',
+        'CONSULTANCY',
+        'Federal / FPCU',
+        'Technical advisory, agronomy training, and environmental baseline studies',
+        '2025-08-15',
+        '2026-04-30',
+        'DRAFT',
+      ],
+    ];
+
+    samplePlanRows.forEach((vals, idx) => {
+      const row = sheet.getRow(2 + idx);
+      row.values = vals;
+      row.height = 20;
+    });
+
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);
 
@@ -1400,6 +1927,83 @@ export class ExcelService {
         'REJECTED',
       ]);
     }
+
+    this.addInstructionsSheet(
+      workbook,
+      'Procurement Plans Bulk Import Guide & Specifications',
+      [
+        {
+          field: 'Project Code (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Registered Project Code (e.g. PRJ-24-001)',
+          description:
+            'Must match an active, registered project in the procurement database.',
+        },
+        {
+          field: 'Plan Title (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'Free text (minimum 5 characters)',
+          description: 'Official title of the procurement plan.',
+        },
+        {
+          field: 'Budget Year (Required)',
+          requirement: 'Required',
+          type: 'Text',
+          options: 'e.g. 2018 EFY, 2025/2026',
+          description:
+            'Fiscal budget year for government and donor accounting.',
+        },
+        {
+          field: 'Category (Dropdown)',
+          requirement: 'Required',
+          type: 'Dropdown',
+          options: 'GOODS, WORKS, CONSULTANCY, NON_CONSULTING',
+          description:
+            'Primary category of procurements contained within this plan.',
+        },
+        {
+          field: 'Organization (Optional)',
+          requirement: 'Optional',
+          type: 'Text',
+          options: 'e.g. Federal / MoA, Regional Bureau',
+          description:
+            'Implementing unit, regional bureau, or federal directorate.',
+        },
+        {
+          field: 'Description (Optional)',
+          requirement: 'Optional',
+          type: 'Text',
+          options: 'Free text narrative',
+          description:
+            'Strategic procurement scope and high-level deliverables.',
+        },
+        {
+          field: 'Period Start (Required)',
+          requirement: 'Required',
+          type: 'Date (ISO)',
+          options: 'YYYY-MM-DD (e.g. 2025-07-08)',
+          description:
+            'Start date of plan period. Must not precede project start.',
+        },
+        {
+          field: 'Period End (Required)',
+          requirement: 'Required',
+          type: 'Date (ISO)',
+          options: 'YYYY-MM-DD (e.g. 2026-07-07)',
+          description:
+            'End date of plan period. Must be after start date and within project lifetime.',
+        },
+        {
+          field: 'Status (Dropdown)',
+          requirement: 'Optional',
+          type: 'Dropdown',
+          options: 'DRAFT, SUBMITTED, APPROVED (Default: DRAFT)',
+          description: 'Initial plan status upon import.',
+        },
+      ],
+    );
 
     res.setHeader(
       'Content-Type',

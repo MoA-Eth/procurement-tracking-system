@@ -101,12 +101,18 @@ export function OfficerContractsView({
     () => selectedContractNumber ?? "",
   );
   const [status, setStatus] = useState<"all" | ContractStatus>("all");
+  const [pageSize, setPageSize] = useState<number>(50);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importNotification, setImportNotification] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, fiscalYear, status, pageSize]);
 
   const loadContractsData = useCallback(async () => {
     const localContracts = parseSavedContracts(
@@ -388,17 +394,27 @@ export function OfficerContractsView({
     }
   }
 
+  const totalFilteredCount = filteredContracts.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / pageSize));
+  const validPage = Math.min(Math.max(1, currentPage), totalPages);
+  const firstVisibleIndex = (validPage - 1) * pageSize;
+  const paginatedContracts = useMemo(
+    () =>
+      filteredContracts.slice(firstVisibleIndex, firstVisibleIndex + pageSize),
+    [filteredContracts, firstVisibleIndex, pageSize],
+  );
+
   const allVisibleSelected =
-    filteredContracts.length > 0 &&
-    filteredContracts.every((contract) => selectedIds.has(contract.id));
+    paginatedContracts.length > 0 &&
+    paginatedContracts.every((contract) => selectedIds.has(contract.id));
 
   function toggleAllVisible() {
     setSelectedIds((current) => {
       const next = new Set(current);
       if (allVisibleSelected) {
-        filteredContracts.forEach((contract) => next.delete(contract.id));
+        paginatedContracts.forEach((contract) => next.delete(contract.id));
       } else {
-        filteredContracts.forEach((contract) => next.add(contract.id));
+        paginatedContracts.forEach((contract) => next.add(contract.id));
       }
       return next;
     });
@@ -451,14 +467,14 @@ export function OfficerContractsView({
     }
   }
 
-  const visibleCount = filteredContracts.length;
   const hasActiveFilters =
     Boolean(searchQuery.trim()) || fiscalYear !== "all" || status !== "all";
-  const totalResults = hasActiveFilters ? visibleCount : contracts.length;
+  const fromItem = totalFilteredCount === 0 ? 0 : firstVisibleIndex + 1;
+  const toItem = Math.min(firstVisibleIndex + pageSize, totalFilteredCount);
   const entrySummary =
-    visibleCount === 0
+    totalFilteredCount === 0
       ? "Showing 0 results"
-      : `Showing 1 to ${visibleCount} of ${totalResults} results`;
+      : `Showing ${fromItem} to ${toItem} of ${totalFilteredCount} results`;
   const wrappingCellStyle = {
     display: "block",
     overflow: "hidden",
@@ -598,7 +614,7 @@ export function OfficerContractsView({
         aria-label="Contract filters and table controls"
         className="w-full min-w-0 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-2xs"
       >
-        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(20rem,1fr)_8.5rem_10rem]">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(20rem,1fr)_8.5rem_10rem_auto]">
           <label className="relative block min-w-0 sm:col-span-2 xl:col-span-1">
             <span className="sr-only">
               Search by contract number, activity reference, activity, or
@@ -611,7 +627,7 @@ export function OfficerContractsView({
             <input
               className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-medium text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all shadow-2xs placeholder:text-slate-400 hover:border-slate-300"
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search Contract #, Ref, or Supplier..."
+              placeholder="Search Contract #, Ref, Supplier, or Project..."
               type="search"
               value={searchQuery}
             />
@@ -659,6 +675,20 @@ export function OfficerContractsView({
             minimumWidth="10rem"
             value={status}
           />
+
+          {hasActiveFilters && (
+            <button
+              className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer self-center"
+              onClick={() => {
+                setSearchQuery("");
+                setFiscalYear("all");
+                setStatus("all");
+              }}
+              type="button"
+            >
+              Reset Filters
+            </button>
+          )}
         </div>
       </section>
 
@@ -711,7 +741,7 @@ export function OfficerContractsView({
           role="region"
           tabIndex={0}
         >
-          <table className="w-full min-w-[2200px] table-fixed border-collapse text-left">
+          <table className="w-full min-w-[2500px] table-fixed border-collapse text-left">
             <thead>
               <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="w-12 px-3 py-3 text-center" scope="col">
@@ -775,7 +805,7 @@ export function OfficerContractsView({
                   Status
                 </th>
                 <th
-                  className="w-56 min-w-[200px] px-3 py-3 text-center"
+                  className="w-[340px] min-w-[340px] px-3 py-3 text-center"
                   scope="col"
                 >
                   Actions
@@ -783,8 +813,8 @@ export function OfficerContractsView({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredContracts.length > 0 ? (
-                filteredContracts.map((contract) => {
+              {paginatedContracts.length > 0 ? (
+                paginatedContracts.map((contract) => {
                   const isDelayed = contract.status === "Delayed";
 
                   return (
@@ -852,7 +882,7 @@ export function OfficerContractsView({
                           label={contract.status}
                         />
                       </td>
-                      <td className="px-3 py-2.5 text-center align-top whitespace-nowrap">
+                      <td className="w-[340px] min-w-[340px] px-3 py-2.5 text-center align-top whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           <Link
                             aria-label={`Open contract ${contract.contractNumber}`}
@@ -913,30 +943,49 @@ export function OfficerContractsView({
               Rows per page:
               <select
                 aria-label="Rows per page"
-                className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
-                defaultValue="50"
+                className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer"
+                onChange={(event) => {
+                  setPageSize(Number(event.target.value));
+                  setCurrentPage(1);
+                }}
+                value={pageSize}
               >
+                <option value="10">10</option>
+                <option value="20">20</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
               </select>
             </label>
-            <div aria-label="Contract table pagination" className="flex gap-1">
-              <button
-                aria-label="Previous page"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
-                disabled
-                type="button"
-              >
-                <ChevronLeft aria-hidden="true" className="h-4 w-4" />
-              </button>
-              <button
-                aria-label="Next page"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
-                type="button"
-              >
-                <ChevronRight aria-hidden="true" className="h-4 w-4" />
-              </button>
+            <div
+              aria-label="Contract table pagination"
+              className="flex items-center gap-3"
+            >
+              <span className="text-slate-500 font-medium">
+                Page {validPage} of {totalPages}
+              </span>
+              <div className="flex gap-1">
+                <button
+                  aria-label="Previous page"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                  disabled={validPage <= 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  type="button"
+                >
+                  <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+                </button>
+                <button
+                  aria-label="Next page"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                  disabled={validPage >= totalPages}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  type="button"
+                >
+                  <ChevronRight aria-hidden="true" className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>

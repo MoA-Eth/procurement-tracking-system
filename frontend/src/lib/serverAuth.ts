@@ -24,6 +24,12 @@ function parseSessionPayload(val: string): AuthSession | null {
 
   const tryValidate = (parsed: any): AuthSession | null => {
     if (parsed && parsed.user && parsed.status) {
+      if (parsed.expiresAt) {
+        const exp = new Date(parsed.expiresAt).getTime();
+        if (Number.isFinite(exp) && exp <= Date.now()) {
+          return null; // Session expired
+        }
+      }
       if (parsed.user.role || parsed.user.authRole) {
         parsed.user.role = normalizeUserRole(
           parsed.user.authRole || parsed.user.role,

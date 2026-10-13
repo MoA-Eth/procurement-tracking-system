@@ -118,6 +118,7 @@ export interface QuarterlyDetailedRow {
   id: string;
   rowNo: number;
   description: string;
+  category: string;
   method: string;
   winnerSupplier: string;
   awardedAmount: number;

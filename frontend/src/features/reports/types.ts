@@ -32,6 +32,8 @@ export interface ReportFilterState {
   efy: string;
   fromDate: string;
   toDate: string;
+  fromEthiopianDate?: string;
+  toEthiopianDate?: string;
   project: string;
   projects?: string[];
   category: string;
@@ -58,8 +60,10 @@ export interface ReportFilterState {
 
 export const DEFAULT_FILTERS: ReportFilterState = {
   efy: "ALL",
-  fromDate: "2024-07-08",
-  toDate: "2027-07-07",
+  fromDate: "",
+  toDate: "",
+  fromEthiopianDate: "",
+  toEthiopianDate: "",
   project: "ALL",
   projects: [],
   category: "ALL",

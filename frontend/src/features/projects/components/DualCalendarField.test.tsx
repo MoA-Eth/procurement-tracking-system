@@ -37,4 +37,39 @@ describe("DualCalendarField", () => {
     expect(markup).toContain("08-July-2024");
     expect(markup).toContain("01-Hamle-2016");
   });
+
+  it("automatically computes Gregorian date representation if omitted when Ethiopian date is given", () => {
+    const markup = renderToStaticMarkup(
+      <DualCalendarField
+        id="test-eth-to-greg"
+        label="Target Date"
+        gregorianValue=""
+        ethiopianValue="01-Meskerem-2017"
+        onChange={() => undefined}
+      />,
+    );
+
+    expect(markup).toContain("Target Date");
+    expect(markup).toContain("11-September-2024");
+    expect(markup).toContain("01-Meskerem-2017");
+  });
+
+  it("renders with variant='compact' properly", () => {
+    const markup = renderToStaticMarkup(
+      <DualCalendarField
+        id="test-compact"
+        label="Compact Date Filter"
+        gregorianValue="2024-09-11"
+        ethiopianValue="01-Meskerem-2017"
+        onChange={() => undefined}
+        variant="compact"
+      />,
+    );
+
+    expect(markup).toContain("Compact Date Filter");
+    expect(markup).toContain("11-September-2024");
+    expect(markup).toContain("01-Meskerem-2017");
+    expect(markup).toContain("GREGORIAN");
+    expect(markup).toContain("ETHIOPIAN");
+  });
 });

@@ -871,6 +871,7 @@ export function ReportTables({
               <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">No.</th>
                 <th className="py-3 px-3">Description</th>
+                <th className="py-3 px-3">Category</th>
                 <th className="py-3 px-3">Method</th>
                 <th className="py-3 px-3">Winning Supplier</th>
                 <th className="py-3 px-3 text-right font-semibold">
@@ -896,6 +897,11 @@ export function ReportTables({
                     title={row.description}
                   >
                     {row.description}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <span className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                      {row.category || "Goods"}
+                    </span>
                   </td>
                   <td className="py-2.5 px-3">{row.method}</td>
                   <td className="py-2.5 px-3 font-semibold text-slate-800">

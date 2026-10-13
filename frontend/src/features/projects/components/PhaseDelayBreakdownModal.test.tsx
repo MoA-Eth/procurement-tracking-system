@@ -136,12 +136,61 @@ describe("PhaseDelayBreakdownModal and calculations", () => {
       expect(result.actualDurationDays).toBe(0);
       expect(result.status).toBe("Not Applicable");
     });
+    it("does not fabricate fake dates or delay when stage has no planned dates", () => {
+      const now = new Date("2026-10-13T00:00:00Z").getTime();
+      const stage = {
+        name: "Stage Without Dates",
+        sequence: 1,
+        status: "NOT_STARTED",
+      };
+
+      const result = computePhaseMetrics(stage, now);
+      expect(result.delayDays).toBe(0);
+      expect(result.status).toBe("Pending");
+      expect(result.plannedStartDate).toBeNull();
+      expect(result.plannedEndDate).toBeNull();
+    });
+
+    it("does not treat past start date as delay when end date is still in the future", () => {
+      const now = new Date("2026-10-13T00:00:00Z").getTime();
+      const stage = {
+        name: "Stage On Track",
+        sequence: 2,
+        status: "IN_PROGRESS",
+        plannedStartDate: "2026-10-01",
+        currentTargetStartDate: "2026-10-01",
+        plannedEndDate: "2026-10-30",
+        currentTargetEndDate: "2026-10-30",
+        actualStartDate: "2026-10-01",
+      };
+
+      const result = computePhaseMetrics(stage, now);
+      expect(result.delayDays).toBe(0);
+      expect(result.status).toBe("In Progress");
+    });
   });
 
   describe("calculateRealActivityDelay", () => {
     it("returns 0 for empty or unconfigured stages", () => {
       expect(calculateRealActivityDelay([])).toBe(0);
       expect(calculateRealActivityDelay(undefined)).toBe(0);
+    });
+
+    it("returns 0 for stages without delay", () => {
+      const stages = [
+        {
+          name: "Stage 1",
+          status: "NOT_STARTED",
+        },
+        {
+          name: "Stage 2",
+          status: "IN_PROGRESS",
+          plannedStartDate: "2026-10-01",
+          plannedEndDate: "2026-10-30",
+        },
+      ];
+      const now = new Date("2026-10-13T00:00:00Z").getTime();
+      expect(calculateRealActivityDelay(stages, now)).toBe(0);
     });
 
     it("returns the maximum active phase delay across real stages", () => {

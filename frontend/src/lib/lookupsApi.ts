@@ -750,39 +750,6 @@ export interface CommitteeUserItem {
   role: string;
 }
 
-const FALLBACK_COMMITTEE_MEMBERS: CommitteeUserItem[] = [
-  {
-    id: "dcb48490-bf61-4982-89b0-3556da376ea3",
-    name: "Workneh Tsionawit",
-    email: "tsionawit.ugr-4989-16@aau.edu.et",
-    role: "ENDORSING_COMMITTEE",
-  },
-  {
-    id: "46258fbe-9684-41cf-b814-77788d30bca1",
-    name: "Edna Asmamaw",
-    email: "edna@gmail.com",
-    role: "ENDORSING_COMMITTEE",
-  },
-  {
-    id: "265f711e-adf1-406a-b965-185a96496bce",
-    name: "Alula Girma",
-    email: "alula@gmail.com",
-    role: "ENDORSING_COMMITTEE",
-  },
-  {
-    id: "d129e293-d9d6-4759-9705-1077c5a288ad",
-    name: "Worku Bekele",
-    email: "worku@gmail.com",
-    role: "ENDORSING_COMMITTEE",
-  },
-  {
-    id: "0e02469a-39df-4af4-9400-c08c383dd903",
-    name: "Dawit Haile",
-    email: "dawit@gmail.com",
-    role: "ENDORSING_COMMITTEE",
-  },
-];
-
 export async function fetchCommitteeMembers(): Promise<CommitteeUserItem[]> {
   try {
     const payload = await apiClient.get<any>("/users", {
@@ -814,5 +781,5 @@ export async function fetchCommitteeMembers(): Promise<CommitteeUserItem[]> {
   } catch {
     // Graceful fallback
   }
-  return FALLBACK_COMMITTEE_MEMBERS;
+  return [];
 }

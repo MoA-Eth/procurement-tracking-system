@@ -402,7 +402,10 @@ export function UserAccessTable({
           user={selectedModalUser}
           isOpen={Boolean(selectedModalUser)}
           onClose={() => setSelectedModalUser(null)}
-          onUserUpdated={() => {
+          onUserUpdated={(updatedUser) => {
+            if (updatedUser) {
+              setSelectedModalUser(updatedUser);
+            }
             onRefresh?.();
           }}
         />

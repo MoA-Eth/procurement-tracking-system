@@ -858,6 +858,46 @@ export function getProjectFundingSources(project: {
     : [project.fundingSource?.trim() || "Project Funding"];
 }
 
+export const STANDARD_PROCUREMENT_PROCESSES = [
+  "Single Stage One Envelope",
+  "Single Stage Two Envelope",
+  "Two Stage Two Envelope",
+] as const;
+
+export function normalizeProcurementProcess(value: string | undefined): string {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return "";
+  const lower = trimmed.toLowerCase();
+  if (
+    lower === "single stage one envelope" ||
+    lower === "single stage - one envelope" ||
+    lower === "1 envelope (single stage 1 env)" ||
+    lower === "single stage" ||
+    lower === "single stage: one-envelope" ||
+    lower === "single stage: one envelope"
+  ) {
+    return "Single Stage One Envelope";
+  }
+  if (
+    lower === "single stage two envelope" ||
+    lower === "single stage - two envelope" ||
+    lower === "single stage: two-envelope" ||
+    lower === "single stage: two envelope"
+  ) {
+    return "Single Stage Two Envelope";
+  }
+  if (
+    lower === "two stage two envelope" ||
+    lower === "two stage - two envelope" ||
+    lower === "two stage" ||
+    lower === "two stage: two-envelope" ||
+    lower === "two stage: two envelope"
+  ) {
+    return "Two Stage Two Envelope";
+  }
+  return trimmed;
+}
+
 function createInitialForm(
   project: OfficerProject,
   plan: ProcurementPlanSummary,
@@ -990,10 +1030,11 @@ function createInitialForm(
           : "Not Applicable",
       procurementDocumentType:
         d?.procurementDocumentType || anyAct.procurementDocumentType || "",
-      procurementProcess:
+      procurementProcess: normalizeProcurementProcess(
         d?.procurementProcess ||
-        anyAct.procurementProcess ||
-        "Single Stage One Envelope",
+          anyAct.procurementProcess ||
+          "Single Stage One Envelope",
+      ),
       qualificationApproach:
         d?.qualificationApproach || anyAct.qualificationApproach || "",
       requiresUnAgency: Boolean(
@@ -2265,21 +2306,24 @@ function KeyDetailsStep({
             >
               <SelectControl
                 hasError={attempted && !form.procurementProcess}
-                onChange={(value) => onChange("procurementProcess", value)}
-                value={form.procurementProcess}
+                onChange={(value) =>
+                  onChange(
+                    "procurementProcess",
+                    normalizeProcurementProcess(value),
+                  )
+                }
+                value={normalizeProcurementProcess(form.procurementProcess)}
               >
                 <option value="">Select configured process</option>
-                <option>Single Stage One Envelope</option>
-                <option>Single Stage - One Envelope</option>
-                <option>1 Envelope (Single Stage 1 Env)</option>
-                <option>Two Stage Two Envelope</option>
+                {STANDARD_PROCUREMENT_PROCESSES.map((proc) => (
+                  <option key={proc} value={proc}>
+                    {proc}
+                  </option>
+                ))}
                 {form.procurementProcess &&
-                ![
-                  "Single Stage One Envelope",
-                  "Single Stage - One Envelope",
-                  "1 Envelope (Single Stage 1 Env)",
-                  "Two Stage Two Envelope",
-                ].includes(form.procurementProcess) ? (
+                !STANDARD_PROCUREMENT_PROCESSES.includes(
+                  normalizeProcurementProcess(form.procurementProcess) as any,
+                ) ? (
                   <option value={form.procurementProcess}>
                     {form.procurementProcess}
                   </option>

@@ -5,6 +5,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LoginCard } from "./components/auth/LoginCard";
 import { ForgotPasswordCard } from "./components/auth/ForgotPasswordCard";
 import { TechnicalSupportModal } from "./components/TechnicalSupportModal";
+import { getClientSession } from "./lib/authApi";
+import { authTokenManager } from "./lib/authTokenManager";
 import { tabSessionManager } from "./lib/tabSessionManager";
 import { dashboardPath } from "./lib/authTypes";
 
@@ -14,11 +16,15 @@ const MainAppRouter: React.FC = () => {
   const [isTechSupportOpen, setIsTechSupportOpen] = useState(false);
 
   useEffect(() => {
-    if (tabSessionManager.hasTabSession()) {
-      const session = tabSessionManager.getTabSession();
-      if (session?.user) {
-        router.replace(dashboardPath(session.user.role));
+    const session = tabSessionManager.getTabSession() || getClientSession();
+    if (session?.user && session.status === "AUTHENTICATED") {
+      if (!tabSessionManager.hasTabSession()) {
+        tabSessionManager.setTabSession(session);
+        if (session.accessToken) {
+          authTokenManager.setToken(session.accessToken);
+        }
       }
+      router.replace(dashboardPath(session.user.role));
     }
   }, [router]);
 

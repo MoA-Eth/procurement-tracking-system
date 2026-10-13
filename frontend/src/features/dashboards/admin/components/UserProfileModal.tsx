@@ -37,7 +37,7 @@ interface UserProfileModalProps {
   user: ApiUser | null;
   isOpen: boolean;
   onClose: () => void;
-  onUserUpdated: () => void;
+  onUserUpdated: (updatedUser?: ApiUser) => void;
 }
 
 const PRISMA_ROLE_LABELS: Record<string, string> = {
@@ -98,6 +98,9 @@ export function UserProfileModal({
   onClose,
   onUserUpdated,
 }: UserProfileModalProps) {
+  const [currentUserState, setCurrentUserState] = useState<ApiUser | null>(
+    user,
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRole, setSelectedRole] =
     useState<ProvisionableRole>("OFFICER");
@@ -120,6 +123,7 @@ export function UserProfileModal({
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
+    setCurrentUserState(user);
     if (!isOpen || !user) {
       setIsEditing(false);
       setActionError("");
@@ -275,9 +279,12 @@ export function UserProfileModal({
 
   if (!isOpen || !user) return null;
 
+  const activeUser = currentUserState ?? user;
+
   const currentRole =
-    (normalizeUserRole(user.authRole || user.role) as ProvisionableRole) ||
-    "OFFICER";
+    (normalizeUserRole(
+      activeUser.authRole || activeUser.role,
+    ) as ProvisionableRole) || "OFFICER";
 
   // Identify active projects (exclude explicitly closed, suspended, archived, or inactive)
   const activeProjects = assignedProjects.filter((p: any) => {
@@ -293,15 +300,22 @@ export function UserProfileModal({
   });
 
   const isRoleChanging = selectedRole !== currentRole;
+  // Handover is only required when an existing OFFICER is being changed away from Officer and has active projects
   const requiresOfficerHandover =
-    isRoleChanging && activeProjects.length > 0 && selectedRole !== "OFFICER";
+    currentRole === "OFFICER" &&
+    selectedRole !== "OFFICER" &&
+    activeProjects.length > 0;
 
   const handleApplyChanges = async () => {
     setActionError("");
     setSuccessMessage("");
 
-    // If handover is required, ensure a replacement officer is chosen
-    if (requiresOfficerHandover && !replacementOfficerId) {
+    // If handover is required and there are other officers available, prompt for replacement
+    if (
+      requiresOfficerHandover &&
+      availableOfficers.length > 0 &&
+      !replacementOfficerId
+    ) {
       setActionError(
         "Please select a replacement officer to hand over active projects to.",
       );
@@ -310,17 +324,15 @@ export function UserProfileModal({
 
     setIsSubmitting(true);
     try {
-      // 1. Reassign active projects if needed
-      if (requiresOfficerHandover && replacementOfficerId) {
-        const replacementOfficer = availableOfficers.find(
-          (o) => o.id === replacementOfficerId,
-        );
-
+      // 1. Reassign or unassign active projects if needed
+      if (requiresOfficerHandover) {
         for (const proj of activeProjects) {
           try {
-            await assignOfficerToProject(proj.id, replacementOfficerId);
-            if (user.id) {
-              await removeOfficerFromProject(proj.id, user.id);
+            if (replacementOfficerId) {
+              await assignOfficerToProject(proj.id, replacementOfficerId);
+            }
+            if (activeUser.id) {
+              await removeOfficerFromProject(proj.id, activeUser.id);
             }
           } catch (reassignErr) {
             console.warn(
@@ -329,6 +341,9 @@ export function UserProfileModal({
             );
           }
         }
+        setAssignedProjects((prev) =>
+          prev.filter((p) => !activeProjects.some((ap) => ap.id === p.id)),
+        );
       }
 
       // 2. Update user role and status in database
@@ -337,10 +352,21 @@ export function UserProfileModal({
         isActive: isActiveStatus,
       };
 
-      await updateUser(user.id, updatePayload);
+      const res = await updateUser(activeUser.id, updatePayload);
+
+      const updatedUser: ApiUser = {
+        ...activeUser,
+        ...(res?.data || {}),
+        role: selectedRole,
+        authRole: selectedRole,
+        isActive: isActiveStatus,
+      };
+
+      setCurrentUserState(updatedUser);
+      onUserUpdated(updatedUser);
 
       setSuccessMessage(
-        requiresOfficerHandover
+        requiresOfficerHandover && replacementOfficerId
           ? `Active projects successfully handed over and role updated to ${
               ROLE_LABELS[selectedRole] || selectedRole
             }!`
@@ -349,11 +375,10 @@ export function UserProfileModal({
             }!`,
       );
 
-      // Refresh parent view and transition back to view mode after short delay
+      // Transition back to view mode after short delay so the user can review updated profile
       setTimeout(() => {
-        onUserUpdated();
         setIsEditing(false);
-      }, 1200);
+      }, 1000);
     } catch (err: any) {
       setActionError(err?.message || "Failed to update user profile and role.");
     } finally {
@@ -444,16 +469,24 @@ export function UserProfileModal({
           <div className="rounded-2xl bg-slate-50/90 border border-slate-200/80 p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5 min-w-0">
               <div className="h-13 w-13 rounded-2xl bg-gradient-to-br from-[#0A3C2F] to-[#14532d] text-white font-semibold text-base flex items-center justify-center shrink-0 shadow-xs">
-                {(user.displayName || user.name || user.email || "U")
+                {(
+                  activeUser.displayName ||
+                  activeUser.name ||
+                  activeUser.email ||
+                  "U"
+                )
                   .substring(0, 2)
                   .toUpperCase()}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h4 className="text-base font-semibold text-slate-900 truncate">
-                    {user.displayName || user.name || "Unnamed User"}
+                    {activeUser.displayName ||
+                      activeUser.name ||
+                      "Unnamed User"}
                   </h4>
-                  {!user.isActive && user.status === "PENDING_INVITATION" ? (
+                  {!activeUser.isActive &&
+                  activeUser.status === "PENDING_INVITATION" ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-rose-50 text-rose-800 border-rose-200">
                       <span className="w-1.5 h-1.5 rounded-full mr-1 bg-rose-500" />
                       Invitation Cancelled
@@ -461,27 +494,27 @@ export function UserProfileModal({
                   ) : (
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                        user.isActive
+                        activeUser.isActive
                           ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                           : "bg-rose-50 text-rose-800 border-rose-200"
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full mr-1 ${
-                          user.isActive ? "bg-emerald-500" : "bg-rose-500"
+                          activeUser.isActive ? "bg-emerald-500" : "bg-rose-500"
                         }`}
                       />
-                      {user.isActive ? "Active Account" : "Inactive"}
+                      {activeUser.isActive ? "Active Account" : "Inactive"}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 font-mono">
                   <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="truncate">{user.email}</span>
+                  <span className="truncate">{activeUser.email}</span>
                 </div>
-                {user.username && (
+                {activeUser.username && (
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Username: @{user.username}
+                    Username: @{activeUser.username}
                   </p>
                 )}
               </div>
@@ -492,7 +525,7 @@ export function UserProfileModal({
                 Current Role
               </span>
               <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-[#0A3C2F] text-emerald-200 shadow-2xs">
-                {displayRole(user)}
+                {displayRole(activeUser)}
               </span>
             </div>
           </div>
@@ -508,11 +541,12 @@ export function UserProfileModal({
                     <span>Account Status</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-800 mt-1">
-                    {!user.isActive && user.status === "PENDING_INVITATION"
+                    {!activeUser.isActive &&
+                    activeUser.status === "PENDING_INVITATION"
                       ? "Invitation Cancelled (Revoked)"
-                      : user.status === "PENDING_INVITATION"
+                      : activeUser.status === "PENDING_INVITATION"
                         ? "Pending Invitation"
-                        : user.isActive
+                        : activeUser.isActive
                           ? "Active & Verified"
                           : "Deactivated / Deleted"}
                   </p>
@@ -524,8 +558,8 @@ export function UserProfileModal({
                     <span>Last Login Timestamp</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-800 mt-1">
-                    {user.lastLoginAt
-                      ? new Date(user.lastLoginAt).toLocaleString()
+                    {activeUser.lastLoginAt
+                      ? new Date(activeUser.lastLoginAt).toLocaleString()
                       : "Never logged in"}
                   </p>
                 </div>
@@ -703,7 +737,11 @@ export function UserProfileModal({
                       onChange={(e) => setReplacementOfficerId(e.target.value)}
                       className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs text-slate-900 font-semibold focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/20 outline-none"
                     >
-                      <option value="">-- Choose an Officer --</option>
+                      <option value="">
+                        {availableOfficers.length > 0
+                          ? "-- Choose a Replacement Officer --"
+                          : "-- No other officers available (Projects will be unassigned) --"}
+                      </option>
                       {availableOfficers.map((off) => (
                         <option key={off.id} value={off.id}>
                           {off.name} ({off.email})
@@ -755,7 +793,9 @@ export function UserProfileModal({
                   onClick={handleApplyChanges}
                   disabled={
                     isSubmitting ||
-                    (requiresOfficerHandover && !replacementOfficerId)
+                    (requiresOfficerHandover &&
+                      availableOfficers.length > 0 &&
+                      !replacementOfficerId)
                   }
                   className="px-5 py-2 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
                 >
@@ -764,7 +804,7 @@ export function UserProfileModal({
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       <span>Applying Changes…</span>
                     </>
-                  ) : requiresOfficerHandover ? (
+                  ) : requiresOfficerHandover && replacementOfficerId ? (
                     <>
                       <span>Transfer Projects & Apply Role</span>
                       <ArrowRight className="w-3.5 h-3.5" />

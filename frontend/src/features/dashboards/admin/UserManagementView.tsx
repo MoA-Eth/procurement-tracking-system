@@ -22,8 +22,14 @@ import {
   Ban,
   UserX,
   UserCheck,
+  Copy,
+  Check,
 } from "lucide-react";
-import { createInvitedUser, getCurrentUser } from "@/lib/authApi";
+import {
+  createInvitedUser,
+  getCurrentUser,
+  getInvitationLink,
+} from "@/lib/authApi";
 import { UserProfileModal } from "./components/UserProfileModal";
 import {
   fetchUsers,
@@ -298,7 +304,10 @@ export function UserManagementView({
     email: string;
     role: string;
     isResend?: boolean;
+    invitationLink?: string;
   } | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copyingUserId, setCopyingUserId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Action state (toggling status or resending invitation)
@@ -722,7 +731,7 @@ export function UserManagementView({
       "OFFICER";
 
     try {
-      await createInvitedUser(
+      const res = await createInvitedUser(
         user.displayName || user.name || user.email,
         user.email,
         role,
@@ -732,7 +741,12 @@ export function UserManagementView({
       removeCancelledUserId(user.id);
       removeDeletedUserId(user.id);
 
-      setInvitedInfo({ email: user.email, role, isResend: true });
+      setInvitedInfo({
+        email: user.email,
+        role,
+        isResend: true,
+        invitationLink: res.invitationLink,
+      });
       await loadUsers();
     } catch (err) {
       setErrorMessage(
@@ -758,7 +772,11 @@ export function UserManagementView({
     const targetRole = inviteRole;
 
     try {
-      await createInvitedUser(inviteFullName.trim(), targetEmail, targetRole);
+      const res = await createInvitedUser(
+        inviteFullName.trim(),
+        targetEmail,
+        targetRole,
+      );
 
       // Remove matching user from cancelled and deleted sets if previously there
       users.forEach((u) => {
@@ -768,7 +786,12 @@ export function UserManagementView({
         }
       });
 
-      setInvitedInfo({ email: targetEmail, role: targetRole, isResend: false });
+      setInvitedInfo({
+        email: targetEmail,
+        role: targetRole,
+        isResend: false,
+        invitationLink: res.invitationLink,
+      });
 
       // Reset form fields
       setInviteFullName("");
@@ -867,6 +890,41 @@ export function UserManagementView({
                     . The recipient can click the link in their inbox to setup
                     their password.
                   </p>
+                  {invitedInfo.invitationLink && (
+                    <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (invitedInfo.invitationLink) {
+                            navigator.clipboard.writeText(
+                              invitedInfo.invitationLink,
+                            );
+                            setCopiedLink(true);
+                            setTimeout(() => setCopiedLink(false), 2500);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A3C2F] text-white text-xs font-semibold hover:bg-[#072a21] transition-colors cursor-pointer shadow-2xs shrink-0"
+                        title="Copy the direct password creation link"
+                      >
+                        {copiedLink ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-300" />
+                            <span>Invitation Link Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy Direct Invitation Link</span>
+                          </>
+                        )}
+                      </button>
+                      <span className="text-[11px] text-emerald-800">
+                        Institutional fallback: If institutional email filters
+                        (such as @moa.gov.et) delay delivery, you can share this
+                        direct link with the user.
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1437,26 +1495,65 @@ export function UserManagementView({
                                       <span>Restore</span>
                                     </button>
                                   ) : isPending ? (
-                                    <button
-                                      type="button"
-                                      disabled={actionUserId === user.id}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleResendInvitation(user);
-                                      }}
-                                      className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
-                                    >
-                                      {actionUserId === user.id ? (
-                                        <Loader2 className="w-3 h-3 animate-spin inline" />
-                                      ) : (
-                                        <RefreshCw className="w-3 h-3 inline" />
-                                      )}
-                                      <span>
-                                        {actionUserId === user.id
-                                          ? "Resending…"
-                                          : "Resend Invitation"}
-                                      </span>
-                                    </button>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        disabled={actionUserId === user.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleResendInvitation(user);
+                                        }}
+                                        className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                                      >
+                                        {actionUserId === user.id ? (
+                                          <Loader2 className="w-3 h-3 animate-spin inline" />
+                                        ) : (
+                                          <RefreshCw className="w-3 h-3 inline" />
+                                        )}
+                                        <span>
+                                          {actionUserId === user.id
+                                            ? "Resending…"
+                                            : "Resend Invitation"}
+                                        </span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={copyingUserId === user.id}
+                                        onClick={async (e) => {
+                                          e.stopPropagation();
+                                          setCopyingUserId(user.id);
+                                          try {
+                                            const link =
+                                              await getInvitationLink(user.id);
+                                            await navigator.clipboard.writeText(
+                                              link,
+                                            );
+                                            setActionSuccessMessage(
+                                              `Invitation link for ${user.email} copied to clipboard!`,
+                                            );
+                                            setTimeout(
+                                              () =>
+                                                setActionSuccessMessage(null),
+                                              4000,
+                                            );
+                                          } catch {
+                                            setErrorMessage(
+                                              "Could not generate invitation link.",
+                                            );
+                                          } finally {
+                                            setCopyingUserId(null);
+                                          }
+                                        }}
+                                        className="p-1.5 rounded-full border border-emerald-200 text-[#0A3C2F] bg-white hover:bg-emerald-50 transition-colors cursor-pointer shadow-2xs hover:shadow-xs"
+                                        title="Copy direct invitation link for this user"
+                                      >
+                                        {copyingUserId === user.id ? (
+                                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        ) : (
+                                          <Copy className="w-3.5 h-3.5" />
+                                        )}
+                                      </button>
+                                    </div>
                                   ) : isSelf && isActive ? (
                                     <button
                                       type="button"
@@ -1585,7 +1682,19 @@ export function UserManagementView({
           user={selectedDetailUser}
           isOpen={Boolean(selectedDetailUser)}
           onClose={() => setSelectedDetailUser(null)}
-          onUserUpdated={async () => {
+          onUserUpdated={async (updatedUser) => {
+            if (updatedUser) {
+              setSelectedDetailUser(updatedUser);
+              setUsersResponse((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  data: prev.data.map((u) =>
+                    u.id === updatedUser.id ? { ...u, ...updatedUser } : u,
+                  ),
+                };
+              });
+            }
             await loadUsers();
           }}
         />

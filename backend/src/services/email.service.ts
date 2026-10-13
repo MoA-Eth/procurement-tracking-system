@@ -28,6 +28,8 @@ export function isSmtpConfigured(): boolean {
 }
 
 export async function sendEmail(message: TransactionalEmail): Promise<void> {
+  const cleanTo = message.to.trim().toLowerCase();
+
   // 1. Try Brevo API first
   if (isBrevoConfigured()) {
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -44,7 +46,7 @@ export async function sendEmail(message: TransactionalEmail): Promise<void> {
         },
         to: [
           {
-            email: message.to,
+            email: cleanTo,
           },
         ],
         subject: message.subject,
@@ -62,7 +64,7 @@ export async function sendEmail(message: TransactionalEmail): Promise<void> {
     }
 
     logger.info(
-      { to: message.to, subject: message.subject },
+      { to: cleanTo, subject: message.subject },
       'Email sent successfully via Brevo',
     );
 
@@ -84,7 +86,7 @@ export async function sendEmail(message: TransactionalEmail): Promise<void> {
       },
       body: JSON.stringify({
         from: { email: fromEmail, name: fromName },
-        to: [{ email: message.to }],
+        to: [{ email: cleanTo }],
         subject: message.subject,
         text: message.text,
         ...(message.html ? { html: message.html } : {}),
@@ -116,7 +118,7 @@ export async function sendEmail(message: TransactionalEmail): Promise<void> {
     }
 
     logger.info(
-      { to: message.to, subject: message.subject },
+      { to: cleanTo, subject: message.subject },
       'Email sent successfully via MailerSend',
     );
 
@@ -127,31 +129,90 @@ export async function sendEmail(message: TransactionalEmail): Promise<void> {
   if (isSmtpConfigured()) {
     const port = env.SMTP_PORT ?? 587;
     const secure = env.SMTP_SECURE ?? port === 465;
-    const transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port,
-      secure,
-      family: 4,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS?.replace(/\s+/g, ''),
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    const fromAddress =
+      env.SMTP_FROM || `"MoA Procurement Tracking System" <${env.SMTP_USER}>`;
+    const senderEmail = env.SMTP_USER;
 
-    await transporter.sendMail({
-      from:
-        env.SMTP_FROM || `"MoA Procurement Tracking System" <${env.SMTP_USER}>`,
-      to: message.to,
+    const createTransporter = (targetPort: number, isSecure: boolean) =>
+      nodemailer.createTransport({
+        host: env.SMTP_HOST,
+        port: targetPort,
+        secure: isSecure,
+        auth: {
+          user: env.SMTP_USER,
+          pass: env.SMTP_PASS?.replace(/\s+/g, ''),
+        },
+        connectionTimeout: 15_000,
+        greetingTimeout: 10_000,
+        socketTimeout: 30_000,
+        tls: {
+          rejectUnauthorized: false,
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+
+    const mailOptions = {
+      from: fromAddress,
+      to: cleanTo,
+      sender: senderEmail,
+      replyTo: senderEmail || fromAddress,
+      envelope: {
+        from: senderEmail || fromAddress,
+        to: [cleanTo],
+      },
       subject: message.subject,
       text: message.text,
       ...(message.html ? { html: message.html } : {}),
-    });
-    logger.info(
-      { to: message.to, subject: message.subject },
-      'Email sent successfully via SMTP',
-    );
-    return;
+      headers: {
+        'X-Auto-Response-Suppress': 'All',
+        'Auto-Submitted': 'auto-generated',
+        'X-Priority': '3',
+        Priority: 'Normal',
+        Importance: 'Normal',
+      },
+    };
+
+    try {
+      const transporter = createTransporter(port, secure);
+      await transporter.sendMail(mailOptions);
+      logger.info(
+        { to: cleanTo, subject: message.subject, port, secure },
+        'Email sent successfully via SMTP',
+      );
+      return;
+    } catch (primaryError) {
+      // If primary port (e.g. 465) failed or timed out, attempt alternate standard port (587)
+      const fallbackPort = port === 465 ? 587 : 465;
+      const fallbackSecure = fallbackPort === 465;
+      logger.warn(
+        { error: primaryError, primaryPort: port, fallbackPort },
+        'Primary SMTP delivery failed, attempting fallback SMTP port',
+      );
+
+      try {
+        const fallbackTransporter = createTransporter(
+          fallbackPort,
+          fallbackSecure,
+        );
+        await fallbackTransporter.sendMail(mailOptions);
+        logger.info(
+          {
+            to: cleanTo,
+            subject: message.subject,
+            port: fallbackPort,
+            secure: fallbackSecure,
+          },
+          'Email sent successfully via fallback SMTP',
+        );
+        return;
+      } catch (fallbackError) {
+        logger.error(
+          { error: fallbackError, to: cleanTo, subject: message.subject },
+          'Failed to send email via SMTP on both primary and fallback ports',
+        );
+        throw fallbackError;
+      }
+    }
   }
 
   // 4. Fallback to Ethereal for local development

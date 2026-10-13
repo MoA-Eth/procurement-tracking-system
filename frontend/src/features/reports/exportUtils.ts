@@ -166,6 +166,7 @@ export function exportReportToExcel({
       dataForSheet = quarterlyDetailedRows.map((r) => ({
         "No.": r.rowNo,
         Description: r.description,
+        Category: r.category || "—",
         Method: r.method,
         "Winning Supplier": r.winnerSupplier,
         "Award Amount": r.awardedAmount,

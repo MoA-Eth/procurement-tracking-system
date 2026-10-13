@@ -12,11 +12,17 @@ const roleValues = [
   'DIRECTOR',
   'ENDORSING_COMMITTEE',
   'MANAGEMENT',
+  'MANAGEMENT_TEAM',
   'ADMIN',
+  'ADMINISTRATOR',
 ] as const;
 
 export const roleEnum = z.enum(roleValues);
-export const emailSchema = z.email({ message: 'Invalid email address' });
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.string().email({ message: 'Invalid email address' }));
 
 export const createUserSchema = registry.register(
   'CreateUser',

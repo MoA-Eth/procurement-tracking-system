@@ -53,7 +53,6 @@ export const getActivitiesService = async (planId?: string) => {
         { planId: trimmed },
         { plan: { id: trimmed } },
         { plan: { title: { equals: trimmed, mode: 'insensitive' } } },
-        { plan: { title: { contains: trimmed, mode: 'insensitive' } } },
       ],
     };
   }
@@ -108,24 +107,16 @@ export const createActivityService = async (
     const trimmedPlanId = data.planId.trim();
     let plan = await tx.plan.findFirst({
       where: {
-        OR: [
-          { id: trimmedPlanId },
-          { title: { equals: trimmedPlanId, mode: 'insensitive' } },
-        ],
+        id: trimmedPlanId,
+        isActive: true,
       },
     });
     if (!plan) {
       plan = await tx.plan.findFirst({
         where: {
-          title: { contains: trimmedPlanId, mode: 'insensitive' },
+          title: { equals: trimmedPlanId, mode: 'insensitive' },
           isActive: true,
         },
-      });
-    }
-    if (!plan) {
-      plan = await tx.plan.findFirst({
-        where: { isActive: true },
-        orderBy: { createdAt: 'desc' },
       });
     }
     if (!plan) {
@@ -549,20 +540,19 @@ export const updateActivityService = async (
   );
 
   if (
-    user &&
-    (user.authRole === UserRole.DIRECTOR ||
-      user.id !== oldActivity.plan.createdBy)
+    user?.authRole === UserRole.DIRECTOR &&
+    oldActivity.plan.status !== PlanStatus.DRAFT
   ) {
-    const actorName = user.displayName || user.name || 'User';
+    const directorName = user.displayName || user.name || 'Director';
     const activityTitle = activity.reference || 'Activity';
     notifyOfficersOnEntityChange({
       planId: oldActivity.planId,
       projectId: oldActivity.plan.projectId,
       creatorId: oldActivity.plan.createdBy,
       actorUserId: user.id,
-      title: `Activity Updated: ${activityTitle}`,
-      message: `${actorName} updated activity "${activityTitle}" in plan "${oldActivity.plan.title}".`,
-      type: 'SYSTEM',
+      title: `Activity Modified by Director: ${activityTitle}`,
+      message: `Director ${directorName} made changes to activity "${activityTitle}" in procurement plan "${oldActivity.plan.title}".`,
+      type: 'PLAN_REVIEW',
       severity: 'INFO',
       link: '/workspace/plan-management',
     }).catch(() => {});

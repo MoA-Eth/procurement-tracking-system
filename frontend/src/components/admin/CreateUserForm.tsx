@@ -26,7 +26,11 @@ export function CreateUserForm() {
     setMessage(null);
     setIsLoading(true);
     try {
-      const result = await createInvitedUser(displayName, email, role);
+      const result = await createInvitedUser(
+        displayName.trim(),
+        email.trim().toLowerCase(),
+        role,
+      );
       setIsError(false);
       setMessage(result.message);
       setDisplayName("");

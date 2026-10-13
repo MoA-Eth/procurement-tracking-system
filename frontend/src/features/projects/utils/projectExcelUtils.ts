@@ -12,6 +12,7 @@ import type {
 
 export interface ParsedActivityRow {
   reference: string;
+  planId?: string;
   description: string;
   category: string;
   method: string;
@@ -38,6 +39,7 @@ export interface ParsedActivitiesResult {
 export interface ParsedPlanRow {
   name: string;
   reference: string;
+  projectCode?: string;
   budgetYear: string;
   category: string;
   organizationRegion: string;
@@ -87,56 +89,223 @@ export function downloadActivityExcelTemplate(
 ) {
   const templateData = [
     {
-      "Plan ID (Required)": planRef,
-      "Reference (Required)": "ET-MoA-001-GO-RFQ",
-      Description: "Procurement of Agricultural Laboratory Equipment",
-      "Category (Dropdown)": "Goods",
-      "Method ID (Dropdown)": "RFQ",
-      "Estimated Budget": 1500000,
-      "Currency (Dropdown)": "ETB",
-      "Market Approach (Dropdown)": "Open National",
-      "Review Type (Dropdown)": "Post Review",
+      "Plan ID or Title (Required)": planRef,
+      "Activity Reference (Required)": "ET-MoA-001-GO-RFQ",
+      "Activity Description (Required)":
+        "Procurement of Soil Laboratory Equipment and Field Testing Kits",
+      "Category (Required - Dropdown)": "Goods",
+      "Method ID (Required - Dropdown)": "RFQ",
+      "Estimated Budget (ETB) (Required)": 1500000,
+      "Currency (Optional - Dropdown)": "ETB",
+      "Market Approach (Optional - Dropdown)": "Open National",
+      "Review Type (Optional - Dropdown)": "Post Review",
+      "Contract Type (Optional - Dropdown)": "Lump Sum",
+      "Domestic Preference (Optional - Dropdown)": "No",
+      "Location (Optional)": "Addis Ababa / Federal",
+      "Lot Required (Optional - Dropdown)": "No",
+      "Planned Start Date (Optional - YYYY-MM-DD)": "2025-08-01",
+      "Planned End Date (Optional - YYYY-MM-DD)": "2025-11-30",
     },
     {
-      "Plan ID (Required)": planRef,
-      "Reference (Required)": "ET-MoA-002-CW-RFB",
-      Description: "Construction of Regional Seed Testing Center",
-      "Category (Dropdown)": "Works",
-      "Method ID (Dropdown)": "RFB National",
-      "Estimated Budget": 12000000,
-      "Currency (Dropdown)": "ETB",
-      "Market Approach (Dropdown)": "Open National",
-      "Review Type (Dropdown)": "Prior Review",
+      "Plan ID or Title (Required)": planRef,
+      "Activity Reference (Required)": "ET-MoA-002-CW-RFB",
+      "Activity Description (Required)":
+        "Construction and Rehabilitation of Regional Seed Inspection Center",
+      "Category (Required - Dropdown)": "Works",
+      "Method ID (Required - Dropdown)": "RFB National",
+      "Estimated Budget (ETB) (Required)": 12500000,
+      "Currency (Optional - Dropdown)": "ETB",
+      "Market Approach (Optional - Dropdown)": "Open National",
+      "Review Type (Optional - Dropdown)": "Prior Review",
+      "Contract Type (Optional - Dropdown)": "Lump Sum",
+      "Domestic Preference (Optional - Dropdown)": "Yes",
+      "Location (Optional)": "Oromia Regional State",
+      "Lot Required (Optional - Dropdown)": "No",
+      "Planned Start Date (Optional - YYYY-MM-DD)": "2025-09-01",
+      "Planned End Date (Optional - YYYY-MM-DD)": "2026-06-30",
     },
     {
-      "Plan ID (Required)": planRef,
-      "Reference (Required)": "ET-MoA-003-CS-QCBS",
-      Description: "Consultancy Services for Environmental Impact Assessment",
-      "Category (Dropdown)": "Consultancy Services",
-      "Method ID (Dropdown)": "QCBS",
-      "Estimated Budget": 3500000,
-      "Currency (Dropdown)": "ETB",
-      "Market Approach (Dropdown)": "Open International",
-      "Review Type (Dropdown)": "Prior Review",
+      "Plan ID or Title (Required)": planRef,
+      "Activity Reference (Required)": "ET-MoA-003-CS-QCBS",
+      "Activity Description (Required)":
+        "Consultancy Services for Environmental & Social Impact Assessment (ESIA)",
+      "Category (Required - Dropdown)": "Consultancy Services",
+      "Method ID (Required - Dropdown)": "QCBS",
+      "Estimated Budget (ETB) (Required)": 3200000,
+      "Currency (Optional - Dropdown)": "ETB",
+      "Market Approach (Optional - Dropdown)": "Open International",
+      "Review Type (Optional - Dropdown)": "Prior Review",
+      "Contract Type (Optional - Dropdown)": "Time Based",
+      "Domestic Preference (Optional - Dropdown)": "No",
+      "Location (Optional)": "Federal / FPCU",
+      "Lot Required (Optional - Dropdown)": "No",
+      "Planned Start Date (Optional - YYYY-MM-DD)": "2025-08-15",
+      "Planned End Date (Optional - YYYY-MM-DD)": "2026-02-15",
     },
   ];
 
   const worksheet = XLSX.utils.json_to_sheet(templateData);
-  const colWidths = [
-    { wch: 22 }, // Plan ID
-    { wch: 25 }, // Reference
-    { wch: 45 }, // Description
-    { wch: 22 }, // Category
-    { wch: 22 }, // Method ID
-    { wch: 18 }, // Estimated Budget
-    { wch: 14 }, // Currency
-    { wch: 22 }, // Market Approach
-    { wch: 18 }, // Review Type
+  worksheet["!cols"] = [
+    { wch: 28 }, // Plan ID or Title
+    { wch: 28 }, // Activity Reference
+    { wch: 55 }, // Activity Description
+    { wch: 25 }, // Category
+    { wch: 25 }, // Method ID
+    { wch: 28 }, // Estimated Budget
+    { wch: 22 }, // Currency
+    { wch: 28 }, // Market Approach
+    { wch: 24 }, // Review Type
+    { wch: 24 }, // Contract Type
+    { wch: 28 }, // Domestic Preference
+    { wch: 26 }, // Location
+    { wch: 22 }, // Lot Required
+    { wch: 28 }, // Planned Start Date
+    { wch: 28 }, // Planned End Date
   ];
-  worksheet["!cols"] = colWidths;
+
+  const guideRows = [
+    {
+      "Field Name": "Plan ID or Title (Required)",
+      Requirement: "Mandatory",
+      "Data Type": "Text",
+      "Allowed Values / Options": "Plan Reference, UUID, or exact Plan Title",
+      "Description & Business Rules":
+        "Identifies the parent procurement plan. Pre-filled with active plan reference.",
+    },
+    {
+      "Field Name": "Activity Reference (Required)",
+      Requirement: "Mandatory",
+      "Data Type": "Text",
+      "Allowed Values / Options": "e.g. ET-MoA-001-GO-RFQ",
+      "Description & Business Rules":
+        "Must be unique across all activities in the procurement tracking system.",
+    },
+    {
+      "Field Name": "Activity Description (Required)",
+      Requirement: "Mandatory",
+      "Data Type": "Text",
+      "Allowed Values / Options": "Free text (clear procurement description)",
+      "Description & Business Rules":
+        "Detailed specification of the goods, works, or consulting assignment.",
+    },
+    {
+      "Field Name": "Category (Required - Dropdown)",
+      Requirement: "Mandatory",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options":
+        "Goods, Works, Consultancy Services, Non-Consulting Services",
+      "Description & Business Rules":
+        "High-level procurement classification standard.",
+    },
+    {
+      "Field Name": "Method ID (Required - Dropdown)",
+      Requirement: "Mandatory",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options":
+        "RFQ, RFB National, RFB International, QCBS, FBS, LCS, QBS, CQS, Direct Contracting",
+      "Description & Business Rules":
+        "Procurement method code governing competition and evaluation procedures.",
+    },
+    {
+      "Field Name": "Estimated Budget (ETB) (Required)",
+      Requirement: "Mandatory",
+      "Data Type": "Decimal / Number",
+      "Allowed Values / Options": "Non-negative numeric amount (>= 0)",
+      "Description & Business Rules":
+        "Planned financial allocation for this specific activity.",
+    },
+    {
+      "Field Name": "Currency (Optional - Dropdown)",
+      Requirement: "Optional",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options": "ETB, USD, EUR (Default: ETB)",
+      "Description & Business Rules":
+        "Currency used for budgeting and financial monitoring.",
+    },
+    {
+      "Field Name": "Market Approach (Optional - Dropdown)",
+      Requirement: "Optional",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options":
+        "Open National, Open International, Limited, Direct",
+      "Description & Business Rules":
+        "Geographic scope and market openness for bidding.",
+    },
+    {
+      "Field Name": "Review Type (Optional - Dropdown)",
+      Requirement: "Optional",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options": "Post Review, Prior Review",
+      "Description & Business Rules":
+        "Determines if oversight approval is needed prior to contract award.",
+    },
+    {
+      "Field Name": "Contract Type (Optional - Dropdown)",
+      Requirement: "Optional",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options": "Lump Sum, Time Based",
+      "Description & Business Rules":
+        "Remuneration structure for the resulting contract.",
+    },
+    {
+      "Field Name": "Domestic Preference (Optional - Dropdown)",
+      Requirement: "Optional",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options": "No, Yes",
+      "Description & Business Rules":
+        "Applies domestic preference evaluation margin where eligible.",
+    },
+    {
+      "Field Name": "Location (Optional)",
+      Requirement: "Optional",
+      "Data Type": "Text",
+      "Allowed Values / Options":
+        "e.g. Addis Ababa, Oromia, Amhara, Tigray, Somali, Sidama",
+      "Description & Business Rules":
+        "Physical project implementation site or delivery destination.",
+    },
+    {
+      "Field Name": "Lot Required (Optional - Dropdown)",
+      Requirement: "Optional",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options": "No, Yes",
+      "Description & Business Rules":
+        "Indicates if procurement will be split into multiple lots.",
+    },
+    {
+      "Field Name": "Planned Start Date (Optional - YYYY-MM-DD)",
+      Requirement: "Optional",
+      "Data Type": "Date (ISO)",
+      "Allowed Values / Options": "YYYY-MM-DD (e.g. 2025-08-01)",
+      "Description & Business Rules":
+        "Target date to begin bidding document preparation.",
+    },
+    {
+      "Field Name": "Planned End Date (Optional - YYYY-MM-DD)",
+      Requirement: "Optional",
+      "Data Type": "Date (ISO)",
+      "Allowed Values / Options": "YYYY-MM-DD (e.g. 2026-06-30)",
+      "Description & Business Rules":
+        "Target completion or goods delivery date.",
+    },
+  ];
+
+  const guideWorksheet = XLSX.utils.json_to_sheet(guideRows);
+  guideWorksheet["!cols"] = [
+    { wch: 32 },
+    { wch: 16 },
+    { wch: 20 },
+    { wch: 38 },
+    { wch: 65 },
+  ];
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Activities Upload");
+  XLSX.utils.book_append_sheet(
+    workbook,
+    guideWorksheet,
+    "Instructions & Field Guide",
+  );
   XLSX.writeFile(workbook, "Procurement_Activity_Import_Template.xlsx");
 }
 
@@ -245,11 +414,13 @@ export async function parseActivitiesFromExcel(
       "Base Currency",
     ]);
     const rawMarket = getColumnValue(row, [
+      "Market Approach (Optional - Dropdown)",
       "Market Approach (Dropdown)",
       "Market Approach",
       "Approach",
     ]);
     const rawReview = getColumnValue(row, [
+      "Review Type (Optional - Dropdown)",
       "Review Type (Dropdown)",
       "Review Type",
       "Review",
@@ -266,7 +437,49 @@ export async function parseActivitiesFromExcel(
       "Activity Status",
       "State",
     ]);
-    const rawFunding = getColumnValue(row, ["Funding Source", "Funding"]);
+    const rawFunding = getColumnValue(row, [
+      "Funding Source",
+      "Funding",
+      "Funding Source (Optional)",
+    ]);
+    const rawSpecificMethod = getColumnValue(row, [
+      "Specific Method",
+      "Specific Procurement Method",
+      "Method Detail",
+    ]);
+    const rawContractType = getColumnValue(row, [
+      "Contract Type (Optional - Dropdown)",
+      "Contract Type (Dropdown)",
+      "Contract Type",
+    ]);
+    const rawDomesticPref = getColumnValue(row, [
+      "Domestic Preference (Optional - Dropdown)",
+      "Domestic Preference (Dropdown)",
+      "Domestic Preference",
+    ]);
+    const rawLocation = getColumnValue(row, [
+      "Location (Optional)",
+      "Location",
+      "Location / Region",
+      "Region",
+    ]);
+    const rawLotRequired = getColumnValue(row, [
+      "Lot Required (Optional - Dropdown)",
+      "Lot Required (Dropdown)",
+      "Lot Required",
+    ]);
+    const rawPlannedStart = getColumnValue(row, [
+      "Planned Start Date (Optional - YYYY-MM-DD)",
+      "Planned Start Date",
+      "Planned Start",
+      "Start Date",
+    ]);
+    const rawPlannedEnd = getColumnValue(row, [
+      "Planned End Date (Optional - YYYY-MM-DD)",
+      "Planned End Date",
+      "Planned End",
+      "End Date",
+    ]);
 
     const description = String(rawDesc || "").trim();
     const rawRefStr = String(rawRef || "").trim();
@@ -326,9 +539,24 @@ export async function parseActivitiesFromExcel(
     const fundingSource = rawFunding ? String(rawFunding).trim() : undefined;
     const marketApproach = rawMarket ? String(rawMarket).trim() : undefined;
     const reviewType = rawReview ? String(rawReview).trim() : undefined;
+    const contractType =
+      rawContractType && String(rawContractType).toLowerCase().includes("time")
+        ? "Time Based"
+        : "Lump Sum";
+    const domesticPreference =
+      rawDomesticPref && String(rawDomesticPref).toLowerCase().includes("yes")
+        ? "Yes"
+        : "No";
+    const location = rawLocation ? String(rawLocation).trim() : "";
+    const lotRequired = Boolean(
+      rawLotRequired &&
+      (String(rawLotRequired).toLowerCase().includes("yes") ||
+        String(rawLotRequired).toLowerCase() === "true"),
+    );
 
     const parsedRow: ParsedActivityRow = {
       reference,
+      planId: rawPlanId ? String(rawPlanId).trim() : defaultPlanId,
       description,
       category,
       method,
@@ -346,6 +574,26 @@ export async function parseActivitiesFromExcel(
     parsedRows.push(parsedRow);
 
     if (isValid) {
+      const roadmapStages: any[] = [];
+      if (rawPlannedStart || rawPlannedEnd) {
+        roadmapStages.push({
+          name: currentStage,
+          days: "30",
+          gregorianDate: rawPlannedStart ? String(rawPlannedStart).trim() : "",
+          plannedStartDate: rawPlannedStart
+            ? String(rawPlannedStart).trim()
+            : undefined,
+          plannedEndDate: rawPlannedEnd
+            ? String(rawPlannedEnd).trim()
+            : undefined,
+          status: status === "Completed" ? "Completed" : "Not Started",
+          notApplicable: false,
+          allowNotApplicable: false,
+          remarks: "",
+          ethiopianDate: "",
+        });
+      }
+
       validActivities.push({
         reference,
         description,
@@ -361,9 +609,9 @@ export async function parseActivitiesFromExcel(
             activityDescription: description,
             classificationCode: "",
             comments: "",
-            contractType: "Lump Sum",
+            contractType,
             currency,
-            domesticPreference: "No",
+            domesticPreference,
             estimatedAmount: String(estimatedAmount),
             evaluationOptionCode: "",
             fundingSource: fundingSource || "",
@@ -371,9 +619,9 @@ export async function parseActivitiesFromExcel(
             inProcess: false,
             invitationReference: "",
             latitude: "",
-            location: "",
+            location,
             longitude: "",
-            lotRequired: false,
+            lotRequired,
             marketApproach: marketApproach || "OPEN_NATIONAL",
             method,
             oversightClassification: "",
@@ -384,11 +632,11 @@ export async function parseActivitiesFromExcel(
             requiresUnAgency: false,
             reviewType: reviewType || "POST",
             scopeNotes: "",
-            specificMethod: "",
+            specificMethod: String(rawSpecificMethod || "").trim(),
             subcomponent: "",
           },
           lots: [],
-          roadmap: [],
+          roadmap: roadmapStages,
         },
       });
     }
@@ -405,6 +653,60 @@ export async function parseActivitiesFromExcel(
 }
 
 /**
+ * Formats multiple funding sources or single funding sources with allocation percentages if available.
+ */
+export function formatActivityFundingSources(
+  activity: any,
+  fallback: string = "",
+): string {
+  // 1. Check financingAllocations array
+  const allocations =
+    activity?.details?.financingAllocations ||
+    activity?.financingAllocations ||
+    activity?.details?.form?.financingAllocations;
+
+  if (Array.isArray(allocations) && allocations.length > 0) {
+    const valid = allocations.filter(
+      (item: any) =>
+        item &&
+        item.selected !== false &&
+        (item.source || item.label || item.id),
+    );
+    if (valid.length > 0) {
+      return valid
+        .map((item: any) => {
+          const name = item.source || item.label || item.id;
+          const pct = item.percent ? ` (${item.percent}%)` : "";
+          return `${name}${pct}`;
+        })
+        .join(", ");
+    }
+  }
+
+  // 2. Check fundings array (backend ActivityFunding structure)
+  const fundings = activity?.fundings || activity?.details?.fundings;
+  if (Array.isArray(fundings) && fundings.length > 0) {
+    return fundings
+      .map((f: any) => {
+        const name = f.fundingSource || f.label || f.name || "Financing";
+        const pct = f.allocationPct != null ? ` (${f.allocationPct}%)` : "";
+        return `${name}${pct}`;
+      })
+      .join(", ");
+  }
+
+  // 3. Check scalar fundingSource field
+  if (activity?.details?.form?.fundingSource) {
+    return String(activity.details.form.fundingSource).trim();
+  }
+  if (activity?.fundingSource) {
+    return String(activity.fundingSource).trim();
+  }
+
+  return fallback;
+}
+
+/**
  * Exports plan activities to a formatted Excel file matching canonical standards.
  */
 export function exportPlanActivitiesToExcel(
@@ -413,42 +715,133 @@ export function exportPlanActivitiesToExcel(
   projectCode: string,
 ) {
   const sheetName = (plan.name || "Activities").slice(0, 31);
-  const rows = activities.map((a) => ({
-    "Plan ID": plan.reference,
-    Reference: a.reference,
-    Description: a.description,
-    Category: a.category,
-    "Method ID": a.method,
-    "Estimated Budget": a.estimatedAmount,
-    Currency: a.details?.form?.currency || plan.currency || "ETB",
-    "Market Approach": a.details?.form?.marketApproach || "Open National",
-    "Review Type": a.details?.form?.reviewType || "Post Review",
-    "Current Stage": a.currentStage,
-    Status: a.status,
-    "Funding Source": a.details?.form?.fundingSource || "",
-    "Project Code": projectCode,
-  }));
+  const rows = activities.map((a) => {
+    const roadmap = a.details?.roadmap || [];
+    const firstStage = roadmap.find(
+      (s) => s.plannedStartDate || s.gregorianDate,
+    );
+    const lastStage = [...roadmap]
+      .reverse()
+      .find((s) => s.plannedEndDate || s.gregorianDate);
+    const completedStage = [...roadmap]
+      .reverse()
+      .find((s) => s.actualEndDate || s.actualDate);
+
+    return {
+      "Plan ID": plan.id || plan.reference,
+      "Plan Reference": plan.reference,
+      "Plan Title": plan.name,
+      "Project Code": projectCode,
+      Reference: a.reference,
+      Description: a.description,
+      Category: a.category || plan.category || "Goods",
+      "Method ID": a.method,
+      "Specific Method": a.details?.form?.specificMethod || "",
+      "Estimated Budget": a.estimatedAmount,
+      Currency: a.details?.form?.currency || plan.currency || "ETB",
+      "Market Approach": a.details?.form?.marketApproach || "Open National",
+      "Review Type": a.details?.form?.reviewType || "Post Review",
+      "Contract Type": a.details?.form?.contractType || "Lump Sum",
+      "Procurement Process": a.details?.form?.procurementProcess || "",
+      "Domestic Preference": a.details?.form?.domesticPreference || "No",
+      "Current Stage": a.currentStage,
+      Status: a.status,
+      "Funding Source": formatActivityFundingSources(
+        a,
+        plan.organizationRegion || "",
+      ),
+      Location: a.details?.form?.location || "",
+      "Lot Required": a.details?.form?.lotRequired ? "Yes" : "No",
+      "Planned Start Date":
+        firstStage?.plannedStartDate || firstStage?.gregorianDate || "",
+      "Planned End Date":
+        lastStage?.plannedEndDate || lastStage?.gregorianDate || "",
+      "Actual Completion Date":
+        completedStage?.actualEndDate || completedStage?.actualDate || "",
+      "Remarks / Notes":
+        a.details?.form?.comments || a.details?.form?.scopeNotes || "",
+    };
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
-  const colWidths = [
-    { wch: 22 }, // Plan ID
-    { wch: 24 }, // Reference
+  worksheet["!cols"] = [
+    { wch: 36 }, // Plan ID
+    { wch: 22 }, // Plan Reference
+    { wch: 40 }, // Plan Title
+    { wch: 18 }, // Project Code
+    { wch: 25 }, // Reference
     { wch: 45 }, // Description
     { wch: 20 }, // Category
     { wch: 20 }, // Method ID
+    { wch: 22 }, // Specific Method
     { wch: 18 }, // Estimated Budget
     { wch: 10 }, // Currency
-    { wch: 18 }, // Market Approach
-    { wch: 14 }, // Review Type
+    { wch: 20 }, // Market Approach
+    { wch: 16 }, // Review Type
+    { wch: 16 }, // Contract Type
+    { wch: 22 }, // Procurement Process
+    { wch: 20 }, // Domestic Preference
     { wch: 30 }, // Current Stage
-    { wch: 16 }, // Status
-    { wch: 18 }, // Funding Source
-    { wch: 16 }, // Project Code
+    { wch: 18 }, // Status
+    { wch: 32 }, // Funding Source
+    { wch: 20 }, // Location
+    { wch: 14 }, // Lot Required
+    { wch: 18 }, // Planned Start Date
+    { wch: 18 }, // Planned End Date
+    { wch: 22 }, // Actual Completion Date
+    { wch: 35 }, // Remarks / Notes
   ];
-  worksheet["!cols"] = colWidths;
+
+  const planInfoData = [
+    { Field: "Plan Title", Value: plan.name },
+    { Field: "Plan Reference", Value: plan.reference },
+    { Field: "Plan ID", Value: plan.id || plan.reference },
+    { Field: "Project Code", Value: projectCode },
+    { Field: "Budget Year / Fiscal Period", Value: plan.budgetYear },
+    { Field: "Procurement Category", Value: plan.category },
+    {
+      Field: "Funding Sources Involved",
+      Value:
+        Array.from(
+          new Set(
+            activities
+              .map((act) => formatActivityFundingSources(act))
+              .filter(Boolean),
+          ),
+        ).join("; ") ||
+        plan.organizationRegion ||
+        "Federal / MoA",
+    },
+    { Field: "Plan Status", Value: plan.status },
+    { Field: "Total Activities in Export", Value: activities.length },
+    {
+      Field: "Total Estimated Budget",
+      Value: activities.reduce(
+        (sum, a) => sum + (Number(a.estimatedAmount) || 0),
+        0,
+      ),
+    },
+    { Field: "Base Currency", Value: plan.currency || "ETB" },
+    {
+      Field: "Organization / Region",
+      Value: plan.organizationRegion || "Federal / MoA",
+    },
+    {
+      Field: "Period Start Date",
+      Value: plan.planPeriod?.from?.gregorian || "",
+    },
+    {
+      Field: "Period End Date",
+      Value: plan.planPeriod?.to?.gregorian || "",
+    },
+    { Field: "Export Date", Value: new Date().toISOString().slice(0, 10) },
+  ];
+  const infoWorksheet = XLSX.utils.json_to_sheet(planInfoData);
+  infoWorksheet["!cols"] = [{ wch: 28 }, { wch: 55 }];
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  XLSX.utils.book_append_sheet(workbook, infoWorksheet, "Plan Information");
 
   const timestamp = new Date().toISOString().slice(0, 10);
   const filename = `Plan_${plan.reference}_Activities_${timestamp}.xlsx`;
@@ -484,17 +877,30 @@ export function exportProjectDetailsToExcel(project: OfficerProject) {
     { Field: "Total Active Plans", Value: project.activePlans },
   ];
 
-  const plansSheetData = project.plans.map((p) => ({
-    "Plan Reference": p.reference,
-    "Plan Name": p.name,
-    "Fiscal Year": p.budgetYear,
-    Category: p.category,
-    "Total Activities": p.activities,
-    Status: p.status,
-    "Estimated Value": p.estimatedValue || 0,
-    Currency: p.currency || project.baseCurrency,
-    "Organization / Region": p.organizationRegion || "",
-  }));
+  const plansSheetData = project.plans.map((p) => {
+    const calculatedBudget =
+      p.planActivities && p.planActivities.length > 0
+        ? p.planActivities.reduce(
+            (sum, a) => sum + (Number(a.estimatedAmount) || 0),
+            0,
+          )
+        : p.estimatedValue || 0;
+
+    return {
+      "Plan Reference": p.reference,
+      "Plan Name": p.name,
+      "Fiscal Year": p.budgetYear,
+      Category: p.category,
+      "Total Activities":
+        p.planActivities && p.planActivities.length > 0
+          ? p.planActivities.length
+          : p.activities,
+      Status: p.status,
+      "Estimated Value": calculatedBudget,
+      Currency: p.currency || project.baseCurrency,
+      "Organization / Region": p.organizationRegion || "",
+    };
+  });
 
   const workbook = XLSX.utils.book_new();
 
@@ -515,6 +921,67 @@ export function exportProjectDetailsToExcel(project: OfficerProject) {
     { wch: 25 },
   ];
   XLSX.utils.book_append_sheet(workbook, plansWorksheet, "Procurement Plans");
+
+  // Collect all activities across all plans in the project if available
+  const allActivities: any[] = [];
+  project.plans.forEach((p) => {
+    if (p.planActivities && p.planActivities.length > 0) {
+      p.planActivities.forEach((a) => {
+        allActivities.push({
+          "Project Code": project.code,
+          "Plan Reference": p.reference,
+          "Plan Title": p.name,
+          Reference: a.reference,
+          Description: a.description,
+          Category: a.category || p.category || "Goods",
+          "Method ID": a.method,
+          "Estimated Budget": a.estimatedAmount,
+          Currency:
+            a.details?.form?.currency ||
+            p.currency ||
+            project.baseCurrency ||
+            "ETB",
+          "Market Approach": a.details?.form?.marketApproach || "Open National",
+          "Review Type": a.details?.form?.reviewType || "Post Review",
+          "Contract Type": a.details?.form?.contractType || "Lump Sum",
+          "Current Stage": a.currentStage,
+          Status: a.status,
+          Location: a.details?.form?.location || "",
+          "Funding Source": formatActivityFundingSources(
+            a,
+            project.fundingSource || p.organizationRegion || "",
+          ),
+        });
+      });
+    }
+  });
+
+  if (allActivities.length > 0) {
+    const actWorksheet = XLSX.utils.json_to_sheet(allActivities);
+    actWorksheet["!cols"] = [
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 35 },
+      { wch: 22 },
+      { wch: 40 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 10 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 16 },
+      { wch: 28 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 22 },
+    ];
+    XLSX.utils.book_append_sheet(
+      workbook,
+      actWorksheet,
+      "Procurement Activities",
+    );
+  }
 
   const timestamp = new Date().toISOString().slice(0, 10);
   const filename = `Project_${project.code}_Details_${timestamp}.xlsx`;
@@ -604,56 +1071,152 @@ export function downloadPlanExcelTemplate(projectCode: string = "PRJ-24-001") {
   const templateData = [
     {
       "Project Code (Required)": projectCode,
-      "Plan Title (Required)": "Annual Agricultural Inputs Procurement Plan",
+      "Plan Title (Required)":
+        "Annual Agricultural Inputs & Machinery Procurement Plan",
       "Budget Year (Required)": "2018 EFY",
-      "Category (Dropdown)": "Goods",
-      Organization: "Federal / MoA",
-      Description: "Procurement plan for agricultural supplies and machinery",
-      "Period Start (Required)": "2025-07-08",
-      "Period End (Required)": "2026-07-07",
-      "Status (Dropdown)": "Draft",
+      "Category (Required - Dropdown)": "Goods",
+      "Organization (Optional)": "Federal / Ministry of Agriculture",
+      "Description (Optional)":
+        "Procurement plan for agricultural supplies, certified seeds, fertilizer, and laboratory machinery",
+      "Period Start (Required - YYYY-MM-DD)": "2025-07-08",
+      "Period End (Required - YYYY-MM-DD)": "2026-07-07",
+      "Status (Optional - Dropdown)": "Draft",
     },
     {
       "Project Code (Required)": projectCode,
       "Plan Title (Required)":
-        "Regional Irrigation Infrastructure Development Plan",
+        "Regional Irrigation Civil Works & Infrastructure Plan",
       "Budget Year (Required)": "2018 EFY",
-      "Category (Dropdown)": "Works",
-      Organization: "Oromia Regional Bureau",
-      Description: "Civil works and canal construction for smallholder farmers",
-      "Period Start (Required)": "2025-07-08",
-      "Period End (Required)": "2026-07-07",
-      "Status (Dropdown)": "Draft",
+      "Category (Required - Dropdown)": "Works",
+      "Organization (Optional)": "Oromia Regional Bureau of Agriculture",
+      "Description (Optional)":
+        "Civil works, intake weir construction, and canal rehabilitation for smallholder farmers",
+      "Period Start (Required - YYYY-MM-DD)": "2025-08-01",
+      "Period End (Required - YYYY-MM-DD)": "2026-06-30",
+      "Status (Optional - Dropdown)": "Draft",
     },
     {
       "Project Code (Required)": projectCode,
-      "Plan Title (Required)": "Advisory and Technical Capacity Building Plan",
+      "Plan Title (Required)":
+        "Advisory, Environmental Audit & Capacity Building Plan",
       "Budget Year (Required)": "2018 EFY",
-      "Category (Dropdown)": "Consultancy Services",
-      Organization: "Federal / FPCU",
-      Description: "Technical consultancy for project baseline evaluation",
-      "Period Start (Required)": "2025-07-08",
-      "Period End (Required)": "2026-07-07",
-      "Status (Dropdown)": "Draft",
+      "Category (Required - Dropdown)": "Consultancy Services",
+      "Organization (Optional)": "Federal / FPCU",
+      "Description (Optional)":
+        "Technical advisory, agronomy training, and environmental baseline evaluation studies",
+      "Period Start (Required - YYYY-MM-DD)": "2025-08-15",
+      "Period End (Required - YYYY-MM-DD)": "2026-04-30",
+      "Status (Optional - Dropdown)": "Draft",
     },
   ];
 
   const worksheet = XLSX.utils.json_to_sheet(templateData);
-  const colWidths = [
-    { wch: 22 }, // Project Code
-    { wch: 45 }, // Plan Title
-    { wch: 18 }, // Budget Year
-    { wch: 22 }, // Category
-    { wch: 25 }, // Organization
-    { wch: 50 }, // Description
-    { wch: 18 }, // Period Start
-    { wch: 18 }, // Period End
-    { wch: 16 }, // Status
+  worksheet["!cols"] = [
+    { wch: 24 }, // Project Code
+    { wch: 50 }, // Plan Title
+    { wch: 20 }, // Budget Year
+    { wch: 26 }, // Category
+    { wch: 32 }, // Organization
+    { wch: 60 }, // Description
+    { wch: 28 }, // Period Start
+    { wch: 28 }, // Period End
+    { wch: 24 }, // Status
   ];
-  worksheet["!cols"] = colWidths;
+
+  const guideRows = [
+    {
+      "Field Name": "Project Code (Required)",
+      Requirement: "Mandatory",
+      "Data Type": "Text",
+      "Allowed Values / Options":
+        "Valid Project Code (e.g. PRJ-24-001, MOA-AGP2)",
+      "Description & Business Rules":
+        "Must match an active, registered project in the procurement database.",
+    },
+    {
+      "Field Name": "Plan Title (Required)",
+      Requirement: "Mandatory",
+      "Data Type": "Text",
+      "Allowed Values / Options": "Free text (minimum 5 characters)",
+      "Description & Business Rules":
+        "The official title representing this annual or multi-year procurement plan.",
+    },
+    {
+      "Field Name": "Budget Year (Required)",
+      Requirement: "Mandatory",
+      "Data Type": "Text",
+      "Allowed Values / Options": "e.g. 2018 EFY, 2025/2026, 2017 EFY",
+      "Description & Business Rules":
+        "Fiscal budget year for government and donor accounting.",
+    },
+    {
+      "Field Name": "Category (Required - Dropdown)",
+      Requirement: "Mandatory",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options":
+        "Goods, Works, Consultancy Services, Non-Consulting Services",
+      "Description & Business Rules":
+        "Primary category of procurements contained within this plan.",
+    },
+    {
+      "Field Name": "Organization (Optional)",
+      Requirement: "Optional",
+      "Data Type": "Text",
+      "Allowed Values / Options":
+        "e.g. Federal / MoA, Oromia Bureau, Amhara Bureau",
+      "Description & Business Rules":
+        "Implementing unit, regional bureau, or federal directorate.",
+    },
+    {
+      "Field Name": "Description (Optional)",
+      Requirement: "Optional",
+      "Data Type": "Text",
+      "Allowed Values / Options": "Free text",
+      "Description & Business Rules":
+        "High-level strategic narrative and objectives of this procurement plan.",
+    },
+    {
+      "Field Name": "Period Start (Required - YYYY-MM-DD)",
+      Requirement: "Mandatory",
+      "Data Type": "Date (ISO)",
+      "Allowed Values / Options": "YYYY-MM-DD (e.g. 2025-07-08)",
+      "Description & Business Rules":
+        "Fiscal period start date. Must not precede project start date.",
+    },
+    {
+      "Field Name": "Period End (Required - YYYY-MM-DD)",
+      Requirement: "Mandatory",
+      "Data Type": "Date (ISO)",
+      "Allowed Values / Options": "YYYY-MM-DD (e.g. 2026-07-07)",
+      "Description & Business Rules":
+        "Fiscal period end date. Must be after start date and not exceed project closing.",
+    },
+    {
+      "Field Name": "Status (Optional - Dropdown)",
+      Requirement: "Optional",
+      "Data Type": "Dropdown",
+      "Allowed Values / Options": "Draft, Submitted, Approved (Default: Draft)",
+      "Description & Business Rules":
+        "Initial status assigned to the plan upon importation.",
+    },
+  ];
+
+  const guideWorksheet = XLSX.utils.json_to_sheet(guideRows);
+  guideWorksheet["!cols"] = [
+    { wch: 32 },
+    { wch: 16 },
+    { wch: 20 },
+    { wch: 40 },
+    { wch: 65 },
+  ];
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Plan Template");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Plans Upload");
+  XLSX.utils.book_append_sheet(
+    workbook,
+    guideWorksheet,
+    "Instructions & Field Guide",
+  );
   XLSX.writeFile(workbook, "Procurement_Plan_Import_Template.xlsx");
 }
 
@@ -822,6 +1385,9 @@ export async function parsePlansFromExcel(
     const parsedRow: ParsedPlanRow = {
       name,
       reference,
+      projectCode: rawProjectCode
+        ? String(rawProjectCode).trim()
+        : defaultProjectCode,
       budgetYear: budgetYear || "2018 EFY",
       category,
       organizationRegion,
@@ -875,35 +1441,54 @@ export async function parsePlansFromExcel(
  * Exports procurement plans for a single project.
  */
 export function exportProjectPlansToExcel(project: OfficerProject) {
-  const rows = project.plans.map((p) => ({
-    "Project Code": project.code,
-    "Plan Title": p.name,
-    "Budget Year": p.budgetYear,
-    Category: p.category,
-    Organization:
-      p.organizationRegion || project.organizationRegion || "Federal / FPCU",
-    Description: p.description || "",
-    "Period Start": p.planPeriod?.from?.gregorian || "2025-07-08",
-    "Period End": p.planPeriod?.to?.gregorian || "2026-07-07",
-    Status: p.status,
-    "Plan Reference": p.reference,
-    "Total Activities": p.activities,
-    "Estimated Value": p.estimatedValue || 0,
-    Currency: p.currency || project.baseCurrency || "ETB",
-  }));
+  const rows = project.plans.map((p) => {
+    const calculatedBudget =
+      p.planActivities && p.planActivities.length > 0
+        ? p.planActivities.reduce(
+            (sum, a) => sum + (Number(a.estimatedAmount) || 0),
+            0,
+          )
+        : p.estimatedValue || 0;
+
+    return {
+      "Project Code": project.code,
+      "Plan Reference": p.reference,
+      "Plan Title": p.name,
+      "Budget Year": p.budgetYear,
+      Category: p.category,
+      "Funding Source": project.fundingSource || "",
+      Organization:
+        p.organizationRegion || project.organizationRegion || "Federal / FPCU",
+      Description: p.description || "",
+      "Period Start (Gregorian)": p.planPeriod?.from?.gregorian || "2025-07-08",
+      "Period Start (Ethiopian)": p.planPeriod?.from?.ethiopian || "",
+      "Period End (Gregorian)": p.planPeriod?.to?.gregorian || "2026-07-07",
+      "Period End (Ethiopian)": p.planPeriod?.to?.ethiopian || "",
+      Status: p.status,
+      "Total Activities":
+        p.planActivities && p.planActivities.length > 0
+          ? p.planActivities.length
+          : p.activities,
+      "Estimated Value": calculatedBudget,
+      Currency: p.currency || project.baseCurrency || "ETB",
+    };
+  });
 
   const worksheet = XLSX.utils.json_to_sheet(rows);
   worksheet["!cols"] = [
     { wch: 18 }, // Project Code
+    { wch: 22 }, // Plan Reference
     { wch: 40 }, // Plan Title
     { wch: 16 }, // Budget Year
     { wch: 22 }, // Category
+    { wch: 25 }, // Funding Source
     { wch: 25 }, // Organization
     { wch: 45 }, // Description
-    { wch: 16 }, // Period Start
-    { wch: 16 }, // Period End
+    { wch: 24 }, // Period Start (Gregorian)
+    { wch: 24 }, // Period Start (Ethiopian)
+    { wch: 24 }, // Period End (Gregorian)
+    { wch: 24 }, // Period End (Ethiopian)
     { wch: 16 }, // Status
-    { wch: 22 }, // Plan Reference
     { wch: 16 }, // Total Activities
     { wch: 18 }, // Estimated Value
     { wch: 10 }, // Currency
@@ -911,6 +1496,67 @@ export function exportProjectPlansToExcel(project: OfficerProject) {
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Procurement Plans");
+
+  // Collect all activities across all plans in the project
+  const allActivities: any[] = [];
+  project.plans.forEach((p) => {
+    if (p.planActivities && p.planActivities.length > 0) {
+      p.planActivities.forEach((a) => {
+        allActivities.push({
+          "Project Code": project.code,
+          "Plan Reference": p.reference,
+          "Plan Title": p.name,
+          Reference: a.reference,
+          Description: a.description,
+          Category: a.category || p.category || "Goods",
+          "Method ID": a.method,
+          "Estimated Budget": a.estimatedAmount,
+          Currency:
+            a.details?.form?.currency ||
+            p.currency ||
+            project.baseCurrency ||
+            "ETB",
+          "Market Approach": a.details?.form?.marketApproach || "Open National",
+          "Review Type": a.details?.form?.reviewType || "Post Review",
+          "Contract Type": a.details?.form?.contractType || "Lump Sum",
+          "Current Stage": a.currentStage,
+          Status: a.status,
+          Location: a.details?.form?.location || "",
+          "Funding Source": formatActivityFundingSources(
+            a,
+            project.fundingSource || p.organizationRegion || "",
+          ),
+        });
+      });
+    }
+  });
+
+  if (allActivities.length > 0) {
+    const actWorksheet = XLSX.utils.json_to_sheet(allActivities);
+    actWorksheet["!cols"] = [
+      { wch: 16 }, // Project Code
+      { wch: 20 }, // Plan Reference
+      { wch: 35 }, // Plan Title
+      { wch: 22 }, // Reference
+      { wch: 40 }, // Description
+      { wch: 20 }, // Category
+      { wch: 20 }, // Method ID
+      { wch: 18 }, // Estimated Budget
+      { wch: 10 }, // Currency
+      { wch: 18 }, // Market Approach
+      { wch: 14 }, // Review Type
+      { wch: 16 }, // Contract Type
+      { wch: 28 }, // Current Stage
+      { wch: 16 }, // Status
+      { wch: 20 }, // Location
+      { wch: 22 }, // Funding Source
+    ];
+    XLSX.utils.book_append_sheet(
+      workbook,
+      actWorksheet,
+      "Procurement Activities",
+    );
+  }
 
   const timestamp = new Date().toISOString().slice(0, 10);
   const filename = `Project_${project.code}_Plans_${timestamp}.xlsx`;
@@ -1006,8 +1652,65 @@ export async function downloadProjectExcelTemplate(): Promise<void> {
       { wch: 18 }, // Status
     ];
 
+    const guideRows = [
+      {
+        "Field Name": "Project Code (Required)",
+        Requirement: "Mandatory",
+        "Data Type": "Text",
+        "Allowed Values / Options": "Unique Code (e.g. MOA-AGP2)",
+        "Description & Business Rules":
+          "Unique official project reference code.",
+      },
+      {
+        "Field Name": "Project Name (Required)",
+        Requirement: "Mandatory",
+        "Data Type": "Text",
+        "Allowed Values / Options": "Project title (minimum 5 characters)",
+        "Description & Business Rules":
+          "Full official name of the development project or program.",
+      },
+      {
+        "Field Name": "Funding Source ID (Dropdown)",
+        Requirement: "Mandatory",
+        "Data Type": "Dropdown",
+        "Allowed Values / Options":
+          "World Bank (WB), African Development Bank (AfDB), Government of Ethiopia (GoE), IFAD, EU",
+        "Description & Business Rules":
+          "Financing partner or development institution.",
+      },
+      {
+        "Field Name": "Sector ID (Dropdown)",
+        Requirement: "Mandatory",
+        "Data Type": "Dropdown",
+        "Allowed Values / Options":
+          "Agriculture & Crop Production, Livestock & Fishery, Natural Resources, Irrigation",
+        "Description & Business Rules": "Primary agricultural economic sector.",
+      },
+      {
+        "Field Name": "Status (Dropdown)",
+        Requirement: "Optional",
+        "Data Type": "Dropdown",
+        "Allowed Values / Options": "Draft, ACTIVE, CLOSED, SUSPENDED",
+        "Description & Business Rules": "Lifecycle operational status.",
+      },
+    ];
+
+    const guideWorksheet = XLSX.utils.json_to_sheet(guideRows);
+    guideWorksheet["!cols"] = [
+      { wch: 30 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 35 },
+      { wch: 60 },
+    ];
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Projects Upload");
+    XLSX.utils.book_append_sheet(
+      workbook,
+      guideWorksheet,
+      "Instructions & Field Guide",
+    );
     XLSX.writeFile(workbook, "Projects_Import_Template.xlsx");
   }
 }

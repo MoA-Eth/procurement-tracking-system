@@ -61,6 +61,12 @@ export const authTokenManager = {
           }
 
           if (parsed && typeof parsed.accessToken === "string") {
+            if (parsed.expiresAt) {
+              const exp = new Date(parsed.expiresAt).getTime();
+              if (Number.isFinite(exp) && exp <= Date.now()) {
+                continue;
+              }
+            }
             const tokenStr: string = parsed.accessToken;
             inMemoryAccessToken = tokenStr;
             if (typeof window !== "undefined") {

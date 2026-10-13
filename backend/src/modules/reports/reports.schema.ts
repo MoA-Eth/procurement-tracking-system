@@ -36,6 +36,7 @@ export const annualPlanSchema = z.object({
   currency: z.string().optional(),
   minAmount: z.coerce.number().nonnegative().optional(),
   maxAmount: z.coerce.number().nonnegative().optional(),
+  ...dateRangeParams,
   ...pageParams,
 });
 export type AnnualPlanQuery = z.infer<typeof annualPlanSchema>;
@@ -116,6 +117,7 @@ export const monthlyProcurementSchema = z.object({
   fundingSourceId: z.string().optional(),
   officerId: z.string().optional(),
   status: z.string().optional(),
+  ...dateRangeParams,
   ...pageParams,
 });
 export type MonthlyProcurementQuery = z.infer<typeof monthlyProcurementSchema>;
@@ -130,6 +132,7 @@ export const monthlySummarySchema = z.object({
   fundingSourceId: z.string().optional(),
   region: z.string().optional(),
   officerId: z.string().optional(),
+  ...dateRangeParams,
   ...pageParams,
 });
 export type MonthlySummaryQuery = z.infer<typeof monthlySummarySchema>;
@@ -150,6 +153,7 @@ export const quarterlySummarySchema = z.object({
   fundingType: z.string().optional(),
   category: z.string().optional(),
   methodId: z.string().optional(),
+  ...dateRangeParams,
   ...pageParams,
 });
 export type QuarterlySummaryQuery = z.infer<typeof quarterlySummarySchema>;
@@ -230,6 +234,7 @@ export const regionalSectorSummarySchema = z.object({
   category: z.string().optional(),
   methodId: z.string().optional(),
   currency: z.string().optional(),
+  ...dateRangeParams,
   ...pageParams,
 });
 export type RegionalSectorSummaryQuery = z.infer<
@@ -248,6 +253,7 @@ export const projectSummarySchema = z.object({
   methodId: z.string().optional(),
   status: z.string().optional(),
   currency: z.string().optional(),
+  ...dateRangeParams,
   ...pageParams,
 });
 export type ProjectSummaryQuery = z.infer<typeof projectSummarySchema>;
@@ -264,6 +270,7 @@ export const officerSummarySchema = z.object({
   category: z.string().optional(),
   methodId: z.string().optional(),
   currency: z.string().optional(),
+  ...dateRangeParams,
   ...pageParams,
 });
 export type OfficerSummaryQuery = z.infer<typeof officerSummarySchema>;
@@ -284,6 +291,7 @@ export const committeeApprovalSchema = z.object({
   directorDecision: z.string().optional(),
   committeeResult: z.string().optional(),
   managementDecision: z.string().optional(),
+  ...dateRangeParams,
   ...pageParams,
 });
 export type CommitteeApprovalQuery = z.infer<typeof committeeApprovalSchema>;

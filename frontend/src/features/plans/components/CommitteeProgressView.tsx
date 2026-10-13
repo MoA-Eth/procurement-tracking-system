@@ -329,28 +329,6 @@ export function CommitteeProgressView({
             }
           });
 
-          // If a rejection reason exists on the plan / draft and no member vote is rejected yet,
-          // associate it with the first committee member so it is visibly rendered in Section A
-          if (
-            memberVotes.length > 0 &&
-            !memberVotes.some((mv) => mv.voteStatus === "Rejected") &&
-            effectiveRejectionReason &&
-            (bp.status === "REJECTED" ||
-              bp.status === "COMMITTEE_REJECTED" ||
-              bp.status === "RETURNED_FOR_REVISION" ||
-              matchingDraft?.status === "Returned" ||
-              matchingDraft?.status === "Rejected")
-          ) {
-            memberVotes[0] = {
-              ...memberVotes[0],
-              voteStatus: "Rejected",
-              feedback: effectiveRejectionReason,
-              votedAt: bp.updatedAt
-                ? new Date(bp.updatedAt).toLocaleString()
-                : undefined,
-            };
-          }
-
           const approvedCount = memberVotes.filter(
             (v) => v.voteStatus === "Approved",
           ).length;
@@ -1344,171 +1322,177 @@ export function CommitteeProgressView({
 
               {/* Committee Members Voting Cards */}
               <div className="space-y-3">
-                {selectedPlan.memberVotes.map((member) => (
-                  <div
-                    key={member.id}
-                    className={`p-3.5 rounded-xl border transition-all overflow-hidden ${
-                      member.voteStatus === "Approved"
-                        ? "border-emerald-200 bg-emerald-50/20"
-                        : member.voteStatus === "Rejected"
-                          ? "border-rose-200 bg-rose-50/20"
-                          : "border-slate-200 bg-slate-50/40"
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <h4 className="text-xs font-semibold text-slate-950">
-                          {member.name}
-                        </h4>
-                        {member.email && (
-                          <p className="text-[11px] text-slate-500 font-mono">
-                            {member.email}
-                          </p>
-                        )}
+                {selectedPlan.memberVotes.length === 0 ? (
+                  <div className="p-4 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-500">
+                    No endorsement committee votes recorded yet.
+                  </div>
+                ) : (
+                  selectedPlan.memberVotes.map((member) => (
+                    <div
+                      key={member.id}
+                      className={`p-3.5 rounded-xl border transition-all overflow-hidden ${
+                        member.voteStatus === "Approved"
+                          ? "border-emerald-200 bg-emerald-50/20"
+                          : member.voteStatus === "Rejected"
+                            ? "border-rose-200 bg-rose-50/20"
+                            : "border-slate-200 bg-slate-50/40"
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <h4 className="text-xs font-semibold text-slate-950">
+                            {member.name}
+                          </h4>
+                          {member.email && (
+                            <p className="text-[11px] text-slate-500 font-mono">
+                              {member.email}
+                            </p>
+                          )}
+                        </div>
+
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
+                            member.voteStatus === "Approved"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : member.voteStatus === "Rejected"
+                                ? "bg-rose-100 text-rose-800"
+                                : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {member.voteStatus === "Approved" && (
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                          )}
+                          {member.voteStatus === "Rejected" && (
+                            <XCircle className="h-3 w-3 text-rose-600" />
+                          )}
+                          {member.voteStatus === "Pending" && (
+                            <Clock className="h-3 w-3 text-slate-500" />
+                          )}
+                          <span>
+                            {member.voteStatus === "Pending"
+                              ? "Pending Vote"
+                              : member.voteStatus}
+                          </span>
+                        </span>
                       </div>
 
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${
-                          member.voteStatus === "Approved"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : member.voteStatus === "Rejected"
-                              ? "bg-rose-100 text-rose-800"
-                              : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {member.voteStatus === "Approved" && (
-                          <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                        )}
-                        {member.voteStatus === "Rejected" && (
-                          <XCircle className="h-3 w-3 text-rose-600" />
-                        )}
-                        {member.voteStatus === "Pending" && (
-                          <Clock className="h-3 w-3 text-slate-500" />
-                        )}
-                        <span>
-                          {member.voteStatus === "Pending"
-                            ? "Pending Vote"
-                            : member.voteStatus}
-                        </span>
-                      </span>
-                    </div>
+                      {member.feedback &&
+                        (() => {
+                          const parsed = parseRejectionDetails(member.feedback);
+                          const flaggedRefsToDisplay = Array.from(
+                            new Set([
+                              ...parsed.rejectedActivityRefs,
+                              ...(member.voteStatus === "Rejected"
+                                ? selectedPlan.rejectedActivityRefs || []
+                                : []),
+                            ]),
+                          );
+                          const isRejectedWithSpecific =
+                            member.voteStatus === "Rejected" &&
+                            flaggedRefsToDisplay.length > 0;
 
-                    {member.feedback &&
-                      (() => {
-                        const parsed = parseRejectionDetails(member.feedback);
-                        const flaggedRefsToDisplay = Array.from(
-                          new Set([
-                            ...parsed.rejectedActivityRefs,
-                            ...(member.voteStatus === "Rejected"
-                              ? selectedPlan.rejectedActivityRefs || []
-                              : []),
-                          ]),
-                        );
-                        const isRejectedWithSpecific =
-                          member.voteStatus === "Rejected" &&
-                          flaggedRefsToDisplay.length > 0;
+                          return (
+                            <div
+                              className={`mt-2.5 p-3.5 rounded-xl border text-xs overflow-hidden break-words break-all [overflow-wrap:anywhere] ${
+                                member.voteStatus === "Rejected"
+                                  ? "bg-rose-50 border-rose-200 text-rose-950"
+                                  : "bg-emerald-50 border-emerald-200 text-emerald-950"
+                              }`}
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2 font-semibold mb-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  {member.voteStatus === "Rejected" ? (
+                                    <>
+                                      <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                                      <span className="text-rose-900">
+                                        Rejection Reason:
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                      <span className="text-emerald-900">
+                                        Deliberation Remarks:
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
 
-                        return (
-                          <div
-                            className={`mt-2.5 p-3.5 rounded-xl border text-xs overflow-hidden break-words break-all [overflow-wrap:anywhere] ${
-                              member.voteStatus === "Rejected"
-                                ? "bg-rose-50 border-rose-200 text-rose-950"
-                                : "bg-emerald-50 border-emerald-200 text-emerald-950"
-                            }`}
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-2 font-semibold mb-1.5">
-                              <div className="flex items-center gap-1.5">
-                                {member.voteStatus === "Rejected" ? (
-                                  <>
-                                    <AlertCircle className="h-3.5 w-3.5 text-rose-600 shrink-0" />
-                                    <span className="text-rose-900">
-                                      Rejection Reason:
-                                    </span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                                    <span className="text-emerald-900">
-                                      Deliberation Remarks:
-                                    </span>
-                                  </>
+                                {isRejectedWithSpecific && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wide bg-rose-200/80 text-rose-900 border border-rose-300">
+                                    Specific Activity Objection
+                                  </span>
                                 )}
                               </div>
 
-                              {isRejectedWithSpecific && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wide bg-rose-200/80 text-rose-900 border border-rose-300">
-                                  Specific Activity Objection
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Interactive Clickable Flagged Activity Badges: Clicking takes Director directly to that specific activity */}
-                            {flaggedRefsToDisplay.length > 0 && (
-                              <div className="my-2.5 p-3 rounded-xl bg-white/95 border border-rose-200 shadow-2xs space-y-2">
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <span className="text-[11px] font-semibold text-rose-950 flex items-center gap-1.5">
-                                    <AlertTriangle className="h-3.5 w-3.5 text-rose-600" />
-                                    <span>
-                                      Flagged Activities (Click to Open):
-                                    </span>
-                                  </span>
-                                  <span className="text-[10px] font-medium text-rose-700">
-                                    Open Activity Inspection
-                                  </span>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-2">
-                                  {flaggedRefsToDisplay.map((ref) => (
-                                    <button
-                                      key={ref}
-                                      type="button"
-                                      onClick={() => {
-                                        setActiveActivityRef(ref);
-                                        if (typeof window !== "undefined") {
-                                          window.history.pushState(
-                                            null,
-                                            "",
-                                            `/workspace/vote-progress?plan=${encodeURIComponent(selectedPlan.planNumber || selectedPlan.id)}&activity=${encodeURIComponent(ref)}`,
-                                          );
-                                        }
-                                      }}
-                                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-mono font-semibold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-2xs hover:shadow-xs transition-all cursor-pointer group"
-                                      title={`Click to open Director view for activity ${ref}`}
-                                    >
-                                      <span>{ref}</span>
-                                      <span className="h-3.5 w-px bg-rose-400/80" />
-                                      <span className="font-sans text-[11px] font-semibold text-rose-100 group-hover:text-white flex items-center gap-1">
-                                        Open
-                                        <ArrowRight className="h-3.5 w-3.5 text-rose-200 group-hover:translate-x-0.5 transition-transform" />
-                                      </span>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="pl-1 pt-1 break-words break-all [overflow-wrap:anywhere] min-w-0">
+                              {/* Interactive Clickable Flagged Activity Badges: Clicking takes Director directly to that specific activity */}
                               {flaggedRefsToDisplay.length > 0 && (
-                                <span className="text-[11px] font-semibold text-slate-700">
-                                  Member Notes:{" "}
-                                </span>
-                              )}
-                              <span className="font-medium italic leading-relaxed text-slate-800 break-words break-all [overflow-wrap:anywhere] block">
-                                &quot;{parsed.cleanRemarks || member.feedback}
-                                &quot;
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })()}
+                                <div className="my-2.5 p-3 rounded-xl bg-white/95 border border-rose-200 shadow-2xs space-y-2">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <span className="text-[11px] font-semibold text-rose-950 flex items-center gap-1.5">
+                                      <AlertTriangle className="h-3.5 w-3.5 text-rose-600" />
+                                      <span>
+                                        Flagged Activities (Click to Open):
+                                      </span>
+                                    </span>
+                                    <span className="text-[10px] font-medium text-rose-700">
+                                      Open Activity Inspection
+                                    </span>
+                                  </div>
 
-                    {member.votedAt && (
-                      <p className="text-[10px] text-slate-400 font-mono pt-1">
-                        Voted at: {member.votedAt}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {flaggedRefsToDisplay.map((ref) => (
+                                      <button
+                                        key={ref}
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveActivityRef(ref);
+                                          if (typeof window !== "undefined") {
+                                            window.history.pushState(
+                                              null,
+                                              "",
+                                              `/workspace/vote-progress?plan=${encodeURIComponent(selectedPlan.planNumber || selectedPlan.id)}&activity=${encodeURIComponent(ref)}`,
+                                            );
+                                          }
+                                        }}
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl font-mono font-semibold text-xs bg-rose-600 hover:bg-rose-700 text-white shadow-2xs hover:shadow-xs transition-all cursor-pointer group"
+                                        title={`Click to open Director view for activity ${ref}`}
+                                      >
+                                        <span>{ref}</span>
+                                        <span className="h-3.5 w-px bg-rose-400/80" />
+                                        <span className="font-sans text-[11px] font-semibold text-rose-100 group-hover:text-white flex items-center gap-1">
+                                          Open
+                                          <ArrowRight className="h-3.5 w-3.5 text-rose-200 group-hover:translate-x-0.5 transition-transform" />
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="pl-1 pt-1 break-words break-all [overflow-wrap:anywhere] min-w-0">
+                                {flaggedRefsToDisplay.length > 0 && (
+                                  <span className="text-[11px] font-semibold text-slate-700">
+                                    Member Notes:{" "}
+                                  </span>
+                                )}
+                                <span className="font-medium italic leading-relaxed text-slate-800 break-words break-all [overflow-wrap:anywhere] block">
+                                  &quot;{parsed.cleanRemarks || member.feedback}
+                                  &quot;
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                      {member.votedAt && (
+                        <p className="text-[10px] text-slate-400 font-mono pt-1">
+                          Voted at: {member.votedAt}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -2145,40 +2129,46 @@ export function CommitteeProgressView({
                         {/* Committee Members Voting Boxes */}
                         <td className="py-3 px-4 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            {item.memberVotes.map((member, idx) => {
-                              const boxNum = idx + 1;
-                              if (member.voteStatus === "Approved") {
+                            {item.memberVotes.length === 0 ? (
+                              <span className="text-[11px] text-slate-400">
+                                —
+                              </span>
+                            ) : (
+                              item.memberVotes.map((member, idx) => {
+                                const boxNum = idx + 1;
+                                if (member.voteStatus === "Approved") {
+                                  return (
+                                    <div
+                                      key={member.id}
+                                      title={`${member.name}: Approved`}
+                                      className="h-6 w-6 rounded-md bg-[#0A3C2F] text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
+                                    >
+                                      ✓
+                                    </div>
+                                  );
+                                }
+                                if (member.voteStatus === "Rejected") {
+                                  return (
+                                    <div
+                                      key={member.id}
+                                      title={`${member.name}: Rejected`}
+                                      className="h-6 w-6 rounded-md bg-rose-600 text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
+                                    >
+                                      ✕
+                                    </div>
+                                  );
+                                }
                                 return (
                                   <div
                                     key={member.id}
-                                    title={`${member.name}: Approved`}
-                                    className="h-6 w-6 rounded-md bg-[#0A3C2F] text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
+                                    title={`${member.name}: Pending Vote`}
+                                    className="h-6 w-6 rounded-md bg-slate-100 text-slate-500 border border-slate-200/80 flex items-center justify-center text-[11px] font-medium"
                                   >
-                                    ✓
+                                    {boxNum}
                                   </div>
                                 );
-                              }
-                              if (member.voteStatus === "Rejected") {
-                                return (
-                                  <div
-                                    key={member.id}
-                                    title={`${member.name}: Rejected`}
-                                    className="h-6 w-6 rounded-md bg-rose-600 text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
-                                  >
-                                    ✕
-                                  </div>
-                                );
-                              }
-                              return (
-                                <div
-                                  key={member.id}
-                                  title={`${member.name}: Pending Vote`}
-                                  className="h-6 w-6 rounded-md bg-slate-100 text-slate-500 border border-slate-200/80 flex items-center justify-center text-[11px] font-medium"
-                                >
-                                  {boxNum}
-                                </div>
-                              );
-                            })}
+                              })
+                            )}
                           </div>
                         </td>
 

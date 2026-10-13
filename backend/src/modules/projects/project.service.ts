@@ -8,7 +8,6 @@ import {
 import { prisma } from '../../config/database.js';
 import { logRevision } from '../../shared/audit/revision.service.js';
 import { createAuditLog } from '../../shared/audit/audit-logger.js';
-import { notifyOfficersOnEntityChange } from '../alerts/officer-notification.helper.js';
 import type { AuthenticatedUser } from '../../middleware/auth.js';
 
 export interface GetProjectsQueryOptions {
@@ -187,7 +186,7 @@ export const updateProjectService = async (
   data: Prisma.ProjectUpdateInput,
   userId: string,
 ) => {
-  const { project, userExists } = await prisma.$transaction(
+  const project = await prisma.$transaction(
     async (tx: Prisma.TransactionClient) => {
       const userExists = await tx.user.findUnique({ where: { id: userId } });
       if (!userExists) {
@@ -237,23 +236,9 @@ export const updateProjectService = async (
         console.warn('logRevision warning:', auditErr);
       }
 
-      return { project, userExists };
+      return project;
     },
   );
-
-  if (userExists?.authRole === UserRole.DIRECTOR) {
-    const directorName =
-      userExists.displayName || userExists.name || 'Director';
-    notifyOfficersOnEntityChange({
-      projectId: project.id,
-      actorUserId: userExists.id,
-      title: `Project Modified by Director: ${project.name}`,
-      message: `Director ${directorName} made changes to project "${project.name}" (${project.code}).`,
-      type: 'SYSTEM',
-      severity: 'INFO',
-      link: '/workspace/projects',
-    }).catch(() => {});
-  }
 
   return project;
 };

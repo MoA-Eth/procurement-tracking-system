@@ -96,29 +96,10 @@ export async function updateUser(
 ): Promise<{ message: string; data: ApiUser }> {
   try {
     const payload = { ...data };
-    if (payload.role === "MANAGEMENT") {
-      payload.role = "MANAGEMENT_TEAM";
-    }
-    let res: any;
-    try {
-      res = await apiClient.patch<any>(
-        `/users/${encodeURIComponent(id)}`,
-        payload,
-      );
-    } catch (err: any) {
-      if (
-        data.role === "MANAGEMENT" &&
-        err?.message?.includes('invalid input value for enum "UserRole"')
-      ) {
-        payload.role = "ManagementTeam";
-        res = await apiClient.patch<any>(
-          `/users/${encodeURIComponent(id)}`,
-          payload,
-        );
-      } else {
-        throw err;
-      }
-    }
+    const res = await apiClient.patch<any>(
+      `/users/${encodeURIComponent(id)}`,
+      payload,
+    );
     return res.data ? res : { message: "User updated successfully", data: res };
   } catch (err) {
     if (err instanceof ApiClientError) {

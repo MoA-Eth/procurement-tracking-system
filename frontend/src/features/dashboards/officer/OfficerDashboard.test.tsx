@@ -352,6 +352,61 @@ describe("Real Data Synchronization - Officer Dashboard & Alerts Center", () => 
     );
   });
 
+  it("extractLiveDelayedActivities ignores unapproved plans and on-track in-progress activities", () => {
+    const now = new Date("2026-10-13T00:00:00Z").getTime();
+    const mockPlans: any[] = [
+      // 1. Plan still with committee (unapproved), activity status PLANNED with past dates
+      {
+        id: "plan-unapproved",
+        status: "WITH_COMMITTEE",
+        project: { code: "PRJ-DRAFT" },
+        activities: [
+          {
+            id: "act-unapproved-plan",
+            reference: "ACT-IN-DRAFT-PLAN",
+            status: "PLANNED",
+            stages: [
+              {
+                id: "st-draft-1",
+                name: "Draft Stage",
+                status: "NOT_STARTED",
+                plannedStartDate: "2026-09-01T00:00:00Z",
+                plannedEndDate: "2026-09-15T00:00:00Z",
+              },
+            ],
+          },
+        ],
+      },
+      // 2. Approved plan, activity in progress, started in past, but deadline in future
+      {
+        id: "plan-approved",
+        status: "APPROVED",
+        project: { code: "PRJ-ACTIVE" },
+        activities: [
+          {
+            id: "act-on-track",
+            reference: "ACT-ON-TRACK-FUTURE-DEADLINE",
+            status: "IN_PROGRESS",
+            stages: [
+              {
+                id: "st-on-track-1",
+                name: "Tender Evaluation",
+                status: "IN_PROGRESS",
+                plannedStartDate: "2026-10-01T00:00:00Z",
+                currentTargetStartDate: "2026-10-01T00:00:00Z",
+                plannedEndDate: "2026-10-30T00:00:00Z",
+                currentTargetEndDate: "2026-10-30T00:00:00Z",
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const liveDelayed = extractLiveDelayedActivities(mockPlans, now, [], []);
+    expect(liveDelayed).toHaveLength(0);
+  });
+
   it("calculateOverviewStatusItems accurately tallies draft, submitted, returned, and approved plans", () => {
     const mockPlans: any[] = [
       { id: "p1", status: "DRAFT" },
@@ -433,5 +488,50 @@ describe("Real Data Synchronization - Officer Dashboard & Alerts Center", () => 
       "Contract CON-MOA-2026-001 Signed",
     );
     expect(contractAlert?.href).toBe("/workspace/contracts");
+  });
+
+  it("splits colon-delimited notifications to avoid duplicate statusLine and referenceLine", () => {
+    const mockNotifications: any[] = [
+      {
+        id: "notif-dir-plan",
+        title:
+          "Plan Modified by Director: Climate Resilient Wheat Value Chain Development Project (CREW)",
+        message:
+          'Director John Doe made changes to procurement plan "Climate Resilient Wheat Value Chain Development Project (CREW)".',
+        type: "plan",
+        priority: "normal",
+        timestamp: "Just now",
+        link: "/workspace/projects",
+      },
+      {
+        id: "notif-dir-act",
+        title: "Activity Modified by Director: ET-MOA-44390",
+        message:
+          'Director John Doe made changes to activity "ET-MOA-44390" in plan "CREW".',
+        type: "activity",
+        priority: "normal",
+        timestamp: "Just now",
+        link: "/workspace/plan-management",
+      },
+    ];
+
+    const alerts = generateDynamicAlerts(
+      [],
+      [],
+      new Date("2026-09-04T12:00:00Z").getTime(),
+      mockNotifications,
+    );
+
+    const planAlert = alerts.find((a) => a.id === "notif-notif-dir-plan");
+    expect(planAlert?.statusLine).toBe("Plan Modified by Director");
+    expect(planAlert?.referenceLine).toBe(
+      "Climate Resilient Wheat Value Chain Development Project (CREW)",
+    );
+    expect(planAlert?.statusLine).not.toBe(planAlert?.referenceLine);
+
+    const actAlert = alerts.find((a) => a.id === "notif-notif-dir-act");
+    expect(actAlert?.statusLine).toBe("Activity Modified by Director");
+    expect(actAlert?.referenceLine).toBe("ET-MOA-44390");
+    expect(actAlert?.statusLine).not.toBe(actAlert?.referenceLine);
   });
 });

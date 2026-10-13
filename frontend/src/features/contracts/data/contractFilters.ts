@@ -14,7 +14,10 @@ export interface OfficerContractFilterValues {
 }
 
 export function contractFiscalYear(contract: OfficerContract) {
-  const match = contract.signingDate.gregorian.match(/\b(\d{4})\b/);
+  const match =
+    contract.signingDate?.gregorian?.match(/\b(\d{4})\b/) ||
+    contract.details?.awardDate?.gregorian?.match(/\b(\d{4})\b/) ||
+    contract.completionDate?.gregorian?.match(/\b(\d{4})\b/);
   return match?.[1] ?? "";
 }
 
@@ -30,10 +33,23 @@ export function filterOfficerContracts(
       contract.details?.activityReference,
       contract.procurementActivity,
       contract.supplier,
+      contract.project,
     ]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
+
+    const matchesStatus = () => {
+      if (filters.status === "all") return true;
+      if (filters.status === "Active") {
+        return (
+          contract.status === "Active" ||
+          contract.status === "Active / Under Implementation" ||
+          contract.status === "Signed"
+        );
+      }
+      return contract.status === filters.status;
+    };
 
     return (
       (!normalizedSearch || searchableText.includes(normalizedSearch)) &&
@@ -43,7 +59,7 @@ export function filterOfficerContracts(
         contract.details?.organizationRegion === filters.organization) &&
       (filters.project === "all" || contract.project === filters.project) &&
       (filters.currency === "all" || contract.currency === filters.currency) &&
-      (filters.status === "all" || contract.status === filters.status)
+      matchesStatus()
     );
   });
 }

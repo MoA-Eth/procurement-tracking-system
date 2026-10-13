@@ -25,7 +25,7 @@ async function sendCommitteeReminders(): Promise<void> {
 
   const committeeMembers = await prisma.user.findMany({
     where: {
-      authRole: { in: [UserRole.ENDORSING_COMMITTEE, UserRole.MANAGEMENT] },
+      authRole: UserRole.ENDORSING_COMMITTEE,
       isActive: true,
     },
     select: { id: true, name: true, displayName: true, email: true },

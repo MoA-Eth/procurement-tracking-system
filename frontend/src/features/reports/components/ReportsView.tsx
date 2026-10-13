@@ -92,6 +92,25 @@ function getEthiopianMonthName(date: Date): string {
   return `${ethName} (${gMonthName} ${gYear})`;
 }
 
+function formatActivityFundings(act: any, fallback: string = ""): string {
+  if (Array.isArray(act?.fundings) && act.fundings.length > 0) {
+    const valid = act.fundings.filter(
+      (f: any) => f && (f.fundingSource || f.label),
+    );
+    if (valid.length > 0) {
+      return valid
+        .map((f: any) => {
+          const src = f.fundingSource || f.label || "Financing";
+          const pct = f.allocationPct != null ? ` (${f.allocationPct}%)` : "";
+          return `${src}${pct}`;
+        })
+        .join(", ");
+    }
+  }
+  if (act?.fundingSource) return String(act.fundingSource);
+  return fallback;
+}
+
 export function ReportsView() {
   const [activeReport, setActiveReport] = useState<ReportType>("annual-plan");
   const [backendPlans, setBackendPlans] = useState<BackendPlan[]>([]);
@@ -137,21 +156,53 @@ export function ReportsView() {
     return () => window.removeEventListener("pts:sidebar-reset", handleReset);
   }, []);
 
-  // Switch report type & restore last used filters
+  // Switch report type & restore last used filters while applying the calendar date filter across all report tabs
   const handleSelectReport = (newReport: ReportType) => {
     setActiveReport(newReport);
     const saved = savedFiltersPerReport[newReport] || { ...DEFAULT_FILTERS };
-    setFilters(saved);
-    setSavedFiltersPerReport((prev) => ({ ...prev, [newReport]: saved }));
+    // Preserve and carry over the active calendar date filter to the newly selected report tab
+    const nextFilters: ReportFilterState = {
+      ...saved,
+      fromDate: filters.fromDate,
+      toDate: filters.toDate,
+      fromEthiopianDate: filters.fromEthiopianDate,
+      toEthiopianDate: filters.toEthiopianDate,
+    };
+    setFilters(nextFilters);
+    setSavedFiltersPerReport((prev) => ({ ...prev, [newReport]: nextFilters }));
   };
 
   const updateFilter = <K extends keyof ReportFilterState>(
     key: K,
     value: ReportFilterState[K],
   ) => {
+    const isDateKey =
+      key === "fromDate" ||
+      key === "toDate" ||
+      key === "fromEthiopianDate" ||
+      key === "toEthiopianDate";
+
     setFilters((prev) => {
       const updated = { ...prev, [key]: value };
-      setSavedFiltersPerReport((s) => ({ ...s, [activeReport]: updated }));
+      setSavedFiltersPerReport((s) => {
+        if (isDateKey) {
+          const nextSaved: Partial<Record<ReportType, ReportFilterState>> = {};
+          for (const rep in s) {
+            nextSaved[rep as ReportType] = {
+              ...(s[rep as ReportType] || prev),
+              [key]: value,
+            };
+          }
+          return {
+            ...nextSaved,
+            [activeReport]: { ...(s[activeReport] || prev), [key]: value },
+          };
+        }
+        return {
+          ...s,
+          [activeReport]: { ...(s[activeReport] || prev), [key]: value },
+        };
+      });
       return updated;
     });
   };
@@ -168,10 +219,22 @@ export function ReportsView() {
 
   const handleResetFilters = () => {
     setFilters({ ...DEFAULT_FILTERS });
-    setSavedFiltersPerReport((prev) => ({
-      ...prev,
-      [activeReport]: { ...DEFAULT_FILTERS },
-    }));
+    setSavedFiltersPerReport((prev) => {
+      const nextSaved: Partial<Record<ReportType, ReportFilterState>> = {};
+      for (const rep in prev) {
+        nextSaved[rep as ReportType] = {
+          ...(prev[rep as ReportType] || DEFAULT_FILTERS),
+          fromDate: "",
+          toDate: "",
+          fromEthiopianDate: "",
+          toEthiopianDate: "",
+        };
+      }
+      return {
+        ...nextSaved,
+        [activeReport]: { ...DEFAULT_FILTERS },
+      };
+    });
     triggerApplyFeedback();
   };
 
@@ -403,6 +466,60 @@ export function ReportsView() {
     );
   };
 
+  // Date interval matching helper for spanning entities (activities, contracts, plans)
+  function isSpanningIntervalMatch(
+    startDate: string | undefined | null,
+    endDate: string | undefined | null,
+    fromDate?: string,
+    toDate?: string,
+  ): boolean {
+    if (!fromDate && !toDate) return true;
+    const s = startDate ? String(startDate).slice(0, 10) : "";
+    const e = endDate ? String(endDate).slice(0, 10) : "";
+
+    // If an entity has no dates and a date interval is applied, it does not match
+    if (!s && !e) return false;
+
+    // If we have both filter bounds: [fromDate, toDate]
+    if (fromDate && toDate) {
+      if (s && e) {
+        return s <= toDate && e >= fromDate;
+      }
+      const single = s || e;
+      return single >= fromDate && single <= toDate;
+    }
+
+    // If only fromDate is set: span must not have ended before fromDate
+    if (fromDate) {
+      if (e) return e >= fromDate;
+      if (s) return s >= fromDate;
+      return false;
+    }
+
+    // If only toDate is set: span must have started on or before toDate
+    if (toDate) {
+      if (s) return s <= toDate;
+      if (e) return e <= toDate;
+      return false;
+    }
+
+    return true;
+  }
+
+  // Date interval matching helper for single-date events (milestones, submissions, payments, awards)
+  function isSingleDateIntervalMatch(
+    eventDate: string | undefined | null,
+    fromDate?: string,
+    toDate?: string,
+  ): boolean {
+    if (!fromDate && !toDate) return true;
+    if (!eventDate || eventDate === "—" || eventDate === "-") return false;
+    const d = String(eventDate).slice(0, 10);
+    if (fromDate && d < fromDate) return false;
+    if (toDate && d > toDate) return false;
+    return true;
+  }
+
   // Active Filter Count Calculation
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -415,6 +532,7 @@ export function ReportsView() {
 
     if (isProjectActive) count++;
     if (isSectorActive) count++;
+    if (Boolean(filters.fromDate) || Boolean(filters.toDate)) count++;
 
     if (activeReport === "annual-plan") {
       if (filters.efy !== "ALL") count++;
@@ -424,8 +542,6 @@ export function ReportsView() {
       if (filters.planStatus !== "ALL") count++;
     } else if (activeReport === "plan-vs-actual") {
       if (filters.efy !== "ALL") count++;
-      if (filters.fromDate !== "2024-07-08" || filters.toDate !== "2027-07-07")
-        count++;
     } else if (activeReport === "procurement-step") {
       if (filters.marketApproach !== "ALL") count++;
       if (filters.reviewType !== "ALL") count++;
@@ -489,40 +605,48 @@ export function ReportsView() {
         for (const a of p.activities || []) {
           rows.push({
             id: a.id,
-            projectCode: p.project?.code || "MOA",
-            planName: p.title || "Procurement Plan",
+            projectCode: p.project?.code || p.project?.name || "—",
+            planName: p.title || "—",
             refNo: a.reference || a.id,
-            description: a.description || "",
-            category: (p as any).category || a.category || "Goods",
+            description: a.description || "—",
+            category:
+              (p as any).procurementCategory ||
+              (p as any).category ||
+              a.category ||
+              "—",
             method:
-              a.procurementMethod?.label ||
-              a.procurementMethod?.code ||
-              "RFB - National",
+              a.procurementMethod?.label || a.procurementMethod?.code || "—",
             estimatedAmount: Number(a.estimatedBudget || 0),
             currency: a.currency || "ETB",
-            fundingSource:
-              a.fundings?.[0]?.fundingSource ||
+            fundingSource: formatActivityFundings(
+              a,
               backendProjects.find(
                 (bp) => bp.id === p.projectId || bp.id === p.project?.id,
               )?.fundingSource?.label ||
-              (p.project as any)?.fundingSource?.label ||
-              "African Development Bank (AfDB)",
+                (p.project as any)?.fundingSource?.label ||
+                "—",
+            ),
             plannedStartDate:
               a.stages?.[0]?.plannedStartDate?.slice(0, 10) ||
               (a as any).periodStart?.slice(0, 10) ||
-              "2025-08-01",
+              p.periodStart?.slice(0, 10) ||
+              "—",
             plannedCompletionDate:
+              a.stages?.[a.stages.length - 1]?.plannedEndDate?.slice(0, 10) ||
               a.stages?.[a.stages.length - 1]?.plannedStartDate?.slice(0, 10) ||
               (a as any).periodEnd?.slice(0, 10) ||
-              "2026-07-07",
-            officer:
-              p.creator?.displayName || p.creator?.name || "Assigned Officer",
+              p.periodEnd?.slice(0, 10) ||
+              "—",
+            officer: p.creator?.displayName || p.creator?.name || "—",
             status:
               p.status === "APPROVED"
                 ? "Approved"
                 : p.status === "SUBMITTED"
                   ? "Submitted"
-                  : "Draft",
+                  : p.status
+                    ? p.status.charAt(0).toUpperCase() +
+                      p.status.slice(1).toLowerCase().replace(/_/g, " ")
+                    : "Draft",
           });
         }
       }
@@ -643,6 +767,18 @@ export function ReportsView() {
         return matchingPlan?.status === filters.planStatus;
       });
     }
+
+    if (filters.fromDate || filters.toDate) {
+      rows = rows.filter((r) => {
+        const matchingPlan = backendPlans.find((p) =>
+          p.activities?.some((a) => a.id === r.id),
+        );
+        const s = r.plannedStartDate || matchingPlan?.periodStart;
+        const e = r.plannedCompletionDate || matchingPlan?.periodEnd;
+        return isSpanningIntervalMatch(s, e, filters.fromDate, filters.toDate);
+      });
+    }
+
     return rows;
   }, [backendPlans, backendProjects, fundingSources, filters]);
 
@@ -678,36 +814,82 @@ export function ReportsView() {
           rows.push({
             id: a.id,
             refNo: a.reference || a.id,
-            description: a.description || "",
-            project: p.project?.code || p.project?.name || "MoA",
-            officer:
-              p.creator?.displayName || p.creator?.name || "Assigned Officer",
-            category: (p as any).category || a.category || "Goods",
+            description: a.description || "—",
+            project: p.project?.code || p.project?.name || "—",
+            officer: p.creator?.displayName || p.creator?.name || "—",
+            category:
+              (p as any).procurementCategory ||
+              (p as any).category ||
+              a.category ||
+              "—",
             method:
-              a.procurementMethod?.label || a.procurementMethod?.code || "RFB",
+              a.procurementMethod?.label || a.procurementMethod?.code || "—",
             stage:
               stages.find((s: any) => s.status === "IN_PROGRESS")?.stageType
                 ?.label ||
               sig?.stageType?.label ||
-              "Contract Signature",
+              stages[0]?.stageType?.label ||
+              "—",
             baselineDate: adv?.plannedStartDate
               ? new Date(adv.plannedStartDate).toISOString().slice(0, 10)
-              : "2025-08-01",
+              : "—",
             revisedDate: adv?.currentTargetStartDate
               ? new Date(adv.currentTargetStartDate).toISOString().slice(0, 10)
-              : "2025-08-01",
+              : adv?.plannedStartDate
+                ? new Date(adv.plannedStartDate).toISOString().slice(0, 10)
+                : "—",
             actualDate: adv?.actualStartDate
               ? new Date(adv.actualStartDate).toISOString().slice(0, 10)
               : "—",
-            varianceDays: "0",
-            delayDays: "0",
+            varianceDays:
+              adv?.actualStartDate && adv?.plannedStartDate
+                ? String(
+                    Math.round(
+                      (new Date(adv.actualStartDate).getTime() -
+                        new Date(adv.plannedStartDate).getTime()) /
+                        (1000 * 60 * 60 * 24),
+                    ),
+                  )
+                : "0",
+            delayDays: (() => {
+              const targetEnd =
+                adv?.currentTargetEndDate || adv?.plannedEndDate;
+              if (!targetEnd || currentTime === null) return "0";
+              const targetEndMs = new Date(targetEnd).getTime();
+              if (isNaN(targetEndMs)) return "0";
+              if (adv.actualEndDate) {
+                const actEndMs = new Date(adv.actualEndDate).getTime();
+                if (!isNaN(actEndMs) && actEndMs > targetEndMs) {
+                  return String(
+                    Math.floor(
+                      (actEndMs - targetEndMs) / (1000 * 60 * 60 * 24),
+                    ),
+                  );
+                }
+                return "0";
+              }
+              if (currentTime > targetEndMs) {
+                return String(
+                  Math.max(
+                    1,
+                    Math.floor(
+                      (currentTime - targetEndMs) / (1000 * 60 * 60 * 24),
+                    ),
+                  ),
+                );
+              }
+              return "0";
+            })(),
             stageStatus:
               a.status === "COMPLETED"
                 ? "Signed"
                 : a.status === "IN_PROGRESS"
                   ? "In Progress"
                   : "Not Started",
-            remarks: (a as any).remarks || "On track",
+            remarks:
+              (a as any).remarks ||
+              stages.find((s: any) => s.remarks)?.remarks ||
+              "—",
             // Legacy milestone properties for complete backwards compatibility
             plannedAdvertisingDate: adv?.plannedStartDate
               ? new Date(adv.plannedStartDate).toISOString().slice(0, 10)
@@ -774,8 +956,35 @@ export function ReportsView() {
       return true;
     });
 
+    if (filters.fromDate || filters.toDate) {
+      rows = rows.filter((r) => {
+        const matchingPlan = backendPlans.find((p) =>
+          p.activities?.some((a) => a.id === r.id),
+        );
+        const s =
+          r.baselineDate && r.baselineDate !== "—"
+            ? r.baselineDate
+            : r.actualDate && r.actualDate !== "—"
+              ? r.actualDate
+              : (r as any).plannedAdvertisingDate || matchingPlan?.periodStart;
+        const e =
+          (r as any).actualSignatureDate &&
+          (r as any).actualSignatureDate !== "—"
+            ? (r as any).actualSignatureDate
+            : (r as any).plannedSignatureDate &&
+                (r as any).plannedSignatureDate !== "—"
+              ? (r as any).plannedSignatureDate
+              : r.revisedDate && r.revisedDate !== "—"
+                ? r.revisedDate
+                : r.actualDate !== "—"
+                  ? r.actualDate
+                  : matchingPlan?.periodEnd;
+        return isSpanningIntervalMatch(s, e, filters.fromDate, filters.toDate);
+      });
+    }
+
     return rows;
-  }, [backendPlans, backendProjects, filters]);
+  }, [backendPlans, backendProjects, currentTime, filters]);
 
   // ─── 3. Procurement STEP Report Rows ──────────────────────────────────────
   const stepReportRows = useMemo(() => {
@@ -792,21 +1001,26 @@ export function ReportsView() {
           rows.push({
             id: a.id,
             refNo: a.reference || a.id,
-            description: a.description || "",
-            project: p.project?.code || p.project?.name || "MoA",
-            category: (p as any).category || a.category || "Goods",
+            description: a.description || "—",
+            project: p.project?.code || p.project?.name || "—",
+            category:
+              (p as any).procurementCategory ||
+              (p as any).category ||
+              a.category ||
+              "—",
             method:
-              a.procurementMethod?.label ||
-              a.procurementMethod?.code ||
-              "RFB - National",
-            reviewType: (a as any).reviewType || "Post Review",
-            marketApproach: (a as any).marketApproach || "Open - National",
+              a.procurementMethod?.label || a.procurementMethod?.code || "—",
+            reviewType:
+              (a as any).reviewType ||
+              (a as any).procurementMethod?.reviewType ||
+              "—",
+            marketApproach: (a as any).marketApproach || "—",
             estimatedAmount: a.estimatedBudget || 0,
             currency: a.currency || "ETB",
             stage:
               currentStage?.stageType?.label ||
               (currentStage as any)?.name ||
-              "Preparation",
+              "—",
             plannedDate: currentStage?.plannedStartDate?.slice(0, 10) || "—",
             revisedDate:
               currentStage?.currentTargetStartDate?.slice(0, 10) || "—",
@@ -816,8 +1030,47 @@ export function ReportsView() {
                 ? "Completed"
                 : currentStage?.status === "DELAYED"
                   ? "Delayed"
-                  : "In Progress",
-            delayDays: currentStage?.status === "DELAYED" ? "14" : "0",
+                  : currentStage?.status === "IN_PROGRESS"
+                    ? "In Progress"
+                    : "Not Started",
+            delayDays: (() => {
+              const targetEnd =
+                currentStage?.currentTargetEndDate ||
+                currentStage?.plannedEndDate;
+              if (!targetEnd || currentTime === null) return "0";
+              const targetEndMs = new Date(targetEnd).getTime();
+              if (isNaN(targetEndMs)) return "0";
+              if (
+                currentStage?.status === "COMPLETED" &&
+                currentStage?.actualEndDate
+              ) {
+                const actEndMs = new Date(currentStage.actualEndDate).getTime();
+                if (!isNaN(actEndMs) && actEndMs > targetEndMs) {
+                  return String(
+                    Math.floor(
+                      (actEndMs - targetEndMs) / (1000 * 60 * 60 * 24),
+                    ),
+                  );
+                }
+                return "0";
+              }
+              if (
+                currentStage?.status === "DELAYED" ||
+                (currentStage?.status !== "COMPLETED" &&
+                  currentStage?.status !== "NOT_STARTED" &&
+                  currentTime > targetEndMs)
+              ) {
+                return String(
+                  Math.max(
+                    1,
+                    Math.floor(
+                      (currentTime - targetEndMs) / (1000 * 60 * 60 * 24),
+                    ),
+                  ),
+                );
+              }
+              return "0";
+            })(),
           });
         }
       }
@@ -851,39 +1104,97 @@ export function ReportsView() {
       rows = rows.filter((r) => r.reviewType.toLowerCase().includes(revNorm));
     }
 
+    if (filters.fromDate || filters.toDate) {
+      rows = rows.filter((r) => {
+        const matchingPlan = backendPlans.find((p) =>
+          p.activities?.some((a) => a.id === r.id),
+        );
+        const effectiveEventDate =
+          r.actualDate !== "—"
+            ? r.actualDate
+            : r.revisedDate !== "—"
+              ? r.revisedDate
+              : r.plannedDate !== "—"
+                ? r.plannedDate
+                : matchingPlan?.periodStart;
+        return isSingleDateIntervalMatch(
+          effectiveEventDate,
+          filters.fromDate,
+          filters.toDate,
+        );
+      });
+    }
+
     return rows;
-  }, [backendPlans, backendProjects, filters]);
+  }, [backendPlans, backendProjects, currentTime, filters]);
 
   // ─── 4. Delayed Procurement Rows ──────────────────────────────────────────
   const delayedProcurementRows = useMemo(() => {
     let rows: DelayedProcurementRow[] = [];
     if (backendPlans.length > 0) {
       for (const p of backendPlans) {
+        // Plans in draft / submitted / review stage haven't started execution
+        const isPlanApproved =
+          !p.status ||
+          p.status === "APPROVED" ||
+          p.status === "MANAGEMENT_APPROVED" ||
+          p.status === "UPDATE_REQUESTED";
+
         for (const a of p.activities || []) {
+          const isActActive =
+            a.status === "IN_PROGRESS" ||
+            a.status === "In Progress" ||
+            a.status === "DELAYED" ||
+            a.status === "Delayed" ||
+            (a as any).performanceStatus === "DELAYED";
+
+          if (!isPlanApproved && !isActActive) {
+            continue;
+          }
+
           const stages = a.stages || [];
           for (const s of stages) {
-            const isOverdue =
-              s.currentTargetStartDate &&
-              currentTime !== null &&
-              new Date(s.currentTargetStartDate).getTime() < currentTime &&
-              s.status !== "COMPLETED" &&
-              !s.isNotApplicable;
+            if (s.isNotApplicable || (s as any).notApplicable) continue;
 
-            if (s.status === "DELAYED" || isOverdue) {
-              const target = s.currentTargetStartDate
-                ? new Date(s.currentTargetStartDate).toISOString().slice(0, 10)
-                : "2026-08-01";
-              const delayDays =
-                s.currentTargetStartDate && currentTime !== null
-                  ? Math.max(
-                      1,
-                      Math.floor(
-                        (currentTime -
-                          new Date(s.currentTargetStartDate).getTime()) /
-                          (1000 * 60 * 60 * 24),
-                      ),
-                    )
-                  : 14;
+            const targetEnd = s.currentTargetEndDate || s.plannedEndDate;
+            const targetEndMs = targetEnd ? new Date(targetEnd).getTime() : NaN;
+            const isCompleted = s.status === "COMPLETED";
+            const isNotStarted =
+              s.status === "NOT_STARTED" ||
+              s.status === "Not Started" ||
+              s.status === "Pending";
+
+            let delayDays = 0;
+            if (isCompleted && s.actualEndDate && !isNaN(targetEndMs)) {
+              const actEndMs = new Date(s.actualEndDate).getTime();
+              if (!isNaN(actEndMs) && actEndMs > targetEndMs) {
+                delayDays = Math.max(
+                  1,
+                  Math.floor((actEndMs - targetEndMs) / (1000 * 60 * 60 * 24)),
+                );
+              }
+            } else if (
+              !isCompleted &&
+              !isNotStarted &&
+              !isNaN(targetEndMs) &&
+              currentTime !== null &&
+              currentTime > targetEndMs
+            ) {
+              delayDays = Math.max(
+                1,
+                Math.floor((currentTime - targetEndMs) / (1000 * 60 * 60 * 24)),
+              );
+            } else if (typeof (s as any).delayDays === "number") {
+              delayDays = Math.max(0, (s as any).delayDays);
+            }
+
+            const isDelayed =
+              s.status === "DELAYED" || (delayDays > 0 && !isNotStarted);
+
+            if (isDelayed && (delayDays > 0 || s.status === "DELAYED")) {
+              const target = targetEnd
+                ? new Date(targetEnd).toISOString().slice(0, 10)
+                : "—";
               const latestRev = (s.revisions || [])[
                 (s.revisions || []).length - 1
               ];
@@ -891,27 +1202,26 @@ export function ReportsView() {
               rows.push({
                 id: `${a.id}-${s.id}`,
                 refNo: a.reference || a.id,
-                description: a.description || "",
-                project: p.project?.code || p.project?.name || "MoA",
-                category: a.category || "Goods",
+                description: a.description || "—",
+                project: p.project?.code || p.project?.name || "—",
+                category: a.category || (p as any).procurementCategory || "—",
                 method:
                   a.procurementMethod?.label ||
                   a.procurementMethod?.code ||
-                  "RFB",
-                officer:
-                  p.creator?.displayName ||
-                  p.creator?.name ||
-                  "Assigned Officer",
-                delayedStage:
-                  s.stageType?.label || (s as any).name || "Overdue Stage",
+                  "—",
+                officer: p.creator?.displayName || p.creator?.name || "—",
+                delayedStage: s.stageType?.label || (s as any).name || "—",
                 effectiveTargetDate: target,
                 delayDays,
-                fundingSource: a.fundings?.[0]?.fundingSource || "AfDB",
-                status: "Delayed",
-                remarks:
-                  latestRev?.reason ||
-                  s.remarks ||
-                  "Delay in procurement step execution",
+                fundingSource: formatActivityFundings(
+                  a,
+                  backendProjects.find(
+                    (bp) => bp.id === p.projectId || bp.id === p.project?.id,
+                  )?.fundingSource?.label || "—",
+                ),
+                status:
+                  s.status === "COMPLETED" ? "Completed (Delayed)" : "Delayed",
+                remarks: latestRev?.reason || s.remarks || "—",
               });
             }
           }
@@ -960,6 +1270,16 @@ export function ReportsView() {
       });
     }
 
+    if (filters.fromDate || filters.toDate) {
+      rows = rows.filter((r) =>
+        isSingleDateIntervalMatch(
+          r.effectiveTargetDate,
+          filters.fromDate,
+          filters.toDate,
+        ),
+      );
+    }
+
     return rows;
   }, [backendPlans, backendProjects, currentTime, filters, officers]);
 
@@ -979,6 +1299,20 @@ export function ReportsView() {
             p.periodStart ||
             a.stages?.[0]?.plannedStartDate ||
             (a as any).createdAt;
+          const dateEnd =
+            (a as any).periodEnd ||
+            p.periodEnd ||
+            a.stages?.[a.stages.length - 1]?.plannedStartDate;
+          if (
+            !isSpanningIntervalMatch(
+              dateStr,
+              dateEnd,
+              filters.fromDate,
+              filters.toDate,
+            )
+          ) {
+            continue;
+          }
           const d = dateStr ? new Date(dateStr) : new Date();
           const validDate = !isNaN(d.getTime()) ? d : new Date();
           const monthName = getEthiopianMonthName(validDate);
@@ -996,13 +1330,16 @@ export function ReportsView() {
             id: a.id,
             reportingMonth: monthName,
             refNo: a.reference || a.id,
-            description: a.description || "Package details",
-            project: p.project?.code || p.project?.name || "MoA",
-            category: a.category || (p as any).category || "Goods",
+            description: a.description || "—",
+            project: p.project?.code || p.project?.name || "—",
+            category:
+              (p as any).procurementCategory ||
+              (p as any).category ||
+              a.category ||
+              "—",
             method:
-              a.procurementMethod?.label || a.procurementMethod?.code || "RFB",
-            officer:
-              p.creator?.displayName || p.creator?.name || "Assigned Officer",
+              a.procurementMethod?.label || a.procurementMethod?.code || "—",
+            officer: p.creator?.displayName || p.creator?.name || "—",
             status:
               a.status === "COMPLETED"
                 ? "Completed"
@@ -1012,13 +1349,15 @@ export function ReportsView() {
             achievement:
               completedStages.length > 0
                 ? `${completedStages[completedStages.length - 1]?.stageType?.label || "Stage"} finalized`
-                : "Activity initiated",
+                : a.status === "COMPLETED"
+                  ? "Completed"
+                  : "—",
             value: `ETB ${Number(a.estimatedBudget || 0).toLocaleString()}`,
             delay: isDelayed ? "Delayed" : "On Track",
             nextActivity:
               inProgressStage?.stageType?.label ||
               stages[completedStages.length]?.stageType?.label ||
-              "Final sign-off",
+              "—",
           });
         }
       }
@@ -1053,18 +1392,39 @@ export function ReportsView() {
             (a as any).periodStart ||
             p.periodStart ||
             a.stages?.[0]?.plannedStartDate;
+          const dateEnd =
+            (a as any).periodEnd ||
+            p.periodEnd ||
+            a.stages?.[a.stages?.length - 1]?.plannedStartDate;
+          if (
+            !isSpanningIntervalMatch(
+              dateStr,
+              dateEnd,
+              filters.fromDate,
+              filters.toDate,
+            )
+          ) {
+            continue;
+          }
           const d = dateStr ? new Date(dateStr) : new Date();
           const validDate = !isNaN(d.getTime()) ? d : new Date();
           const monthName = getEthiopianMonthName(validDate);
           const method =
-            a.procurementMethod?.label || a.procurementMethod?.code || "RFB";
+            a.procurementMethod?.label || a.procurementMethod?.code || "—";
+          const fundingType =
+            (Array.isArray(a.fundings) && a.fundings[0]?.fundingSource) ||
+            backendProjects.find(
+              (bp) => bp.id === p.projectId || bp.id === p.project?.id,
+            )?.fundingSource?.label ||
+            (p.project as any)?.fundingType ||
+            "—";
 
-          const key = `${monthName}-${cat}`;
+          const key = `${monthName}-${cat}-${fundingType}`;
           const current = monthMap.get(key) || {
             monthYear: monthName,
             category: cat,
             method,
-            fundingType: "Loan",
+            fundingType: fundingType as any,
             packageCount: 0,
             totalAmountETB: 0,
           };
@@ -1117,10 +1477,39 @@ export function ReportsView() {
       if (!isSectorMatch(sec)) return;
 
       p.activities?.forEach((a) => {
+        const actStart =
+          (a as any).periodStart ||
+          p.periodStart ||
+          a.stages?.[0]?.plannedStartDate;
+        const actEnd =
+          (a as any).periodEnd ||
+          p.periodEnd ||
+          a.stages?.[a.stages.length - 1]?.plannedStartDate;
+        if (
+          !isSpanningIntervalMatch(
+            actStart,
+            actEnd,
+            filters.fromDate,
+            filters.toDate,
+          )
+        ) {
+          return;
+        }
+
         const method =
-          a.procurementMethod?.label || a.procurementMethod?.code || "RFB";
-        const category = a.category || (p as any).category || "Goods";
-        const fundingType = "AfDB Loan";
+          a.procurementMethod?.label || a.procurementMethod?.code || "—";
+        const category =
+          (p as any).procurementCategory ||
+          (p as any).category ||
+          a.category ||
+          "—";
+        const fundingType =
+          (Array.isArray(a.fundings) && a.fundings[0]?.fundingSource) ||
+          backendProjects.find(
+            (bp) => bp.id === p.projectId || bp.id === p.project?.id,
+          )?.fundingSource?.label ||
+          (p.project as any)?.fundingSource?.label ||
+          "—";
         const key = `${method}__${category}__${fundingType}`;
 
         const curr = groupMap.get(key) || {
@@ -1162,15 +1551,40 @@ export function ReportsView() {
         const matchedContract = backendContracts.find(
           (c) => c.activityId === a.id || c.activity?.reference === a.reference,
         );
+        const actStart =
+          matchedContract?.startDate ||
+          (a as any).periodStart ||
+          p.periodStart ||
+          a.stages?.[0]?.plannedStartDate;
+        const actEnd =
+          matchedContract?.actualEndDate ||
+          matchedContract?.plannedEndDate ||
+          (a as any).periodEnd ||
+          p.periodEnd ||
+          a.stages?.[a.stages.length - 1]?.plannedStartDate;
+        if (
+          !isSpanningIntervalMatch(
+            actStart ? String(actStart) : null,
+            actEnd ? String(actEnd) : null,
+            filters.fromDate,
+            filters.toDate,
+          )
+        ) {
+          return;
+        }
 
         rows.push({
           id: a.id,
           rowNo: rowCount++,
-          description: a.description || "Package description",
+          description: a.description || "—",
           method:
-            a.procurementMethod?.label || a.procurementMethod?.code || "RFB",
-          winnerSupplier:
-            matchedContract?.supplier?.name || "Pending Selection",
+            a.procurementMethod?.label || a.procurementMethod?.code || "—",
+          category:
+            (p as any).procurementCategory ||
+            (p as any).category ||
+            a.category ||
+            "—",
+          winnerSupplier: matchedContract?.supplier?.name || "—",
           awardedAmount: Number(
             matchedContract?.contractAmountWithVat ||
               matchedContract?.totalValue ||
@@ -1178,20 +1592,35 @@ export function ReportsView() {
               0,
           ),
           currency: a.currency || "ETB",
-          budgetType: (matchedContract as any)?.budgetType || "Capital",
-          fundingSource: a.fundings?.[0]?.fundingSource || "AfDB",
-          poPvNumber: (matchedContract as any)?.purchaseOrderNo || "PO-001",
-          receiptStatus:
-            matchedContract?.status === "COMPLETED"
+          budgetType:
+            (matchedContract as any)?.budgetType ||
+            (a as any).budgetType ||
+            "—",
+          fundingSource: formatActivityFundings(
+            a,
+            backendProjects.find(
+              (bp) => bp.id === p.projectId || bp.id === p.project?.id,
+            )?.fundingSource?.label || "—",
+          ),
+          poPvNumber:
+            (matchedContract as any)?.purchaseOrderNo ||
+            (matchedContract as any)?.poNumber ||
+            "—",
+          receiptStatus: matchedContract
+            ? matchedContract.status === "COMPLETED"
               ? "Completed"
-              : matchedContract?.status === "ACTIVE"
+              : matchedContract.status === "ACTIVE"
                 ? "In Progress"
-                : "Pending",
-          completionDate: matchedContract?.plannedEndDate || "2026-07-07",
-          project: p.project?.code || p.project?.name || "MoA",
-          region: p.organization || "Federal",
-          officer:
-            p.creator?.displayName || p.creator?.name || "Assigned Officer",
+                : matchedContract.status
+            : "—",
+          completionDate: matchedContract?.plannedEndDate
+            ? String(matchedContract.plannedEndDate).slice(0, 10)
+            : matchedContract?.actualEndDate
+              ? String(matchedContract.actualEndDate).slice(0, 10)
+              : "—",
+          project: p.project?.code || p.project?.name || "—",
+          region: matchedContract?.region || p.organization || "—",
+          officer: p.creator?.displayName || p.creator?.name || "—",
         });
       });
     });
@@ -1223,20 +1652,31 @@ export function ReportsView() {
         (a) => a.id === c.activityId || a.reference === c.activity?.reference,
       );
 
+      const fs =
+        backendProjects.find(
+          (bp) =>
+            bp.id === matchingPlan?.projectId ||
+            bp.id === matchingPlan?.project?.id,
+        )?.fundingSource?.label ||
+        (matchingPlan?.project as any)?.fundingSource?.label ||
+        (Array.isArray(matchingAct?.fundings) &&
+          matchingAct.fundings[0]?.fundingSource) ||
+        "—";
+
       return {
         id: c.id,
-        contractNo: c.contractNo || "CON-001",
+        contractNo: c.contractNo || "—",
         refNo: c.activity?.reference || "—",
-        description:
-          c.activity?.description || c.remarks || "Procurement Contract",
-        project: matchingPlan?.project?.code || "MoA",
-        supplierName: c.supplier?.name || "Supplier / Contractor",
-        region: c.region || "Federal / FPCU",
+        description: c.activity?.description || c.remarks || "—",
+        project:
+          matchingPlan?.project?.code || matchingPlan?.project?.name || "—",
+        supplierName: c.supplier?.name || "—",
+        region: c.region || "—",
         method:
           matchingAct?.procurementMethod?.label ||
           matchingAct?.procurementMethod?.code ||
-          "RFB",
-        fundingSource: "AfDB",
+          "—",
+        fundingSource: fs,
         currency: c.currency || "ETB",
         originalAmount: orig,
         amendmentAmount: amend,
@@ -1291,6 +1731,24 @@ export function ReportsView() {
         !r.region.toLowerCase().includes(filters.region.toLowerCase())
       )
         return false;
+      if (filters.fromDate || filters.toDate) {
+        const s =
+          r.startDate !== "—"
+            ? r.startDate
+            : r.awardDate !== "—"
+              ? r.awardDate
+              : r.signatureDate !== "—"
+                ? r.signatureDate
+                : null;
+        const e =
+          r.actualCompletionDate !== "—"
+            ? r.actualCompletionDate
+            : r.plannedCompletionDate !== "—"
+              ? r.plannedCompletionDate
+              : s;
+        if (!isSpanningIntervalMatch(s, e, filters.fromDate, filters.toDate))
+          return false;
+      }
       return true;
     });
   }, [backendContracts, backendPlans, backendProjects, filters]);
@@ -1344,11 +1802,12 @@ export function ReportsView() {
 
       return {
         id: c.id,
-        contractNo: c.contractNo || "CON-001",
+        contractNo: c.contractNo || "—",
         refNo: c.activity?.reference || "—",
-        project: matchingPlan?.project?.code || "MoA",
-        supplierName: c.supplier?.name || "Supplier / Contractor",
-        region: c.region || "Federal / FPCU",
+        project:
+          matchingPlan?.project?.code || matchingPlan?.project?.name || "—",
+        supplierName: c.supplier?.name || "—",
+        region: c.region || "—",
         currency: c.currency || "ETB",
         originalAmount,
         amendmentAmount: 0,
@@ -1384,6 +1843,19 @@ export function ReportsView() {
         !r.region.toLowerCase().includes(filters.region.toLowerCase())
       )
         return false;
+      if (filters.fromDate || filters.toDate) {
+        const s = c?.startDate || c?.awardDate || c?.signatureDate;
+        const e = c?.actualEndDate || c?.plannedEndDate || s;
+        if (
+          !isSpanningIntervalMatch(
+            s ? String(s) : null,
+            e ? String(e) : null,
+            filters.fromDate,
+            filters.toDate,
+          )
+        )
+          return false;
+      }
       return true;
     });
   }, [backendContracts, backendPlans, backendProjects, filters]);
@@ -1411,7 +1883,13 @@ export function ReportsView() {
       const sec = getSectorForPlan(p);
       if (!isSectorMatch(sec)) return;
 
-      const unit = p.organization || "Federal / MoA Head Office";
+      const unit =
+        p.organization ||
+        backendProjects.find(
+          (bp) => bp.id === p.projectId || bp.id === p.project?.id,
+        )?.sector?.label ||
+        (p.project as any)?.sector?.label ||
+        "—";
       const curr = regionMap.get(unit) || {
         organizationUnit: unit,
         totalActivities: 0,
@@ -1425,6 +1903,24 @@ export function ReportsView() {
       };
 
       p.activities?.forEach((a) => {
+        const actStart =
+          (a as any).periodStart ||
+          p.periodStart ||
+          a.stages?.[0]?.plannedStartDate;
+        const actEnd =
+          (a as any).periodEnd ||
+          p.periodEnd ||
+          a.stages?.[a.stages.length - 1]?.plannedStartDate;
+        if (
+          !isSpanningIntervalMatch(
+            actStart,
+            actEnd,
+            filters.fromDate,
+            filters.toDate,
+          )
+        )
+          return;
+
         curr.totalActivities += 1;
         if (a.status === "COMPLETED") curr.completed += 1;
         else if (a.status === "IN_PROGRESS") curr.ongoing += 1;
@@ -1443,7 +1939,19 @@ export function ReportsView() {
       const sec = getSectorForPlan(matchingPlan);
       if (!isSectorMatch(sec)) return;
 
-      const unit = c.region || "Federal / MoA Head Office";
+      const cStart = c.startDate || c.awardDate || c.signatureDate;
+      const cEnd = c.actualEndDate || c.plannedEndDate || cStart;
+      if (
+        !isSpanningIntervalMatch(
+          cStart ? String(cStart) : null,
+          cEnd ? String(cEnd) : null,
+          filters.fromDate,
+          filters.toDate,
+        )
+      )
+        return;
+
+      const unit = c.region || "—";
       const curr = regionMap.get(unit);
       if (curr) {
         curr.contractedAmount += Number(
@@ -1482,7 +1990,20 @@ export function ReportsView() {
       const plans = backendPlans.filter(
         (p) => p.projectId === proj.id || p.project?.id === proj.id,
       );
-      const activities = plans.flatMap((p) => p.activities || []);
+      const rawActivities = plans.flatMap((p) => p.activities || []);
+      const activities = rawActivities.filter((a) => {
+        const actStart =
+          (a as any).periodStart || a.stages?.[0]?.plannedStartDate;
+        const actEnd =
+          (a as any).periodEnd ||
+          a.stages?.[a.stages.length - 1]?.plannedStartDate;
+        return isSpanningIntervalMatch(
+          actStart,
+          actEnd,
+          filters.fromDate,
+          filters.toDate,
+        );
+      });
 
       const completed = activities.filter(
         (a) => a.status === "COMPLETED",
@@ -1498,11 +2019,20 @@ export function ReportsView() {
         (sum, a) => sum + Number(a.estimatedBudget || 0),
         0,
       );
-      const matchedContracts = backendContracts.filter((c) =>
-        activities.some(
+      const matchedContracts = backendContracts.filter((c) => {
+        const isMatched = activities.some(
           (a) => a.id === c.activityId || a.reference === c.activity?.reference,
-        ),
-      );
+        );
+        if (!isMatched) return false;
+        const cStart = c.startDate || c.awardDate || c.signatureDate;
+        const cEnd = c.actualEndDate || c.plannedEndDate || cStart;
+        return isSpanningIntervalMatch(
+          cStart ? String(cStart) : null,
+          cEnd ? String(cEnd) : null,
+          filters.fromDate,
+          filters.toDate,
+        );
+      });
       const contracted = matchedContracts.reduce(
         (sum, c) => sum + Number(c.contractAmountWithVat || c.totalValue || 0),
         0,
@@ -1551,7 +2081,20 @@ export function ReportsView() {
         if (!isSectorMatch(sec)) return false;
         return true;
       });
-      const activities = plans.flatMap((p) => p.activities || []);
+      const rawActivities = plans.flatMap((p) => p.activities || []);
+      const activities = rawActivities.filter((a) => {
+        const actStart =
+          (a as any).periodStart || a.stages?.[0]?.plannedStartDate;
+        const actEnd =
+          (a as any).periodEnd ||
+          a.stages?.[a.stages.length - 1]?.plannedStartDate;
+        return isSpanningIntervalMatch(
+          actStart,
+          actEnd,
+          filters.fromDate,
+          filters.toDate,
+        );
+      });
       const completed = activities.filter(
         (a) => a.status === "COMPLETED",
       ).length;
@@ -1566,6 +2109,48 @@ export function ReportsView() {
         0,
       );
 
+      const distinctStages = Array.from(
+        new Set(
+          activities
+            .flatMap((a) => a.stages || [])
+            .filter(
+              (s: any) => s.status === "IN_PROGRESS" || s.status === "DELAYED",
+            )
+            .map((s: any) => s.stageType?.label || (s as any).name)
+            .filter(Boolean),
+        ),
+      );
+      const currentStages =
+        distinctStages.length > 0
+          ? distinctStages.slice(0, 3).join(", ")
+          : activities.some((a) => a.status === "COMPLETED")
+            ? "Completed"
+            : "—";
+
+      const matchedContracts = backendContracts.filter((c) => {
+        const isMatched = activities.some(
+          (a) => a.id === c.activityId || a.reference === c.activity?.reference,
+        );
+        if (!isMatched) return false;
+        const cStart = c.startDate || c.awardDate || c.signatureDate;
+        const cEnd = c.actualEndDate || c.plannedEndDate || cStart;
+        return isSpanningIntervalMatch(
+          cStart ? String(cStart) : null,
+          cEnd ? String(cEnd) : null,
+          filters.fromDate,
+          filters.toDate,
+        );
+      });
+      const contractedAmount = matchedContracts.reduce(
+        (sum, c) => sum + Number(c.contractAmountWithVat || c.totalValue || 0),
+        0,
+      );
+      const paidAmount = matchedContracts.reduce(
+        (sum, c) => sum + Number(c.paidAmount || 0),
+        0,
+      );
+      const remainingBalance = Math.max(0, contractedAmount - paidAmount);
+
       return {
         id: off.id,
         officerName: off.name || off.email,
@@ -1573,15 +2158,15 @@ export function ReportsView() {
         completed,
         ongoing,
         delayed,
-        currentStages: "Execution & Evaluation",
+        currentStages,
         estimatedAmount: estimated,
-        contractedAmount: estimated,
-        paidAmount: Math.round(estimated * 0.4),
-        remainingBalance: Math.round(estimated * 0.6),
+        contractedAmount,
+        paidAmount,
+        remainingBalance,
         delayMeasure: `${delayed} overdue`,
       };
     });
-  }, [officers, backendPlans, backendProjects, filters]);
+  }, [officers, backendPlans, backendProjects, backendContracts, filters]);
 
   // Legacy Project Officer Summary Rows
   const projectOfficerRows = useMemo(() => {
@@ -1600,7 +2185,7 @@ export function ReportsView() {
       if (plans.length === 0) {
         rows.push({
           id: `${proj.id}-none`,
-          projectCode: proj.code || "MOA",
+          projectCode: proj.code || proj.name || "—",
           officerName: "Unassigned",
           totalPlans: 0,
           totalActivities: 0,
@@ -1609,11 +2194,25 @@ export function ReportsView() {
           delayedCount: 0,
         } as any);
       } else {
-        const allActs = plans.flatMap((p) => p.activities || []);
+        const rawActs = plans.flatMap((p) => p.activities || []);
+        const allActs = rawActs.filter((a) => {
+          const actStart =
+            (a as any).periodStart || a.stages?.[0]?.plannedStartDate;
+          const actEnd =
+            (a as any).periodEnd ||
+            a.stages?.[a.stages.length - 1]?.plannedStartDate;
+          return isSpanningIntervalMatch(
+            actStart,
+            actEnd,
+            filters.fromDate,
+            filters.toDate,
+          );
+        });
         rows.push({
           id: proj.id,
-          projectCode: proj.code || "MOA",
-          officerName: plans[0]?.creator?.displayName || "Assigned Officer",
+          projectCode: proj.code || proj.name || "—",
+          officerName:
+            plans[0]?.creator?.displayName || plans[0]?.creator?.name || "—",
           totalPlans: plans.length,
           totalActivities: allActs.length,
           totalBudgetETB: allActs.reduce(
@@ -1632,7 +2231,7 @@ export function ReportsView() {
 
   // ─── 13. Committee / Approval Progress Rows ───────────────────────────────
   const committeeApprovalRows = useMemo(() => {
-    const filteredPlans = backendPlans.filter((p) => {
+    let filteredPlans = backendPlans.filter((p) => {
       const projId = p.projectId || p.project?.id;
       if (!isProjectMatch(projId)) return false;
       const sec = getSectorForPlan(p);
@@ -1640,31 +2239,99 @@ export function ReportsView() {
       return true;
     });
 
+    if (filters.fromDate || filters.toDate) {
+      filteredPlans = filteredPlans.filter((p) => {
+        const s = p.periodStart || p.updatedAt;
+        const e = p.periodEnd || p.updatedAt;
+        return isSpanningIntervalMatch(
+          s ? String(s) : null,
+          e ? String(e) : null,
+          filters.fromDate,
+          filters.toDate,
+        );
+      });
+    }
+
     return filteredPlans.map((p) => {
-      const isApproved = p.status === "APPROVED";
+      const isApproved =
+        p.status === "APPROVED" || p.status === "MANAGEMENT_APPROVED";
+
+      let directorDecision = "PENDING_SUBMISSION";
+      if (p.status !== "DRAFT" && p.status !== "SUBMITTED") {
+        if (p.status === "RETURNED_FOR_REVISION") {
+          directorDecision = "RETURNED_FOR_REVISION";
+        } else if (p.status === "REJECTED") {
+          directorDecision = "REJECTED";
+        } else {
+          directorDecision = "FORWARDED_TO_COMMITTEE";
+        }
+      } else if (p.status === "SUBMITTED") {
+        directorDecision = "UNDER_REVIEW";
+      }
+
+      const directorComment =
+        p.directorRevisionComment || p.rejectionReason || "—";
+
+      const currentRound = p.committeeRound || 1;
+      const currentRoundVotes = (p.committeeVotes || []).filter(
+        (v: any) => (v.round || 1) === currentRound,
+      );
+      const committeeApprovals = currentRoundVotes.filter(
+        (v: any) => v.decision === "APPROVE",
+      ).length;
+      const committeeRejections = currentRoundVotes.filter(
+        (v: any) => v.decision === "REJECT",
+      ).length;
+      const isEndorsed =
+        p.status === "COMMITTEE_ENDORSED" ||
+        p.status === "APPROVED" ||
+        p.status === "MANAGEMENT_APPROVED";
+      const pendingVotes = isEndorsed
+        ? 0
+        : Math.max(0, 5 - (committeeApprovals + committeeRejections));
+
+      let committeeResult = "PENDING";
+      if (isEndorsed || committeeApprovals >= 3) {
+        committeeResult = "ENDORSED";
+      } else if (
+        p.status === "COMMITTEE_REJECTED" ||
+        committeeRejections >= 3
+      ) {
+        committeeResult = "REJECTED";
+      } else if (
+        currentRoundVotes.length > 0 ||
+        p.status === "WITH_COMMITTEE"
+      ) {
+        committeeResult = "IN_VOTING";
+      }
+
+      const managementDecision =
+        p.managementDecision ||
+        (isApproved
+          ? "APPROVED"
+          : p.status === "MANAGEMENT_REJECTED"
+            ? "REJECTED"
+            : "PENDING");
+      const managementComment = p.managementComment || "—";
+
       return {
         id: p.id,
-        planTitle: p.title || "Annual Procurement Plan",
-        project: p.project?.code || p.project?.name || "MoA",
-        officer:
-          p.creator?.displayName || p.creator?.name || "Assigned Officer",
-        submittedDate: p.updatedAt
-          ? String(p.updatedAt).slice(0, 10)
-          : "2026-08-01",
-        directorDecision: isApproved
-          ? "FORWARDED_TO_COMMITTEE"
-          : p.status === "SUBMITTED"
-            ? "FORWARDED_TO_COMMITTEE"
-            : "PENDING_SUBMISSION",
-        directorComment: isApproved
-          ? "Recommended for committee endorsement"
-          : "Under review",
-        committeeApprovals: isApproved ? 4 : 2,
-        committeeRejections: 0,
-        pendingVotes: isApproved ? 0 : 3,
-        committeeResult: isApproved ? "ENDORSED" : "IN_VOTING",
-        managementDecision: isApproved ? "APPROVED" : "PENDING",
-        managementComment: isApproved ? "Endorsed and approved" : "Pending",
+        planTitle: p.title || "—",
+        project: p.project?.code || p.project?.name || "—",
+        officer: p.creator?.displayName || p.creator?.name || "—",
+        submittedDate: p.createdAt
+          ? String(p.createdAt).slice(0, 10)
+          : p.updatedAt
+            ? String(p.updatedAt).slice(0, 10)
+            : "—",
+        directorDecision,
+        directorComment,
+        committeeApprovals,
+        committeeRejections,
+        pendingVotes,
+        committeeResult,
+        managementDecision,
+        managementComment,
         currentPlanStatus: p.status,
       };
     });
@@ -1704,6 +2371,19 @@ export function ReportsView() {
       );
     }
 
+    if (filters.fromDate || filters.toDate) {
+      filteredContracts = filteredContracts.filter((c) => {
+        const s = c.startDate || c.awardDate || c.signatureDate;
+        const e = c.actualEndDate || c.plannedEndDate || s;
+        return isSpanningIntervalMatch(
+          s ? String(s) : null,
+          e ? String(e) : null,
+          filters.fromDate,
+          filters.toDate,
+        );
+      });
+    }
+
     const suppMap = new Map<
       string,
       {
@@ -1725,14 +2405,9 @@ export function ReportsView() {
         c.supplier?.name ||
         c.contractNo ||
         c.id;
-      const name =
-        c.supplier?.name ||
-        (c as any).supplierName ||
-        (c.contractNo ? `Supplier (${c.contractNo})` : "General Supplier");
+      const name = c.supplier?.name || (c as any).supplierName || "—";
       const tin =
-        c.supplier?.tinNumber ||
-        (c.supplier as any)?.tinNumber ||
-        `TIN-${c.id.slice(0, 8).toUpperCase()}`;
+        c.supplier?.tinNumber || (c.supplier as any)?.tinNumber || "—";
 
       const curr = suppMap.get(supplierKey) || {
         supplierName: name,
@@ -1747,7 +2422,17 @@ export function ReportsView() {
 
       curr.totalContracts += 1;
       if (c.status === "ACTIVE") curr.activeContracts += 1;
-      else if (c.status === "COMPLETED") curr.completedOnTime += 1;
+      else if (c.status === "COMPLETED") {
+        if (
+          c.actualEndDate &&
+          c.plannedEndDate &&
+          new Date(c.actualEndDate) > new Date(c.plannedEndDate)
+        ) {
+          curr.completedDelayed += 1;
+        } else {
+          curr.completedOnTime += 1;
+        }
+      }
 
       const award = Number(c.contractAmountWithVat || c.totalValue || 0);
       const paid = Number(c.paidAmount || 0);
@@ -1758,12 +2443,21 @@ export function ReportsView() {
 
     return Array.from(suppMap.entries()).map(([id, data]) => {
       const balance = Math.max(0, data.totalAwardValue - data.totalPaidAmount);
+      const compliancePct =
+        data.totalContracts > 0
+          ? `${Math.round(((data.totalContracts - data.completedDelayed) / data.totalContracts) * 100)}%`
+          : "—";
       return {
         id,
         ...data,
         remainingBalance: balance,
-        compliancePct: "95%",
-        status: data.activeContracts > 0 ? "Active Supplier" : "Satisfactory",
+        compliancePct,
+        status:
+          data.activeContracts > 0
+            ? "Active Supplier"
+            : data.completedOnTime > 0
+              ? "Satisfactory"
+              : "—",
       };
     });
   }, [backendContracts, backendPlans, backendProjects, filters]);
@@ -1782,6 +2476,8 @@ export function ReportsView() {
           : undefined;
     const effectiveSector =
       filters.sector && filters.sector !== "ALL" ? filters.sector : undefined;
+    const dateFrom = filters.fromDate || undefined;
+    const dateTo = filters.toDate || undefined;
 
     try {
       switch (activeReport) {
@@ -1802,6 +2498,8 @@ export function ReportsView() {
                 : undefined,
             status:
               filters.planStatus !== "ALL" ? filters.planStatus : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1810,8 +2508,8 @@ export function ReportsView() {
             budgetYear: filters.efy !== "ALL" ? filters.efy : undefined,
             projectId: effectiveProjectId,
             sector: effectiveSector,
-            dateFrom: filters.fromDate,
-            dateTo: filters.toDate,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1825,6 +2523,8 @@ export function ReportsView() {
                 : undefined,
             reviewType:
               filters.reviewType !== "ALL" ? filters.reviewType : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1837,6 +2537,8 @@ export function ReportsView() {
               filters.delayRange !== "ALL"
                 ? (filters.delayRange as "1-7" | "8-30" | "31-60" | "60+")
                 : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1851,6 +2553,8 @@ export function ReportsView() {
             sector: effectiveSector,
             fundingSourceId:
               filters.fundingType !== "ALL" ? filters.fundingType : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
         }
@@ -1864,6 +2568,8 @@ export function ReportsView() {
               filters.quarter !== "ALL"
                 ? parseInt(filters.quarter, 10)
                 : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1873,6 +2579,8 @@ export function ReportsView() {
             projectId: effectiveProjectId,
             sector: effectiveSector,
             category: filters.category !== "ALL" ? filters.category : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1885,6 +2593,8 @@ export function ReportsView() {
                 ? filters.contractStatus
                 : undefined,
             region: filters.region !== "ALL" ? filters.region : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1897,6 +2607,8 @@ export function ReportsView() {
                 ? filters.contractStatus
                 : undefined,
             region: filters.region !== "ALL" ? filters.region : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1904,6 +2616,8 @@ export function ReportsView() {
           await downloadRegionalSectorSummaryReport({
             groupBy: filters.orgGrouping,
             projectId: effectiveProjectId,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1911,6 +2625,8 @@ export function ReportsView() {
           await downloadProjectSummaryReport({
             projectId: effectiveProjectId,
             sector: effectiveSector,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1920,6 +2636,8 @@ export function ReportsView() {
             projectId: effectiveProjectId,
             sector: effectiveSector,
             officerId: filters.officer !== "ALL" ? filters.officer : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1931,6 +2649,8 @@ export function ReportsView() {
               filters.committeeResult !== "ALL"
                 ? filters.committeeResult
                 : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
 
@@ -1939,6 +2659,8 @@ export function ReportsView() {
             sector: effectiveSector,
             supplierId:
               filters.supplier !== "ALL" ? filters.supplier : undefined,
+            dateFrom,
+            dateTo,
           });
           break;
       }

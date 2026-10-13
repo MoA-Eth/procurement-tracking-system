@@ -13,6 +13,8 @@ import { ApiClientError, BACKEND_API_URL } from "./apiClient";
 export interface ReportPagination {
   page?: number;
   limit?: number;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export interface DownloadedReport {

@@ -307,4 +307,39 @@ describe("CommitteeProgressView", () => {
       "This procurement plan and its activities have received final executive authorization.",
     );
   });
+
+  it("renders graceful empty state when no committee member votes are recorded", () => {
+    const mockEmptyVotesPlan: any = {
+      id: "plan-empty-votes",
+      planNumber: "MoA/BREFONS/2018/PLAN-EMPTY",
+      planTitle: "BREFONS Empty Votes Plan",
+      projectCode: "BREFONS",
+      projectName: "Building Resilience Food Security",
+      budgetYear: "2018 EFY",
+      currency: "ETB",
+      totalBudget: 1000000,
+      description: "Test plan with no committee votes",
+      rawStatus: "WITH_COMMITTEE",
+      overallStatus: "Pending Approval",
+      committeeStatus: "Pending Approval",
+      managementStatus: "Not Reached",
+      approvedCount: 0,
+      rejectedCount: 0,
+      memberVotes: [],
+      hasAdvancedToManagement: false,
+      activities: [],
+      rejectedActivityRefs: [],
+    };
+
+    const markup = renderToStaticMarkup(
+      <CommitteeProgressView
+        currentUser={{ role: "DIRECTOR", name: "Director Abebe" }}
+        initialSelectedPlan={mockEmptyVotesPlan}
+      />,
+    );
+
+    expect(markup).toContain("No endorsement committee votes recorded yet.");
+    expect(markup).not.toContain("fake");
+    expect(markup).not.toContain("Edna Asmamaw");
+  });
 });

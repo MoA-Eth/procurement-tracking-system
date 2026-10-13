@@ -138,25 +138,15 @@ export function generateRoadmapForMethod(
   const methodKey = methodToConfigKey(method);
   const templateStages = roadmapForMethod(methodKey);
 
-  const baseDate = new Date("2026-09-05");
-  let activeIndex = 0;
-
   return templateStages.map((stageTpl, idx) => {
     const isNA = Boolean(stageTpl.allowNotApplicable);
-    let dateStr = "Not applicable";
-
-    if (!isNA) {
-      const d = new Date(baseDate);
-      d.setDate(baseDate.getDate() + activeIndex * 24);
-      dateStr = d.toISOString().slice(0, 10);
-      activeIndex++;
-    }
+    const dateStr = isNA ? "Not applicable" : "";
 
     return {
       id: `stage-${idx + 1}`,
       stageName: stageTpl.name,
-      originalPlannedDate: isNA ? "Not applicable" : dateStr,
-      revisedTargetDate: isNA ? "Not applicable" : dateStr,
+      originalPlannedDate: dateStr,
+      revisedTargetDate: dateStr,
       stageStatus: isNA ? "Not Applicable" : "Not Started",
       notApplicable: isNA,
     };

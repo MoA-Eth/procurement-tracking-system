@@ -191,6 +191,16 @@ export function isTestOrJunkActivity(
   if (/^g{5,}$/i.test(desc) || /^m{5,}$/i.test(desc) || /^hbhb/i.test(desc)) {
     return true;
   }
+  if (
+    desc.startsWith("uat uat") ||
+    desc === "nnknk" ||
+    desc === "jbjbjjjb" ||
+    desc.includes("jbjbjjjb") ||
+    ref === "act-493355" ||
+    desc.includes("batch 3355")
+  ) {
+    return true;
+  }
 
   return false;
 }
@@ -465,8 +475,6 @@ export function mapBackendActivityToProcurementActivitySummary(
                     : "rfb-national";
 
   const templateRoadmap = roadmapForMethod(methodKey);
-  const baseDate = new Date("2026-09-05");
-  let activeOffset = 0;
 
   const hasExplicitDates = (ba.stages || []).some((st: any) =>
     Boolean(
@@ -504,11 +512,8 @@ export function mapBackendActivityToProcurementActivitySummary(
             : rawPlannedDate;
 
           if (!isNA && !rawPlannedDate) {
-            const d = new Date(baseDate);
-            d.setDate(baseDate.getDate() + activeOffset * 24);
-            rawPlannedDate = d.toISOString().slice(0, 10);
-            rawTargetDate = rawPlannedDate;
-            activeOffset++;
+            rawPlannedDate = "";
+            rawTargetDate = "";
           }
 
           const greg = isNA ? "" : rawTargetDate || rawPlannedDate;
@@ -546,14 +551,8 @@ export function mapBackendActivityToProcurementActivitySummary(
         })
       : templateRoadmap.map((tpl, idx) => {
           const isNA = Boolean(tpl.allowNotApplicable);
-          let greg = "";
-          if (!isNA) {
-            const d = new Date(baseDate);
-            d.setDate(baseDate.getDate() + activeOffset * 24);
-            greg = d.toISOString().slice(0, 10);
-            activeOffset++;
-          }
-          const eth = isNA ? "" : toEthiopianDateString(greg);
+          const greg = "";
+          const eth = "";
           return {
             name: tpl.name,
             allowNotApplicable: Boolean(tpl.allowNotApplicable),

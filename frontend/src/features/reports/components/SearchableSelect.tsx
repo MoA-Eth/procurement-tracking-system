@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { ChevronDown } from "lucide-react";
 
 export interface SearchableSelectOption {
   value: string;
@@ -64,7 +65,7 @@ export function SearchableSelect({
         className="w-full rounded-xl border border-slate-300 px-3 py-1.5 font-semibold text-slate-800 bg-white outline-none flex items-center justify-between text-left hover:border-slate-400 transition-colors text-xs"
       >
         <span className="truncate pr-1">{selectedLabel}</span>
-        <span className="text-slate-400 text-[10px] shrink-0">▼</span>
+        <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
       </button>
 
       {isOpen && (

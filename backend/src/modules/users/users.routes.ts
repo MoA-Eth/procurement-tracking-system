@@ -44,14 +44,24 @@ router.use(loadSession, requireAuthenticated, bridgeAuth);
 
 router.get(
   '/',
-  authorize('Administrator', 'ProcurementDirector'),
+  authorize(
+    'Administrator',
+    'ProcurementDirector',
+    'ProcurementOfficer',
+    'ManagementTeam',
+  ),
   validate(listUsersQuerySchema, 'query'),
   listUsersHandler,
 );
 
 router.get(
   '/:id',
-  authorize('Administrator', 'ProcurementDirector'),
+  authorize(
+    'Administrator',
+    'ProcurementDirector',
+    'ProcurementOfficer',
+    'ManagementTeam',
+  ),
   validate(userIdParamSchema, 'params'),
   getUserHandler,
 );

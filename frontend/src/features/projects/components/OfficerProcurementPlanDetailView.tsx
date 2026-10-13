@@ -197,13 +197,18 @@ export function OfficerProcurementPlanDetailView({
   const handleSelectActivityDelay = (act: PlanActivity) => {
     const actStages =
       (act as any).stages || act.details?.roadmap || (act as any).roadmap || [];
+    const realDelay = calculateRealActivityDelay(actStages);
     const rawDelay =
-      (act as any).delayDays !== undefined && (act as any).delayDays !== null
-        ? Number((act as any).delayDays)
-        : (act as any).daysOverdue !== undefined &&
-            (act as any).daysOverdue !== null
-          ? Number((act as any).daysOverdue)
-          : calculateRealActivityDelay(actStages);
+      realDelay > 0
+        ? realDelay
+        : actStages.length === 0 &&
+            (act as any).delayDays !== undefined &&
+            (act as any).delayDays !== null
+          ? Number((act as any).delayDays)
+          : (act as any).daysOverdue !== undefined &&
+              (act as any).daysOverdue !== null
+            ? Number((act as any).daysOverdue)
+            : 0;
 
     const resolvedCat =
       act.category ||
@@ -426,7 +431,13 @@ export function OfficerProcurementPlanDetailView({
   };
 
   function exportActivities() {
-    exportPlanActivitiesToExcel(currentPlan, filteredActivities, project.code);
+    const listToExport =
+      activities.length > 0
+        ? activities
+        : filteredActivities.length > 0
+          ? filteredActivities
+          : (currentPlan.planActivities as ProcurementActivitySummary[]) || [];
+    exportPlanActivitiesToExcel(currentPlan, listToExport, project.code);
   }
 
   function handleBulkImport(imported: ProcurementActivitySummary[]) {
@@ -1512,12 +1523,14 @@ function ActivityRow({
     activity.details?.roadmap ||
     (activity as any).roadmap ||
     [];
+  const realDelay = calculateRealActivityDelay(rowStages);
   const isDelayed =
     activity.status === "Delayed" ||
     (activity as any).status === "DELAYED" ||
-    Boolean((activity as any).delayDays) ||
-    Boolean((activity as any).daysOverdue) ||
-    calculateRealActivityDelay(rowStages) > 0;
+    (rowStages.length > 0
+      ? realDelay > 0
+      : Boolean((activity as any).delayDays) ||
+        Boolean((activity as any).daysOverdue));
 
   return (
     <tr className="even:bg-[#fbfcff] hover:bg-[#f7fbf9] transition-colors">

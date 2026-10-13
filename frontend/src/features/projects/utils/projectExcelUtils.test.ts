@@ -7,6 +7,7 @@ import {
   exportProjectDetailsToExcel,
   exportProjectPlansToExcel,
   exportOfficerProjectsToExcel,
+  formatActivityFundingSources,
   parseActivitiesFromExcel,
   parsePlansFromExcel,
   parseProjectsFromExcel,
@@ -360,5 +361,50 @@ describe("projectExcelUtils", () => {
     await expect(parseProjectsFromExcel(file)).rejects.toThrow(
       /Invalid template structure: The uploaded file does not follow the Project template structure/,
     );
+  });
+
+  describe("formatActivityFundingSources", () => {
+    it("formats multiple funding sources from financingAllocations with percentages", () => {
+      const activity = {
+        details: {
+          financingAllocations: [
+            { source: "World Bank (IDA)", percent: "70", selected: true },
+            {
+              source: "Government of Ethiopia",
+              percent: "30",
+              selected: true,
+            },
+          ],
+        },
+      };
+
+      const result = formatActivityFundingSources(activity);
+      expect(result).toBe(
+        "World Bank (IDA) (70%), Government of Ethiopia (30%)",
+      );
+    });
+
+    it("formats multiple funding sources from backend fundings array with percentages", () => {
+      const activity = {
+        fundings: [
+          { fundingSource: "African Development Bank", allocationPct: 60 },
+          { fundingSource: "MoA Counterpart", allocationPct: 40 },
+        ],
+      };
+
+      const result = formatActivityFundingSources(activity);
+      expect(result).toBe(
+        "African Development Bank (60%), MoA Counterpart (40%)",
+      );
+    });
+
+    it("falls back to scalar fundingSource or fallback parameter", () => {
+      expect(
+        formatActivityFundingSources({ fundingSource: "World Bank" }),
+      ).toBe("World Bank");
+      expect(
+        formatActivityFundingSources({}, "Federal Ministry of Agriculture"),
+      ).toBe("Federal Ministry of Agriculture");
+    });
   });
 });

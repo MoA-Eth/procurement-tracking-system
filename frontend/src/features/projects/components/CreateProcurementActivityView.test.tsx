@@ -13,6 +13,8 @@ import type { ProcurementActivitySummary } from "../data/officerActivityDrafts";
 import {
   CreateProcurementActivityView,
   RelatedInformationStep,
+  STANDARD_PROCUREMENT_PROCESSES,
+  normalizeProcurementProcess,
 } from "./CreateProcurementActivityView";
 
 const plan: ProcurementPlanSummary = {
@@ -1147,5 +1149,113 @@ describe("CreateProcurementActivityView", () => {
     expect(markup).toContain("Related Information");
     expect(markup).toContain("Additional Details");
     expect(markup).toContain("Roadmap");
+  });
+
+  it("deduplicates Procurement Process dropdown options and normalizes legacy variants", () => {
+    // 1. Verify standard processes list has no duplicates
+    expect(STANDARD_PROCUREMENT_PROCESSES).toEqual([
+      "Single Stage One Envelope",
+      "Single Stage Two Envelope",
+      "Two Stage Two Envelope",
+    ]);
+
+    // 2. Verify legacy variations normalize correctly
+    expect(normalizeProcurementProcess("Single Stage - One Envelope")).toBe(
+      "Single Stage One Envelope",
+    );
+    expect(normalizeProcurementProcess("1 Envelope (Single Stage 1 Env)")).toBe(
+      "Single Stage One Envelope",
+    );
+    expect(normalizeProcurementProcess("Single Stage")).toBe(
+      "Single Stage One Envelope",
+    );
+    expect(normalizeProcurementProcess("Two Stage - Two Envelope")).toBe(
+      "Two Stage Two Envelope",
+    );
+    expect(normalizeProcurementProcess("Single Stage Two Envelope")).toBe(
+      "Single Stage Two Envelope",
+    );
+
+    // 3. Render edit view with RFB activity and verify dropdown contains standard options without duplicated variations
+    const rfbActivity = {
+      category: "Goods",
+      createdAt: "2026-03-01T00:00:00Z",
+      currency: "ETB",
+      currentStage: "Draft",
+      description: "Procurement of Agricultural Equipment",
+      estimatedAmount: 5_000_000,
+      id: "act-rfb-01",
+      method: "rfb-national",
+      planId: plan.id,
+      procurementProcess: "1 Envelope (Single Stage 1 Env)",
+      projectId: project.id,
+      reference: "ET-MOA-RFB-001",
+      status: "Draft",
+      updatedAt: "2026-03-01T00:00:00Z",
+      details: {
+        form: {
+          activityDescription: "Procurement of Agricultural Equipment",
+          classificationCode: "",
+          comments: "",
+          contractType: "Lump Sum",
+          currency: "ETB",
+          domesticPreference: "No",
+          estimatedAmount: "5000000",
+          evaluationOptionCode: "",
+          exchangeRate: "",
+          fundingSource: "World Bank (IDA)",
+          highRiskCode: "",
+          inProcess: false,
+          invitationReference: "",
+          latitude: "",
+          location: "Addis Ababa",
+          longitude: "",
+          lotRequired: false,
+          marketApproach: "Open - National",
+          method: "rfb-national",
+          oversightClassification: "",
+          pricingBasis: "Not Applicable",
+          procurementDocumentType: "National Procurement Document - 1 Envelope",
+          procurementProcess: "1 Envelope (Single Stage 1 Env)",
+          qualificationApproach: "Post-qualification",
+          requiresUnAgency: false,
+          reviewType: "Prior Review",
+          scopeNotes: "",
+          specificMethod: "",
+          subcomponent: "",
+        },
+        componentAllocations: [],
+        financingAllocations: [],
+        lots: [],
+        roadmap: [],
+      },
+    };
+
+    const markup = renderToStaticMarkup(
+      <CreateProcurementActivityView
+        initialActivity={rfbActivity as unknown as ProcurementActivitySummary}
+        plan={plan}
+        project={project}
+      />,
+    );
+
+    // Should include the standard options
+    expect(markup).toContain("Single Stage One Envelope");
+    expect(markup).toContain("Single Stage Two Envelope");
+    expect(markup).toContain("Two Stage Two Envelope");
+
+    // The select options should not have duplicate variations
+    const optionMatches = markup.match(/<option[^>]*>([^<]+)<\/option>/g) || [];
+    const optionTexts = optionMatches.map((o) =>
+      o.replace(/<[^>]+>/g, "").trim(),
+    );
+    const singleStageOneEnvOptions = optionTexts.filter(
+      (text) =>
+        text === "Single Stage One Envelope" ||
+        text === "Single Stage - One Envelope" ||
+        text === "1 Envelope (Single Stage 1 Env)",
+    );
+    // Exactly one option for Single Stage One Envelope in the dropdown
+    expect(singleStageOneEnvOptions).toHaveLength(1);
   });
 });
