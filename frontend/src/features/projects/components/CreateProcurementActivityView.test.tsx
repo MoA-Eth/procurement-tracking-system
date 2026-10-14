@@ -103,6 +103,7 @@ describe("CreateProcurementActivityView", () => {
       "Quality-Based Selection (QBS)",
       "Consultant's Qualifications Selection (CQS)",
       "Individual Consultant Selection (INDV)",
+      "Direct Selection",
     ]);
   });
 
@@ -1257,5 +1258,25 @@ describe("CreateProcurementActivityView", () => {
     );
     // Exactly one option for Single Stage One Envelope in the dropdown
     expect(singleStageOneEnvOptions).toHaveLength(1);
+  });
+
+  it("renders Direct Selection in Procurement Method dropdown for Consultancy Services", () => {
+    const consultancyPlan: ProcurementPlanSummary = {
+      ...plan,
+      category: "Consultancy Services",
+      name: "Consultancy Services Plan 2017",
+    };
+
+    const markup = renderToStaticMarkup(
+      <CreateProcurementActivityView
+        plan={consultancyPlan}
+        project={project}
+      />,
+    );
+
+    expect(markup).toContain("Direct Selection");
+    expect(markup).toContain(
+      '<option value="direct">Direct Selection</option>',
+    );
   });
 });

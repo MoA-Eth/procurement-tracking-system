@@ -66,7 +66,11 @@ import {
   formatGregorianDate,
 } from "@/features/projects/utils/ethiopianCalendar";
 import { apiClient } from "@/lib/apiClient";
-import { keepAvailablePlan, planServerId, requireExistingPlan } from "../data/planAvailability";
+import {
+  keepAvailablePlan,
+  planServerId,
+  requireExistingPlan,
+} from "../data/planAvailability";
 import { usePlanAvailability } from "../data/usePlanAvailability";
 import { getCurrentUser } from "@/lib/authApi";
 import type { AuthUser } from "@/lib/authTypes";
@@ -462,19 +466,41 @@ export function OfficerProjectsView({
     });
   }, [backendProjects, backendPlans]);
 
-  const { availability, checking: checkingPlanAvailability, retry: retryPlanAvailability } = usePlanAvailability(
-    [...savedPlanRecords.map(record => record.plan),
-      ...allProjects.flatMap(project => project.plans).filter(plan => selectedPlanReference &&
-        [plan.id, plan.reference, plan.name].some(value => value?.trim().toLowerCase() === selectedPlanReference.trim().toLowerCase())),
-      { reference: selectedPlanReference }],
+  const {
+    availability,
+    checking: checkingPlanAvailability,
+    retry: retryPlanAvailability,
+  } = usePlanAvailability(
+    [
+      ...savedPlanRecords.map((record) => record.plan),
+      ...allProjects
+        .flatMap((project) => project.plans)
+        .filter(
+          (plan) =>
+            selectedPlanReference &&
+            [plan.id, plan.reference, plan.name].some(
+              (value) =>
+                value?.trim().toLowerCase() ===
+                selectedPlanReference.trim().toLowerCase(),
+            ),
+        ),
+      { reference: selectedPlanReference },
+    ],
     effectiveUser?.id || "",
   );
   const projects = useMemo(() => {
-    const visibleProjects = allProjects.map(project => {
-      const plans = project.plans.filter(plan => keepAvailablePlan(plan, availability));
+    const visibleProjects = allProjects.map((project) => {
+      const plans = project.plans.filter((plan) =>
+        keepAvailablePlan(plan, availability),
+      );
       return { ...project, plans, activePlans: plans.length };
     });
-    return mergeSavedPlans(visibleProjects, savedPlanRecords.filter(record => keepAvailablePlan(record.plan, availability)));
+    return mergeSavedPlans(
+      visibleProjects,
+      savedPlanRecords.filter((record) =>
+        keepAvailablePlan(record.plan, availability),
+      ),
+    );
   }, [allProjects, savedPlanRecords, availability]);
   const selectedProject = projects.find(
     (project) =>
@@ -611,8 +637,8 @@ export function OfficerProjectsView({
     const id = planServerId(selectedPlan);
     return Boolean(
       id &&
-        (availability[id] === "available" ||
-          backendPlans.some((bp) => (bp.id || "").toLowerCase() === id)),
+      (availability[id] === "available" ||
+        backendPlans.some((bp) => (bp.id || "").toLowerCase() === id)),
     );
   }, [backendPlans, selectedPlan, availability]);
 
@@ -1629,7 +1655,9 @@ export function OfficerProjectsView({
     }
 
     // Verify the exact server identity before mutations; never substitute a same-title plan.
-    await requireExistingPlan(targetPlan, id => apiClient.get<unknown>("/plans/" + encodeURIComponent(id)));
+    await requireExistingPlan(targetPlan, (id) =>
+      apiClient.get<unknown>("/plans/" + encodeURIComponent(id)),
+    );
     let planIdToSubmit = planServerId(targetPlan);
 
     if (!planIdToSubmit) {
@@ -2204,22 +2232,55 @@ export function OfficerProjectsView({
     await loadData();
   }
 
-  const selectedServerId = planServerId(selectedPlan || { reference: selectedPlanReference });
-  if (selectedPlanReference && selectedServerId && (checkingPlanAvailability || availability[selectedServerId] !== "available")) {
+  const selectedServerId = planServerId(
+    selectedPlan || { reference: selectedPlanReference },
+  );
+  if (
+    selectedPlanReference &&
+    selectedServerId &&
+    (checkingPlanAvailability || availability[selectedServerId] !== "available")
+  ) {
     const missing = availability[selectedServerId] === "missing";
     return (
-      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6" role="status">
+      <section
+        className="space-y-4 rounded-xl border border-slate-200 bg-white p-6"
+        role="status"
+      >
         <h2 className="text-lg font-semibold">
-          {checkingPlanAvailability ? "Checking plan availability..." : missing ? "Plan no longer available" : "Unable to verify this plan"}
+          {checkingPlanAvailability
+            ? "Checking plan availability..."
+            : missing
+              ? "Plan no longer available"
+              : "Unable to verify this plan"}
         </h2>
         <p className="text-sm text-slate-600">
-          {checkingPlanAvailability ? "Please wait while we check the server." : missing
-            ? "The server could not find this plan. It may have been removed. Its browser copy has been preserved, but it cannot be edited or submitted here."
-            : "Check your connection and sign-in, then retry. Your saved work has been preserved."}
+          {checkingPlanAvailability
+            ? "Please wait while we check the server."
+            : missing
+              ? "The server could not find this plan. It may have been removed. Its browser copy has been preserved, but it cannot be edited or submitted here."
+              : "Check your connection and sign-in, then retry. Your saved work has been preserved."}
         </p>
         <div className="flex gap-4">
-          <Link className="font-medium text-emerald-800 underline" href={selectedProjectCode ? "/workspace/projects?project=" + encodeURIComponent(selectedProjectCode) : "/workspace/projects"}>Back to projects</Link>
-          {!checkingPlanAvailability && <button type="button" className="font-medium text-emerald-800 underline" onClick={retryPlanAvailability}>Retry</button>}
+          <Link
+            className="font-medium text-emerald-800 underline"
+            href={
+              selectedProjectCode
+                ? "/workspace/projects?project=" +
+                  encodeURIComponent(selectedProjectCode)
+                : "/workspace/projects"
+            }
+          >
+            Back to projects
+          </Link>
+          {!checkingPlanAvailability && (
+            <button
+              type="button"
+              className="font-medium text-emerald-800 underline"
+              onClick={retryPlanAvailability}
+            >
+              Retry
+            </button>
+          )}
         </div>
       </section>
     );

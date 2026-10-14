@@ -329,12 +329,44 @@ export function CommitteeProgressView({
             }
           });
 
-          const approvedCount = memberVotes.filter(
-            (v) => v.voteStatus === "Approved",
-          ).length;
-          const rejectedCount = memberVotes.filter(
-            (v) => v.voteStatus === "Rejected",
-          ).length;
+          // Endorsement Committee strictly consists of 5 members (3-of-5 quorum)
+          const fiveMemberVotes: CommitteeMemberVote[] = [];
+          for (let i = 0; i < 5; i++) {
+            if (memberVotes[i]) {
+              fiveMemberVotes.push(memberVotes[i]);
+            } else {
+              fiveMemberVotes.push({
+                id: `seat-${i + 1}`,
+                name: `Committee Member ${i + 1}`,
+                roleTitle: "Endorsement Committee",
+                voteStatus: "Pending",
+              });
+            }
+          }
+
+          // If there are cast votes beyond the 5th index, replace pending slots within the 5 seats
+          const overflowVotes = memberVotes
+            .slice(5)
+            .filter((v) => v.voteStatus !== "Pending");
+          if (overflowVotes.length > 0) {
+            overflowVotes.forEach((ov) => {
+              const pendingIdx = fiveMemberVotes.findIndex(
+                (v) => v.voteStatus === "Pending",
+              );
+              if (pendingIdx !== -1) {
+                fiveMemberVotes[pendingIdx] = ov;
+              }
+            });
+          }
+
+          const approvedCount = Math.min(
+            5,
+            fiveMemberVotes.filter((v) => v.voteStatus === "Approved").length,
+          );
+          const rejectedCount = Math.min(
+            5,
+            fiveMemberVotes.filter((v) => v.voteStatus === "Rejected").length,
+          );
 
           // Committee Status evaluation
           let committeeStatus: "Approved" | "Rejected" | "Pending Approval" =
@@ -448,7 +480,7 @@ export function CommitteeProgressView({
             committeeStatus,
             approvedCount,
             rejectedCount,
-            memberVotes,
+            memberVotes: fiveMemberVotes,
             hasAdvancedToManagement,
             managementStatus,
             managementDecision: bp.managementDecision,
@@ -1327,7 +1359,7 @@ export function CommitteeProgressView({
                     No endorsement committee votes recorded yet.
                   </div>
                 ) : (
-                  selectedPlan.memberVotes.map((member) => (
+                  selectedPlan.memberVotes.slice(0, 5).map((member) => (
                     <div
                       key={member.id}
                       className={`p-3.5 rounded-xl border transition-all overflow-hidden ${
@@ -2134,40 +2166,42 @@ export function CommitteeProgressView({
                                 —
                               </span>
                             ) : (
-                              item.memberVotes.map((member, idx) => {
-                                const boxNum = idx + 1;
-                                if (member.voteStatus === "Approved") {
+                              item.memberVotes
+                                .slice(0, 5)
+                                .map((member, idx) => {
+                                  const boxNum = idx + 1;
+                                  if (member.voteStatus === "Approved") {
+                                    return (
+                                      <div
+                                        key={member.id}
+                                        title={`${member.name}: Approved`}
+                                        className="h-6 w-6 rounded-md bg-[#0A3C2F] text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
+                                      >
+                                        ✓
+                                      </div>
+                                    );
+                                  }
+                                  if (member.voteStatus === "Rejected") {
+                                    return (
+                                      <div
+                                        key={member.id}
+                                        title={`${member.name}: Rejected`}
+                                        className="h-6 w-6 rounded-md bg-rose-600 text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
+                                      >
+                                        ✕
+                                      </div>
+                                    );
+                                  }
                                   return (
                                     <div
                                       key={member.id}
-                                      title={`${member.name}: Approved`}
-                                      className="h-6 w-6 rounded-md bg-[#0A3C2F] text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
+                                      title={`${member.name}: Pending Vote`}
+                                      className="h-6 w-6 rounded-md bg-slate-100 text-slate-500 border border-slate-200/80 flex items-center justify-center text-[11px] font-medium"
                                     >
-                                      ✓
+                                      {boxNum}
                                     </div>
                                   );
-                                }
-                                if (member.voteStatus === "Rejected") {
-                                  return (
-                                    <div
-                                      key={member.id}
-                                      title={`${member.name}: Rejected`}
-                                      className="h-6 w-6 rounded-md bg-rose-600 text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
-                                    >
-                                      ✕
-                                    </div>
-                                  );
-                                }
-                                return (
-                                  <div
-                                    key={member.id}
-                                    title={`${member.name}: Pending Vote`}
-                                    className="h-6 w-6 rounded-md bg-slate-100 text-slate-500 border border-slate-200/80 flex items-center justify-center text-[11px] font-medium"
-                                  >
-                                    {boxNum}
-                                  </div>
-                                );
-                              })
+                                })
                             )}
                           </div>
                         </td>

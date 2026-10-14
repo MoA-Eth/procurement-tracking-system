@@ -256,8 +256,10 @@ export function CreateProcurementActivityView({
     return items.map((item) => ({ code: item.code, label: item.label }));
   }, [lookupVersion]);
   const selectedMethod = useMemo(
-    () => resolveProcurementMethodOption(form.method),
-    [form.method, lookupVersion],
+    () =>
+      methodOptions.find((m) => m.key === form.method) ||
+      resolveProcurementMethodOption(form.method, activityCategory),
+    [form.method, methodOptions, activityCategory, lookupVersion],
   );
   const planRefParam = plan.id || plan.reference || plan.name;
   const planHref =
@@ -1979,8 +1981,9 @@ function KeyDetailsStep({
   usesCompetition: boolean;
 }) {
   const selectedMethod =
+    methodOptions.find((method) => method.key === form.method) ||
     procurementMethodOptions.find((method) => method.key === form.method) ||
-    resolveProcurementMethodOption(form.method);
+    resolveProcurementMethodOption(form.method, category);
   const usesRfb =
     form.method === "rfb" ||
     form.method === "rfb-international" ||

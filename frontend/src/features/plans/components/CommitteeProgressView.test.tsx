@@ -342,4 +342,47 @@ describe("CommitteeProgressView", () => {
     expect(markup).not.toContain("fake");
     expect(markup).not.toContain("Edna Asmamaw");
   });
+
+  it("strictly constrains voting boxes to 5 committee members even if 8 votes are supplied", () => {
+    const mock8VotesPlan: any = {
+      id: "plan-8-votes",
+      planNumber: "MoA/BREFONS/2018/PLAN-8",
+      planTitle: "Plan with 8 votes",
+      projectCode: "BREFONS",
+      projectName: "Building Resilience Food Security",
+      budgetYear: "2018 EFY",
+      currency: "ETB",
+      totalBudget: 1000000,
+      description: "Test plan with 8 votes",
+      rawStatus: "WITH_COMMITTEE",
+      overallStatus: "Pending Approval",
+      committeeStatus: "Pending Approval",
+      managementStatus: "Not Reached",
+      approvedCount: 5,
+      rejectedCount: 0,
+      memberVotes: Array.from({ length: 8 }, (_, i) => ({
+        id: `mem-${i + 1}`,
+        name: `Member ${i + 1}`,
+        roleTitle: "Endorsement Committee",
+        voteStatus: i < 3 ? "Approved" : "Pending",
+      })),
+      hasAdvancedToManagement: false,
+      activities: [],
+      rejectedActivityRefs: [],
+    };
+
+    const markup = renderToStaticMarkup(
+      <CommitteeProgressView
+        currentUser={{ role: "DIRECTOR", name: "Director Abebe" }}
+        initialSelectedPlan={mock8VotesPlan}
+      />,
+    );
+
+    // In detail view, only up to 5 members are rendered
+    expect(markup).toContain("Member 1");
+    expect(markup).toContain("Member 5");
+    expect(markup).not.toContain("Member 6");
+    expect(markup).not.toContain("Member 7");
+    expect(markup).not.toContain("Member 8");
+  });
 });

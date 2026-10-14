@@ -108,6 +108,12 @@ export const procurementMethodOptions: readonly ProcurementMethodOption[] = [
     label: "Individual Consultant Selection (INDV)",
     roadmap: "individual",
   },
+  {
+    appliesTo: ["Consultancy Services"],
+    key: "direct",
+    label: "Direct Selection",
+    roadmap: "direct",
+  },
 ];
 
 export const legacyProcurementMethodOptions: readonly ProcurementMethodOption[] =
@@ -392,30 +398,63 @@ export function methodsForCategory(
 
 export function resolveProcurementMethodOption(
   methodOrKeyOrLabel?: string,
+  category?: string,
 ): ProcurementMethodOption | undefined {
   if (!methodOrKeyOrLabel) return undefined;
   const allOptions = getAllProcurementMethodOptions();
   const needle = methodOrKeyOrLabel.trim().toLowerCase();
+  const normalizedCategory = category
+    ? normalizeActivityCategory(category)
+    : undefined;
 
   // 1. Direct match by key
-  const byKey = allOptions.find((opt) => opt.key === needle);
-  if (byKey) return byKey;
+  const matchingKeys = allOptions.filter((opt) => opt.key === needle);
+  if (matchingKeys.length === 1) return matchingKeys[0];
+  if (matchingKeys.length > 1) {
+    if (normalizedCategory) {
+      const catMatch = matchingKeys.find((opt) =>
+        opt.appliesTo.includes(normalizedCategory),
+      );
+      if (catMatch) return catMatch;
+    }
+    return matchingKeys[0];
+  }
 
   // 2. Direct match by label
-  const byLabel = allOptions.find((opt) => opt.label.toLowerCase() === needle);
-  if (byLabel) return byLabel;
+  const matchingLabels = allOptions.filter(
+    (opt) => opt.label.toLowerCase() === needle,
+  );
+  if (matchingLabels.length === 1) return matchingLabels[0];
+  if (matchingLabels.length > 1) {
+    if (normalizedCategory) {
+      const catMatch = matchingLabels.find((opt) =>
+        opt.appliesTo.includes(normalizedCategory),
+      );
+      if (catMatch) return catMatch;
+    }
+    return matchingLabels[0];
+  }
 
   // 3. Clean alphanumeric match (e.g. "rfb national" -> "rfbnational")
   const clean = needle.replace(/[^a-z0-9]/g, "");
-  const byClean = allOptions.find(
+  const matchingClean = allOptions.filter(
     (opt) =>
       opt.key.replace(/[^a-z0-9]/g, "") === clean ||
       opt.label.toLowerCase().replace(/[^a-z0-9]/g, "") === clean,
   );
-  if (byClean) return byClean;
+  if (matchingClean.length === 1) return matchingClean[0];
+  if (matchingClean.length > 1) {
+    if (normalizedCategory) {
+      const catMatch = matchingClean.find((opt) =>
+        opt.appliesTo.includes(normalizedCategory),
+      );
+      if (catMatch) return catMatch;
+    }
+    return matchingClean[0];
+  }
 
   // 4. Substring / partial matching
-  const byPartial = allOptions.find((opt) => {
+  const matchingPartial = allOptions.filter((opt) => {
     const optClean = opt.key.replace(/[^a-z0-9]/g, "");
     const optLabelClean = opt.label.toLowerCase().replace(/[^a-z0-9]/g, "");
     return (
@@ -425,7 +464,16 @@ export function resolveProcurementMethodOption(
       (optLabelClean.length > 2 && clean.includes(optLabelClean))
     );
   });
-  if (byPartial) return byPartial;
+  if (matchingPartial.length === 1) return matchingPartial[0];
+  if (matchingPartial.length > 1) {
+    if (normalizedCategory) {
+      const catMatch = matchingPartial.find((opt) =>
+        opt.appliesTo.includes(normalizedCategory),
+      );
+      if (catMatch) return catMatch;
+    }
+    return matchingPartial[0];
+  }
 
   // 5. Common acronym / prefix mappings
   if (needle.startsWith("rfb") || needle.includes("bids")) {
@@ -452,6 +500,13 @@ export function resolveProcurementMethodOption(
     return allOptions.find((opt) => opt.key === "rfp");
   }
   if (needle.includes("direct")) {
+    if (normalizedCategory) {
+      const match = allOptions.find(
+        (opt) =>
+          opt.key === "direct" && opt.appliesTo.includes(normalizedCategory),
+      );
+      if (match) return match;
+    }
     return allOptions.find((opt) => opt.key === "direct");
   }
   if (needle.includes("un") || needle.includes("unops")) {
@@ -493,13 +548,14 @@ export function resolveProcurementMethodOption(
 
 export function resolveMethodKey(
   methodOrKeyOrLabel?: string,
+  category?: string,
 ): ProcurementMethodKey | "" {
-  const opt = resolveProcurementMethodOption(methodOrKeyOrLabel);
+  const opt = resolveProcurementMethodOption(methodOrKeyOrLabel, category);
   return opt ? opt.key : "";
 }
 
 export function roadmapForMethod(methodKeyOrLabel: string, category?: string) {
-  const method = resolveProcurementMethodOption(methodKeyOrLabel);
+  const method = resolveProcurementMethodOption(methodKeyOrLabel, category);
   if (!method) return [];
   const stages = roadmapTemplates[method.roadmap];
   const isConsulting =
@@ -544,6 +600,7 @@ export function activityReferenceFor(
   const methodSegmentMap: Record<string, string> = {
     cqs: "CQS",
     direct: "DIR",
+    "direct-selection": "DIR",
     fbs: "FBS",
     indv: "INDV",
     lcs: "LCS",

@@ -761,13 +761,12 @@ export async function fetchCommitteeMembers(): Promise<CommitteeUserItem[]> {
         const activeFlag = u.isActive !== false;
         const activeStatus = !u.status || u.status === "ACTIVE";
         const isCommitteeRole =
-          !u.role ||
           u.role === "ENDORSING_COMMITTEE" ||
           u.role === "CommitteeMember" ||
           u.role === "EndorsingCommitteeMember" ||
           u.authRole === "ENDORSING_COMMITTEE" ||
           u.authRole === "CommitteeMember";
-        return activeFlag && activeStatus && isCommitteeRole;
+        return activeFlag && activeStatus && Boolean(isCommitteeRole);
       });
       if (filtered.length > 0) {
         return filtered.map((u: any) => ({
