@@ -100,7 +100,6 @@ export const authenticate: RequestHandler = async (req, res, next) => {
           displayName: session.user.displayName,
           role: session.user.authRole,
           status: session.user.status,
-          passwordHash: session.user.passwordHash,
         },
       };
 

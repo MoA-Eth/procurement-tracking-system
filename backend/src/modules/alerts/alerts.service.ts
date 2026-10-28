@@ -243,20 +243,25 @@ export class AlertsService {
   /**
    * READ ONE: Get single alert by ID
    */
-  async getAlertById(id: string, userId?: string): Promise<AlertItem | null> {
+  async getAlertById(
+    id: string,
+    userId: string,
+    role: string,
+  ): Promise<AlertItem | null> {
     try {
       const userNotificationModel = (
         prisma as unknown as Record<string, unknown>
       ).userNotification as
         | {
-            findUnique: (
-              args: unknown,
-            ) => Promise<PersistedNotification | null>;
+            findFirst: (args: unknown) => Promise<PersistedNotification | null>;
           }
         | undefined;
 
       if (userNotificationModel) {
-        const found = await userNotificationModel.findUnique({ where: { id } });
+        // Scope by owner so a user cannot open another user's notification.
+        const found = await userNotificationModel.findFirst({
+          where: { id, userId },
+        });
         if (found) {
           return {
             id: found.id,
@@ -279,10 +284,7 @@ export class AlertsService {
     if (inMem) return inMem;
 
     // Check dynamic alerts
-    const dynamicAlerts = await this.generateDynamicAlerts({
-      userId: userId || 'anonymous',
-      role: 'OFFICER',
-    });
+    const dynamicAlerts = await this.generateDynamicAlerts({ userId, role });
     return dynamicAlerts.find((a) => a.id === id) || null;
   }
 

@@ -54,7 +54,7 @@ type RequestAuth = {
   sessionId: string;
   sessionKind: SessionKind;
   sessionExpiresAt: Date;
-  user: PublicUser & { status: UserStatus; passwordHash: string | null };
+  user: PublicUser & { status: UserStatus };
 };
 
 declare global {
@@ -441,7 +441,6 @@ export const loadSession: RequestHandler = async (req, res, next) => {
     user: {
       ...publicUser(session.user),
       status: session.user.status,
-      passwordHash: session.user.passwordHash,
     },
   };
   await prisma.session.update({
@@ -491,6 +490,7 @@ authRouter.post('/login', async (req, res) => {
   ).toLowerCase();
   const user = await prisma.user.findFirst({
     where: { OR: [{ email: identifier }, { username: identifier }] },
+    omit: { passwordHash: false },
   });
   const passwordValid = await verifyPassword(
     parsed.data.password,
@@ -597,9 +597,13 @@ authRouter.post('/change-password', loadSession, async (req, res) => {
   }
 
   const auth = req.auth!;
+  const credentials = await prisma.user.findUnique({
+    where: { id: auth.user.id },
+    select: { passwordHash: true },
+  });
   const currentValid = await verifyPassword(
     parsed.data.currentPassword,
-    auth.user.passwordHash,
+    credentials?.passwordHash,
   );
   if (!currentValid) {
     await audit('PASSWORD_CHANGE_FAILED', false, req, { userId: auth.user.id });
