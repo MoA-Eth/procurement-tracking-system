@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import type {
+  ContractAmendment,
   ContractDateValue,
   OfficerContract,
 } from "../data/officerContracts";
@@ -53,11 +54,14 @@ function formatAmount(value: number) {
 
 export function AddContractAmendmentView({
   contract,
+  editingAmendment,
   fromOpen,
   fromTracker,
   onSave,
 }: {
   contract: OfficerContract;
+  /** When set, the form edits this recorded amendment instead of adding one. */
+  editingAmendment?: ContractAmendment;
   fromOpen?: boolean;
   fromTracker?: boolean;
   onSave: (amendmentData: {
@@ -76,14 +80,31 @@ export function AddContractAmendmentView({
   const [history, setHistory] = useState<BackendContractAmendment[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  const [form, setForm] = useState<AmendmentFormState>({
-    variationType: "ADDITION",
-    amount: "",
-    date: { ethiopian: "", gregorian: "" },
-    approvalRef: "",
-    reason: "",
-    notes: "",
-  });
+  const isEditing = Boolean(editingAmendment);
+  const [form, setForm] = useState<AmendmentFormState>(() =>
+    editingAmendment
+      ? {
+          variationType: editingAmendment.amount < 0 ? "REDUCTION" : "ADDITION",
+          amount: formatNumberWithCommas(
+            String(Math.abs(editingAmendment.amount)),
+          ),
+          date: {
+            ethiopian: editingAmendment.ethiopianDate || "",
+            gregorian: editingAmendment.effectiveDate?.slice(0, 10) || "",
+          },
+          approvalRef: editingAmendment.approvalRef || "",
+          reason: editingAmendment.reason || "",
+          notes: editingAmendment.notes || "",
+        }
+      : {
+          variationType: "ADDITION",
+          amount: "",
+          date: { ethiopian: "", gregorian: "" },
+          approvalRef: "",
+          reason: "",
+          notes: "",
+        },
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -127,7 +148,11 @@ export function AddContractAmendmentView({
       ? -variationMagnitude
       : variationMagnitude;
 
-  const newTotalAmount = contractCurrentAmount + signedVariation;
+  // When editing, the amendment's current amount is already included in the
+  // contract total, so apply the edited variation to the total without it.
+  const baselineAmount =
+    contractCurrentAmount - (editingAmendment?.amount ?? 0);
+  const newTotalAmount = baselineAmount + signedVariation;
   const newRemainingBalance = newTotalAmount - contractTotalPaid;
 
   // Business logic validations
@@ -172,9 +197,10 @@ export function AddContractAmendmentView({
   }
 
   const nextAmendmentNo =
-    history.length > 0
+    editingAmendment?.id ??
+    (history.length > 0
       ? Math.max(...history.map((h) => h.amendmentNo)) + 1
-      : (contract.details?.amendments?.length || 0) + 1;
+      : (contract.details?.amendments?.length || 0) + 1);
 
   return (
     <div className="min-w-0 space-y-5 pb-20">
@@ -221,10 +247,14 @@ export function AddContractAmendmentView({
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
-              Contract Amendment / Variation
+              {isEditing
+                ? "Edit Contract Amendment"
+                : "Contract Amendment / Variation"}
             </h1>
             <p className="mt-1 text-xs leading-5 text-slate-500">
-              Record an approved cost addition (+) or reduction (-) for contract{" "}
+              {isEditing
+                ? `Update the details of amendment #${nextAmendmentNo} for contract `
+                : "Record an approved cost addition (+) or reduction (-) for contract "}
               <span className="font-mono font-semibold text-slate-700">
                 {contract.contractNumber}
               </span>
@@ -752,12 +782,18 @@ export function AddContractAmendmentView({
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Applying Amendment...</span>
+                  <span>
+                    {isEditing ? "Saving Changes..." : "Applying Amendment..."}
+                  </span>
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4" />
-                  <span>Apply Amendment #{nextAmendmentNo}</span>
+                  <span>
+                    {isEditing
+                      ? `Save Changes to Amendment #${nextAmendmentNo}`
+                      : `Apply Amendment #${nextAmendmentNo}`}
+                  </span>
                 </>
               )}
             </button>

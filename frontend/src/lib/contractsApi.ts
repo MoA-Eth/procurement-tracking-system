@@ -261,6 +261,23 @@ export async function createContractAmendment(
   return res.data || res;
 }
 
+export async function updateContractAmendment(
+  contractId: string,
+  amendmentNo: number,
+  data: Partial<
+    Omit<CreateContractAmendmentInput, "approvalRef" | "notes"> & {
+      approvalRef: string | null;
+      notes: string | null;
+    }
+  >,
+): Promise<BackendContractAmendment> {
+  const res = await apiClient.patch<any>(
+    `/contracts/${encodeURIComponent(contractId)}/amendments/${amendmentNo}`,
+    data,
+  );
+  return res.amendment || res.data || res;
+}
+
 export function mapBackendPaymentType(pt?: string | null): ContractPaymentType {
   if (!pt) return "Other";
   switch (pt.toUpperCase()) {
@@ -355,7 +372,8 @@ export function mapBackendContractToOfficerContract(bc: BackendContract): any {
         id: a.amendmentNo,
         amount: Number(a.variationAmount) || 0,
         reason: a.reason,
-        effectiveDate: a.effectiveDate || undefined,
+        // The API returns an ISO timestamp; the UI works with YYYY-MM-DD
+        effectiveDate: a.effectiveDate?.slice(0, 10) || undefined,
         approvalRef: a.approvalRef || undefined,
         notes: a.notes || undefined,
       })),

@@ -5,6 +5,7 @@ import {
   createContractSchema,
   createPaymentSchema,
   createAmendmentSchema,
+  updateAmendmentSchema,
   updateContractSchema,
   getContractPaymentsQuerySchema,
 } from './contracts.schema.js';
@@ -187,6 +188,43 @@ export class ContractsController {
       const message =
         error instanceof Error ? error.message : 'Invalid amendment details';
       res.status(400).json({ error: message });
+    }
+  }
+
+  async updateAmendment(req: Request, res: Response): Promise<void> {
+    try {
+      const id = String(req.params.id);
+      const amendmentNo = Number(req.params.amendmentNo);
+      if (!Number.isInteger(amendmentNo) || amendmentNo < 1) {
+        res.status(400).json({ error: 'Invalid amendment number' });
+        return;
+      }
+      const validated = updateAmendmentSchema.parse(req.body);
+      const userId =
+        (
+          req as unknown as {
+            auth?: { user?: { id?: string } };
+            user?: { id?: string };
+          }
+        ).auth?.user?.id ||
+        (req as unknown as { user?: { id?: string } }).user?.id;
+      const result = await contractsService.updateAmendment(
+        id,
+        amendmentNo,
+        validated,
+        userId,
+      );
+      res.status(200).json(result);
+    } catch (error: unknown) {
+      if (error instanceof ZodError) {
+        res.status(400).json({ error: error.issues });
+        return;
+      }
+      const message =
+        error instanceof Error ? error.message : 'Invalid amendment details';
+      res
+        .status(message.includes('not found') ? 404 : 400)
+        .json({ error: message });
     }
   }
 

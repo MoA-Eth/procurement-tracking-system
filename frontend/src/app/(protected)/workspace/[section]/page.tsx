@@ -29,6 +29,7 @@ export default async function WorkspaceSectionPage({
   params: Promise<{ section: string }>;
   searchParams: Promise<{
     activity?: string | string[];
+    amendment?: string | string[];
     contract?: string | string[];
     from?: string | string[];
     mode?: string | string[];
@@ -171,9 +172,14 @@ export default async function WorkspaceSectionPage({
       query.mode === "register" ||
       query.mode === "add-payment" ||
       query.mode === "add-amendment" ||
+      query.mode === "edit-amendment" ||
       query.mode === "open" ||
       query.mode === "view"
         ? query.mode
+        : undefined;
+    const editAmendmentNo =
+      typeof query.amendment === "string" && Number(query.amendment) > 0
+        ? Number(query.amendment)
         : undefined;
     const initialActivityReference =
       typeof query.activity === "string" ? query.activity : undefined;
@@ -183,6 +189,7 @@ export default async function WorkspaceSectionPage({
       typeof query.plan === "string" ? query.plan : undefined;
     return (
       <OfficerContractsView
+        editAmendmentNo={editAmendmentNo}
         fromOpen={fromOpen}
         fromProjects={fromProjects}
         fromTracker={fromTracker}

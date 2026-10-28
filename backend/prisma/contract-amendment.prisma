@@ -1,19 +1,27 @@
-// Append-only history of contract value changes.
-// Never update Contract.totalValue directly — always insert a new amendment row.
+// History of contract value changes.
+// Never update Contract.totalValue directly — record or edit an amendment row.
+// Amendments can be edited after they are recorded (amendments are not always
+// known in advance); every edit is written to the AuditLog with old and new
+// values, and later amendments' previous/new values are recalculated.
 model ContractAmendment {
   id         String   @id @default(cuid())
   contractId String
   contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
 
-  amendmentNo    Int     // 1, 2, 3... auto-incremented per contract
-  previousValue  Decimal @db.Decimal(15, 2)
-  newValue       Decimal @db.Decimal(15, 2)
-  reason         String
+  amendmentNo     Int     // 1, 2, 3... auto-incremented per contract
+  previousValue   Decimal @db.Decimal(15, 2)
+  newValue        Decimal @db.Decimal(15, 2)
+  variationAmount Decimal @default(0) @db.Decimal(15, 2) // newValue - previousValue
+  reason          String
+  effectiveDate   DateTime?
+  approvalRef     String?
+  notes           String?
 
   amendedById String
   amendedBy   User   @relation("ContractAmendedBy", fields: [amendedById], references: [id])
 
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 
   @@unique([contractId, amendmentNo])
   @@index([contractId])

@@ -71,6 +71,18 @@ router.post(
   ),
   (req, res) => contractsController.recordAmendment(req, res),
 );
+router.patch(
+  '/:id/amendments/:amendmentNo',
+  authorize(
+    'Administrator',
+    'ProcurementOfficer',
+    'ProcurementDirector',
+    'OFFICER',
+    'DIRECTOR',
+    'ADMIN',
+  ),
+  (req, res) => contractsController.updateAmendment(req, res),
+);
 
 router.get('/:id/payments', (req, res) =>
   contractsController.getContractPayments(req, res),

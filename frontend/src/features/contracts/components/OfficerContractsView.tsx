@@ -51,6 +51,7 @@ import {
 import {
   createContract,
   createContractAmendment,
+  updateContractAmendment,
   recordContractPayment,
   fetchContracts,
   mapBackendContractToOfficerContract,
@@ -70,6 +71,7 @@ const amountFormatter = new Intl.NumberFormat("en-US", {
 });
 
 export function OfficerContractsView({
+  editAmendmentNo,
   fromOpen,
   fromProjects,
   fromTracker,
@@ -79,13 +81,20 @@ export function OfficerContractsView({
   mode,
   selectedContractNumber,
 }: {
+  editAmendmentNo?: number;
   fromOpen?: boolean;
   fromProjects?: boolean;
   fromTracker?: boolean;
   initialActivityReference?: string;
   initialPlanReference?: string;
   initialProjectCode?: string;
-  mode?: "add-payment" | "register" | "add-amendment" | "open" | "view";
+  mode?:
+    | "add-payment"
+    | "register"
+    | "add-amendment"
+    | "edit-amendment"
+    | "open"
+    | "view";
   selectedContractNumber?: string;
 }) {
   const router = useRouter();
@@ -237,6 +246,12 @@ export function OfficerContractsView({
       contract.contractNumber.toLowerCase() ===
       (selectedContractNumber || "").toLowerCase(),
   );
+  const editingAmendment =
+    mode === "edit-amendment" && editAmendmentNo
+      ? selectedContract?.details?.amendments?.find(
+          (amendment) => amendment.id === editAmendmentNo,
+        )
+      : undefined;
 
   const fiscalYearOptions = useMemo(
     () =>
@@ -342,6 +357,17 @@ export function OfficerContractsView({
   }) {
     if (!selectedContract) return;
 
+    const existingAmendments = selectedContract.details?.amendments || [];
+    const savedAmendment = {
+      id: editingAmendment?.id ?? existingAmendments.length + 1,
+      amount: amendmentData.variationAmount,
+      approvalRef: amendmentData.approvalRef,
+      effectiveDate: amendmentData.effectiveDate,
+      ethiopianDate: amendmentData.ethiopianDate,
+      notes: amendmentData.notes,
+      reason: amendmentData.reason,
+    };
+
     const updatedContract: OfficerContract = {
       ...selectedContract,
       currentAmount: amendmentData.newTotalAmount,
@@ -350,18 +376,13 @@ export function OfficerContractsView({
         ? {
             ...selectedContract.details,
             amountWithVat: amendmentData.newTotalAmount,
-            amendments: [
-              ...(selectedContract.details.amendments || []),
-              {
-                id: (selectedContract.details.amendments?.length || 0) + 1,
-                amount: amendmentData.variationAmount,
-                approvalRef: amendmentData.approvalRef,
-                effectiveDate: amendmentData.effectiveDate,
-                ethiopianDate: amendmentData.ethiopianDate,
-                notes: amendmentData.notes,
-                reason: amendmentData.reason,
-              },
-            ],
+            amendments: editingAmendment
+              ? existingAmendments.map((amendment) =>
+                  amendment.id === editingAmendment.id
+                    ? savedAmendment
+                    : amendment,
+                )
+              : [...existingAmendments, savedAmendment],
           }
         : undefined,
     };
@@ -374,15 +395,30 @@ export function OfficerContractsView({
     );
 
     try {
-      await createContractAmendment(selectedContract.id, {
-        variationAmount: amendmentData.variationAmount,
-        reason: amendmentData.reason,
-        effectiveDate: amendmentData.effectiveDate,
-        approvalRef: amendmentData.approvalRef,
-        notes: amendmentData.notes,
-      });
+      if (editingAmendment) {
+        await updateContractAmendment(
+          selectedContract.id,
+          editingAmendment.id,
+          {
+            variationAmount: amendmentData.variationAmount,
+            reason: amendmentData.reason,
+            effectiveDate: amendmentData.effectiveDate,
+            // Send null so cleared fields are also cleared on the server
+            approvalRef: amendmentData.approvalRef ?? null,
+            notes: amendmentData.notes ?? null,
+          },
+        );
+      } else {
+        await createContractAmendment(selectedContract.id, {
+          variationAmount: amendmentData.variationAmount,
+          reason: amendmentData.reason,
+          effectiveDate: amendmentData.effectiveDate,
+          approvalRef: amendmentData.approvalRef,
+          notes: amendmentData.notes,
+        });
+      }
     } catch (err) {
-      console.warn("Backend createContractAmendment note:", err);
+      console.warn("Backend contract amendment note:", err);
     }
 
     if (fromOpen || selectedContractNumber) {
@@ -508,10 +544,17 @@ export function OfficerContractsView({
     );
   }
 
-  if (mode === "add-amendment" && selectedContract) {
+  if (
+    selectedContract &&
+    (mode === "add-amendment" ||
+      (mode === "edit-amendment" && editingAmendment))
+  ) {
     return (
       <AddContractAmendmentView
+        // Remount when switching amendments so the form re-initialises
+        key={editingAmendment ? `edit-${editingAmendment.id}` : "add"}
         contract={selectedContract}
+        editingAmendment={editingAmendment}
         fromOpen={fromOpen}
         fromTracker={fromTracker}
         onSave={saveAmendment}

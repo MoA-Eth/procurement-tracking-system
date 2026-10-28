@@ -52,27 +52,72 @@ export const getContractPaymentsQuerySchema = z.object({
   'filter[status]': z.enum(['PAID', 'PENDING', 'FAILED']).optional(),
 });
 
+// The web app sends `variationAmount` and `approvalRef`; API clients may use
+// `amount` and `referenceNo`. Normalise both spellings before validating.
+const normaliseAmendmentInput = (input: unknown) => {
+  if (!input || typeof input !== 'object') return input;
+  const { variationAmount, referenceNo, ...rest } = input as Record<
+    string,
+    unknown
+  >;
+  return {
+    ...rest,
+    ...(rest.amount === undefined && variationAmount !== undefined
+      ? { amount: variationAmount }
+      : {}),
+    ...(rest.approvalRef === undefined && referenceNo !== undefined
+      ? { approvalRef: referenceNo }
+      : {}),
+  };
+};
+
+const amendmentFields = {
+  amount: z
+    .number()
+    .refine((val) => val !== 0, 'Amendment amount cannot be zero')
+    .openapi({
+      example: 50000,
+      description:
+        'Positive for addition, negative for reduction (alias: variationAmount)',
+    }),
+  reason: z
+    .string()
+    .trim()
+    .min(1, 'Reason for amendment is required')
+    .openapi({ example: 'Scope addition approved by project manager' }),
+  approvalRef: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+    .openapi({ example: 'VAR-001', description: 'Alias: referenceNo' }),
+  notes: z.string().trim().max(2000).optional(),
+  effectiveDate: z.coerce.date().optional(),
+};
+
 export const createAmendmentSchema = registry.register(
   'CreateAmendment',
-  z.object({
-    amount: z
-      .number()
-      .refine((val) => val !== 0, 'Amendment amount cannot be zero')
-      .openapi({
-        example: 50000,
-        description: 'Positive for addition, negative for reduction',
-      }),
-    reason: z
-      .string()
-      .trim()
-      .min(1, 'Reason for amendment is required')
-      .openapi({ example: 'Scope addition approved by project manager' }),
-    referenceNo: z.string().trim().optional().openapi({ example: 'VAR-001' }),
-    effectiveDate: z.coerce.date().optional(),
-  }),
+  z.preprocess(normaliseAmendmentInput, z.object(amendmentFields)),
+);
+
+export const updateAmendmentSchema = registry.register(
+  'UpdateAmendment',
+  z.preprocess(
+    normaliseAmendmentInput,
+    z
+      .object({
+        ...amendmentFields,
+        // Optional text fields can be cleared on edit
+        approvalRef: amendmentFields.approvalRef.nullable(),
+        notes: amendmentFields.notes.nullable(),
+        effectiveDate: z.coerce.date().nullable().optional(),
+      })
+      .partial(),
+  ),
 );
 
 export type CreateAmendmentDto = z.infer<typeof createAmendmentSchema>;
+export type UpdateAmendmentDto = z.infer<typeof updateAmendmentSchema>;
 
 export const createPaymentSchema = registry.register(
   'CreatePayment',

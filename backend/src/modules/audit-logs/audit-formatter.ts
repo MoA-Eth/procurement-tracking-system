@@ -62,6 +62,12 @@ export function formatAuditSummary(log: AuditLogPayload): string {
       return `${userName} issued Amendment${amendNo} for Contract ${contractNo}${reason}`;
     }
 
+    case 'CONTRACT_AMENDMENT_UPDATED': {
+      const contractNo = String(changes.contractNo ?? log.entityId ?? '');
+      const amendNo = changes.amendmentNo ? ` #${changes.amendmentNo}` : '';
+      return `${userName} edited Amendment${amendNo} for Contract ${contractNo}`;
+    }
+
     case 'CONTRACT_DELETED': {
       const contractNo = String(changes.contractNo ?? log.entityId ?? '');
       return `${userName} deleted Contract ${contractNo}`;

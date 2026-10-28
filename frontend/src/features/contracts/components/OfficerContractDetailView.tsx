@@ -165,7 +165,7 @@ export function OfficerContractDetailView({
               id: ba.amendmentNo,
               amount: Number(ba.variationAmount) || 0,
               reason: ba.reason,
-              effectiveDate: ba.effectiveDate || undefined,
+              effectiveDate: ba.effectiveDate?.slice(0, 10) || undefined,
               approvalRef: ba.approvalRef || undefined,
               notes: ba.notes || undefined,
             })),
@@ -589,6 +589,9 @@ export function OfficerContractDetailView({
                     Justification Reason
                   </th>
                   <th className="px-4 py-3 min-w-[150px]">Remarks / Notes</th>
+                  <th className="px-4 py-3 text-right">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -693,6 +696,19 @@ export function OfficerContractDetailView({
                           <span className="text-slate-400">—</span>
                         )}
                       </td>
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          aria-label={`Edit amendment ${amendment.id}`}
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors"
+                          href={`/workspace/contracts?mode=edit-amendment&contract=${encodeURIComponent(contract.contractNumber)}&amendment=${amendment.id}&from=open${fromTracker ? "&origin=tracker" : ""}`}
+                        >
+                          <FileEdit
+                            aria-hidden="true"
+                            className="h-3.5 w-3.5 text-slate-500"
+                          />
+                          Edit
+                        </Link>
+                      </td>
                     </tr>
                   );
                 })}
@@ -720,7 +736,7 @@ export function OfficerContractDetailView({
                     {formatAmount(Math.abs(totalVariationAmount))}
                   </td>
                   <td className="px-4 py-3 text-center">{currency}</td>
-                  <td className="px-4 py-3" colSpan={4}>
+                  <td className="px-4 py-3" colSpan={5}>
                     <span className="text-xs font-normal text-slate-500">
                       Revised contract value:{" "}
                       <span className="font-semibold text-slate-800">

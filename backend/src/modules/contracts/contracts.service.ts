@@ -9,6 +9,7 @@ import type {
   CreatePaymentDto,
   UpdateContractDto,
   CreateAmendmentDto,
+  UpdateAmendmentDto,
 } from './contracts.schema.js';
 import { createAuditLog } from '../../shared/audit/audit-logger.js';
 
@@ -417,7 +418,11 @@ export class ContractsService {
           amendmentNo,
           previousValue,
           newValue,
+          variationAmount: data.amount,
           reason: data.reason,
+          effectiveDate: data.effectiveDate ?? null,
+          approvalRef: data.approvalRef ?? null,
+          notes: data.notes ?? null,
           amendedById: validUserId,
           createdAt: data.effectiveDate ?? new Date(),
         },
@@ -472,6 +477,159 @@ export class ContractsService {
         },
         tx,
       );
+
+      return { amendment, contract: updatedContract };
+    });
+  }
+
+  /**
+   * Edits a recorded amendment. Amendments are not always known in advance,
+   * so officers may correct or complete them later. When the amount changes,
+   * the difference is applied to this amendment's new value, to the
+   * previous/new values of every later amendment, and to the contract totals.
+   */
+  async updateAmendment(
+    contractId: string,
+    amendmentNo: number,
+    data: UpdateAmendmentDto,
+    userId?: string,
+  ) {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const contract = await tx.contract.findFirst({
+        where: {
+          OR: [{ id: contractId }, { contractNo: contractId }],
+          deletedAt: null,
+        },
+        include: { amendments: { orderBy: { amendmentNo: 'asc' } } },
+      });
+
+      if (!contract) {
+        throw new Error('Contract not found');
+      }
+
+      const existing = contract.amendments.find(
+        (a) => a.amendmentNo === amendmentNo,
+      );
+      if (!existing) {
+        throw new Error(`Amendment #${amendmentNo} not found on this contract`);
+      }
+
+      const oldAmount =
+        Number(existing.newValue) - Number(existing.previousValue);
+      const newAmount = data.amount ?? oldAmount;
+      const delta = newAmount - oldAmount;
+
+      const currentTotal = Number(
+        contract.contractAmountWithVat || contract.totalValue,
+      );
+      const newTotal = currentTotal + delta;
+      if (newTotal < Number(contract.paidAmount)) {
+        throw new Error(
+          `Contract value cannot be reduced below the amount already paid (${Number(contract.paidAmount)}).`,
+        );
+      }
+
+      const amendment = await tx.contractAmendment.update({
+        where: { id: existing.id },
+        data: {
+          ...(delta !== 0
+            ? {
+                variationAmount: newAmount,
+                newValue: Number(existing.newValue) + delta,
+              }
+            : {}),
+          ...(data.reason !== undefined ? { reason: data.reason } : {}),
+          ...(data.effectiveDate !== undefined
+            ? { effectiveDate: data.effectiveDate }
+            : {}),
+          ...(data.approvalRef !== undefined
+            ? { approvalRef: data.approvalRef }
+            : {}),
+          ...(data.notes !== undefined ? { notes: data.notes } : {}),
+        },
+        include: {
+          amendedBy: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+      });
+
+      if (delta !== 0) {
+        // Later amendments were calculated from this amendment's new value
+        for (const later of contract.amendments.filter(
+          (a) => a.amendmentNo > amendmentNo,
+        )) {
+          await tx.contractAmendment.update({
+            where: { id: later.id },
+            data: {
+              previousValue: Number(later.previousValue) + delta,
+              newValue: Number(later.newValue) + delta,
+            },
+          });
+        }
+
+        await tx.contract.update({
+          where: { id: contract.id },
+          data: {
+            totalValue: newTotal,
+            contractAmountWithVat: newTotal,
+            remainingValue: newTotal - Number(contract.paidAmount),
+          },
+        });
+      }
+
+      await createAuditLog(
+        {
+          userId: userId ?? null,
+          action: 'CONTRACT_AMENDMENT_UPDATED',
+          entityType: 'CONTRACT',
+          entityId: contract.id,
+          changes: {
+            contractNo: contract.contractNo,
+            amendmentNo,
+            before: {
+              variationAmount: oldAmount,
+              reason: existing.reason,
+              effectiveDate: existing.effectiveDate,
+              approvalRef: existing.approvalRef,
+              notes: existing.notes,
+            },
+            after: {
+              variationAmount: newAmount,
+              reason: amendment.reason,
+              effectiveDate: amendment.effectiveDate,
+              approvalRef: amendment.approvalRef,
+              notes: amendment.notes,
+            },
+            ...(delta !== 0
+              ? {
+                  previousContractValue: currentTotal,
+                  newContractValue: newTotal,
+                }
+              : {}),
+          },
+        },
+        tx,
+      );
+
+      const updatedContract = await tx.contract.findUniqueOrThrow({
+        where: { id: contract.id },
+        include: {
+          supplier: true,
+          amendments: {
+            orderBy: { amendmentNo: 'asc' },
+            include: {
+              amendedBy: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+          },
+          payments: {
+            where: { deletedAt: null },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+      });
 
       return { amendment, contract: updatedContract };
     });
