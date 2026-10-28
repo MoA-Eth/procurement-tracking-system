@@ -4,6 +4,7 @@ import {
   Activity,
   BarChart3,
   Bell,
+  Calendar,
   ClipboardCheck,
   FileSignature,
   FolderKanban,
@@ -15,6 +16,7 @@ import {
   Menu,
   Settings,
   Sliders,
+  UserRound,
   Users,
   X,
   type LucideIcon,
@@ -22,7 +24,11 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import {
+  ETHIOPIAN_MONTHS,
+  gregorianToEthiopian,
+} from "@/features/projects/utils/ethiopianCalendar";
 import type { AuthUser } from "../../lib/authTypes";
 import type { UserRole } from "@/types";
 import { NotificationHeaderDropdown } from "@/features/notifications/components/NotificationHeaderDropdown";
@@ -56,6 +62,24 @@ const roleContext: Record<UserRole, string> = {
   ADMIN: "System Administration",
 };
 
+// Today in the Ethiopian calendar ("18 Tikimt 2019 E.C.") and Gregorian
+// ("28 Oct 2026 G.C."), shown in the header as in the Asset Tracking System.
+function todayLabels(now: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const eth = gregorianToEthiopian(iso);
+  return {
+    ethiopian: eth
+      ? `${eth.day} ${ETHIOPIAN_MONTHS[eth.month - 1]} ${eth.year} E.C.`
+      : "",
+    gregorian: `${now.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })} G.C.`,
+  };
+}
+
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "MU";
@@ -77,6 +101,39 @@ export function AppShell({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigation = getNavigationForRole(user.role);
   const userInitials = initials(user.displayName);
+
+  // Page title and icon for the header: the menu entry that best matches the
+  // current path (longest href prefix), with the pages outside the menu.
+  const currentNav = [...navigation]
+    .filter(
+      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  const pageTitle =
+    currentNav?.label ??
+    (pathname.startsWith("/workspace/settings")
+      ? "Settings"
+      : pathname.startsWith("/profile")
+        ? "My Profile"
+        : pathname.startsWith("/dashboard")
+          ? "Dashboard"
+          : "");
+  const PageIcon: LucideIcon = currentNav
+    ? navigationIcons[currentNav.icon]
+    : pathname.startsWith("/workspace/settings")
+      ? Settings
+      : pathname.startsWith("/profile")
+        ? UserRound
+        : LayoutDashboard;
+
+  // Set after mount so the server's time zone never shows a different day
+  const [today, setToday] = useState<ReturnType<typeof todayLabels> | null>(
+    null,
+  );
+  const [showGregorian, setShowGregorian] = useState(false);
+  useEffect(() => {
+    setToday(todayLabels(new Date()));
+  }, []);
 
   const handleNavClick = (
     href: string,
@@ -249,23 +306,58 @@ export function AppShell({
       {/* Main Content Area */}
       <div className="min-w-0 flex-1 flex flex-col">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between lg:justify-end border-b border-slate-200 bg-white px-4 sm:px-6 shadow-2xs">
-          <button
-            type="button"
-            aria-label="Open navigation"
-            aria-expanded={isMobileMenuOpen}
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 lg:hidden transition-colors"
-          >
-            <Menu size={20} />
-          </button>
+        {/* Same layout as the Asset Tracking System header: page icon and
+            title on the left; today's date, notifications and language on
+            the right. */}
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-slate-200/90 bg-white px-3.5 sm:px-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              aria-label="Open navigation"
+              aria-expanded={isMobileMenuOpen}
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:hidden transition-colors"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="h-5 w-px shrink-0 bg-slate-200 lg:hidden" />
+            {pageTitle ? (
+              <div className="flex min-w-0 items-center gap-2">
+                <PageIcon
+                  aria-hidden="true"
+                  className="h-5 w-5 shrink-0 text-[#00843D]"
+                />
+                <h1 className="truncate text-base font-bold tracking-tight text-slate-900 sm:text-lg">
+                  {pageTitle}
+                </h1>
+              </div>
+            ) : null}
+          </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2.5 text-xs">
+            {today ? (
+              <button
+                type="button"
+                onClick={() => setShowGregorian((value) => !value)}
+                title={
+                  showGregorian
+                    ? "Showing the Gregorian date. Click for the Ethiopian calendar."
+                    : "Showing the Ethiopian calendar. Click for the Gregorian date."
+                }
+                className="hidden xl:flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-600 transition hover:border-emerald-300 hover:text-emerald-800 cursor-pointer"
+              >
+                <Calendar className="h-3.5 w-3.5 text-emerald-700" />
+                <span className="tabular-nums">
+                  {showGregorian ? today.gregorian : today.ethiopian}
+                </span>
+              </button>
+            ) : null}
+
             <NotificationHeaderDropdown user={user} />
 
             <div
               aria-label="Current language: English and Amharic"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 bg-white"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 text-[11px] font-medium text-slate-600 bg-white"
             >
               <Globe
                 size={14}
