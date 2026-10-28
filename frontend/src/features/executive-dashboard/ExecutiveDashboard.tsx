@@ -14,6 +14,7 @@ import styles from "./responsive.module.css";
 import { ProcurementRegister } from "./ProcurementRegister";
 import { ExecutiveVisualizations } from "./ExecutiveVisualizations";
 import { SystemDashboardSummary } from "./SystemDashboardSummary";
+import { ContractSummary } from "./ContractSummary";
 import { MinisterOverview } from "./MinisterOverview";
 import { apiClient } from "@/lib/apiClient";
 import {
@@ -129,11 +130,6 @@ export function ExecutiveDashboard() {
   const pages = Math.max(1, Math.ceil(rows.length / 15));
   const currentPage = Math.min(page, pages);
   const pageRows = rows.slice((currentPage - 1) * 15, currentPage * 15);
-  const groups = ITEM_TYPES.map((type) => ({
-    type,
-    rows: rows.filter((row) => row.itemType === type),
-  }));
-  const maxCount = Math.max(1, ...groups.map((group) => group.rows.length));
   const exportCsv = () => {
     const url = URL.createObjectURL(
       new Blob([registerCsv(rows)], { type: "text/csv;charset=utf-8;" }),
@@ -152,7 +148,7 @@ export function ExecutiveDashboard() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Executive procurement overview
+            Executive contract dashboard
           </h1>
           <p className="mt-1.5 text-sm text-slate-500">
             Works, goods and services · Portfolio value, delivery and leadership
@@ -207,17 +203,14 @@ export function ExecutiveDashboard() {
               </button>
             </div>
           )}
-          {snapshot?.systemSummary && (
-            <SystemDashboardSummary summary={snapshot.systemSummary} />
-          )}
-          <MinisterOverview rows={rows} asOf={asOf} onSelect={setSelected} />
+          <ContractSummary rows={rows} asOf={asOf} />
         </>
       )}
       {!loading && !error && (
-        <details className="rounded-xl border border-slate-200 bg-white">
-          <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-emerald-800">
-            View detailed reports and contract register
-          </summary>
+        <section
+          aria-label="Contract register and filters"
+          className="min-w-0 rounded-xl border border-slate-200 bg-white"
+        >
           <div className="space-y-6 border-t border-slate-100 bg-slate-50/50 p-4 sm:p-5">
             <section
               aria-label="Dashboard filters"
@@ -379,15 +372,6 @@ export function ExecutiveDashboard() {
                 })}
               </span>
             </div>
-            {!!all.length && (
-              <ExecutiveVisualizations
-                rows={rows}
-                asOf={asOf}
-                onSelect={setSelected}
-                onProjectSelect={(id) => update("project", id)}
-                onSupplierSelect={(name) => update("supplier", name)}
-              />
-            )}
             {!all.length ? (
               <section className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
                 <Building2 size={30} className="mx-auto text-emerald-700" />
@@ -416,137 +400,13 @@ export function ExecutiveDashboard() {
                   Clear filters
                 </button>
               </div>
-            ) : (
-              <div className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-                <section className="rounded-xl border border-slate-200 bg-white p-5">
-                  <h2 className="font-semibold">Delivery by item type</h2>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Register rows, with the same count scale for every type
-                  </p>
-                  <div className="mt-6 space-y-5">
-                    {groups
-                      .filter(
-                        (group) =>
-                          group.rows.length || group.type !== "UNCLASSIFIED",
-                      )
-                      .map((group) => (
-                        <div key={group.type}>
-                          <div className="mb-2 flex justify-between text-sm">
-                            <span>{TYPE_LABELS[group.type]}</span>
-                            <span className="font-semibold">
-                              {group.rows.length}
-                            </span>
-                          </div>
-                          <div className="h-7 rounded bg-slate-50">
-                            <div
-                              className="flex h-full overflow-hidden rounded"
-                              style={{
-                                width: `${(group.rows.length / maxCount) * 100}%`,
-                              }}
-                            >
-                              {Object.entries(STATUS_COLORS).map(
-                                ([status, color]) => {
-                                  const count = group.rows.filter(
-                                    (row) =>
-                                      deliveryStatus(row, asOf) === status,
-                                  ).length;
-                                  return count ? (
-                                    <button
-                                      key={status}
-                                      title={`${TYPE_LABELS[group.type]}: ${count} ${status.toLowerCase()}`}
-                                      aria-label={`${TYPE_LABELS[group.type]}: ${count} ${status.toLowerCase()}. Filter these records.`}
-                                      className={`${color} h-full min-w-1 focus-visible:outline-2 focus-visible:outline-black`}
-                                      style={{
-                                        width: `${(count / group.rows.length) * 100}%`,
-                                      }}
-                                      onClick={() => {
-                                        setFilters((previous) => ({
-                                          ...previous,
-                                          itemType: group.type,
-                                          status,
-                                        }));
-                                        setPage(1);
-                                      }}
-                                    />
-                                  ) : null;
-                                },
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                  <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
-                    {Object.entries(STATUS_COLORS).map(([status, color]) => (
-                      <span key={status} className="flex items-center gap-1.5">
-                        <span className={`h-2 w-2 rounded-full ${color}`} />
-                        {status}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-                <section className="rounded-xl border border-slate-200 bg-white p-5">
-                  <h2 className="font-semibold">Reporting coverage</h2>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Missing fields remain visible in the register
-                  </p>
-                  <div className="mt-5 space-y-4">
-                    {[
-                      {
-                        label: "Unclassified item types",
-                        count: rows.filter(
-                          (row) => row.itemType === "UNCLASSIFIED",
-                        ).length,
-                        note: "Category comes from the linked procurement plan.",
-                      },
-                      {
-                        label: "Contracts without a completion target",
-                        count: rows.filter(
-                          (row) =>
-                            row.contractId &&
-                            !row.initialCompletionDate &&
-                            !row.revisedCompletionDate,
-                        ).length,
-                        note: "These cannot be assessed for overdue delivery.",
-                      },
-                      {
-                        label: "Contracts without reported progress",
-                        count: metrics.missingProgress,
-                        note: "Progress is the activity’s reported percentage, not payment progress.",
-                      },
-                      {
-                        label: "Records without a currency",
-                        count: rows.filter((row) => !row.currency).length,
-                        note: "Unspecified amounts are kept in their own total.",
-                      },
-                    ].map((item) => (
-                      <div
-                        key={item.label}
-                        className="border-b border-slate-100 pb-3 last:border-0"
-                      >
-                        <div className="flex justify-between gap-4 text-sm">
-                          <span>{item.label}</span>
-                          <span
-                            className={`font-semibold ${item.count ? "text-amber-700" : "text-slate-600"}`}
-                          >
-                            {item.count}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs leading-5 text-slate-400">
-                          {item.note}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              </div>
-            )}
+            ) : null}
             <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 p-5">
                 <div>
-                  <h2 className="font-semibold">Procurement register</h2>
+                  <h2 className="font-semibold">Contract register</h2>
                   <p className="mt-1 text-xs text-slate-500">
-                    All 13 workbook columns · Dates: mm/dd/yy · Scroll
+                    Your 13 required columns · Dates: mm/dd/yy · Scroll
                     horizontally to see every field
                   </p>
                 </div>
@@ -587,6 +447,30 @@ export function ExecutiveDashboard() {
                 </div>
               </div>
             </section>
+            <details className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+              <summary className="cursor-pointer text-sm font-semibold text-emerald-800">
+                Additional charts and operational summary
+              </summary>
+              <div className="mt-5 space-y-5">
+                {snapshot?.systemSummary && (
+                  <SystemDashboardSummary summary={snapshot.systemSummary} />
+                )}
+                <MinisterOverview
+                  rows={rows}
+                  asOf={asOf}
+                  onSelect={setSelected}
+                />
+                {!!all.length && (
+                  <ExecutiveVisualizations
+                    rows={rows}
+                    asOf={asOf}
+                    onSelect={setSelected}
+                    onProjectSelect={(id) => update("project", id)}
+                    onSupplierSelect={(name) => update("supplier", name)}
+                  />
+                )}
+              </div>
+            </details>
             <details className="rounded-xl border border-slate-200 bg-white p-5 text-xs text-slate-500">
               <summary className="flex cursor-pointer items-center justify-between font-semibold text-slate-700">
                 Sources and measurement definitions
@@ -604,8 +488,8 @@ export function ExecutiveDashboard() {
                   <strong>Money:</strong> Initial value is the original contract
                   amount excluding VAT; amendments and payments are not
                   completion measures. Currencies are never converted or
-                  combined. Category cards ignore the item-type filter to retain
-                  comparison; other filters apply.
+                  combined. All contract summary figures and register rows
+                  follow the selected filters.
                 </p>
                 <p>
                   <strong>Delivery:</strong> Completed means a completed
@@ -625,7 +509,7 @@ export function ExecutiveDashboard() {
               </div>
             </details>
           </div>
-        </details>
+        </section>
       )}
 
       {selected && (

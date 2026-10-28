@@ -1,10 +1,8 @@
 # Executive dashboard module
 
-## Ministerial default view
+## Contract focused default view
 
-The landing page is a concise procurement briefing for ministers. It shows four headline figures (estimated procurement value, contract commitments, completed contracts and overdue contracts), a Works/Goods/Services comparison, a simple delivery donut and a short attention list with the next recorded deadline and material data gaps. Currency totals remain separate. Category counts represent activities so unawarded Goods and Services are visible rather than appearing to be absent.
-
-All filters, the three analytical views, measurement definitions, diagnostics and the complete 13-column register remain under **View detailed reports and contract register**, collapsed by default. The default page contains no analytical tabs, scatterplots, gauge, supplier rankings or wide table. A visible filtered-portfolio banner and reset control prevent hidden filters from silently changing the high-level briefing. Existing permissions and database records are unchanged.
+The default page prioritizes the user's 13-column contract register. Cost estimates, initial contract amounts, contract completion and reported activity progress appear above visible filters and the register. Dates use mm/dd/yy; missing and pre-contract values remain explicit. The register is no longer collapsed. Extra visualizations and the full-portfolio operational summary are retained under Additional charts and operational summary, closed initially. All other modules remain unchanged.
 
 Read-only executive oversight for Works, Goods and Services. Local preview:
 `http://localhost:3201/workspace/executive-dashboard`.
