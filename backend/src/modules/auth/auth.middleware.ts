@@ -20,7 +20,7 @@ export type RequestAuth = {
   sessionId: string;
   sessionKind: SessionKind;
   sessionExpiresAt: Date;
-  user: PublicUser & { status: UserStatus; passwordHash: string | null };
+  user: PublicUser & { status: UserStatus };
 };
 
 declare global {
@@ -110,7 +110,6 @@ export const loadSession: RequestHandler = async (req, res, next) => {
       displayName: session.user.displayName,
       role: session.user.authRole,
       status: session.user.status,
-      passwordHash: session.user.passwordHash,
     },
   };
   await prisma.session.update({

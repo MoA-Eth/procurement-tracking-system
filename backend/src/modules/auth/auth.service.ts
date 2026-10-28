@@ -184,6 +184,7 @@ export class AuthService {
       where: {
         id: userId,
       },
+      omit: { passwordHash: false },
     });
 
     if (!user) {

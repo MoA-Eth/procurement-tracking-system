@@ -38,11 +38,9 @@ export class AlertsController {
   async getAlerts(req: Request, res: Response): Promise<void> {
     try {
       const validatedQuery = alertsQuerySchema.parse(req.query);
-      const sessionUser = req.auth?.user;
-
-      const userId =
-        sessionUser?.id || (req.query.userId as string) || 'anonymous';
-      const role = sessionUser?.role || validatedQuery.role || 'OFFICER';
+      // Identity always comes from the session; query-string userId/role are
+      // ignored so one user cannot read another user's alerts.
+      const { id: userId, role } = req.auth!.user;
 
       const alerts = await alertsService.getAlertsForUser({
         userId,
@@ -73,9 +71,13 @@ export class AlertsController {
   async getAlertById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const userId = req.auth?.user?.id;
+      const { id: userId, role } = req.auth!.user;
 
-      const alert = await alertsService.getAlertById(id as string, userId);
+      const alert = await alertsService.getAlertById(
+        id as string,
+        userId,
+        role,
+      );
       if (!alert) {
         res.status(404).json({ error: 'Alert not found' });
         return;
@@ -148,8 +150,7 @@ export class AlertsController {
   async markAlertAsRead(req: Request, res: Response): Promise<void> {
     try {
       const alertId = req.params.id as string;
-      const userId =
-        req.auth?.user?.id || (req.query.userId as string) || 'anonymous';
+      const userId = req.auth!.user.id;
 
       const result = await alertsService.markAlertAsRead(alertId, userId);
       res.status(200).json(result);
@@ -165,8 +166,7 @@ export class AlertsController {
    */
   async markAllAsRead(req: Request, res: Response): Promise<void> {
     try {
-      const userId =
-        req.auth?.user?.id || (req.query.userId as string) || 'anonymous';
+      const userId = req.auth!.user.id;
 
       const result = await alertsService.markAllAlertsAsRead(userId);
       res.status(200).json(result);

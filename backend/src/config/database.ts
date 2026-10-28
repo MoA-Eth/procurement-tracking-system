@@ -8,11 +8,19 @@ const pool = new pg.Pool({ connectionString: env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 
 const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
+  prisma?: ReturnType<typeof createClient>;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const createClient = () => new PrismaClient({ adapter: adapter as any });
+// passwordHash is omitted from every query result so a relation include such as
+// `creator: true` can never leak it into an API response. Code that genuinely
+// needs the hash (login, change-password) opts back in with
+// `omit: { passwordHash: false }`.
+const createClient = () =>
+  new PrismaClient({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    adapter: adapter as any,
+    omit: { user: { passwordHash: true } },
+  });
 
 export const prisma = globalForPrisma.prisma ?? createClient();
 
