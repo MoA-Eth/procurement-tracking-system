@@ -14,6 +14,7 @@ import styles from "./responsive.module.css";
 import { ProcurementRegister } from "./ProcurementRegister";
 import { ExecutiveVisualizations } from "./ExecutiveVisualizations";
 import { SystemDashboardSummary } from "./SystemDashboardSummary";
+import { ContractGraphs } from "./ContractGraphs";
 import { ContractSummary } from "./ContractSummary";
 import { MinisterOverview } from "./MinisterOverview";
 import { apiClient } from "@/lib/apiClient";
@@ -401,6 +402,9 @@ export function ExecutiveDashboard() {
                 </button>
               </div>
             ) : null}
+            {!!rows.length && (
+              <ContractGraphs rows={rows} onSelect={setSelected} />
+            )}
             <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 p-5">
                 <div>
