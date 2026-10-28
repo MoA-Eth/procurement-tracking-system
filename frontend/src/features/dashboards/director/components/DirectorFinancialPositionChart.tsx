@@ -40,9 +40,14 @@ export function DirectorFinancialPositionChart({
     Number((financialSummary.actualDisbursedETB / 1_000_000).toFixed(0)) || 0,
   );
 
-  // Determine Y-axis max rounded to nearest 100
-  const yMax = Math.max(500, Math.ceil(planTotalM / 100) * 100);
-  const ySteps = [0, yMax * 0.2, yMax * 0.4, yMax * 0.6, yMax * 0.8, yMax];
+  // Scale the Y-axis to the data (rounded up to a clean step) instead of a
+  // fixed 500M floor, which flattened the lines for smaller portfolios.
+  const dataMax = Math.max(planTotalM, actualTotalM, 1);
+  const magnitude = 10 ** Math.floor(Math.log10(dataMax));
+  const yMax = Math.ceil(dataMax / (magnitude / 2)) * (magnitude / 2);
+  const ySteps = [0, 0.2, 0.4, 0.6, 0.8, 1].map((fraction) =>
+    Number((yMax * fraction).toFixed(2)),
+  );
 
   // Calculate monthly cumulative points across all 13 Ethiopian months
   const planPoints = months.map((_, i) => {

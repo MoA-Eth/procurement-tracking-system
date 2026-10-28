@@ -47,6 +47,10 @@ interface OfficerWorkloadSummary {
   }>;
 }
 
+// Delays shown per officer before "Show more", so one officer with many
+// delays does not stretch the whole table.
+const VISIBLE_DELAYS = 2;
+
 export function DirectorOfficerWorkloadPanel() {
   const [loading, setLoading] = useState(true);
   const [workloadData, setWorkloadData] = useState<OfficerWorkloadSummary[]>(
@@ -63,6 +67,18 @@ export function DirectorOfficerWorkloadPanel() {
     method?: string;
     activityHref?: string;
   } | null>(null);
+  const [expandedOfficers, setExpandedOfficers] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  function toggleOfficer(officerId: string) {
+    setExpandedOfficers((current) => {
+      const next = new Set(current);
+      if (next.has(officerId)) next.delete(officerId);
+      else next.add(officerId);
+      return next;
+    });
+  }
 
   useEffect(() => {
     let isMounted = true;
@@ -332,7 +348,7 @@ export function DirectorOfficerWorkloadPanel() {
               filtered.map((officer) => (
                 <tr
                   key={officer.officerId}
-                  className="hover:bg-slate-50/70 transition-colors"
+                  className="align-top hover:bg-slate-50/70 transition-colors"
                 >
                   {/* Officer Info */}
                   <td className="py-3.5 px-4 min-w-[180px]">
@@ -386,7 +402,10 @@ export function DirectorOfficerWorkloadPanel() {
                   <td className="py-3.5 px-4 min-w-[280px]">
                     {officer.delayedItems.length > 0 ? (
                       <div className="space-y-1.5">
-                        {officer.delayedItems.map((d, i) => (
+                        {(expandedOfficers.has(officer.officerId)
+                          ? officer.delayedItems
+                          : officer.delayedItems.slice(0, VISIBLE_DELAYS)
+                        ).map((d, i) => (
                           <div
                             key={i}
                             className="rounded-lg bg-rose-50/60 p-2 text-[10px] border border-rose-200/60"
@@ -432,6 +451,17 @@ export function DirectorOfficerWorkloadPanel() {
                             </button>
                           </div>
                         ))}
+                        {officer.delayedItems.length > VISIBLE_DELAYS ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleOfficer(officer.officerId)}
+                            className="text-[10px] font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+                          >
+                            {expandedOfficers.has(officer.officerId)
+                              ? "Show less"
+                              : `Show ${officer.delayedItems.length - VISIBLE_DELAYS} more`}
+                          </button>
+                        ) : null}
                       </div>
                     ) : (
                       <span className="text-slate-400 italic text-[11px]">

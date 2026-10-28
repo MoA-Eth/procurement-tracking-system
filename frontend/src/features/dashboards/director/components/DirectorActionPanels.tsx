@@ -20,7 +20,7 @@ export function DirectorActionPanels({
   const isManagement = userRole === "MANAGEMENT";
 
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 items-start">
+    <section className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 items-stretch">
       {/* LEFT PANEL: Plans Awaiting Review */}
       <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
         {/* Header */}
@@ -50,8 +50,8 @@ export function DirectorActionPanels({
           </Link>
         </div>
 
-        {/* Plan Cards List */}
-        <div className="p-3 sm:p-4 space-y-2.5">
+        {/* Plan Cards List (capped to keep both panels the same height) */}
+        <div className="p-3 sm:p-4 space-y-2.5 max-h-[28rem] overflow-y-auto">
           {pendingPlans.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-400">
               No plans matching current filter criteria.
@@ -99,8 +99,11 @@ export function DirectorActionPanels({
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     Sector: {plan.directorate} • Officer:{" "}
-                    <span className="font-medium text-slate-700">
-                      {plan.submittedBy}
+                    <span
+                      className="font-medium text-slate-700"
+                      title={plan.submittedBy}
+                    >
+                      {plan.submittedBy.replace(/\s*\([^)]*\)\s*$/, "")}
                     </span>
                   </p>
                 </div>
@@ -145,10 +148,10 @@ export function DirectorActionPanels({
           </span>
         </div>
 
-        {/* Delays Table */}
-        <div className="overflow-x-auto">
+        {/* Delays Table (scrolls within the panel; header stays visible) */}
+        <div className="max-h-[28rem] overflow-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#0A3C2F] text-white text-[10px] uppercase font-semibold tracking-wider">
+            <thead className="sticky top-0 z-10 bg-[#0A3C2F] text-white text-[10px] uppercase font-semibold tracking-wider">
               <tr>
                 <th className="px-3.5 py-2.5">Activity &amp; Project</th>
                 <th className="px-2.5 py-2.5">Owner</th>
@@ -183,18 +186,22 @@ export function DirectorActionPanels({
                         </span>
                       </p>
                     </td>
-                    <td className="px-2.5 py-2.5 font-medium text-slate-700 text-xs">
-                      {delay.assignedOfficer}
+                    <td
+                      className="whitespace-nowrap px-2.5 py-2.5 font-medium text-slate-700 text-xs"
+                      title={delay.assignedOfficer}
+                    >
+                      {/* The role suffix is the same on every row; show the name only */}
+                      {delay.assignedOfficer.replace(/\s*\([^)]*\)\s*$/, "")}
                     </td>
                     <td className="px-2.5 py-2.5">
-                      <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/70 font-medium text-[11px]">
+                      <span className="whitespace-nowrap px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/70 font-medium text-[11px]">
                         +{delay.daysOverdue} Days
                       </span>
                     </td>
                     <td className="px-3.5 py-2.5 text-right">
                       <Link
                         href={`/workspace/activity-tracker?activity=${encodeURIComponent(delay.id)}`}
-                        className="text-[#0A3C2F] hover:text-[#083025] font-semibold text-xs hover:underline cursor-pointer"
+                        className="whitespace-nowrap text-[#0A3C2F] hover:text-[#083025] font-semibold text-xs hover:underline cursor-pointer"
                       >
                         Inspect
                       </Link>
