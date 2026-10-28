@@ -54,7 +54,7 @@ export function DirectorSummaryCards({
           </span>
           <Link
             href="/workspace/projects"
-            className="text-[#0A3C2F] hover:text-[#083025] font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="text-[#00843D] hover:text-[#0B6B3A] font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
           >
             <span>View All</span>
             <span aria-hidden="true">&rarr;</span>

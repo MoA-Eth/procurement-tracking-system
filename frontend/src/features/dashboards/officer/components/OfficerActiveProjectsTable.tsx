@@ -35,13 +35,13 @@ export function OfficerActiveProjectsTable({
       </div>
       <div
         aria-label="My active projects table"
-        className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#0A3C2F]"
+        className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#00843D]"
         role="region"
         tabIndex={0}
       >
         <table className="w-full table-fixed border-collapse text-left">
-          <thead className="bg-[#0A3C2F]">
-            <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+          <thead className="bg-[#00843D]">
+            <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
               <th className="w-[36%] px-5 py-3.5" scope="col">
                 Project name &amp; code
               </th>
@@ -70,7 +70,7 @@ export function OfficerActiveProjectsTable({
                   className="px-5 py-8 text-center text-sm text-slate-500"
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0A3C2F] border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#00843D] border-t-transparent" />
                     <span>Loading active projects...</span>
                   </div>
                 </td>
@@ -93,7 +93,7 @@ export function OfficerActiveProjectsTable({
                   <td className="px-5 py-4 align-middle">
                     <Link
                       title={project.name}
-                      className="line-clamp-2 break-words [overflow-wrap:anywhere] [word-break:break-word] font-semibold leading-snug text-slate-900 underline-offset-4 hover:text-[#0A3C2F] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] block"
+                      className="line-clamp-2 break-words [overflow-wrap:anywhere] [word-break:break-word] font-semibold leading-snug text-slate-900 underline-offset-4 hover:text-[#00843D] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D] block"
                       href={`/workspace/projects?project=${encodeURIComponent(
                         project.id || project.code,
                       )}`}

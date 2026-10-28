@@ -287,14 +287,14 @@ async function deliverUserInvitation(values: {
         <style>
           body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #0f172a; background-color: #f8fafc; margin: 0; padding: 20px; }
           .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-          .header { background: #04382c; color: #ffffff; padding: 32px 24px; text-align: center; }
+          .header { background: #00843D; color: #ffffff; padding: 32px 24px; text-align: center; }
           .header h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
           .header p { margin: 6px 0 0 0; opacity: 0.85; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
           .body { padding: 32px 24px; }
           .badge { display: inline-block; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 9999px; margin: 12px 0; }
-          .cta-btn { display: inline-block; background: #04382c; color: #ffffff !important; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 9999px; font-size: 14px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+          .cta-btn { display: inline-block; background: #00843D; color: #ffffff !important; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 9999px; font-size: 14px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
           .footer { background: #f8fafc; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-          .link-box { font-size: 12px; word-break: break-all; color: #047857; background: #f1f5f9; padding: 12px; border-radius: 8px; font-family: monospace; }
+          .link-box { font-size: 12px; word-break: break-all; color: #00843D; background: #f1f5f9; padding: 12px; border-radius: 8px; font-family: monospace; }
         </style>
       </head>
       <body>
@@ -747,13 +747,13 @@ authRouter.post('/forgot-password', async (req, res) => {
               <style>
                 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #0f172a; background-color: #f8fafc; margin: 0; padding: 20px; }
                 .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-                .header { background: #04382c; color: #ffffff; padding: 32px 24px; text-align: center; }
+                .header { background: #00843D; color: #ffffff; padding: 32px 24px; text-align: center; }
                 .header h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
                 .header p { margin: 6px 0 0 0; opacity: 0.85; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
                 .body { padding: 32px 24px; }
-                .cta-btn { display: inline-block; background: #04382c; color: #ffffff !important; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 9999px; font-size: 14px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                .cta-btn { display: inline-block; background: #00843D; color: #ffffff !important; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 9999px; font-size: 14px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
                 .footer { background: #f8fafc; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-                .link-box { font-size: 12px; word-break: break-all; color: #047857; background: #f1f5f9; padding: 12px; border-radius: 8px; font-family: monospace; }
+                .link-box { font-size: 12px; word-break: break-all; color: #00843D; background: #f1f5f9; padding: 12px; border-radius: 8px; font-family: monospace; }
               </style>
             </head>
             <body>

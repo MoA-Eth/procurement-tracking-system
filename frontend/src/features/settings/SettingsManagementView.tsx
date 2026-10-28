@@ -364,7 +364,7 @@ export function SettingsManagementView({
     <div className="w-full max-w-7xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0A3C2F] text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 text-xs font-semibold border border-emerald-400/30">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#00843D] text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 text-xs font-semibold border border-emerald-400/30">
           <CheckCircle2 className="h-4 w-4 text-emerald-300" />
           <span>{toastMessage}</span>
         </div>
@@ -373,7 +373,7 @@ export function SettingsManagementView({
       {/* Page Header */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#0A3C2F]/10 text-[#0A3C2F] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#00843D]/10 text-[#00843D] flex items-center justify-center shrink-0">
             <Settings className="h-5 w-5" />
           </div>
           <div>
@@ -392,7 +392,7 @@ export function SettingsManagementView({
             setShowAddForm((prev) => !prev);
             setFormError(null);
           }}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" />
           <span>
@@ -415,7 +415,7 @@ export function SettingsManagementView({
               onClick={() => setActiveTab(tab.type)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? "bg-[#0A3C2F] text-white shadow-sm"
+                  ? "bg-[#00843D] text-white shadow-sm"
                   : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80"
               }`}
             >
@@ -426,7 +426,7 @@ export function SettingsManagementView({
               <span
                 className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
                   isActive
-                    ? "bg-[#072F25] text-emerald-300"
+                    ? "bg-[#06542D] text-emerald-300"
                     : "bg-slate-100 text-slate-500"
                 }`}
               >
@@ -444,7 +444,7 @@ export function SettingsManagementView({
           className="bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 p-5 shadow-sm space-y-4 animate-in fade-in duration-150"
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-[#00843D] uppercase tracking-wider">
               Add New {currentTabConfig.label.slice(0, -1)}
             </h3>
             <span className="text-[11px] text-slate-400 font-medium">
@@ -502,7 +502,7 @@ export function SettingsManagementView({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-1.5 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+              className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
             >
               {isSubmitting ? "Saving..." : "Save Value"}
             </button>
@@ -539,7 +539,7 @@ export function SettingsManagementView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[650px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-4 w-12 text-center">#</th>
                 <th className="py-3 px-4 w-44">
                   {activeTab === "PROJECT_CODE" ? "Project Short Code" : "Code"}
@@ -588,7 +588,7 @@ export function SettingsManagementView({
                             setShowAddForm(true);
                             setFormError(null);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
                         >
                           <Plus className="h-3.5 w-3.5" />
                           <span>Add {currentTabConfig.label.slice(0, -1)}</span>
@@ -746,7 +746,7 @@ export function SettingsManagementView({
                 <button
                   type="submit"
                   disabled={isEditSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isEditSubmitting ? "Saving..." : "Save Changes"}
                 </button>

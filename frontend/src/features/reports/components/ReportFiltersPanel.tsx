@@ -107,14 +107,14 @@ export function ReportFiltersPanel({
       {/* Header Toolbar */}
       <div className="flex items-center justify-between gap-2.5 mb-3 pb-2.5 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5 text-[#0A3C2F]" />
+          <Filter className="h-3.5 w-3.5 text-[#00843D]" />
           <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
             Filters
           </h3>
           <span
             className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
               activeFilterCount > 0
-                ? "bg-[#0A3C2F] text-white"
+                ? "bg-[#00843D] text-white"
                 : "bg-slate-100 text-slate-500"
             }`}
           >
@@ -157,7 +157,7 @@ export function ReportFiltersPanel({
       <div className="mb-3 p-2.5 rounded-xl bg-slate-50/60 border border-slate-200/80 shadow-2xs w-full lg:w-1/2 max-w-2xl">
         <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2 pb-1.5 border-b border-slate-200/60">
           <div className="flex items-center gap-1.5">
-            <div className="h-5 w-5 rounded-md bg-emerald-100/70 flex items-center justify-center text-[#0A3C2F]">
+            <div className="h-5 w-5 rounded-md bg-emerald-100/70 flex items-center justify-center text-[#00843D]">
               <Calendar className="h-3 w-3" />
             </div>
             <div>

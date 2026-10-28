@@ -27,7 +27,7 @@ export function OfficerOverviewStatusBarChart({
     >
       <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
         <div className="flex items-center gap-2.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#006837]" />
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#00843D]" />
           <h2 className="text-lg font-semibold text-[#16253d]">
             Procurement Overview
           </h2>
@@ -50,7 +50,7 @@ export function OfficerOverviewStatusBarChart({
             >
               {/* Status Label (Right aligned towards bar) */}
               <div className="w-36 sm:w-44 text-right shrink-0">
-                <span className="text-xs sm:text-sm font-semibold text-slate-800 leading-tight block group-hover:text-[#006837] transition-colors truncate">
+                <span className="text-xs sm:text-sm font-semibold text-slate-800 leading-tight block group-hover:text-[#00843D] transition-colors truncate">
                   {item.label}
                 </span>
               </div>
@@ -61,7 +61,7 @@ export function OfficerOverviewStatusBarChart({
                   <div className="h-4 sm:h-5 w-24 bg-slate-200/80 rounded-xs animate-pulse" />
                 ) : (
                   <div
-                    className="h-4 sm:h-5 bg-[#006837] rounded-xs transition-all duration-500 ease-out group-hover:bg-[#0A3C2F] shadow-2xs"
+                    className="h-4 sm:h-5 bg-[#00843D] rounded-xs transition-all duration-500 ease-out group-hover:bg-[#00843D] shadow-2xs"
                     style={{
                       width: `${Math.max(percent, item.value > 0 ? 1.5 : 0)}%`,
                     }}
@@ -76,7 +76,7 @@ export function OfficerOverviewStatusBarChart({
                     ...
                   </span>
                 ) : (
-                  <span className="text-sm sm:text-base font-semibold text-[#006837] tabular-nums">
+                  <span className="text-sm sm:text-base font-semibold text-[#00843D] tabular-nums">
                     {item.value}
                   </span>
                 )}

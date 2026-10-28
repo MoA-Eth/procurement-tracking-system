@@ -37,7 +37,7 @@ export function CommitteeRecentDecisions({
               <div className="flex items-start justify-between gap-2">
                 <Link
                   href={`/workspace/committee-progress?planId=${plan.id}`}
-                  className="font-semibold text-slate-900 text-xs leading-tight hover:text-[#0A3C2F] transition-colors"
+                  className="font-semibold text-slate-900 text-xs leading-tight hover:text-[#00843D] transition-colors"
                 >
                   {plan.planName}
                 </Link>

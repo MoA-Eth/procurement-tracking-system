@@ -25,7 +25,7 @@ export default async function AccessDeniedPage() {
       </p>
       <Link
         href={dashboardPath(session.user.role)}
-        className="mx-auto mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0A3C2F] px-5 font-semibold text-white hover:bg-[#072F25]"
+        className="mx-auto mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#00843D] px-5 font-semibold text-white hover:bg-[#06542D]"
       >
         <ArrowLeft size={18} /> Return to dashboard
       </Link>

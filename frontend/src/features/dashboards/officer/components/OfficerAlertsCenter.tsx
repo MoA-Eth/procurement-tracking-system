@@ -25,7 +25,7 @@ export function OfficerAlertsCenter({
           <div className="flex items-center gap-3 min-w-0">
             <Bell
               aria-hidden="true"
-              className="h-5 w-5 shrink-0 text-[#0A3C2F]"
+              className="h-5 w-5 shrink-0 text-[#00843D]"
             />
             <h2
               id="alerts-center-title"
@@ -44,13 +44,13 @@ export function OfficerAlertsCenter({
           {loading ? (
             <div className="flex flex-1 h-full min-h-[220px] flex-col items-center justify-center py-6 text-center text-sm text-slate-500">
               <div className="flex items-center justify-center gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0A3C2F] border-t-transparent" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#00843D] border-t-transparent" />
                 <span>Loading alerts...</span>
               </div>
             </div>
           ) : alerts.length === 0 ? (
             <div className="flex flex-1 h-full min-h-[220px] flex-col items-center justify-center py-6 text-center text-sm text-slate-500">
-              <CheckCircle2 className="h-7 w-7 text-[#0A3C2F]/40 mb-1.5" />
+              <CheckCircle2 className="h-7 w-7 text-[#00843D]/40 mb-1.5" />
               <p className="font-semibold text-slate-700">No active alerts</p>
               <p className="text-xs text-slate-500">
                 You are all caught up for now.
@@ -65,7 +65,7 @@ export function OfficerAlertsCenter({
                   <Link
                     key={alert.id}
                     href={alert.href}
-                    className="group flex items-stretch gap-3 sm:gap-3.5 rounded-md border border-slate-200/90 bg-white p-3 sm:p-3.5 shadow-2xs transition-all hover:border-[#0A3C2F]/40 hover:bg-slate-50/40 hover:shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
+                    className="group flex items-stretch gap-3 sm:gap-3.5 rounded-md border border-slate-200/90 bg-white p-3 sm:p-3.5 shadow-2xs transition-all hover:border-[#00843D]/40 hover:bg-slate-50/40 hover:shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]"
                   >
                     {/* Left vertical accent bar */}
                     <div
@@ -95,7 +95,7 @@ export function OfficerAlertsCenter({
                             className={`text-xs sm:text-sm font-semibold tracking-tight break-words [overflow-wrap:anywhere] [word-break:break-word] leading-snug group-hover:underline ${
                               alert.tone === "returned"
                                 ? "text-[#10243f]"
-                                : "font-mono text-[#0A3C2F]"
+                                : "font-mono text-[#00843D]"
                             }`}
                           >
                             {alert.referenceLine}
@@ -156,7 +156,7 @@ export function OfficerAlertsCenter({
                         ) : (
                           <span />
                         )}
-                        <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#0A3C2F] group-hover:text-[#006837] group-hover:underline">
+                        <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#00843D] group-hover:text-[#00843D] group-hover:underline">
                           {alert.actionLabel || "Review"}
                           <ArrowRight
                             aria-hidden="true"

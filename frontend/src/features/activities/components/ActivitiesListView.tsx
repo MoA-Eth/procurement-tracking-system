@@ -218,7 +218,7 @@ export function ActivitiesListView({
           className={`transition-colors cursor-pointer truncate max-w-[260px] ${
             selectedActivity
               ? "text-slate-500 hover:text-slate-900"
-              : "font-semibold text-[#0A3C2F]"
+              : "font-semibold text-[#00843D]"
           }`}
         >
           {currentPlanName}
@@ -226,7 +226,7 @@ export function ActivitiesListView({
         {selectedActivity && (
           <>
             <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
-            <span className="font-semibold text-[#0A3C2F] font-mono truncate max-w-[180px]">
+            <span className="font-semibold text-[#00843D] font-mono truncate max-w-[180px]">
               {selectedActivity.activityRefNo}
             </span>
           </>
@@ -243,13 +243,13 @@ export function ActivitiesListView({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setSelectedActivity(null)}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#00843D] hover:underline cursor-pointer"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" /> Back to Activities
                     Table
                   </button>
                   <span className="text-slate-300">•</span>
-                  <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-200">
+                  <span className="font-mono text-xs font-semibold text-[#00843D] bg-white px-2 py-0.5 rounded border border-emerald-200">
                     {selectedActivity.activityRefNo}
                   </span>
                 </div>
@@ -268,7 +268,7 @@ export function ActivitiesListView({
                   <span>•</span>
                   <span>
                     Method:{" "}
-                    <strong className="text-[#0A3C2F]">
+                    <strong className="text-[#00843D]">
                       {selectedActivity.method}
                     </strong>
                   </span>
@@ -290,7 +290,7 @@ export function ActivitiesListView({
                 </div>
               </div>
 
-              <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-[#0A3C2F] text-white shadow-2xs">
+              <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-[#00843D] text-white shadow-2xs">
                 {selectedActivity.status}
               </span>
             </div>
@@ -319,7 +319,7 @@ export function ActivitiesListView({
                     <div
                       className={`h-9 w-9 rounded-full flex items-center justify-center font-semibold text-sm transition-all bg-white ${
                         isActive
-                          ? "border-2 border-[#0A3C2F] text-[#0A3C2F] ring-4 ring-[#0A3C2F]/10 shadow-xs"
+                          ? "border-2 border-[#00843D] text-[#00843D] ring-4 ring-[#00843D]/10 shadow-xs"
                           : "border border-slate-300 text-slate-500 group-hover:border-slate-400 group-hover:text-slate-700"
                       }`}
                     >
@@ -330,7 +330,7 @@ export function ActivitiesListView({
                     <span
                       className={`mt-2 text-xs transition-colors whitespace-nowrap ${
                         isActive
-                          ? "font-semibold text-[#0A3C2F]"
+                          ? "font-semibold text-[#00843D]"
                           : "font-medium text-slate-500 group-hover:text-slate-800"
                       }`}
                     >
@@ -345,7 +345,7 @@ export function ActivitiesListView({
           {activeDetailTab === 1 && (
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4 animate-in fade-in duration-150">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                <FileText className="h-4 w-4 text-[#0A3C2F]" />
+                <FileText className="h-4 w-4 text-[#00843D]" />
                 <h3 className="text-sm font-semibold text-slate-900">
                   4.1 Step 1 — Key Details & Procurement Framework
                 </h3>
@@ -369,7 +369,7 @@ export function ActivitiesListView({
                           e.target.value,
                         )
                       }
-                      className="w-2/3 rounded-xl border border-emerald-300 bg-white p-2.5 text-xs font-semibold text-slate-900 focus:border-[#0A3C2F] outline-none"
+                      className="w-2/3 rounded-xl border border-emerald-300 bg-white p-2.5 text-xs font-semibold text-slate-900 focus:border-[#00843D] outline-none"
                     />
                   ) : (
                     <span className="font-semibold text-slate-900 w-2/3">
@@ -392,7 +392,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Procurement Method
                   </span>
-                  <span className="font-semibold text-[#0A3C2F] w-2/3">
+                  <span className="font-semibold text-[#00843D] w-2/3">
                     {selectedActivity.method}
                     {selectedActivity.specificMethod &&
                       ` (${selectedActivity.specificMethod})`}
@@ -490,7 +490,7 @@ export function ActivitiesListView({
           {activeDetailTab === 2 && (
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4 animate-in fade-in duration-150">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                <DollarSign className="h-4 w-4 text-[#0A3C2F]" />
+                <DollarSign className="h-4 w-4 text-[#00843D]" />
                 <h3 className="text-sm font-semibold text-slate-900">
                   4.2 Step 2 — Scope, Budget, Lot Packaging & Financing
                 </h3>
@@ -502,7 +502,7 @@ export function ActivitiesListView({
                   <span className="font-semibold text-slate-500 w-1/3">
                     Activity Reference No.
                   </span>
-                  <span className="font-mono font-semibold text-[#0A3C2F] w-2/3">
+                  <span className="font-mono font-semibold text-[#00843D] w-2/3">
                     {selectedActivity.activityRefNo}
                   </span>
                 </div>
@@ -548,7 +548,7 @@ export function ActivitiesListView({
                             );
                           }
                         }}
-                        className="w-48 rounded-xl border border-emerald-300 bg-white px-3 py-1.5 font-mono font-semibold text-xs text-slate-900 focus:border-[#0A3C2F] outline-none"
+                        className="w-48 rounded-xl border border-emerald-300 bg-white px-3 py-1.5 font-mono font-semibold text-xs text-slate-900 focus:border-[#00843D] outline-none"
                       />
                     </div>
                   ) : (
@@ -576,7 +576,7 @@ export function ActivitiesListView({
                         )
                       }
                       placeholder="Enter clarification remarks..."
-                      className="w-2/3 rounded-xl border border-emerald-300 bg-white p-2.5 text-xs font-semibold text-slate-900 focus:border-[#0A3C2F] outline-none"
+                      className="w-2/3 rounded-xl border border-emerald-300 bg-white p-2.5 text-xs font-semibold text-slate-900 focus:border-[#00843D] outline-none"
                     />
                   ) : (
                     <span className="font-medium text-slate-800 w-2/3">
@@ -646,7 +646,7 @@ export function ActivitiesListView({
                                 <strong>{lot.lotNumber}:</strong>{" "}
                                 {lot.lotDescription}
                               </span>
-                              <span className="font-mono font-semibold text-[#0A3C2F] ml-3">
+                              <span className="font-mono font-semibold text-[#00843D] ml-3">
                                 {selectedActivity.currency}{" "}
                                 {lot.estimatedAmount.toLocaleString()}
                               </span>
@@ -664,7 +664,7 @@ export function ActivitiesListView({
           {activeDetailTab === 3 && (
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4 animate-in fade-in duration-150">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                <MapPin className="h-4 w-4 text-[#0A3C2F]" />
+                <MapPin className="h-4 w-4 text-[#00843D]" />
                 <h3 className="text-sm font-semibold text-slate-900">
                   4.3 Step 3 — Classification & Regional Location
                 </h3>
@@ -719,7 +719,7 @@ export function ActivitiesListView({
                         )
                       }
                       placeholder="Enter additional notes..."
-                      className="w-2/3 rounded-xl border border-emerald-300 bg-white p-2.5 text-xs font-semibold text-slate-900 focus:border-[#0A3C2F] outline-none"
+                      className="w-2/3 rounded-xl border border-emerald-300 bg-white p-2.5 text-xs font-semibold text-slate-900 focus:border-[#00843D] outline-none"
                     />
                   ) : (
                     <span className="font-medium text-slate-800 w-2/3">
@@ -736,7 +736,7 @@ export function ActivitiesListView({
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4 animate-in fade-in duration-150">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-[#0A3C2F]" />
+                  <Clock className="h-4 w-4 text-[#00843D]" />
                   <h3 className="text-sm font-semibold text-slate-900">
                     4.4 Step 4 — Activity Roadmap & Stage Milestones
                   </h3>
@@ -750,7 +750,7 @@ export function ActivitiesListView({
               <div className="rounded-lg border border-slate-200 overflow-hidden text-xs">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[650px]">
-                    <thead className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase">
+                    <thead className="bg-[#00843D] text-white text-[11px] font-semibold uppercase">
                       <tr>
                         <th className="py-2.5 px-3 w-8 text-center">#</th>
                         <th className="py-2.5 px-3 min-w-[180px]">
@@ -806,7 +806,7 @@ export function ActivitiesListView({
                                     e.target.value,
                                   )
                                 }
-                                className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-xs font-mono font-semibold text-slate-900 focus:border-[#0A3C2F] outline-none cursor-pointer"
+                                className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-xs font-mono font-semibold text-slate-900 focus:border-[#00843D] outline-none cursor-pointer"
                               />
                             ) : (
                               stage.revisedTargetDate ||
@@ -853,19 +853,19 @@ export function ActivitiesListView({
             <div className="flex items-center gap-2">
               <button
                 onClick={onBackClick}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#00843D] hover:underline cursor-pointer"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back
               </button>
               <span className="text-slate-300">•</span>
-              <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="font-mono text-xs font-semibold text-[#00843D] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                 {project.code}
               </span>
             </div>
 
             {isDirectorReview ? (
               <div className="space-y-1">
-                <label className="block text-[10px] font-semibold text-[#0A3C2F] uppercase tracking-wider">
+                <label className="block text-[10px] font-semibold text-[#00843D] uppercase tracking-wider">
                   Plan Name (Editable for Minor Corrections / Typo Fixes)
                 </label>
                 <input
@@ -873,7 +873,7 @@ export function ActivitiesListView({
                   value={currentPlanName}
                   onChange={(e) => setCurrentPlanName(e.target.value)}
                   placeholder="Enter plan name..."
-                  className="w-full text-base sm:text-lg font-semibold text-slate-950 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10 outline-none transition-all"
+                  className="w-full text-base sm:text-lg font-semibold text-slate-950 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/10 outline-none transition-all"
                 />
               </div>
             ) : (
@@ -915,7 +915,7 @@ export function ActivitiesListView({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search package activities by Ref No or Description..."
-                className="w-full pl-10 pr-4 py-1.5 text-xs rounded-lg border border-slate-300 focus:border-[#0A3C2F] outline-none"
+                className="w-full pl-10 pr-4 py-1.5 text-xs rounded-lg border border-slate-300 focus:border-[#00843D] outline-none"
               />
             </div>
 
@@ -972,7 +972,7 @@ export function ActivitiesListView({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[920px]">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-2.5 px-3 text-center w-10">#</th>
                     <th className="py-2.5 px-3 min-w-[140px]">
                       Activity Ref No
@@ -1076,7 +1076,7 @@ export function ActivitiesListView({
                           </td>
 
                           <td className="py-2 px-3 text-xs">
-                            <div className="font-semibold text-[#0A3C2F]">
+                            <div className="font-semibold text-[#00843D]">
                               {act.method}
                             </div>
                             <div className="text-[10px] text-slate-500">
@@ -1136,7 +1136,7 @@ export function ActivitiesListView({
           {isDirectorReview && onApprovePlan && onReturnPlan && (
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5 mt-6">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
+                <ShieldCheck className="h-5 w-5 text-[#00843D]" />
                 <h3 className="text-sm font-semibold text-slate-900">
                   Director Decision & Workflow Actions
                 </h3>
@@ -1152,7 +1152,7 @@ export function ActivitiesListView({
                   value={directorReturnRemarks}
                   onChange={(e) => setDirectorReturnRemarks(e.target.value)}
                   placeholder="Specify required corrections, missing documents or revision notes for the Procurement Officer..."
-                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
+                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#00843D]"
                 />
               </div>
 
@@ -1161,7 +1161,7 @@ export function ActivitiesListView({
                 <button
                   type="button"
                   onClick={() => onApprovePlan(plan)}
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
                   <Send className="h-4 w-4 text-emerald-200" />
                   <span>Approve & Send to Committee</span>

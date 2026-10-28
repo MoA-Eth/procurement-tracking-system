@@ -37,10 +37,10 @@ export const alertToneClasses: Record<
     statusColor: "text-sky-700",
   },
   approved: {
-    barColor: "bg-[#006837]",
-    statusColor: "text-[#006837]",
+    barColor: "bg-[#00843D]",
+    statusColor: "text-[#00843D]",
   },
 };
 
 export const actionLinkClasses =
-  "font-semibold text-[#1261a8] underline-offset-4 hover:text-[#0A3C2F] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]";
+  "font-semibold text-[#1261a8] underline-offset-4 hover:text-[#00843D] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]";

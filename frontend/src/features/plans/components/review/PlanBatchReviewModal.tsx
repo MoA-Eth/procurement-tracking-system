@@ -110,7 +110,7 @@ export function PlanBatchReviewModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-[#0A3C2F]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-[#00843D]">
               <CheckCircle2 className="h-5 w-5" />
             </div>
             <div>
@@ -186,14 +186,14 @@ export function PlanBatchReviewModal({
             {/* Committee Deadline Input */}
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2">
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-                <Calendar className="h-4 w-4 text-[#0A3C2F]" />
+                <Calendar className="h-4 w-4 text-[#00843D]" />
                 Committee Voting Deadline (Optional)
               </label>
               <input
                 type="date"
                 value={committeeDeadlineDate}
                 onChange={(e) => setCommitteeDeadlineDate(e.target.value)}
-                className="w-full sm:w-64 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-800 outline-none focus:border-[#0A3C2F]"
+                className="w-full sm:w-64 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-800 outline-none focus:border-[#00843D]"
               />
               <p className="text-[11px] text-slate-500">
                 Committee members will be notified to cast their endorsement
@@ -256,7 +256,7 @@ export function PlanBatchReviewModal({
                         onClick={() => setUseSharedComment(true)}
                         className={`px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer ${
                           useSharedComment
-                            ? "bg-[#0A3C2F] text-white"
+                            ? "bg-[#00843D] text-white"
                             : "bg-slate-200 text-slate-700"
                         }`}
                       >
@@ -267,7 +267,7 @@ export function PlanBatchReviewModal({
                         onClick={() => setUseSharedComment(false)}
                         className={`px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer ${
                           !useSharedComment
-                            ? "bg-[#0A3C2F] text-white"
+                            ? "bg-[#00843D] text-white"
                             : "bg-slate-200 text-slate-700"
                         }`}
                       >
@@ -284,7 +284,7 @@ export function PlanBatchReviewModal({
                       value={sharedComment}
                       onChange={(e) => setSharedComment(e.target.value)}
                       placeholder="Specify the revisions required by the Officer before approval (e.g. adjust activity budgets, refine procurement milestones, review scope)..."
-                      className="w-full rounded-xl border border-amber-300 bg-white p-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
+                      className="w-full rounded-xl border border-amber-300 bg-white p-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D]"
                     />
                     <p className="text-[11px] text-amber-800 mt-1">
                       This feedback will be attached to each returned plan so
@@ -308,7 +308,7 @@ export function PlanBatchReviewModal({
                             }))
                           }
                           placeholder={`Specify what to improve in ${plan.planName}...`}
-                          className="w-full rounded-lg border border-amber-300 bg-white p-2.5 text-xs text-slate-800 outline-none focus:border-[#0A3C2F]"
+                          className="w-full rounded-lg border border-amber-300 bg-white p-2.5 text-xs text-slate-800 outline-none focus:border-[#00843D]"
                         />
                       </div>
                     ))}
@@ -335,7 +335,7 @@ export function PlanBatchReviewModal({
               isSubmitting || (isPartial && !areRequiredCommentsProvided())
             }
             onClick={handleConfirm}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-5 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-5 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>

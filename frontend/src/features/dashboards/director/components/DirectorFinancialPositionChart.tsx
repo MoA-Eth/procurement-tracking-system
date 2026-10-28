@@ -115,8 +115,8 @@ export function DirectorFinancialPositionChart({
             <span>Plan</span>
           </div>
           <div className="flex items-center gap-2 text-slate-900">
-            <span className="w-5 h-0.5 bg-[#0A3C2F] inline-block" />
-            <span className="h-2 w-2 rounded-full bg-[#0A3C2F] -ml-3 inline-block" />
+            <span className="w-5 h-0.5 bg-[#00843D] inline-block" />
+            <span className="h-2 w-2 rounded-full bg-[#00843D] -ml-3 inline-block" />
             <span>Actual</span>
           </div>
         </div>
@@ -138,8 +138,8 @@ export function DirectorFinancialPositionChart({
                 x2="0"
                 y2="1"
               >
-                <stop offset="0%" stopColor="#0A3C2F" stopOpacity="0.14" />
-                <stop offset="100%" stopColor="#0A3C2F" stopOpacity="0.01" />
+                <stop offset="0%" stopColor="#00843D" stopOpacity="0.14" />
+                <stop offset="100%" stopColor="#00843D" stopOpacity="0.01" />
               </linearGradient>
             </defs>
 
@@ -187,7 +187,7 @@ export function DirectorFinancialPositionChart({
             <path
               d={actualPathD}
               fill="none"
-              stroke="#0A3C2F"
+              stroke="#00843D"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -200,7 +200,7 @@ export function DirectorFinancialPositionChart({
                 cx={getX(idx)}
                 cy={getY(val)}
                 r="4.5"
-                fill="#0A3C2F"
+                fill="#00843D"
                 stroke="#FFFFFF"
                 strokeWidth="2"
               />

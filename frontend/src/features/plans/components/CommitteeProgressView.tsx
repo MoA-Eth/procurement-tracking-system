@@ -1093,7 +1093,7 @@ export function CommitteeProgressView({
           className={`transition-colors cursor-pointer ${
             selectedPlan
               ? "text-slate-500 hover:text-slate-900"
-              : "font-semibold text-[#0A3C2F]"
+              : "font-semibold text-[#00843D]"
           }`}
         >
           {currentUser?.role === "ENDORSING_COMMITTEE"
@@ -1103,7 +1103,7 @@ export function CommitteeProgressView({
         {selectedPlan && (
           <>
             <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            <span className="font-semibold text-[#0A3C2F] font-mono">
+            <span className="font-semibold text-[#00843D] font-mono">
               {selectedPlan.planNumber} Voting & Review Details
             </span>
           </>
@@ -1119,7 +1119,7 @@ export function CommitteeProgressView({
               <div className="space-y-1.5">
                 <button
                   onClick={handleBackToOverview}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer mb-1"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00843D] hover:underline cursor-pointer mb-1"
                 >
                   <ArrowLeft className="h-4 w-4" />{" "}
                   {currentUser?.role === "ENDORSING_COMMITTEE"
@@ -1165,7 +1165,7 @@ export function CommitteeProgressView({
                     <span className="text-slate-400 font-medium block text-[11px]">
                       Total Estimated Budget:
                     </span>
-                    <strong className="text-[#0A3C2F] font-mono font-semibold text-sm">
+                    <strong className="text-[#00843D] font-mono font-semibold text-sm">
                       {selectedPlan.currency}{" "}
                       {selectedPlan.totalBudget.toLocaleString("en-US", {
                         minimumFractionDigits: 2,
@@ -1231,7 +1231,7 @@ export function CommitteeProgressView({
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-[#0A3C2F] flex items-center justify-center font-semibold">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-[#00843D] flex items-center justify-center font-semibold">
                     <Users className="h-4.5 w-4.5" />
                   </div>
                   <div>
@@ -1532,7 +1532,7 @@ export function CommitteeProgressView({
             <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-[#0A3C2F] flex items-center justify-center font-semibold">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-50 text-[#00843D] flex items-center justify-center font-semibold">
                     <Building2 className="h-4.5 w-4.5" />
                   </div>
                   <div>
@@ -1634,7 +1634,7 @@ export function CommitteeProgressView({
                   {selectedPlan.managementComment && (
                     <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-1.5">
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
-                        <MessageSquare className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                        <MessageSquare className="h-3.5 w-3.5 text-[#00843D]" />
                         <span>Executive Review Comments & Directives:</span>
                       </div>
                       <p className="text-xs text-slate-700 italic leading-relaxed pl-5">
@@ -1741,7 +1741,7 @@ export function CommitteeProgressView({
                     <button
                       type="button"
                       onClick={handleOpenFullActivitiesTracker}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-2xs transition-colors cursor-pointer shrink-0"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-2xs transition-colors cursor-pointer shrink-0"
                     >
                       <ListChecks className="h-4 w-4 text-emerald-200" />
                       <span>Inspect Full Activities Tracker</span>
@@ -1755,7 +1755,7 @@ export function CommitteeProgressView({
               <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
-                    <ListChecks className="h-5 w-5 text-[#0A3C2F]" />
+                    <ListChecks className="h-5 w-5 text-[#00843D]" />
                     <div>
                       <h3 className="text-sm font-semibold text-slate-900">
                         Package Activities in this Plan
@@ -1769,7 +1769,7 @@ export function CommitteeProgressView({
 
                   <Link
                     href={`/workspace/plan-for-review?plan=${encodeURIComponent(selectedPlan.id)}&from=vote-progress`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold transition-colors shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold transition-colors shadow-2xs"
                   >
                     <span>Open Full Plan Review</span>
                     <ExternalLink className="h-3.5 w-3.5 text-emerald-200" />
@@ -1778,7 +1778,7 @@ export function CommitteeProgressView({
 
                 <div className="overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-[#0A3C2F] text-white font-semibold uppercase text-[10px] tracking-wider">
+                    <thead className="bg-[#00843D] text-white font-semibold uppercase text-[10px] tracking-wider">
                       <tr>
                         <th className="py-2.5 px-3 w-10 text-center">#</th>
                         <th className="py-2.5 px-3">Ref No</th>
@@ -1863,7 +1863,7 @@ export function CommitteeProgressView({
                                 act.method ||
                                 "RFB - National"}
                             </td>
-                            <td className="py-2.5 px-3 font-mono font-semibold text-[#0A3C2F] text-right">
+                            <td className="py-2.5 px-3 font-mono font-semibold text-[#00843D] text-right">
                               {selectedPlan.currency}{" "}
                               {(
                                 act.estimatedBudget ||
@@ -1884,7 +1884,7 @@ export function CommitteeProgressView({
                                     );
                                   }
                                 }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-[#0A3C2F] hover:text-white text-slate-700 transition-colors shadow-2xs cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-[#00843D] hover:text-white text-slate-700 transition-colors shadow-2xs cursor-pointer"
                               >
                                 <span>Open</span>
                                 <ArrowRight className="h-3 w-3" />
@@ -1935,7 +1935,7 @@ export function CommitteeProgressView({
 
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-slate-800 flex items-center gap-1.5">
-                    <MessageSquare className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                    <MessageSquare className="h-3.5 w-3.5 text-[#00843D]" />
                     <span>
                       Director Revision Instructions for Officer{" "}
                       <span className="text-rose-600">*</span>
@@ -1946,7 +1946,7 @@ export function CommitteeProgressView({
                     value={resendComment}
                     onChange={(e) => setResendComment(e.target.value)}
                     placeholder="Provide actionable guidance for adjusting activities, estimated budget, or procurement packages..."
-                    className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] outline-none text-xs text-slate-800 bg-white"
+                    className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] outline-none text-xs text-slate-800 bg-white"
                   />
                 </div>
 
@@ -1957,7 +1957,7 @@ export function CommitteeProgressView({
                       handleReturnToOfficer(selectedPlan, resendComment)
                     }
                     disabled={!resendComment.trim() || isSubmittingRevision}
-                    className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-[#0A3C2F] hover:bg-[#072F25] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-2xs transition-all cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-[#00843D] hover:bg-[#06542D] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-2xs transition-all cursor-pointer"
                   >
                     <Send className="h-4 w-4" />
                     <span>
@@ -1991,7 +1991,7 @@ export function CommitteeProgressView({
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
                 Endorsed
               </span>
-              <p className="text-xl font-semibold text-[#0A3C2F]">
+              <p className="text-xl font-semibold text-[#00843D]">
                 {stats.committeeEndorsed}
               </p>
               <span className="text-[10px] text-slate-400 block">
@@ -2045,7 +2045,7 @@ export function CommitteeProgressView({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search plan number, title or project..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:border-[#0A3C2F] outline-none"
+                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:border-[#00843D] outline-none"
               />
             </div>
 
@@ -2071,11 +2071,11 @@ export function CommitteeProgressView({
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
             <div className="p-4 bg-emerald-50/60 border-b border-emerald-100/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-[#0A3C2F] text-white flex items-center justify-center font-semibold text-xs">
+                <div className="h-7 w-7 rounded-lg bg-[#00843D] text-white flex items-center justify-center font-semibold text-xs">
                   <Users className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold text-[#00843D] uppercase tracking-wider">
                     Section A: Endorsement Committee Progress
                   </h3>
                   <p className="text-[11px] text-slate-500">
@@ -2084,7 +2084,7 @@ export function CommitteeProgressView({
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-semibold text-[#0A3C2F]">
+              <span className="text-xs font-semibold text-[#00843D]">
                 {committeeItems.length} Plans
               </span>
             </div>
@@ -2092,7 +2092,7 @@ export function CommitteeProgressView({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-4 min-w-36">Plan Number</th>
                     <th className="py-3 px-4 min-w-56">
                       Plan Title &amp; Project
@@ -2175,7 +2175,7 @@ export function CommitteeProgressView({
                                       <div
                                         key={member.id}
                                         title={`${member.name}: Approved`}
-                                        className="h-6 w-6 rounded-md bg-[#0A3C2F] text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
+                                        className="h-6 w-6 rounded-md bg-[#00843D] text-white flex items-center justify-center text-[11px] font-medium shadow-2xs"
                                       >
                                         ✓
                                       </div>
@@ -2231,7 +2231,7 @@ export function CommitteeProgressView({
                             <button
                               onClick={() => handleInspectPlan(item)}
                               title="Inspect voting details"
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#00843D] border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </button>
@@ -2249,11 +2249,11 @@ export function CommitteeProgressView({
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden space-y-0">
             <div className="p-4 bg-emerald-50/60 border-b border-emerald-100/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-[#0A3C2F] text-white flex items-center justify-center font-semibold text-xs">
+                <div className="h-7 w-7 rounded-lg bg-[#00843D] text-white flex items-center justify-center font-semibold text-xs">
                   <Building2 className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold text-[#00843D] uppercase tracking-wider">
                     Section B: Executive Management Progress
                   </h3>
                   <p className="text-[11px] text-slate-500">
@@ -2263,7 +2263,7 @@ export function CommitteeProgressView({
                   </p>
                 </div>
               </div>
-              <span className="text-xs font-semibold text-[#0A3C2F]">
+              <span className="text-xs font-semibold text-[#00843D]">
                 {managementItems.length} Plans
               </span>
             </div>
@@ -2271,7 +2271,7 @@ export function CommitteeProgressView({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-4 min-w-36">Plan Number</th>
                     <th className="py-3 px-4 min-w-56">
                       Plan Title &amp; Project
@@ -2373,7 +2373,7 @@ export function CommitteeProgressView({
                             <button
                               onClick={() => handleInspectPlan(item)}
                               title="Inspect executive review details"
-                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
+                              className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#00843D] border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs"
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </button>
@@ -2468,7 +2468,7 @@ export function CommitteeProgressView({
             {/* Revision Instructions Input */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                <MessageSquare className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                <MessageSquare className="h-3.5 w-3.5 text-[#00843D]" />
                 <span>
                   Director Revision Instructions for Officer{" "}
                   <span className="text-rose-600">*</span>
@@ -2479,7 +2479,7 @@ export function CommitteeProgressView({
                 value={revisionInstructions}
                 onChange={(e) => setRevisionInstructions(e.target.value)}
                 placeholder="Enter detailed directives on required amendments to activities, estimated budget lines, timelines, or procurement methods..."
-                className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] outline-none text-xs text-slate-800"
+                className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] outline-none text-xs text-slate-800"
               />
             </div>
 
@@ -2498,7 +2498,7 @@ export function CommitteeProgressView({
                   handleReturnToOfficer(revisionModalPlan, revisionInstructions)
                 }
                 disabled={!revisionInstructions.trim() || isSubmittingRevision}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#0A3C2F] hover:bg-[#083025] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-xs transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-[#00843D] hover:bg-[#0B6B3A] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-xs transition-colors cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5" />
                 <span>

@@ -226,7 +226,7 @@ export function OfficerProcurementActivityDetailView({
         />
         <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#0A3C2F]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#00843D]">
               Procurement Activity
             </p>
             <h1 className="mt-1 max-w-4xl text-2xl font-semibold tracking-tight text-[#10243f]">
@@ -274,12 +274,12 @@ export function OfficerProcurementActivityDetailView({
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {isActivityRevised && (
               <button
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
                 onClick={() => setIsHistoryModalOpen(true)}
                 title="View Activity Version History"
                 type="button"
               >
-                <History className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                <History className="h-3.5 w-3.5 text-[#00843D]" />
                 Version History
               </button>
             )}
@@ -300,7 +300,7 @@ export function OfficerProcurementActivityDetailView({
               plan.status === "Returned for Revision") && (
               <Link
                 aria-label={`Edit activity ${activity.reference}`}
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition"
                 href={
                   "/workspace/projects?project=" +
                   encodeURIComponent(project.code) +
@@ -318,7 +318,7 @@ export function OfficerProcurementActivityDetailView({
             )}
 
             <Link
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[#00552c] bg-[#006837] px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-[#00522c] transition"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[#0B6B3A] bg-[#00843D] px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-[#0B6B3A] transition"
               href={
                 "/workspace/contracts?mode=register&project=" +
                 encodeURIComponent(project.code) +
@@ -335,7 +335,7 @@ export function OfficerProcurementActivityDetailView({
             </Link>
 
             <Link
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#0A3C2F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#00843D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]"
               href={backHref}
             >
               <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" />
@@ -359,7 +359,7 @@ export function OfficerProcurementActivityDetailView({
         title="Related Information"
       >
         <section className="rounded-xl border border-slate-200 bg-[#f8fafc] p-3.5 shadow-2xs">
-          <h3 className="flex items-center gap-1.5 text-[10px] font-semibold text-[#0A3C2F]">
+          <h3 className="flex items-center gap-1.5 text-[10px] font-semibold text-[#00843D]">
             <FolderOpen aria-hidden="true" className="h-3.5 w-3.5" />
             Inherited Project &amp; Plan Context
           </h3>
@@ -616,14 +616,14 @@ function ActivityBreadcrumb({
       <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
         <ol className="flex flex-wrap items-center gap-2">
           <li>
-            <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+            <Link className="hover:text-[#00843D]" href="/dashboard/officer">
               Home
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
             <Link
-              className="hover:text-[#0A3C2F]"
+              className="hover:text-[#00843D]"
               href="/workspace/activity-tracker"
             >
               Activity Tracker
@@ -631,7 +631,7 @@ function ActivityBreadcrumb({
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link className="hover:text-[#0A3C2F]" href={trackerHref}>
+            <Link className="hover:text-[#00843D]" href={trackerHref}>
               {activity.reference}
             </Link>
           </li>
@@ -648,20 +648,20 @@ function ActivityBreadcrumb({
     <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
       <ol className="flex flex-wrap items-center gap-2">
         <li>
-          <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+          <Link className="hover:text-[#00843D]" href="/dashboard/officer">
             Home
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#0A3C2F]" href="/workspace/projects">
+          <Link className="hover:text-[#00843D]" href="/workspace/projects">
             Projects
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
           <Link
-            className="hover:text-[#0A3C2F]"
+            className="hover:text-[#00843D]"
             href={`/workspace/projects?project=${encodeURIComponent(project.code)}`}
           >
             {project.shortName}
@@ -670,7 +670,7 @@ function ActivityBreadcrumb({
         <li aria-hidden="true">/</li>
         <li>
           <Link
-            className="max-w-60 truncate hover:text-[#0A3C2F]"
+            className="max-w-60 truncate hover:text-[#00843D]"
             href={planHref}
           >
             {plan.name}
@@ -699,10 +699,10 @@ function DetailCard({
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-2xs">
       <header className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0A3C2F] text-[10px] font-semibold text-white">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#00843D] text-[10px] font-semibold text-white">
           {number}
         </span>
-        <span className="text-[#0A3C2F]">{icon}</span>
+        <span className="text-[#00843D]">{icon}</span>
         <h2 className="text-sm font-semibold text-[#10243f]">{title}</h2>
       </header>
       <div className="p-4 sm:p-5">{children}</div>
@@ -779,7 +779,7 @@ function CompactTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-136 border-collapse text-left">
           <thead>
-            <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
+            <tr className="bg-[#00843D] text-white text-[10px] font-semibold uppercase tracking-wider">
               {columns.map((column) => (
                 <th className="px-3 py-2.5" key={column} scope="col">
                   {column}
@@ -824,7 +824,7 @@ function RoadmapTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-184 border-collapse text-left">
           <thead>
-            <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
+            <tr className="bg-[#00843D] text-white text-[10px] font-semibold uppercase tracking-wider">
               <th className="w-[34%] px-3 py-2.5" scope="col">
                 Stage
               </th>

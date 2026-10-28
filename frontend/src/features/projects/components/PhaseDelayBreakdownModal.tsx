@@ -460,7 +460,7 @@ export function PhaseDelayBreakdownModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
       <div className="w-full max-w-4xl bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden my-6 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="px-6 py-5 bg-[#0A3C2F] text-white flex items-start justify-between gap-4 shrink-0 border-b border-[#0d4f3e]">
+        <div className="px-6 py-5 bg-[#00843D] text-white flex items-start justify-between gap-4 shrink-0 border-b border-[#0B6B3A]">
           <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               {displayTotalDelay > 0 ? (
@@ -608,7 +608,7 @@ export function PhaseDelayBreakdownModal({
 
             {/* Process Progress */}
             <div className="p-4 rounded-xl bg-gradient-to-br from-slate-50/80 via-white to-emerald-50/30 border border-slate-200/80 shadow-xs flex items-start gap-3.5">
-              <div className="h-9 w-9 rounded-xl bg-slate-100 text-[#0A3C2F] ring-1 ring-slate-200/70 shrink-0 flex items-center justify-center">
+              <div className="h-9 w-9 rounded-xl bg-slate-100 text-[#00843D] ring-1 ring-slate-200/70 shrink-0 flex items-center justify-center">
                 <FileSpreadsheet className="w-4.5 h-4.5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -625,7 +625,7 @@ export function PhaseDelayBreakdownModal({
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden mt-1.5">
                   <div
-                    className="bg-[#0A3C2F] h-full rounded-full transition-all duration-300"
+                    className="bg-[#00843D] h-full rounded-full transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
@@ -640,7 +640,7 @@ export function PhaseDelayBreakdownModal({
           <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
             <div className="px-5 py-3.5 bg-slate-50/90 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#0A3C2F]" />
+                <span className="w-2 h-2 rounded-full bg-[#00843D]" />
                 <h3 className="text-xs font-bold text-[#0f172a] uppercase tracking-wider">
                   Phase-by-Phase Process Schedule &amp; Delay
                 </h3>
@@ -653,7 +653,7 @@ export function PhaseDelayBreakdownModal({
                       onClick={() => setFilterView("active")}
                       className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                         filterView === "active"
-                          ? "bg-white text-[#0A3C2F] shadow-2xs font-bold"
+                          ? "bg-white text-[#00843D] shadow-2xs font-bold"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
@@ -664,7 +664,7 @@ export function PhaseDelayBreakdownModal({
                       onClick={() => setFilterView("all")}
                       className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                         filterView === "all"
-                          ? "bg-white text-[#0A3C2F] shadow-2xs font-bold"
+                          ? "bg-white text-[#00843D] shadow-2xs font-bold"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
@@ -756,7 +756,7 @@ export function PhaseDelayBreakdownModal({
                             </span>
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-bold text-[#0f172a] text-xs leading-snug group-hover:text-[#0A3C2F] transition-colors">
+                            <div className="font-bold text-[#0f172a] text-xs leading-snug group-hover:text-[#00843D] transition-colors">
                               {phase.name}
                             </div>
                             {(phase.plannedStartDate ||
@@ -883,7 +883,7 @@ export function PhaseDelayBreakdownModal({
               <Link
                 href={data.activityHref}
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-[#0A3C2F] hover:bg-[#072d23] text-white text-xs font-semibold shadow-xs hover:shadow-sm inline-flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                className="px-4 py-2 rounded-xl bg-[#00843D] hover:bg-[#06542D] text-white text-xs font-semibold shadow-xs hover:shadow-sm inline-flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
               >
                 <span>Open Activity</span>
                 <ExternalLink className="w-3.5 h-3.5" />

@@ -118,7 +118,7 @@ export function DualCalendarField({
         >
           {icon || (
             <Calendar
-              className={`${isCompact ? "h-3.5 w-3.5" : "h-4 w-4"} text-[#0A3C2F]`}
+              className={`${isCompact ? "h-3.5 w-3.5" : "h-4 w-4"} text-[#00843D]`}
             />
           )}
           <span>{label}</span>
@@ -306,7 +306,7 @@ function GregorianCalendarPicker({
         } ${
           disabled
             ? "bg-slate-100 text-slate-500 cursor-not-allowed"
-            : "hover:border-slate-400 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]/20 cursor-pointer text-slate-900"
+            : "hover:border-slate-400 focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D]/20 cursor-pointer text-slate-900"
         }`}
       >
         <span
@@ -347,7 +347,7 @@ function GregorianCalendarPicker({
                 aria-label="Select Gregorian month"
                 value={visibleMonth}
                 onChange={(e) => setVisibleMonth(Number(e.target.value))}
-                className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
+                className="text-xs font-semibold text-[#00843D] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
               >
                 {GREGORIAN_MONTHS.map((monthName, idx) => (
                   <option key={monthName} value={idx + 1}>
@@ -360,7 +360,7 @@ function GregorianCalendarPicker({
                 aria-label="Select Gregorian year"
                 value={visibleYear}
                 onChange={(e) => setVisibleYear(Number(e.target.value))}
-                className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
+                className="text-xs font-semibold text-[#00843D] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
               >
                 {yearsList.map((yr) => (
                   <option key={yr} value={yr}>
@@ -423,9 +423,9 @@ function GregorianCalendarPicker({
                     }}
                     className={`flex h-7 w-full items-center justify-center rounded-lg text-xs transition-colors cursor-pointer ${
                       isSelected
-                        ? "bg-[#0A3C2F] font-semibold text-white shadow-xs"
+                        ? "bg-[#00843D] font-semibold text-white shadow-xs"
                         : isToday
-                          ? "border border-[#0A3C2F] font-semibold text-[#0A3C2F] hover:bg-emerald-50"
+                          ? "border border-[#00843D] font-semibold text-[#00843D] hover:bg-emerald-50"
                           : "hover:bg-slate-100 text-slate-700 font-medium"
                     }`}
                   >
@@ -454,7 +454,7 @@ function GregorianCalendarPicker({
                 onSelect(gregorianToIso(today));
                 setOpen(false);
               }}
-              className="text-[11px] font-semibold text-[#0A3C2F] hover:text-emerald-800 transition-colors cursor-pointer"
+              className="text-[11px] font-semibold text-[#00843D] hover:text-emerald-800 transition-colors cursor-pointer"
             >
               Today
             </button>
@@ -567,7 +567,7 @@ function EthiopianCalendarPicker({
         } ${
           disabled
             ? "bg-slate-100 text-slate-500 cursor-not-allowed"
-            : "hover:border-slate-400 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]/20 cursor-pointer text-slate-900"
+            : "hover:border-slate-400 focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D]/20 cursor-pointer text-slate-900"
         }`}
       >
         <span
@@ -606,7 +606,7 @@ function EthiopianCalendarPicker({
                 aria-label="Select Ethiopian month"
                 value={visibleMonth}
                 onChange={(e) => setVisibleMonth(Number(e.target.value))}
-                className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
+                className="text-xs font-semibold text-[#00843D] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
               >
                 {ETHIOPIAN_MONTHS.map((monthName, idx) => (
                   <option key={monthName} value={idx + 1}>
@@ -619,7 +619,7 @@ function EthiopianCalendarPicker({
                 aria-label="Select Ethiopian year"
                 value={visibleYear}
                 onChange={(e) => setVisibleYear(Number(e.target.value))}
-                className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
+                className="text-xs font-semibold text-[#00843D] bg-slate-100 hover:bg-slate-200/80 px-2 py-1 rounded-md border-0 outline-none cursor-pointer transition-colors"
               >
                 {ETHIOPIAN_YEARS.map((yr) => (
                   <option key={yr} value={yr}>
@@ -676,9 +676,9 @@ function EthiopianCalendarPicker({
                     }}
                     className={`flex h-7 w-full items-center justify-center rounded-lg text-xs transition-colors cursor-pointer ${
                       isSelected
-                        ? "bg-[#0A3C2F] font-semibold text-white shadow-xs"
+                        ? "bg-[#00843D] font-semibold text-white shadow-xs"
                         : isToday
-                          ? "border border-[#0A3C2F] font-semibold text-[#0A3C2F] hover:bg-emerald-50"
+                          ? "border border-[#00843D] font-semibold text-[#00843D] hover:bg-emerald-50"
                           : "hover:bg-slate-100 text-slate-700 font-medium"
                     }`}
                   >
@@ -707,7 +707,7 @@ function EthiopianCalendarPicker({
                 onSelect(today);
                 setOpen(false);
               }}
-              className="text-[11px] font-semibold text-[#0A3C2F] hover:text-emerald-800 transition-colors cursor-pointer"
+              className="text-[11px] font-semibold text-[#00843D] hover:text-emerald-800 transition-colors cursor-pointer"
             >
               Today
             </button>

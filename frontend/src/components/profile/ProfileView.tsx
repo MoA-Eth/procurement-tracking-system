@@ -133,7 +133,7 @@ export function ProfileView({ user }: { user: AuthUser }) {
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:border-[#072F25] focus:outline-hidden focus:ring-1 focus:ring-[#072F25] transition-colors"
+              className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:border-[#06542D] focus:outline-hidden focus:ring-1 focus:ring-[#06542D] transition-colors"
               placeholder="Enter your name"
               required
             />
@@ -158,7 +158,7 @@ export function ProfileView({ user }: { user: AuthUser }) {
             <button
               type="submit"
               disabled={isUpdatingProfile}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#072F25] hover:bg-[#0A3C2F] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#06542D] hover:bg-[#00843D] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isUpdatingProfile ? (
                 <Loader2 className="w-4 h-4 animate-spin text-white" />
@@ -205,7 +205,7 @@ export function ProfileView({ user }: { user: AuthUser }) {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Enter current password"
-                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pr-11 text-sm text-slate-900 focus:border-[#072F25] focus:outline-hidden focus:ring-1 focus:ring-[#072F25] transition-colors"
+                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pr-11 text-sm text-slate-900 focus:border-[#06542D] focus:outline-hidden focus:ring-1 focus:ring-[#06542D] transition-colors"
               />
               <button
                 type="button"
@@ -232,7 +232,7 @@ export function ProfileView({ user }: { user: AuthUser }) {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
-                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pr-11 text-sm text-slate-900 focus:border-[#072F25] focus:outline-hidden focus:ring-1 focus:ring-[#072F25] transition-colors"
+                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pr-11 text-sm text-slate-900 focus:border-[#06542D] focus:outline-hidden focus:ring-1 focus:ring-[#06542D] transition-colors"
               />
               <button
                 type="button"
@@ -263,7 +263,7 @@ export function ProfileView({ user }: { user: AuthUser }) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter new password"
-                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pr-11 text-sm text-slate-900 focus:border-[#072F25] focus:outline-hidden focus:ring-1 focus:ring-[#072F25] transition-colors"
+                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 pr-11 text-sm text-slate-900 focus:border-[#06542D] focus:outline-hidden focus:ring-1 focus:ring-[#06542D] transition-colors"
               />
               <button
                 type="button"
@@ -286,7 +286,7 @@ export function ProfileView({ user }: { user: AuthUser }) {
               disabled={!isPasswordFormValid || isChangingPassword}
               className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
                 isPasswordFormValid && !isChangingPassword
-                  ? "bg-[#072F25] hover:bg-[#0A3C2F] text-white shadow-xs cursor-pointer"
+                  ? "bg-[#06542D] hover:bg-[#00843D] text-white shadow-xs cursor-pointer"
                   : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
               }`}
             >

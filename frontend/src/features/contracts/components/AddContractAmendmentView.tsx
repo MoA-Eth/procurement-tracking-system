@@ -41,9 +41,9 @@ interface AmendmentFormState {
 }
 
 const inputClasses =
-  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
+  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15";
 const textareaClasses =
-  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
+  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15";
 
 function formatAmount(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -208,14 +208,14 @@ export function AddContractAmendmentView({
         <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
-              <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+              <Link className="hover:text-[#00843D]" href="/dashboard/officer">
                 Home
               </Link>
             </li>
             <li aria-hidden="true">/</li>
             <li>
               <Link
-                className="hover:text-[#0A3C2F]"
+                className="hover:text-[#00843D]"
                 href={
                   fromTracker
                     ? "/workspace/activity-tracker"
@@ -230,7 +230,7 @@ export function AddContractAmendmentView({
                 <li aria-hidden="true">/</li>
                 <li>
                   <Link
-                    className="hover:text-[#0A3C2F]"
+                    className="hover:text-[#00843D]"
                     href={`/workspace/contracts?mode=open&contract=${encodeURIComponent(contract.contractNumber)}${fromTracker ? "&from=tracker" : ""}`}
                   >
                     {contract.contractNumber}
@@ -278,7 +278,7 @@ export function AddContractAmendmentView({
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <FileEdit
                     aria-hidden="true"
-                    className="h-4 w-4 text-[#0A3C2F]"
+                    className="h-4 w-4 text-[#00843D]"
                   />
                   <h2>Contract Baseline & Context</h2>
                 </div>
@@ -458,7 +458,7 @@ export function AddContractAmendmentView({
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <FileEdit
                   aria-hidden="true"
-                  className="h-4 w-4 text-[#0A3C2F]"
+                  className="h-4 w-4 text-[#00843D]"
                 />
                 <h2>Amendment Details</h2>
               </div>
@@ -480,14 +480,14 @@ export function AddContractAmendmentView({
                     onClick={() => updateField("variationType", "ADDITION")}
                     className={`flex items-center justify-center gap-2 rounded-md border p-3 text-xs font-semibold transition cursor-pointer ${
                       form.variationType === "ADDITION"
-                        ? "border-[#0A3C2F] bg-emerald-50 text-emerald-900 ring-1 ring-[#0A3C2F]/20 shadow-xs"
+                        ? "border-[#00843D] bg-emerald-50 text-emerald-900 ring-1 ring-[#00843D]/20 shadow-xs"
                         : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
                     }`}
                   >
                     <Plus
                       className={`h-4 w-4 ${
                         form.variationType === "ADDITION"
-                          ? "text-[#0A3C2F]"
+                          ? "text-[#00843D]"
                           : "text-slate-500"
                       }`}
                     />
@@ -498,14 +498,14 @@ export function AddContractAmendmentView({
                     onClick={() => updateField("variationType", "REDUCTION")}
                     className={`flex items-center justify-center gap-2 rounded-md border p-3 text-xs font-semibold transition cursor-pointer ${
                       form.variationType === "REDUCTION"
-                        ? "border-[#0A3C2F] bg-emerald-50 text-emerald-900 ring-1 ring-[#0A3C2F]/20 shadow-xs"
+                        ? "border-[#00843D] bg-emerald-50 text-emerald-900 ring-1 ring-[#00843D]/20 shadow-xs"
                         : "border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
                     }`}
                   >
                     <Minus
                       className={`h-4 w-4 ${
                         form.variationType === "REDUCTION"
-                          ? "text-[#0A3C2F]"
+                          ? "text-[#00843D]"
                           : "text-slate-500"
                       }`}
                     />
@@ -699,7 +699,7 @@ export function AddContractAmendmentView({
           <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-900">
             <ClipboardCheck
               aria-hidden="true"
-              className="h-4 w-4 text-[#0A3C2F]"
+              className="h-4 w-4 text-[#00843D]"
             />
             Amendment Checklist
           </div>
@@ -777,7 +777,7 @@ export function AddContractAmendmentView({
               type="button"
               disabled={isSubmitting}
               onClick={handleSave}
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-[#00552c] bg-[#006837] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006837] transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-[#0B6B3A] bg-[#00843D] px-4 text-xs font-semibold text-white shadow-sm hover:bg-[#0B6B3A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D] transition disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -838,7 +838,7 @@ function BaselineCard({
       </p>
       <p
         className={`mt-1 font-mono text-sm font-semibold tabular-nums ${
-          emphasized ? "text-[#0A3C2F]" : "text-slate-900"
+          emphasized ? "text-[#00843D]" : "text-slate-900"
         }`}
       >
         {formatAmount(value)}{" "}
@@ -882,7 +882,7 @@ function SummaryValue({
           error
             ? "text-red-700"
             : emphasized
-              ? "text-[#0A3C2F] text-sm"
+              ? "text-[#00843D] text-sm"
               : "text-slate-900"
         }`}
       >
@@ -908,7 +908,7 @@ function ChecklistItem({
       {complete ? (
         <CheckCircle2
           aria-hidden="true"
-          className="h-3.5 w-3.5 shrink-0 text-[#006837]"
+          className="h-3.5 w-3.5 shrink-0 text-[#00843D]"
         />
       ) : (
         <div

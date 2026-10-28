@@ -289,7 +289,7 @@ export function ReportTables({
         {activeReport === "annual-plan" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">Project</th>
                 <th className="py-3 px-3">Plan</th>
                 <th className="py-3 px-3">Activity Ref</th>
@@ -368,7 +368,7 @@ export function ReportTables({
             {planVsActualRows[0]?.plannedAdvertisingDate !== undefined ? (
               <>
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3">Activity Ref</th>
                     <th className="py-3 px-3">Description</th>
                     <th className="py-3 px-3">Method</th>
@@ -441,7 +441,7 @@ export function ReportTables({
             ) : (
               <>
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3">Activity Ref</th>
                     <th className="py-3 px-3">Description</th>
                     <th className="py-3 px-3">Project</th>
@@ -526,7 +526,7 @@ export function ReportTables({
         {activeReport === "procurement-step" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1250px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">Activity Ref</th>
                 <th className="py-3 px-3">Description</th>
                 <th className="py-3 px-3">Project</th>
@@ -607,7 +607,7 @@ export function ReportTables({
         {activeReport === "delayed-procurement" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1150px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">Activity Ref</th>
                 <th className="py-3 px-3">Description</th>
                 <th className="py-3 px-3">Project</th>
@@ -690,7 +690,7 @@ export function ReportTables({
             {effectiveMonthlyRows[0]?.packageCount !== undefined ? (
               <>
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3">Month</th>
                     <th className="py-3 px-3">Category</th>
                     <th className="py-3 px-3">Procurement Method</th>
@@ -726,7 +726,7 @@ export function ReportTables({
             ) : (
               <>
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3">Reporting Month</th>
                     <th className="py-3 px-3">Activity Ref</th>
                     <th className="py-3 px-3">Description</th>
@@ -817,7 +817,7 @@ export function ReportTables({
         {activeReport === "quarterly-summary" && (
           <table className="w-full text-left border-collapse text-xs min-w-[750px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">Procurement Method</th>
                 <th className="py-3 px-3">Category</th>
                 <th className="py-3 px-3">Funding Type</th>
@@ -868,7 +868,7 @@ export function ReportTables({
           activeReport === "detailed-procurement") && (
           <table className="w-full text-left border-collapse text-xs min-w-[1150px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">No.</th>
                 <th className="py-3 px-3">Description</th>
                 <th className="py-3 px-3">Category</th>
@@ -955,7 +955,7 @@ export function ReportTables({
         {activeReport === "contract-register" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1250px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">Contract No</th>
                 <th className="py-3 px-3">Activity Ref</th>
                 <th className="py-3 px-3">Project</th>
@@ -1060,7 +1060,7 @@ export function ReportTables({
         {activeReport === "contract-payment" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1200px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">Contract No</th>
                 <th className="py-3 px-3">Supplier</th>
                 <th className="py-3 px-3">Currency</th>
@@ -1136,7 +1136,7 @@ export function ReportTables({
                       minimumFractionDigits: 2,
                     })}
                   </td>
-                  <td className="py-2.5 px-3 font-sans font-semibold text-center tabular-nums text-[#0A3C2F]">
+                  <td className="py-2.5 px-3 font-sans font-semibold text-center tabular-nums text-[#00843D]">
                     {row.paymentPct}
                   </td>
                   <td className="py-2.5 px-3">
@@ -1161,7 +1161,7 @@ export function ReportTables({
         {activeReport === "regional-sector-summary" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">Organization / Sector / Region</th>
                 <th className="py-3 px-3 text-center font-semibold">
                   Total Activities
@@ -1219,7 +1219,7 @@ export function ReportTables({
                   <td className="py-2.5 px-3 font-sans font-semibold text-right tabular-nums text-amber-700">
                     {row.remainingBalance.toLocaleString()}
                   </td>
-                  <td className="py-2.5 px-3 font-sans font-semibold text-center tabular-nums text-[#0A3C2F]">
+                  <td className="py-2.5 px-3 font-sans font-semibold text-center tabular-nums text-[#00843D]">
                     {row.progressPct}
                   </td>
                   <td className="py-2.5 px-3 font-medium text-rose-600">
@@ -1235,7 +1235,7 @@ export function ReportTables({
         {activeReport === "project-summary" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">Project Code & Name</th>
                 <th className="py-3 px-3 text-center font-semibold">
                   Packages
@@ -1292,7 +1292,7 @@ export function ReportTables({
                   <td className="py-2.5 px-3 font-sans font-semibold text-right tabular-nums text-amber-700">
                     {row.remainingBalance.toLocaleString()}
                   </td>
-                  <td className="py-2.5 px-3 font-sans font-semibold text-center tabular-nums text-[#0A3C2F]">
+                  <td className="py-2.5 px-3 font-sans font-semibold text-center tabular-nums text-[#00843D]">
                     {row.currentProgress}
                   </td>
                 </tr>
@@ -1309,7 +1309,7 @@ export function ReportTables({
             {effectiveOfficerRows[0]?.projectCode !== undefined ? (
               <>
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3">Project Code</th>
                     <th className="py-3 px-3">Assigned Officer</th>
                     <th className="py-3 px-3 text-right font-semibold">
@@ -1362,7 +1362,7 @@ export function ReportTables({
             ) : (
               <>
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3">Responsible Officer</th>
                     <th className="py-3 px-3 text-center font-semibold">
                       Assigned Activities
@@ -1444,7 +1444,7 @@ export function ReportTables({
         {activeReport === "committee-approval" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1250px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3.5 min-w-[200px] whitespace-nowrap">
                   Plan Title
                 </th>
@@ -1560,7 +1560,7 @@ export function ReportTables({
         {activeReport === "supplier-performance" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1150px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3 px-3">Supplier / Contractor Name</th>
                 <th className="py-3 px-3">TIN Number</th>
                 <th className="py-3 px-3 text-center font-semibold">
@@ -1632,7 +1632,7 @@ export function ReportTables({
                       minimumFractionDigits: 2,
                     })}
                   </td>
-                  <td className="py-2.5 px-3 font-sans font-semibold text-center tabular-nums text-[#0A3C2F]">
+                  <td className="py-2.5 px-3 font-sans font-semibold text-center tabular-nums text-[#00843D]">
                     {row.compliancePct}
                   </td>
                   <td className="py-2.5 px-3">

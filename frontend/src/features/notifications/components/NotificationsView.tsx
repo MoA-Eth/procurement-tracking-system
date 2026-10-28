@@ -195,7 +195,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-emerald-50 text-[#0A3C2F] border border-emerald-200">
+            <div className="p-2 rounded-xl bg-emerald-50 text-[#00843D] border border-emerald-200">
               <Bell size={20} />
             </div>
             <div>
@@ -253,7 +253,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
               {unreadCount}
             </p>
           </div>
-          <div className="p-3 rounded-xl bg-[#006837] text-white font-medium text-xs">
+          <div className="p-3 rounded-xl bg-[#00843D] text-white font-medium text-xs">
             {unreadCount > 0 ? `${unreadCount} New` : "Clean"}
           </div>
         </div>
@@ -332,7 +332,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search notifications..."
-                className="w-full pl-9 pr-4 py-1.5 text-xs rounded-xl border border-slate-200 focus:border-[#0A3C2F] outline-none transition-all"
+                className="w-full pl-9 pr-4 py-1.5 text-xs rounded-xl border border-slate-200 focus:border-[#00843D] outline-none transition-all"
               />
             </div>
 
@@ -340,7 +340,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value as any)}
-                className="pl-8 pr-4 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 outline-none focus:border-[#0A3C2F] cursor-pointer"
+                className="pl-8 pr-4 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 outline-none focus:border-[#00843D] cursor-pointer"
               >
                 <option value="all">All Types</option>
                 <option value="plan">Plans</option>
@@ -426,7 +426,7 @@ export function NotificationsView({ user }: { user?: AuthUser }) {
                 {n.link && (
                   <Link
                     href={n.link}
-                    className="px-3 py-1.5 rounded-lg bg-[#0A3C2F] hover:bg-[#072F25] text-white text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-[#00843D] hover:bg-[#06542D] text-white text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
                   >
                     <span>{n.actionLabel || "View"}</span>
                     <ExternalLink size={12} />

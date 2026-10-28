@@ -172,7 +172,7 @@ export function PlanFullScreenReviewView({
           Plan for Review
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-semibold text-[#0A3C2F]">
+        <span className="font-semibold text-[#00843D]">
           Review: {plan.planName}
         </span>
       </nav>
@@ -184,19 +184,19 @@ export function PlanFullScreenReviewView({
             <div className="flex items-center gap-2">
               <button
                 onClick={onBackClick}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#00843D] hover:underline cursor-pointer"
               >
                 <ArrowLeft className="h-3.5 w-3.5" /> Back to Plans List
               </button>
               <span className="text-slate-300">•</span>
-              <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-200">
+              <span className="font-mono text-xs font-semibold text-[#00843D] bg-white px-2 py-0.5 rounded border border-emerald-200">
                 {plan.projectCode}
               </span>
             </div>
 
             {/* Plan Name */}
             <div className="space-y-1">
-              <label className="block text-[11px] font-semibold text-[#0A3C2F] uppercase tracking-wider">
+              <label className="block text-[11px] font-semibold text-[#00843D] uppercase tracking-wider">
                 Plan Title
               </label>
               {userRole === "DIRECTOR" ? (
@@ -204,7 +204,7 @@ export function PlanFullScreenReviewView({
                   type="text"
                   value={plan.planName}
                   onChange={(e) => onUpdatePlanName(e.target.value)}
-                  className="w-full text-lg sm:text-xl font-semibold text-slate-950 tracking-tight rounded-xl border border-emerald-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] outline-none"
+                  className="w-full text-lg sm:text-xl font-semibold text-slate-950 tracking-tight rounded-xl border border-emerald-300 bg-white px-3.5 py-1.5 focus:border-[#00843D] outline-none"
                 />
               ) : (
                 <h2 className="text-lg sm:text-xl font-semibold text-slate-950 tracking-tight pt-0.5">
@@ -243,11 +243,11 @@ export function PlanFullScreenReviewView({
 
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
               onClick={() => onOpenHistoryModal(plan)}
               type="button"
             >
-              <History className="h-3.5 w-3.5 text-[#0A3C2F]" />
+              <History className="h-3.5 w-3.5 text-[#00843D]" />
               Version History (v{getCurrentPlanVersionNumber(plan.id)})
             </button>
             <span
@@ -531,7 +531,7 @@ export function PlanFullScreenReviewView({
               value={plan.description || ""}
               readOnly
               placeholder="Add justification notes or instructions for the procurement plan..."
-              className="w-full text-xs text-slate-800 leading-relaxed rounded-xl border border-slate-300 bg-white p-3.5 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10 outline-none transition-all"
+              className="w-full text-xs text-slate-800 leading-relaxed rounded-xl border border-slate-300 bg-white p-3.5 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/10 outline-none transition-all"
             />
           ) : (
             <div className="w-full text-xs text-slate-800 leading-relaxed rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 italic">
@@ -571,7 +571,7 @@ export function PlanFullScreenReviewView({
             <button
               type="button"
               onClick={() => onOpenActivitiesPlan(plan)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
             >
               <ListChecks className="h-4 w-4 text-[#A3E635]" />
               <span>Inspect Package Activities</span>
@@ -581,7 +581,7 @@ export function PlanFullScreenReviewView({
           {/* Clean View-First Package Activities Table */}
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
             <table className="w-full text-left text-xs border-collapse min-w-[840px]">
-              <thead className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <thead className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <tr>
                   <th className="py-3 px-3.5 w-8 text-center">#</th>
                   <th className="py-3 px-3.5 min-w-[170px] w-44">
@@ -636,7 +636,7 @@ export function PlanFullScreenReviewView({
                         {/* Ref No & Method */}
                         <td className="py-3.5 px-3.5 align-top space-y-1.5 pt-3.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono font-semibold text-[#0A3C2F] text-[11px] whitespace-nowrap block group-hover:text-emerald-800">
+                            <span className="font-mono font-semibold text-[#00843D] text-[11px] whitespace-nowrap block group-hover:text-emerald-800">
                               {act.activityRefNo}
                             </span>
                             {isTargeted && (
@@ -710,7 +710,7 @@ export function PlanFullScreenReviewView({
                                 e.stopPropagation();
                                 setEditingActivity(act);
                               }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200 hover:bg-[#0A3C2F] hover:text-white text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-[#00843D] border border-emerald-200 hover:bg-[#00843D] hover:text-white text-xs font-semibold transition-all shadow-2xs cursor-pointer"
                             >
                               <Edit className="h-3.5 w-3.5" />
                               <span>Edit</span>
@@ -758,7 +758,7 @@ export function PlanFullScreenReviewView({
       ) && (
         <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
+            <ShieldCheck className="h-5 w-5 text-[#00843D]" />
             <h3 className="text-sm font-semibold text-slate-900">
               {userRole === "ENDORSING_COMMITTEE"
                 ? "Endorsement Committee Decision & Voting"
@@ -815,7 +815,7 @@ export function PlanFullScreenReviewView({
                       ? "Enter optional director notes or justification for this cancellation decision..."
                       : "Specify required corrections, missing documents or revision notes for the Procurement Officer..."
               }
-              className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
+              className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#00843D]"
             />
             {userRole === "ENDORSING_COMMITTEE" && !returnRemarks.trim() && (
               <p className="text-[10px] text-slate-400 font-medium">
@@ -869,7 +869,7 @@ export function PlanFullScreenReviewView({
                     <button
                       type="button"
                       onClick={() => onChairAuthorize && onChairAuthorize(plan)}
-                      className="px-5 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                      className="px-5 py-2.5 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-2"
                     >
                       <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
                       <span>Authorize Project for Committee Deliberation</span>
@@ -905,7 +905,7 @@ export function PlanFullScreenReviewView({
                     onClick={() =>
                       onCommitteeVote && onCommitteeVote(plan, "APPROVE")
                     }
-                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                   >
                     <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
                     <span>Vote: Endorse &amp; Approve Plan</span>
@@ -1006,7 +1006,7 @@ export function PlanFullScreenReviewView({
                         onChange={(e) =>
                           setCommitteeDeadlineDate(e.target.value)
                         }
-                        className="rounded-xl border border-slate-300 px-3.5 py-2 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
+                        className="rounded-xl border border-slate-300 px-3.5 py-2 text-xs text-slate-900 outline-none focus:border-[#00843D]"
                       />
                       <div className="flex items-center gap-1">
                         {[3, 7, 14].map((days) => (
@@ -1036,7 +1036,7 @@ export function PlanFullScreenReviewView({
                         onApprovePlan &&
                         onApprovePlan(plan, committeeDeadlineDate)
                       }
-                      className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                      className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                     >
                       <Send className="h-4 w-4 text-[#A3E635]" />
                       <span>Approve &amp; Send to Committee</span>

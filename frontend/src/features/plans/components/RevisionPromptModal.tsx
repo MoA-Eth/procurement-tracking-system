@@ -44,7 +44,7 @@ export function RevisionPromptModal({
       <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0A3C2F] text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00843D] text-white">
               <Edit3 className="h-4.5 w-4.5" />
             </div>
             <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
@@ -75,7 +75,7 @@ export function RevisionPromptModal({
               className={`w-full rounded-lg border p-3 text-xs leading-5 text-slate-800 outline-none transition focus:ring-2 ${
                 error
                   ? "border-rose-400 bg-rose-50/30 focus:border-rose-500 focus:ring-rose-500/15"
-                  : "border-slate-300 bg-white focus:border-[#0A3C2F] focus:ring-[#0A3C2F]/15"
+                  : "border-slate-300 bg-white focus:border-[#00843D] focus:ring-[#00843D]/15"
               }`}
               placeholder="e.g., Updated market estimate, adjusted stage dates per Director feedback..."
               rows={3}
@@ -104,7 +104,7 @@ export function RevisionPromptModal({
             Cancel
           </button>
           <button
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#00843D] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer"
             onClick={handleConfirm}
             type="button"
           >

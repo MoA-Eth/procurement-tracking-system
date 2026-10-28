@@ -27,7 +27,7 @@ export function ReportTypeSelector({
         <button
           onClick={onExport}
           disabled={isExporting}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#083025] text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#00843D] text-white hover:bg-[#0B6B3A] text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
         >
           <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-200" />
           <span>{isExporting ? "Generating Excel…" : "Export to Excel"}</span>
@@ -53,7 +53,7 @@ export function ReportTypeSelector({
               title={item.description}
               className={`shrink-0 whitespace-nowrap text-left px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border flex items-center gap-2 ${
                 isActive
-                  ? "bg-emerald-50 text-[#0A3C2F] font-semibold border-emerald-300 border-l-4 border-l-[#0A3C2F] shadow-2xs"
+                  ? "bg-emerald-50 text-[#00843D] font-semibold border-emerald-300 border-l-4 border-l-[#00843D] shadow-2xs"
                   : "bg-slate-50/70 hover:bg-slate-100 text-slate-600 border-slate-200/60 border-l-4 border-l-transparent"
               }`}
             >

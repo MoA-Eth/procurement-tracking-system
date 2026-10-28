@@ -112,7 +112,7 @@ export function CommitteeStatsCards({
 
           <div className="flex flex-col gap-1.5 mt-4 select-none">
             <div className="flex items-center gap-2 text-[10px] font-medium text-slate-700">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#006837]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#00843D]" />
               <span>
                 {approvedCount} Approved ({approvedPercent}%)
               </span>
@@ -142,7 +142,7 @@ export function CommitteeStatsCards({
               cy="18"
               r="15.915"
               fill="transparent"
-              stroke="#006837"
+              stroke="#00843D"
               strokeWidth="4.5"
               strokeDasharray={`${approvedPercentAnim} 100`}
               strokeDashoffset="0"

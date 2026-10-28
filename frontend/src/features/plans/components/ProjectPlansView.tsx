@@ -163,15 +163,15 @@ export function ProjectPlansView({
             {project.code} Plans
           </button>
           <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-          <span className="font-semibold text-[#0A3C2F]">
+          <span className="font-semibold text-[#00843D]">
             Director Plan Review
           </span>
         </nav>
 
         {/* 2. Top Inherited Project Context Banner (Locked) */}
         <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-5 shadow-2xs space-y-2">
-          <div className="flex items-center gap-2 text-[#0A3C2F] font-semibold text-xs uppercase tracking-wider">
-            <Info className="h-4 w-4 text-[#0A3C2F]" />
+          <div className="flex items-center gap-2 text-[#00843D] font-semibold text-xs uppercase tracking-wider">
+            <Info className="h-4 w-4 text-[#00843D]" />
             <span>INHERITED PROJECT CONTEXT (LOCKED)</span>
           </div>
           <h1 className="text-base sm:text-lg font-semibold text-slate-950 tracking-tight leading-snug">
@@ -203,7 +203,7 @@ export function ProjectPlansView({
         <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7 shadow-2xs space-y-6">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-[#0A3C2F]" />
+              <FileText className="h-4 w-4 text-[#00843D]" />
               <h2 className="text-base font-semibold text-slate-900">
                 Plan Identity & Scope
               </h2>
@@ -344,7 +344,7 @@ export function ProjectPlansView({
                 <label className="font-semibold text-slate-700">
                   Current Workflow Status
                 </label>
-                <div className="rounded-xl border border-slate-200 bg-slate-100/80 p-3 font-semibold text-[#0A3C2F] flex items-center justify-between">
+                <div className="rounded-xl border border-slate-200 bg-slate-100/80 p-3 font-semibold text-[#00843D] flex items-center justify-between">
                   <span>{readOnlyPlan.status}</span>
                   <ChevronRight className="h-4 w-4 text-slate-400 rotate-90" />
                 </div>
@@ -396,7 +396,7 @@ export function ProjectPlansView({
           Projects Directory
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-        <span className="font-semibold text-[#0A3C2F] max-w-xs truncate">
+        <span className="font-semibold text-[#00843D] max-w-xs truncate">
           {project.code} Plans
         </span>
       </nav>
@@ -404,7 +404,7 @@ export function ProjectPlansView({
       <div>
         <button
           onClick={onBackToProjects}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00843D] hover:underline cursor-pointer"
         >
           <ArrowLeft className="h-4 w-4" /> Back to Projects Directory
         </button>
@@ -499,7 +499,7 @@ export function ProjectPlansView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1080px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3.5 px-3.5 text-center w-12">#</th>
                 <th className="py-3.5 px-3.5 min-w-64 max-w-80">Plan Name</th>
                 <th className="py-3.5 px-3.5 w-36">Category</th>
@@ -545,7 +545,7 @@ export function ProjectPlansView({
 
                       {/* Plan Name */}
                       <td className="py-3 px-3.5 min-w-64 max-w-80 wrap-break-word">
-                        <p className="font-semibold text-slate-900 text-xs leading-snug group-hover:text-[#0A3C2F] wrap-break-word">
+                        <p className="font-semibold text-slate-900 text-xs leading-snug group-hover:text-[#00843D] wrap-break-word">
                           {plan.planName}
                         </p>
                         {plan.description && (
@@ -646,7 +646,7 @@ export function ProjectPlansView({
                             handleOpenPlanDetail(plan);
                           }}
                           title="View Plan Review Page"
-                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs mx-auto"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#00843D] border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer shadow-2xs mx-auto"
                         >
                           <Eye className="h-3.5 w-3.5" />
                         </button>

@@ -173,14 +173,14 @@ export function CommitteeRejectionModal({
                 onClick={() => setScope("ALL")}
                 className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                   scope === "ALL"
-                    ? "border-[#0A3C2F] bg-emerald-50/80 ring-2 ring-[#0A3C2F]/10 shadow-xs"
+                    ? "border-[#00843D] bg-emerald-50/80 ring-2 ring-[#00843D]/10 shadow-xs"
                     : "border-slate-200 bg-slate-50/60 hover:bg-slate-100"
                 }`}
               >
                 <div
                   className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
                     scope === "ALL"
-                      ? "border-[#0A3C2F] bg-[#0A3C2F]"
+                      ? "border-[#00843D] bg-[#00843D]"
                       : "border-slate-300 bg-white"
                   }`}
                 >
@@ -216,7 +216,7 @@ export function CommitteeRejectionModal({
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    className="text-[11px] font-semibold text-[#006837] hover:underline cursor-pointer"
+                    className="text-[11px] font-semibold text-[#00843D] hover:underline cursor-pointer"
                   >
                     Select All
                   </button>

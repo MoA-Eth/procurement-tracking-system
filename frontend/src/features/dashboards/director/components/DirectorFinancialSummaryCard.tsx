@@ -134,7 +134,7 @@ export function DirectorFinancialSummaryCard({
             className="flex items-center gap-1.5"
             title="Actual cash paid out to contractors/suppliers against verified deliverables"
           >
-            <span className="h-2.5 w-2.5 rounded-xs bg-[#0A3C2F] inline-block shrink-0" />
+            <span className="h-2.5 w-2.5 rounded-xs bg-[#00843D] inline-block shrink-0" />
             <span className="text-slate-700 font-semibold">Disbursed</span>
             <span className="text-slate-500">
               ({formatMValue(financialSummary.actualDisbursedETB)}M ETB · Paid)
@@ -168,7 +168,7 @@ export function DirectorFinancialSummaryCard({
         <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex shadow-inner border border-slate-200/60">
           <div
             style={{ width: `${spendPercentages.disbursed}%` }}
-            className="bg-[#0A3C2F] h-full transition-all duration-500 border-r border-white/60 last:border-r-0"
+            className="bg-[#00843D] h-full transition-all duration-500 border-r border-white/60 last:border-r-0"
             title={`Disbursed (Paid): ${spendPercentages.disbursed}% (${formatMValue(financialSummary.actualDisbursedETB)}M ETB)`}
           />
           <div

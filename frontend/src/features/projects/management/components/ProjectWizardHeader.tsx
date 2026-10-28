@@ -47,7 +47,7 @@ export function ProjectWizardHeader({
           Projects Directory
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-semibold text-[#0A3C2F]">
+        <span className="font-semibold text-[#00843D]">
           {isEditing
             ? `Edit Sector Project (${code})`
             : "Register New Sector Project"}
@@ -57,7 +57,7 @@ export function ProjectWizardHeader({
       {/* Title & Badge */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200/80 pb-4">
         <div>
-          <span className="text-[11px] font-semibold text-[#0A3C2F] uppercase tracking-wider block mb-1">
+          <span className="text-[11px] font-semibold text-[#00843D] uppercase tracking-wider block mb-1">
             Director Governance Portal
           </span>
           <h1 className="text-xl sm:text-2xl font-semibold text-slate-950 tracking-tight flex items-center gap-3">
@@ -109,7 +109,7 @@ export function ProjectWizardHeader({
                   <div
                     className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full transition-all duration-200 shrink-0 text-xs ${
                       isActive
-                        ? "bg-[#0A3C2F] text-white ring-4 ring-emerald-600/20 shadow-2xs"
+                        ? "bg-[#00843D] text-white ring-4 ring-emerald-600/20 shadow-2xs"
                         : isCompleted
                           ? "bg-emerald-600 text-white"
                           : "bg-slate-100 text-slate-500 border border-slate-200"
@@ -126,7 +126,7 @@ export function ProjectWizardHeader({
                     <span
                       className={`text-xs font-semibold leading-tight ${
                         isActive
-                          ? "text-[#0A3C2F]"
+                          ? "text-[#00843D]"
                           : isCompleted
                             ? "text-emerald-900 font-medium"
                             : "text-slate-500"

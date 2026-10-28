@@ -330,7 +330,7 @@ export function VersionHistoryModal({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-200/90 px-4 sm:px-5 py-3.5 bg-slate-50">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0A3C2F] text-white shadow-2xs">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#00843D] text-white shadow-2xs">
                 <History className="h-4 w-4" />
               </div>
               <div className="min-w-0">
@@ -386,7 +386,7 @@ export function VersionHistoryModal({
               <button
                 className={`rounded-md px-2 py-0.5 text-[11px] font-semibold transition shrink-0 cursor-pointer ${
                   filterVersion === "ALL"
-                    ? "bg-[#0A3C2F] text-white shadow-2xs"
+                    ? "bg-[#00843D] text-white shadow-2xs"
                     : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                 }`}
                 onClick={() => setFilterVersion("ALL")}
@@ -399,7 +399,7 @@ export function VersionHistoryModal({
                   key={vNum}
                   className={`rounded-md px-2 py-0.5 text-[11px] font-semibold transition shrink-0 cursor-pointer ${
                     filterVersion === vNum
-                      ? "bg-[#0A3C2F] text-white shadow-2xs"
+                      ? "bg-[#00843D] text-white shadow-2xs"
                       : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
                   }`}
                   onClick={() => setFilterVersion(vNum)}
@@ -609,7 +609,7 @@ export function VersionHistoryModal({
                                 : rec.action === "APPROVED_DIRECTOR" ||
                                     rec.action === "SENT_TO_COMMITTEE"
                                   ? "bg-indigo-600"
-                                  : "bg-[#0A3C2F]"
+                                  : "bg-[#00843D]"
                           }`}
                         />
                       </div>
@@ -631,7 +631,7 @@ export function VersionHistoryModal({
 
                         {/* Activity or Plan Reference Callout */}
                         {rec.activityReference && (
-                          <div className="text-[11px] font-semibold font-mono text-[#0A3C2F] bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                          <div className="text-[11px] font-semibold font-mono text-[#00843D] bg-slate-50 px-2 py-1 rounded border border-slate-200">
                             Activity: {rec.activityReference}
                             {rec.activityDescription
                               ? ` — ${rec.activityDescription}`
@@ -716,7 +716,7 @@ export function VersionHistoryModal({
                           <button
                             type="button"
                             onClick={() => toggleExpand(rec.id)}
-                            className="font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+                            className="font-semibold text-[#00843D] hover:underline cursor-pointer"
                           >
                             {isExpanded
                               ? "Collapse Snapshot"
@@ -820,7 +820,7 @@ export function VersionHistoryModal({
           {/* Footer */}
           <div className="flex items-center justify-between border-t border-slate-200/80 bg-slate-50/80 px-4 sm:px-5 py-3 text-[11px] text-slate-500">
             <span className="flex items-center gap-1 text-slate-600 font-medium">
-              <Clock className="h-3.5 w-3.5 text-[#0A3C2F]" />
+              <Clock className="h-3.5 w-3.5 text-[#00843D]" />
               Permanent audit trail preserved
             </span>
             <button

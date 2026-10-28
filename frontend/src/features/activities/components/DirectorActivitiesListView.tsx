@@ -1114,7 +1114,7 @@ export function DirectorActivitiesListView({
           className={`transition-colors cursor-pointer truncate max-w-[260px] ${
             selectedActivity
               ? "text-slate-500 hover:text-slate-900"
-              : "font-semibold text-[#0A3C2F]"
+              : "font-semibold text-[#00843D]"
           }`}
         >
           {currentPlanName}
@@ -1122,7 +1122,7 @@ export function DirectorActivitiesListView({
         {selectedActivity && (
           <>
             <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
-            <span className="font-semibold text-[#0A3C2F] font-mono truncate max-w-[180px]">
+            <span className="font-semibold text-[#00843D] font-mono truncate max-w-[180px]">
               {selectedActivity.activityRefNo}
             </span>
           </>
@@ -1147,7 +1147,7 @@ export function DirectorActivitiesListView({
                         onBackClick?.();
                       }
                     }}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#00843D] hover:underline cursor-pointer"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" /> Back to{" "}
                     {from === "vote-progress" ||
@@ -1156,7 +1156,7 @@ export function DirectorActivitiesListView({
                       : "Activities Table"}
                   </button>
                   <span className="text-slate-300">•</span>
-                  <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-200">
+                  <span className="font-mono text-xs font-semibold text-[#00843D] bg-white px-2 py-0.5 rounded border border-emerald-200">
                     {selectedActivity.activityRefNo}
                   </span>
                 </div>
@@ -1205,7 +1205,7 @@ export function DirectorActivitiesListView({
               {/* Connecting Line */}
               <div className="absolute top-4 left-10 right-10 h-0.5 bg-slate-200 -z-0" />
               <div
-                className="absolute top-4 left-10 h-0.5 bg-[#0A3C2F] transition-all duration-300 -z-0"
+                className="absolute top-4 left-10 h-0.5 bg-[#00843D] transition-all duration-300 -z-0"
                 style={{
                   width:
                     activeDetailTab === 1
@@ -1240,9 +1240,9 @@ export function DirectorActivitiesListView({
                     <div
                       className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
                         isActive
-                          ? "bg-[#0A3C2F] text-white shadow-xs"
+                          ? "bg-[#00843D] text-white shadow-xs"
                           : isCompleted
-                            ? "bg-[#0A3C2F] text-white"
+                            ? "bg-[#00843D] text-white"
                             : "border border-slate-300 bg-[#F0F4F8] text-slate-400"
                       }`}
                     >
@@ -1257,7 +1257,7 @@ export function DirectorActivitiesListView({
                     <span
                       className={`mt-2 text-[11px] whitespace-nowrap transition-colors ${
                         isActive
-                          ? "font-semibold text-[#0A3C2F]"
+                          ? "font-semibold text-[#00843D]"
                           : isCompleted
                             ? "font-semibold text-slate-800"
                             : "font-medium text-slate-400"
@@ -1276,7 +1276,7 @@ export function DirectorActivitiesListView({
             <section className="rounded-xl border border-slate-200 bg-white shadow-2xs p-6 sm:p-7 space-y-1">
               {/* Header */}
               <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
-                <FileText className="h-4 w-4 text-[#0A3C2F]" />
+                <FileText className="h-4 w-4 text-[#00843D]" />
                 <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
                   4.1 Step 1 — Key Details & Procurement Framework
                 </h2>
@@ -1303,7 +1303,7 @@ export function DirectorActivitiesListView({
                   <span className="w-full sm:w-72 font-semibold text-slate-500 shrink-0">
                     Procurement Method
                   </span>
-                  <span className="font-semibold text-[#0A3C2F]">
+                  <span className="font-semibold text-[#00843D]">
                     {selectedActivity.method} (National Competitive Bidding
                     (NCB))
                   </span>
@@ -1399,7 +1399,7 @@ export function DirectorActivitiesListView({
             <section className="rounded-xl border border-slate-200 bg-white shadow-2xs p-6 sm:p-7 space-y-6">
               {/* Header */}
               <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
-                <FileText className="h-4 w-4 text-[#0A3C2F]" />
+                <FileText className="h-4 w-4 text-[#00843D]" />
                 <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
                   4.2 Step 2 — Related Information & Activity Details
                 </h2>
@@ -1408,7 +1408,7 @@ export function DirectorActivitiesListView({
               {/* Inherited Project & Plan Context Banner (Unfragmented Horizontal Rows - Image 1 Style) */}
               <div className="rounded-xl border border-slate-200 bg-[#f8fafc] p-4 sm:p-5">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-3">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#0A3C2F]">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[#00843D]">
                     INHERITED PROJECT & PLAN CONTEXT
                   </h3>
                   <span className="text-[10px] text-slate-500 font-medium">
@@ -1429,7 +1429,7 @@ export function DirectorActivitiesListView({
                     <span className="w-full sm:w-60 font-semibold text-slate-500 shrink-0 uppercase text-[10px]">
                       PROJECT CODE
                     </span>
-                    <span className="font-semibold text-[#0A3C2F]">
+                    <span className="font-semibold text-[#00843D]">
                       {project?.code || "PRJ-24-001"}
                     </span>
                   </div>
@@ -1481,7 +1481,7 @@ export function DirectorActivitiesListView({
                   <span className="w-full sm:w-72 font-semibold text-slate-500 shrink-0">
                     Activity Reference
                   </span>
-                  <span className="font-semibold text-[#0A3C2F]">
+                  <span className="font-semibold text-[#00843D]">
                     {selectedActivity.activityRefNo}
                   </span>
                 </div>
@@ -1524,7 +1524,7 @@ export function DirectorActivitiesListView({
                             );
                           }
                         }}
-                        className="w-full rounded-xl border-2 border-slate-400 hover:border-slate-600 bg-white px-3 py-2 text-xs font-semibold font-mono text-[#0A3C2F] shadow-2xs outline-none transition-all focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10"
+                        className="w-full rounded-xl border-2 border-slate-400 hover:border-slate-600 bg-white px-3 py-2 text-xs font-semibold font-mono text-[#00843D] shadow-2xs outline-none transition-all focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/10"
                       />
                       <span className="text-xs font-semibold text-slate-600 font-mono">
                         ({selectedActivity.currency})
@@ -1602,7 +1602,7 @@ export function DirectorActivitiesListView({
                           e.target.value,
                         )
                       }
-                      className="w-full rounded-xl border-2 border-slate-400 hover:border-slate-600 bg-white p-3.5 text-xs font-semibold text-slate-900 shadow-2xs outline-none transition-all focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10"
+                      className="w-full rounded-xl border-2 border-slate-400 hover:border-slate-600 bg-white p-3.5 text-xs font-semibold text-slate-900 shadow-2xs outline-none transition-all focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/10"
                       placeholder="Enter activity description..."
                     />
                   ) : (
@@ -1633,7 +1633,7 @@ export function DirectorActivitiesListView({
                           e.target.value,
                         )
                       }
-                      className="w-full rounded-xl border-2 border-slate-400 hover:border-slate-600 bg-white p-3.5 text-xs font-semibold text-slate-900 shadow-2xs outline-none transition-all focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10"
+                      className="w-full rounded-xl border-2 border-slate-400 hover:border-slate-600 bg-white p-3.5 text-xs font-semibold text-slate-900 shadow-2xs outline-none transition-all focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/10"
                       placeholder="Enter remarks or approval notes..."
                     />
                   ) : (
@@ -1652,7 +1652,7 @@ export function DirectorActivitiesListView({
             <section className="rounded-xl border border-slate-200 bg-white shadow-2xs p-6 sm:p-7 space-y-6">
               {/* Header */}
               <div className="flex items-center gap-2 pb-4 border-b border-slate-200">
-                <FileText className="h-4 w-4 text-[#0A3C2F]" />
+                <FileText className="h-4 w-4 text-[#00843D]" />
                 <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
                   4.3 Step 3 — Additional Details & Allocations
                 </h2>
@@ -1736,8 +1736,8 @@ export function DirectorActivitiesListView({
           {activeDetailTab === 4 && (
             <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#0A3C2F] flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-[#0A3C2F]" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#00843D] flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-[#00843D]" />
                   4.1 Activity Roadmap & Stage Milestones
                 </h3>
                 <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
@@ -1747,7 +1747,7 @@ export function DirectorActivitiesListView({
 
               <div className="overflow-x-auto rounded-lg border border-slate-200">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase">
+                  <thead className="bg-[#00843D] text-white text-[11px] font-semibold uppercase">
                     <tr>
                       <th className="py-2.5 px-3 w-8 text-center">#</th>
                       <th className="py-2.5 px-3">Stage Name</th>
@@ -1797,7 +1797,7 @@ export function DirectorActivitiesListView({
                                   e.target.value,
                                 )
                               }
-                              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold font-mono text-slate-900 outline-none transition-all focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer"
+                              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold font-mono text-slate-900 outline-none transition-all focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] cursor-pointer"
                             />
                           ) : (
                             <span className="font-semibold text-slate-800">
@@ -1841,7 +1841,7 @@ export function DirectorActivitiesListView({
           <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-[#0A3C2F]" />
+                <MessageSquare className="h-4 w-4 text-[#00843D]" />
                 <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                   Activity Comments &amp; Review Annotations
                 </h3>
@@ -1908,7 +1908,7 @@ export function DirectorActivitiesListView({
                         ? "Enter executive comment, reservation, or clarification required on this activity..."
                         : "Enter note or feedback..."
                     }
-                    className="flex-1 p-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#0A3C2F] outline-none"
+                    className="flex-1 p-2.5 text-xs rounded-xl border border-slate-300 focus:border-[#00843D] outline-none"
                   />
                   <button
                     type="button"
@@ -1945,7 +1945,7 @@ export function DirectorActivitiesListView({
                         setIsSubmittingComment(false);
                       }
                     }}
-                    className="px-4 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs transition-colors cursor-pointer shrink-0 mt-0.5"
+                    className="px-4 py-2.5 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs transition-colors cursor-pointer shrink-0 mt-0.5"
                   >
                     {isSubmittingComment ? "Saving..." : "Add Comment"}
                   </button>
@@ -1963,7 +1963,7 @@ export function DirectorActivitiesListView({
               <div className="flex items-center gap-2">
                 <button
                   onClick={onBackClick}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#00843D] hover:underline cursor-pointer"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />{" "}
                   {from === "vote-progress"
@@ -1976,7 +1976,7 @@ export function DirectorActivitiesListView({
                         : "Back to Projects"}
                 </button>
                 <span className="text-slate-300">•</span>
-                <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <span className="font-mono text-xs font-semibold text-[#00843D] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                   {project?.code || plan.projectCode || "BREFONS"}
                 </span>
                 <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 border border-slate-300">
@@ -1996,11 +1996,11 @@ export function DirectorActivitiesListView({
               </div>
 
               <button
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
                 onClick={() => setIsHistoryModalOpen(true)}
                 type="button"
               >
-                <History className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                <History className="h-3.5 w-3.5 text-[#00843D]" />
                 Version History (v{planVersion})
               </button>
             </div>
@@ -2015,7 +2015,7 @@ export function DirectorActivitiesListView({
                   value={currentPlanName}
                   onChange={(e) => setCurrentPlanName(e.target.value)}
                   placeholder="Enter plan name..."
-                  className="w-full text-base sm:text-lg font-semibold text-slate-950 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10 outline-none transition-all"
+                  className="w-full text-base sm:text-lg font-semibold text-slate-950 rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/10 outline-none transition-all"
                 />
               ) : (
                 <p className="text-base sm:text-lg font-semibold text-slate-950 py-1">
@@ -2114,7 +2114,7 @@ export function DirectorActivitiesListView({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 shrink-0 mt-0.5">
-                    <Sparkles className="h-4 w-4 text-[#0A3C2F]" />
+                    <Sparkles className="h-4 w-4 text-[#00843D]" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -2124,7 +2124,7 @@ export function DirectorActivitiesListView({
                       {plan.parentPlanReference && (
                         <span className="text-xs font-medium text-slate-600">
                           Supplement to Approved Plan:{" "}
-                          <span className="font-mono text-[#0A3C2F] font-semibold">
+                          <span className="font-mono text-[#00843D] font-semibold">
                             {plan.parentPlanReference}
                           </span>
                         </span>
@@ -2284,7 +2284,7 @@ export function DirectorActivitiesListView({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search package activities by Ref No or Description..."
-                className="w-full pl-10 pr-4 py-1.5 text-xs rounded-lg border border-slate-300 focus:border-[#0A3C2F] outline-none"
+                className="w-full pl-10 pr-4 py-1.5 text-xs rounded-lg border border-slate-300 focus:border-[#00843D] outline-none"
               />
             </div>
 
@@ -2340,7 +2340,7 @@ export function DirectorActivitiesListView({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse min-w-[900px]">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-xs font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-xs font-semibold uppercase tracking-wider">
                     <th className="py-3 px-3.5 w-10 text-center">#</th>
                     <th className="py-3 px-3.5 min-w-[170px]">
                       Activity Ref No
@@ -2370,7 +2370,7 @@ export function DirectorActivitiesListView({
                         colSpan={8}
                         className="py-8 text-center text-slate-500"
                       >
-                        <Loader2 className="mx-auto h-6 w-6 text-[#0A3C2F] animate-spin mb-1" />
+                        <Loader2 className="mx-auto h-6 w-6 text-[#00843D] animate-spin mb-1" />
                         <p className="font-medium text-slate-700 text-xs">
                           Loading procurement activities...
                         </p>
@@ -2458,7 +2458,7 @@ export function DirectorActivitiesListView({
                           </td>
 
                           <td className="py-3 px-3.5 text-xs">
-                            <div className="font-semibold text-[#0A3C2F]">
+                            <div className="font-semibold text-[#00843D]">
                               {act.method}
                             </div>
                             <div className="text-[11px] text-slate-500">
@@ -2523,7 +2523,7 @@ export function DirectorActivitiesListView({
           {isCommitteeVoteEligible && onCommitteeVote ? (
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5 mt-6">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
+                <ShieldCheck className="h-5 w-5 text-[#00843D]" />
                 <h3 className="text-sm font-semibold text-slate-900">
                   Endorsement Committee Decision & Voting
                 </h3>
@@ -2543,14 +2543,14 @@ export function DirectorActivitiesListView({
                     onClick={() => setCommitteeRejectionScope("ALL")}
                     className={`flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       committeeRejectionScope === "ALL"
-                        ? "border-[#0A3C2F] bg-emerald-50/70 ring-2 ring-[#0A3C2F]/10"
+                        ? "border-[#00843D] bg-emerald-50/70 ring-2 ring-[#00843D]/10"
                         : "border-slate-200 bg-slate-50 hover:bg-slate-100"
                     }`}
                   >
                     <div
                       className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
                         committeeRejectionScope === "ALL"
-                          ? "border-[#0A3C2F] bg-[#0A3C2F]"
+                          ? "border-[#00843D] bg-[#00843D]"
                           : "border-slate-300 bg-white"
                       }`}
                     >
@@ -2584,14 +2584,14 @@ export function DirectorActivitiesListView({
                     }}
                     className={`flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       committeeRejectionScope === "SPECIFIC"
-                        ? "border-[#0A3C2F] bg-emerald-50/50 ring-2 ring-[#0A3C2F]/10"
+                        ? "border-[#00843D] bg-emerald-50/50 ring-2 ring-[#00843D]/10"
                         : "border-slate-200 bg-slate-50 hover:bg-slate-100"
                     }`}
                   >
                     <div
                       className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
                         committeeRejectionScope === "SPECIFIC"
-                          ? "border-[#0A3C2F] bg-[#0A3C2F]"
+                          ? "border-[#00843D] bg-[#00843D]"
                           : "border-slate-300 bg-white"
                       }`}
                     >
@@ -2632,7 +2632,7 @@ export function DirectorActivitiesListView({
                             new Set(activities.map((a) => a.id)),
                           )
                         }
-                        className="text-[11px] font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+                        className="text-[11px] font-semibold text-[#00843D] hover:underline cursor-pointer"
                       >
                         Select All
                       </button>
@@ -2730,7 +2730,7 @@ export function DirectorActivitiesListView({
                       ? "Explain the specific defects, required revisions, or policy issues regarding the selected activities..."
                       : "Enter committee voting remarks or general package rejection feedback..."
                   }
-                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
+                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#00843D]"
                 />
                 {!directorReturnRemarks.trim() && (
                   <p className="text-[10px] text-slate-400 font-medium">
@@ -2745,7 +2745,7 @@ export function DirectorActivitiesListView({
                   onClick={() =>
                     onCommitteeVote(plan, "APPROVE", directorReturnRemarks)
                   }
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
                   <CheckCircle2 className="h-4 w-4 text-emerald-200" />
                   <span>Vote: Endorse &amp; Approve Plan</span>
@@ -2799,7 +2799,7 @@ export function DirectorActivitiesListView({
                   value={directorReturnRemarks}
                   onChange={(e) => setDirectorReturnRemarks(e.target.value)}
                   placeholder="Enter executive authorization remarks or rejection reasons..."
-                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
+                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#00843D]"
                 />
                 {!directorReturnRemarks.trim() && (
                   <p className="text-[10px] text-slate-400 font-medium">
@@ -2814,7 +2814,7 @@ export function DirectorActivitiesListView({
                   onClick={() =>
                     onManagementDecision(plan, "APPROVE", directorReturnRemarks)
                   }
-                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
                   <CheckCircle2 className="h-4 w-4 text-emerald-200" />
                   <span>Authorize &amp; Approve Plan</span>
@@ -2840,7 +2840,7 @@ export function DirectorActivitiesListView({
           ) : isDirectorActionEligible ? (
             <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs space-y-5 mt-6">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <ShieldCheck className="h-5 w-5 text-[#0A3C2F]" />
+                <ShieldCheck className="h-5 w-5 text-[#00843D]" />
                 <h3 className="text-sm font-semibold text-slate-900">
                   {isCancellationRequested
                     ? "Director Decision - Plan Cancellation Request"
@@ -2900,7 +2900,7 @@ export function DirectorActivitiesListView({
                       ? "Enter optional director notes or justification for this cancellation decision..."
                       : "Specify required corrections, missing documents or revision notes for the Procurement Officer..."
                   }
-                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F]"
+                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#00843D]"
                 />
                 {!isCancellationRequested && !directorReturnRemarks.trim() && (
                   <p className="text-[10px] text-slate-400 font-medium">
@@ -2941,7 +2941,7 @@ export function DirectorActivitiesListView({
                   <button
                     type="button"
                     onClick={() => onApprovePlan(plan)}
-                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                   >
                     <Send className="h-4 w-4 text-emerald-200" />
                     <span>Approve &amp; Send to Committee</span>

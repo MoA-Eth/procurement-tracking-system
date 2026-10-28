@@ -189,7 +189,7 @@ export function ActivityTrackingDetailView({
         <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
-              <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+              <Link className="hover:text-[#00843D]" href="/dashboard/officer">
                 Home
               </Link>
             </li>
@@ -198,7 +198,7 @@ export function ActivityTrackingDetailView({
             </li>
             <li>
               <Link
-                className="hover:text-[#0A3C2F]"
+                className="hover:text-[#00843D]"
                 href="/workspace/activity-tracker"
               >
                 Activity Tracker
@@ -207,7 +207,7 @@ export function ActivityTrackingDetailView({
             <li aria-hidden="true" className="text-slate-300">
               /
             </li>
-            <li aria-current="page" className="font-semibold text-[#0A3C2F]">
+            <li aria-current="page" className="font-semibold text-[#00843D]">
               {item.activity.reference}
             </li>
           </ol>
@@ -215,7 +215,7 @@ export function ActivityTrackingDetailView({
 
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#0A3C2F]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#00843D]">
               Execution Tracking
             </p>
             <h1 className="mt-1 max-w-5xl text-2xl font-semibold tracking-tight text-[#10243f]">
@@ -242,14 +242,14 @@ export function ActivityTrackingDetailView({
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             <Link
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-[#0A3C2F]"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-[#00843D]"
               href={projectActivityHref}
             >
               Full activity details{" "}
               <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
             </Link>
             <Link
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-[#0A3C2F]"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-[#00843D]"
               href="/workspace/activity-tracker"
             >
               <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5" /> Back to
@@ -262,7 +262,7 @@ export function ActivityTrackingDetailView({
       {savedMessage ? (
         <div
           aria-live="polite"
-          className="flex items-center gap-2 rounded-md border border-[#b8dfcf] bg-[#edf7f2] px-4 py-3 text-xs font-semibold text-[#0A3C2F]"
+          className="flex items-center gap-2 rounded-md border border-[#b8dfcf] bg-[#edf7f2] px-4 py-3 text-xs font-semibold text-[#00843D]"
         >
           <CheckCircle2 aria-hidden="true" className="h-4 w-4" /> {savedMessage}
         </div>
@@ -279,9 +279,9 @@ export function ActivityTrackingDetailView({
             <button
               aria-controls={tab.id}
               aria-selected={selected}
-              className={`shrink-0 border-b-2 px-0.5 pb-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A3C2F]/30 ${
+              className={`shrink-0 border-b-2 px-0.5 pb-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00843D]/30 ${
                 selected
-                  ? "border-[#0A3C2F] text-[#0A3C2F]"
+                  ? "border-[#00843D] text-[#00843D]"
                   : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
               id={`${tab.id}-tab`}
@@ -406,7 +406,7 @@ export function ActivityTrackingDetailView({
                 <>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
                     <div
-                      className="h-full rounded-full bg-[#0A3C2F]"
+                      className="h-full rounded-full bg-[#00843D]"
                       style={{ width: `${progress.percent}%` }}
                     />
                   </div>
@@ -427,7 +427,7 @@ export function ActivityTrackingDetailView({
               </span>
               <div className="flex min-w-0 gap-2">
                 <input
-                  className="h-9 min-w-0 flex-1 rounded border border-slate-300 px-3 text-xs text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+                  className="h-9 min-w-0 flex-1 rounded border border-slate-300 px-3 text-xs text-slate-700 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
                   onChange={(event) =>
                     updateRecord({ generalRemarks: event.target.value })
                   }
@@ -435,7 +435,7 @@ export function ActivityTrackingDetailView({
                   value={record.generalRemarks}
                 />
                 <button
-                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md bg-[#0A3C2F] px-3 text-xs font-semibold text-white hover:bg-[#083025]"
+                  className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md bg-[#00843D] px-3 text-xs font-semibold text-white hover:bg-[#0B6B3A]"
                   onClick={() => persist(record, "Execution note saved.")}
                   type="button"
                 >
@@ -527,7 +527,7 @@ export function ActivityTrackingDetailView({
                 only shows the execution handoff.
               </p>
               <Link
-                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025]"
+                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A]"
                 href={contractHref}
               >
                 View Contract
@@ -547,7 +547,7 @@ export function ActivityTrackingDetailView({
               </p>
             </div>
             <Link
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025]"
+              className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A]"
               href={contractHref}
             >
               Register Contract
@@ -616,7 +616,7 @@ function MissingRoadmapState({
             </p>
           </div>
           <Link
-            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-[#0A3C2F]"
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-[#00843D]"
             href={projectActivityHref}
           >
             Open full activity details
@@ -664,7 +664,7 @@ function RoadmapTrackingSection({
     <section className="scroll-mt-24 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Route aria-hidden="true" className="h-4 w-4 text-[#0A3C2F]" />
+          <Route aria-hidden="true" className="h-4 w-4 text-[#00843D]" />
           <h2 className="text-sm font-semibold text-[#10243f]">
             Procurement Roadmap Tracking
           </h2>
@@ -684,7 +684,7 @@ function RoadmapTrackingSection({
         >
           <table className="w-304 min-w-304 table-fixed border-collapse text-left">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="w-64 px-4 py-3.5" scope="col">
                   Stage
                 </th>
@@ -783,7 +783,7 @@ function RoadmapTrackingSection({
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
-                        className="font-semibold text-sky-700 hover:text-[#0A3C2F] hover:underline"
+                        className="font-semibold text-sky-700 hover:text-[#00843D] hover:underline"
                         onClick={() => setSelectedStageName(stage.name)}
                         type="button"
                       >
@@ -1118,7 +1118,7 @@ function StageEditor({
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#0A3C2F]">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[#00843D]">
           Selected Stage
         </p>
         <h3 className="mt-1 text-sm font-semibold leading-5 text-[#10243f]">
@@ -1141,7 +1141,7 @@ function StageEditor({
 
       <div className="space-y-4 border-t border-slate-200 pt-4">
         <div className="flex items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-[#0A3C2F]" />
+          <CalendarClock className="h-4 w-4 text-[#00843D]" />
           <h4 className="text-xs font-semibold text-[#10243f]">
             Record Stage Progress
           </h4>
@@ -1184,7 +1184,7 @@ function StageEditor({
             </span>
           </span>
           <textarea
-            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
             onChange={(event) => onUpdate({ remarks: event.target.value })}
             placeholder="Delay, rebid, issue, or completion note..."
             value={tracking.remarks}
@@ -1192,7 +1192,7 @@ function StageEditor({
         </label>
         {stageError ? <ErrorMessage>{stageError}</ErrorMessage> : null}
         <button
-          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] transition cursor-pointer"
+          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] transition cursor-pointer"
           onClick={saveStage}
           type="button"
         >
@@ -1202,7 +1202,7 @@ function StageEditor({
 
       <div className="space-y-4 border-t border-slate-200 pt-4">
         <div className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4 text-[#0A3C2F]" />
+          <RefreshCw className="h-4 w-4 text-[#00843D]" />
           <h4 className="text-xs font-semibold text-[#10243f]">
             Controlled Replanning
           </h4>
@@ -1227,7 +1227,7 @@ function StageEditor({
             Replanning Reason <span className="text-red-600">*</span>
           </span>
           <textarea
-            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+            className="min-h-20 w-full resize-y rounded border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-700 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
             onChange={(event) => {
               setRevisionError("");
               setRevisionReason(event.target.value);
@@ -1238,7 +1238,7 @@ function StageEditor({
         </label>
         {revisionError ? <ErrorMessage>{revisionError}</ErrorMessage> : null}
         <button
-          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-[#0A3C2F] bg-white px-4 text-xs font-semibold text-[#0A3C2F] hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
+          className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-[#00843D] bg-white px-4 text-xs font-semibold text-[#00843D] hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400"
           disabled={!originalDate.gregorian}
           onClick={addRevision}
           type="button"
@@ -1257,7 +1257,7 @@ function StageEditor({
                 key={revision.revisionNumber}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-[10px] font-semibold text-[#0A3C2F]">
+                  <span className="font-mono text-[10px] font-semibold text-[#00843D]">
                     R{revision.revisionNumber}
                   </span>
                   <span className="text-[9px] text-slate-400">
@@ -1334,7 +1334,7 @@ function SectionHeading({
   title: string;
 }) {
   return (
-    <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[#0A3C2F]">
+    <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-[#00843D]">
       {icon}
       <h2 className="text-sm font-semibold text-[#10243f]">{title}</h2>
     </div>
@@ -1358,7 +1358,7 @@ function FieldSelect({
         {label}
       </span>
       <select
-        className="h-10 w-full cursor-pointer rounded border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+        className="h-10 w-full cursor-pointer rounded border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >

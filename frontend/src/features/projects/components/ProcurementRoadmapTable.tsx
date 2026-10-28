@@ -121,7 +121,7 @@ export function ProcurementRoadmapTable({
           {stages.map((stage, index) => (
             <CompactField key={stage.name} label={stage.name}>
               <textarea
-                className="min-h-16 w-full resize-y rounded border border-slate-300 bg-white px-2.5 py-2 text-[10px] leading-4 text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+                className="min-h-16 w-full resize-y rounded border border-slate-300 bg-white px-2.5 py-2 text-[10px] leading-4 text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
                 onChange={(event) =>
                   updateStage(index, { remarks: event.target.value })
                 }
@@ -167,7 +167,7 @@ function RoadmapSection({
       <div className="overflow-visible">
         <table className="w-full table-fixed border-collapse text-left">
           <thead>
-            <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
+            <tr className="bg-[#00843D] text-white text-[10px] font-semibold uppercase tracking-wider">
               <th className="w-[35%] px-3 py-2.5" scope="col">
                 Stage
               </th>
@@ -262,7 +262,7 @@ function RoadmapSection({
                     <input
                       aria-label={"Mark " + stage.name + " not applicable"}
                       checked={stage.notApplicable}
-                      className="h-3.5 w-3.5 accent-[#006837] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="h-3.5 w-3.5 accent-[#00843D] disabled:cursor-not-allowed disabled:opacity-40"
                       disabled={!stage.allowNotApplicable}
                       onChange={(event) => {
                         const checked = event.target.checked;
@@ -314,7 +314,7 @@ function RoadmapDateCell({
             ? "!border-red-500 !bg-red-50/20 text-red-900 font-medium focus:ring-2 focus:ring-red-500/20"
             : gregorianValue
               ? "border-transparent bg-transparent text-slate-700 hover:border-slate-300 hover:bg-white"
-              : "border-slate-300 bg-white text-slate-400 hover:border-[#0A3C2F]")
+              : "border-slate-300 bg-white text-slate-400 hover:border-[#00843D]")
         }
         onClick={() => setEditing((current) => !current)}
         type="button"
@@ -359,7 +359,7 @@ function RoadmapDateCell({
             }}
           />
           <button
-            className="mt-2 text-[9px] font-semibold text-slate-500 hover:text-[#0A3C2F]"
+            className="mt-2 text-[9px] font-semibold text-slate-500 hover:text-[#00843D]"
             onClick={() => setEditing(false)}
             type="button"
           >

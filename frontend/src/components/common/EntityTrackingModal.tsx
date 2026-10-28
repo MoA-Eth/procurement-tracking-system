@@ -223,7 +223,7 @@ export function EntityTrackingModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100/80 text-[#0A3C2F] font-semibold">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100/80 text-[#00843D] font-semibold">
               <Layers className="h-5 w-5" />
             </div>
             <div>
@@ -265,7 +265,7 @@ export function EntityTrackingModal({
                   onClick={() => setSelectedType(type)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer border ${
                     active
-                      ? "bg-[#0A3C2F] text-white border-[#0A3C2F] shadow-xs"
+                      ? "bg-[#00843D] text-white border-[#00843D] shadow-xs"
                       : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
@@ -292,7 +292,7 @@ export function EntityTrackingModal({
               placeholder="Filter by reference, title, assigned officer, or status..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-9 pr-4 py-2 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-1 focus:ring-[#0A3C2F]"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-9 pr-4 py-2 text-xs text-slate-900 outline-none focus:border-[#00843D] focus:bg-white focus:ring-1 focus:ring-[#00843D]"
             />
           </div>
         </div>
@@ -379,7 +379,7 @@ export function EntityTrackingModal({
                   <Link
                     href={entity.link}
                     onClick={onClose}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-[#0A3C2F] bg-white hover:bg-emerald-50 hover:border-emerald-300 transition"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-[#00843D] bg-white hover:bg-emerald-50 hover:border-emerald-300 transition"
                   >
                     <span>View</span>
                     <ExternalLink className="h-3 w-3" />

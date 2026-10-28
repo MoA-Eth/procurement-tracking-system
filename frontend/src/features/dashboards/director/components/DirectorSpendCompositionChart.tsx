@@ -112,7 +112,7 @@ export function DirectorSpendCompositionChart({
                 cy="90"
                 r={radius}
                 fill="transparent"
-                stroke="#0A3C2F"
+                stroke="#00843D"
                 strokeWidth={strokeWidth}
                 strokeDasharray={`${disbursedStroke} ${circumference}`}
                 strokeDashoffset={`-${uncontractedStroke + committedStroke}`}
@@ -139,7 +139,7 @@ export function DirectorSpendCompositionChart({
           className="flex items-center gap-1.5"
           title="Actual cash paid out to contractors"
         >
-          <span className="h-2.5 w-2.5 rounded-xs bg-[#0A3C2F] inline-block shrink-0" />
+          <span className="h-2.5 w-2.5 rounded-xs bg-[#00843D] inline-block shrink-0" />
           <span>Disbursed (Paid) {disbursedM}M</span>
         </div>
         <div

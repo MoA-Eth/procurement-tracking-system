@@ -56,8 +56,8 @@ export function DirectorWorkflowPipelineChart({
     // Early stages and Done stage are Complete (Dark Green)
     if (index < 3 || index === 8) {
       return {
-        bar: "bg-[#0A3C2F]",
-        text: "text-[#0A3C2F]",
+        bar: "bg-[#00843D]",
+        text: "text-[#00843D]",
       };
     }
     // Middle pipeline stages are In Progress (Ochre/Mustard)
@@ -145,7 +145,7 @@ export function DirectorWorkflowPipelineChart({
         {/* Status Legend matching screenshot */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-slate-600">
           <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="h-2 w-2 rounded-full bg-[#0A3C2F] inline-block" />
+            <span className="h-2 w-2 rounded-full bg-[#00843D] inline-block" />
             <span>Complete</span>
           </div>
           <div className="flex items-center gap-1.5 whitespace-nowrap">

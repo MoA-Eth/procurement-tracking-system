@@ -52,7 +52,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         <div className="mt-3 text-center">
           <h1
             id="new-password-title"
-            className="auth-flow-title text-3xl font-semibold text-[#0A3C2F]"
+            className="auth-flow-title text-3xl font-semibold text-[#00843D]"
           >
             Choose a New Password
           </h1>
@@ -98,7 +98,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
                   showNewPassword ? "Hide new password" : "Show new password"
                 }
                 aria-pressed={showNewPassword}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#0A3C2F] cursor-pointer"
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#00843D] cursor-pointer"
               >
                 {showNewPassword ? (
                   <EyeOff size={20} aria-hidden="true" />
@@ -132,7 +132,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
                     : "Show confirmation password"
                 }
                 aria-pressed={showConfirmPassword}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#0A3C2F] cursor-pointer"
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8da3c4] hover:text-[#00843D] cursor-pointer"
               >
                 {showConfirmPassword ? (
                   <EyeOff size={20} aria-hidden="true" />

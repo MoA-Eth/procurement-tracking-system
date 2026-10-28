@@ -142,7 +142,7 @@ export function Step4OfficersReview({
           <div>
             <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center">
-                <UserCheck className="h-4 w-4 text-[#0A3C2F]" />
+                <UserCheck className="h-4 w-4 text-[#00843D]" />
               </div>
               <h2 className="text-sm font-semibold text-slate-900 tracking-tight">
                 Assign Procurement Officers (Optional)
@@ -237,9 +237,9 @@ export function Step4OfficersReview({
                       }
                       className={`h-4.5 w-4.5 mx-auto rounded border flex items-center justify-center transition-colors cursor-pointer ${
                         allFilteredSelected
-                          ? "bg-[#0A3C2F] border-[#0A3C2F] text-white"
+                          ? "bg-[#00843D] border-[#00843D] text-white"
                           : someFilteredSelected
-                            ? "bg-emerald-100 border-[#0A3C2F] text-[#0A3C2F]"
+                            ? "bg-emerald-100 border-[#00843D] text-[#00843D]"
                             : "border-slate-300 bg-white hover:border-slate-400"
                       }`}
                     >
@@ -285,7 +285,7 @@ export function Step4OfficersReview({
                         <div
                           className={`h-4.5 w-4.5 mx-auto rounded border flex items-center justify-center transition-colors ${
                             isSelected
-                              ? "bg-[#0A3C2F] border-[#0A3C2F] text-white"
+                              ? "bg-[#00843D] border-[#00843D] text-white"
                               : "border-slate-300 bg-white"
                           }`}
                         >
@@ -301,8 +301,8 @@ export function Step4OfficersReview({
                           <div
                             className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors ${
                               isSelected
-                                ? "bg-[#0A3C2F] text-white"
-                                : "bg-emerald-100/70 text-[#0A3C2F] border border-emerald-200/60"
+                                ? "bg-[#00843D] text-white"
+                                : "bg-emerald-100/70 text-[#00843D] border border-emerald-200/60"
                             }`}
                           >
                             {initial}
@@ -324,7 +324,7 @@ export function Step4OfficersReview({
 
                       {/* Role Tag */}
                       <td className="py-3 px-3 min-w-[130px] whitespace-nowrap">
-                        <span className="inline-flex items-center text-[10px] font-semibold text-[#0A3C2F] bg-emerald-50/80 border border-emerald-200/60 px-2 py-0.5 rounded-md">
+                        <span className="inline-flex items-center text-[10px] font-semibold text-[#00843D] bg-emerald-50/80 border border-emerald-200/60 px-2 py-0.5 rounded-md">
                           {off.roleTag || "Procurement Officer"}
                         </span>
                       </td>
@@ -424,7 +424,7 @@ export function Step4OfficersReview({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-200/70 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="h-7 w-7 rounded-lg bg-emerald-50 border border-emerald-200/70 flex items-center justify-center">
-              <ShieldCheck className="h-4 w-4 text-[#0A3C2F]" />
+              <ShieldCheck className="h-4 w-4 text-[#00843D]" />
             </div>
             <div>
               <h3 className="text-xs font-semibold text-slate-900 tracking-tight">
@@ -460,7 +460,7 @@ export function Step4OfficersReview({
             <span className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 block mb-1">
               Project Code
             </span>
-            <span className="font-semibold text-xs text-[#0A3C2F] tracking-tight font-mono">
+            <span className="font-semibold text-xs text-[#00843D] tracking-tight font-mono">
               {code || "N/A"}
             </span>
           </div>

@@ -162,7 +162,7 @@ export function QuickAssignOfficerModal({
         <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-mono font-semibold text-xs bg-emerald-50 text-[#0A3C2F] px-2 py-0.5 rounded border border-emerald-200">
+              <span className="font-mono font-semibold text-xs bg-emerald-50 text-[#00843D] px-2 py-0.5 rounded border border-emerald-200">
                 {project.code}
               </span>
               <span className="text-xs text-slate-500 font-medium">
@@ -170,7 +170,7 @@ export function QuickAssignOfficerModal({
               </span>
             </div>
             <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-[#0A3C2F]" />
+              <UserPlus className="h-4 w-4 text-[#00843D]" />
               Assign or Change Officers
             </h3>
           </div>
@@ -213,7 +213,7 @@ export function QuickAssignOfficerModal({
                     onClick={() => toggleOfficer(off.id)}
                     className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
                       isSelected
-                        ? "border-[#0A3C2F] bg-emerald-50/40 shadow-xs"
+                        ? "border-[#00843D] bg-emerald-50/40 shadow-xs"
                         : "border-slate-200 bg-white hover:border-slate-300"
                     }`}
                   >
@@ -221,7 +221,7 @@ export function QuickAssignOfficerModal({
                       <div
                         className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold shrink-0 ${
                           isSelected
-                            ? "bg-[#0A3C2F] text-white"
+                            ? "bg-[#00843D] text-white"
                             : "bg-slate-100 text-slate-600"
                         }`}
                       >
@@ -245,7 +245,7 @@ export function QuickAssignOfficerModal({
                     <div
                       className={`h-5 w-5 rounded-md border flex items-center justify-center transition-colors ${
                         isSelected
-                          ? "bg-[#0A3C2F] border-[#0A3C2F] text-white"
+                          ? "bg-[#00843D] border-[#00843D] text-white"
                           : "border-slate-300 bg-white"
                       }`}
                     >
@@ -279,7 +279,7 @@ export function QuickAssignOfficerModal({
             type="button"
             onClick={handleSave}
             disabled={saving || loading}
-            className="px-5 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save Officer Assignments"}
           </button>

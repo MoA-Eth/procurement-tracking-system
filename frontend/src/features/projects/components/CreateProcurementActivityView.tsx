@@ -80,9 +80,9 @@ type UpdateActivityField = <K extends keyof ActivityFormState>(
 ) => void;
 
 const compactFieldClasses =
-  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
+  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15";
 const compactTextareaClasses =
-  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
+  "min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15";
 const inputClasses = compactFieldClasses;
 const textareaClasses = compactTextareaClasses;
 
@@ -673,7 +673,7 @@ export function CreateProcurementActivityView({
       {isEditing && (
         <div className="mt-3 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-white p-4 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0A3C2F] text-white shadow-2xs">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#00843D] text-white shadow-2xs">
               <Edit3 className="h-4.5 w-4.5" />
             </span>
             <div>
@@ -681,7 +681,7 @@ export function CreateProcurementActivityView({
                 <p className="text-xs font-semibold text-slate-900">
                   Editing Activity:
                 </p>
-                <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-white px-2 py-0.5 rounded border border-emerald-300">
+                <span className="font-mono text-xs font-semibold text-[#00843D] bg-white px-2 py-0.5 rounded border border-emerald-300">
                   {activityReference}
                 </span>
               </div>
@@ -692,7 +692,7 @@ export function CreateProcurementActivityView({
             </div>
           </div>
           <button
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#00843D] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSaving}
             onClick={handleSave}
             type="button"
@@ -723,7 +723,7 @@ export function CreateProcurementActivityView({
             </span>
           )}
           {isEditing && (
-            <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            <span className="font-mono text-xs font-semibold text-[#00843D] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
               {activityReference}
             </span>
           )}
@@ -1392,20 +1392,20 @@ function ActivityBreadcrumb({
     <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
       <ol className="flex flex-wrap items-center gap-2">
         <li>
-          <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+          <Link className="hover:text-[#00843D]" href="/dashboard/officer">
             Home
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#0A3C2F]" href="/workspace/projects">
+          <Link className="hover:text-[#00843D]" href="/workspace/projects">
             Projects
           </Link>
         </li>
         <li>/</li>
         <li>
           <Link
-            className="hover:text-[#0A3C2F]"
+            className="hover:text-[#00843D]"
             href={
               "/workspace/projects?project=" + encodeURIComponent(project.code)
             }
@@ -1416,7 +1416,7 @@ function ActivityBreadcrumb({
         <li aria-hidden="true">/</li>
         <li>
           <Link
-            className="max-w-52 truncate hover:text-[#0A3C2F]"
+            className="max-w-52 truncate hover:text-[#00843D]"
             href={planHref}
           >
             {plan.name}
@@ -1465,7 +1465,7 @@ function WizardProgress({
                 aria-hidden="true"
                 className={
                   "absolute top-3 left-[calc(50%+1.25rem)] h-px w-[calc(100%-2.5rem)] " +
-                  (complete ? "bg-[#0A3C2F]" : "bg-slate-300")
+                  (complete ? "bg-[#00843D]" : "bg-slate-300")
                 }
               />
             ) : null}
@@ -1485,11 +1485,11 @@ function WizardProgress({
                   ? "cursor-pointer hover:scale-110 "
                   : "cursor-default ") +
                 (complete
-                  ? "border-[#0A3C2F] bg-[#0A3C2F] text-white hover:bg-[#00552c]"
+                  ? "border-[#00843D] bg-[#00843D] text-white hover:bg-[#0B6B3A]"
                   : current
-                    ? "border-2 border-[#0A3C2F] bg-white text-[#0A3C2F] shadow-xs"
+                    ? "border-2 border-[#00843D] bg-white text-[#00843D] shadow-xs"
                     : isEditing
-                      ? "border-slate-300 bg-white text-slate-700 hover:border-[#0A3C2F] hover:text-[#0A3C2F]"
+                      ? "border-slate-300 bg-white text-slate-700 hover:border-[#00843D] hover:text-[#00843D]"
                       : "border-slate-300 bg-[#f8fafc] text-slate-400")
               }
             >
@@ -1506,10 +1506,10 @@ function WizardProgress({
               className={
                 "mt-2 max-w-full truncate text-center text-[10px] font-semibold transition-colors " +
                 (canClick
-                  ? "cursor-pointer hover:text-[#0A3C2F] "
+                  ? "cursor-pointer hover:text-[#00843D] "
                   : "cursor-default ") +
                 (current
-                  ? "text-[#0A3C2F] font-semibold"
+                  ? "text-[#00843D] font-semibold"
                   : complete
                     ? "text-slate-700"
                     : isEditing
@@ -1571,7 +1571,7 @@ function CheckEntriesPanel({
                 {complete || (current && ready) ? (
                   <CheckCircle2
                     aria-hidden="true"
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0A3C2F]"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#00843D]"
                   />
                 ) : current ? (
                   <CircleAlert
@@ -1647,7 +1647,7 @@ function ActivityContext({
 }) {
   return (
     <section className="mb-5 rounded-md border border-[#cbd7ee] bg-[#f1f4ff] p-3">
-      <h3 className="flex items-center gap-2 border-b border-[#ccd6e8] pb-2 text-[10px] font-semibold text-[#0A3C2F]">
+      <h3 className="flex items-center gap-2 border-b border-[#ccd6e8] pb-2 text-[10px] font-semibold text-[#00843D]">
         <LockKeyhole aria-hidden="true" className="h-3.5 w-3.5" />
         Inherited Project &amp; Plan Context
       </h3>
@@ -1699,7 +1699,7 @@ function FormSection({
   return (
     <section className="overflow-visible rounded-lg border border-slate-300 bg-white shadow-sm">
       <header className="flex items-start gap-2 border-b border-slate-300 bg-[#f6f7fb] px-4 py-3">
-        <span className="mt-0.5 text-[#0A3C2F]">{icon}</span>
+        <span className="mt-0.5 text-[#00843D]">{icon}</span>
         <div>
           <h2 className="text-[11px] font-semibold text-[#16243a]">{title}</h2>
           {description ? (
@@ -1829,10 +1829,10 @@ function YesNoChoice({
           <button
             aria-pressed={value === option}
             className={
-              "flex h-full min-w-0 items-center justify-center border-r border-slate-200 px-3 text-xs font-semibold transition-colors last:border-r-0 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#0A3C2F] " +
+              "flex h-full min-w-0 items-center justify-center border-r border-slate-200 px-3 text-xs font-semibold transition-colors last:border-r-0 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#00843D] " +
               (value === option
-                ? "bg-[#0A3C2F] text-white shadow-sm"
-                : "bg-white text-slate-600 hover:bg-[#f6f7fb] hover:text-[#0A3C2F]")
+                ? "bg-[#00843D] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-[#f6f7fb] hover:text-[#00843D]")
             }
             key={String(option)}
             onClick={() => onChange(option)}
@@ -1869,7 +1869,7 @@ function WizardFooter({
     <footer className="mt-5 flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
       {step === 1 ? (
         <Link
-          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0A3C2F]"
+          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#00843D]"
           href={planHref}
         >
           <ArrowLeft aria-hidden="true" className="h-4 w-4" />
@@ -1877,7 +1877,7 @@ function WizardFooter({
         </Link>
       ) : (
         <button
-          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#0A3C2F] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex h-10 items-center gap-2 text-xs font-semibold text-slate-600 hover:text-[#00843D] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isSaving}
           onClick={onBack}
           type="button"
@@ -1890,7 +1890,7 @@ function WizardFooter({
       <div className="flex items-center gap-2.5">
         {isEditing && step < 4 && (
           <button
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#006837] px-5 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#00843D] px-5 text-xs font-semibold text-white shadow-sm hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSaving}
             onClick={onSave}
             type="button"
@@ -1909,11 +1909,11 @@ function WizardFooter({
             "inline-flex h-10 items-center justify-center gap-2 rounded-md px-5 text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed " +
             (step === 4
               ? isAdditionalPlan
-                ? "bg-[#0A3C2F] text-white hover:bg-[#072F25] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
-                : "bg-[#006837] text-white hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
+                ? "bg-[#00843D] text-white hover:bg-[#06542D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]"
+                : "bg-[#00843D] text-white hover:bg-[#0B6B3A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]"
               : isEditing
-                ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
-                : "bg-[#006837] text-white hover:bg-[#00552c] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]")
+                ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]"
+                : "bg-[#00843D] text-white hover:bg-[#0B6B3A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]")
           }
           disabled={isSaving}
           onClick={step === 4 ? onSave : onContinue}
@@ -1961,7 +1961,7 @@ function SavedPanel({
     <section className="mt-5 rounded-lg border border-emerald-200 bg-white p-8 text-center shadow-sm">
       <CheckCircle2
         aria-hidden="true"
-        className="mx-auto h-10 w-10 text-[#0A3C2F]"
+        className="mx-auto h-10 w-10 text-[#00843D]"
       />
       <h2 className="mt-3 text-lg font-semibold text-[#10243f]">
         {isAdditionalPlan
@@ -1974,7 +1974,7 @@ function SavedPanel({
           : `Activity ${activityReference} has been prepared with its method-specific roadmap and is ready for the next workflow action.`}
       </p>
       <Link
-        className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#006837] px-5 text-xs font-semibold text-white hover:bg-[#00552c]"
+        className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#00843D] px-5 text-xs font-semibold text-white hover:bg-[#0B6B3A]"
         href={planHref}
       >
         Return to procurement plan
@@ -2059,14 +2059,14 @@ function KeyDetailsStep({
               htmlFor="additional-plan-justification"
               className="flex items-center gap-1.5 text-xs font-bold text-slate-900"
             >
-              <FileText className="h-4 w-4 text-[#0A3C2F]" />
+              <FileText className="h-4 w-4 text-[#00843D]" />
               <span>
                 Justification: Why was this activity not submitted with the
                 original plan / batch?{" "}
               </span>
               <span className="text-rose-600">*</span>
             </label>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#0A3C2F] bg-emerald-50/90 px-2.5 py-0.5 rounded-full border border-emerald-200">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#00843D] bg-emerald-50/90 px-2.5 py-0.5 rounded-full border border-emerald-200">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
               Visible to Director &amp; Committee
             </span>
@@ -2079,7 +2079,7 @@ function KeyDetailsStep({
             onChange={(e) => onAdditionalPlanReasonChange?.(e.target.value)}
             placeholder="Explain the operational necessity or reason why this item was not included in the original collection of plans submitted to the Director (e.g. newly allocated contingency funds, urgent institutional expansion, unforeseen project requirements)..."
             className={
-              "w-full rounded-lg border bg-white p-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 outline-none transition " +
+              "w-full rounded-lg border bg-white p-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 outline-none transition " +
               (justificationHasError
                 ? "border-rose-500 bg-rose-50/20 ring-1 ring-rose-500"
                 : "border-slate-300 hover:border-slate-400")
@@ -2094,7 +2094,7 @@ function KeyDetailsStep({
               className={
                 (additionalPlanReason?.trim().length || 0) < 10
                   ? "text-slate-500 font-medium"
-                  : "text-[#0A3C2F] font-bold"
+                  : "text-[#00843D] font-bold"
               }
             >
               {additionalPlanReason?.trim().length || 0} chars (min 10)
@@ -2437,7 +2437,7 @@ function KeyDetailsStep({
             <label className="flex min-h-10 cursor-pointer items-center gap-3 rounded-md border border-slate-300 bg-[#fbfcfd] px-3">
               <input
                 checked={form.inProcess}
-                className="h-4 w-4 accent-[#0A3C2F]"
+                className="h-4 w-4 accent-[#00843D]"
                 onChange={(event) =>
                   onChange("inProcess", event.target.checked)
                 }
@@ -2456,7 +2456,7 @@ function KeyDetailsStep({
         ) : null}
 
         {selectedMethod ? (
-          <div className="mt-4 flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[10px] leading-4 text-[#0A3C2F]">
+          <div className="mt-4 flex items-start gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[10px] leading-4 text-[#00843D]">
             <Info aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             The {selectedMethod.label} roadmap template will be generated in
             Step 4.
@@ -2865,7 +2865,7 @@ export function RelatedInformationStep({
                   <button
                     type="button"
                     onClick={onAddAdditionalReference}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0A3C2F] hover:text-[#06241c] hover:underline"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#00843D] hover:text-[#06542D] hover:underline"
                   >
                     <Plus className="h-3 w-3" />
                     Add Another
@@ -2879,7 +2879,7 @@ export function RelatedInformationStep({
                     <div className="mb-1.5 flex items-center justify-between gap-2">
                       <select
                         aria-label="Reference type"
-                        className="rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 focus:border-[#0A3C2F] focus:outline-none"
+                        className="rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 focus:border-[#00843D] focus:outline-none"
                         onChange={(e) =>
                           onUpdateAdditionalReference(
                             ref.id,
@@ -2933,9 +2933,9 @@ export function RelatedInformationStep({
                 <button
                   type="button"
                   onClick={onAddAdditionalReference}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-[#0A3C2F] hover:bg-[#0A3C2F]/5 hover:text-[#0A3C2F] transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-[#00843D] hover:bg-[#00843D]/5 hover:text-[#00843D] transition-colors"
                 >
-                  <Plus className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                  <Plus className="h-3.5 w-3.5 text-[#00843D]" />
                   Add Reference Number (e.g. STEP)
                 </button>
               </div>
@@ -3918,7 +3918,7 @@ export function RelatedInformationStep({
               </div>
             ))}
             <button
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-[10px] font-semibold text-[#0A3C2F] hover:border-[#0A3C2F] hover:bg-emerald-50 transition"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-[10px] font-semibold text-[#00843D] hover:border-[#00843D] hover:bg-emerald-50 transition"
               onClick={addLot}
               type="button"
             >
@@ -3964,7 +3964,7 @@ export function RelatedInformationStep({
                 id="add-currency-title"
                 className="text-sm font-semibold text-slate-900 flex items-center gap-2"
               >
-                <Plus className="h-4 w-4 text-[#0A3C2F]" />
+                <Plus className="h-4 w-4 text-[#00843D]" />
                 Add New Currency
               </h3>
               <button
@@ -4045,7 +4045,7 @@ export function RelatedInformationStep({
                 <button
                   type="submit"
                   disabled={isSubmittingCurrency || !newCurrencyCode.trim()}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-md bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md bg-[#00843D] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isSubmittingCurrency ? (
                     <>
@@ -4272,7 +4272,7 @@ function AllocationBlock({
     >
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
         <h3 className="flex items-center gap-2 text-[10px] font-semibold text-[#10243f]">
-          <span className={hasError ? "text-red-600" : "text-[#0A3C2F]"}>
+          <span className={hasError ? "text-red-600" : "text-[#00843D]"}>
             {icon}
           </span>
           {title}
@@ -4392,7 +4392,7 @@ function AllocationSelector({
           <input
             aria-label={"Select " + allocation.id}
             checked={allocation.selected}
-            className="h-4 w-4 shrink-0 accent-[#0A3C2F]"
+            className="h-4 w-4 shrink-0 accent-[#00843D]"
             onChange={() => toggle(allocation.id)}
             type="checkbox"
           />
@@ -4414,7 +4414,7 @@ function AllocationSelector({
                   "h-8 w-20 rounded border px-2 text-right text-[10px] outline-none " +
                   (attempted && !(Number(allocation.percent) > 0)
                     ? "!border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
-                    : "border-slate-300 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15")
+                    : "border-slate-300 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15")
                 }
                 max="100"
                 min="0.01"

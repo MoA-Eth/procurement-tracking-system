@@ -390,7 +390,7 @@ export function UserProfileModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
       <div className="relative w-full max-w-xl bg-white rounded-3xl border border-slate-200/90 shadow-2xl overflow-hidden my-8 animate-in zoom-in-95 duration-200">
         {/* ─── Modal Header ─────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-6 py-4.5 bg-[#0A3C2F] text-white">
+        <div className="flex items-center justify-between px-6 py-4.5 bg-[#00843D] text-white">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-emerald-300">
               <User className="h-5 w-5" />
@@ -468,7 +468,7 @@ export function UserProfileModal({
           {/* ─── Profile Overview Card ──────────────────────────────── */}
           <div className="rounded-2xl bg-slate-50/90 border border-slate-200/80 p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5 min-w-0">
-              <div className="h-13 w-13 rounded-2xl bg-gradient-to-br from-[#0A3C2F] to-[#14532d] text-white font-semibold text-base flex items-center justify-center shrink-0 shadow-xs">
+              <div className="h-13 w-13 rounded-2xl bg-gradient-to-br from-[#00843D] to-[#14532d] text-white font-semibold text-base flex items-center justify-center shrink-0 shadow-xs">
                 {(
                   activeUser.displayName ||
                   activeUser.name ||
@@ -524,7 +524,7 @@ export function UserProfileModal({
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Current Role
               </span>
-              <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-[#0A3C2F] text-emerald-200 shadow-2xs">
+              <span className="inline-block px-3 py-1 rounded-xl text-xs font-semibold bg-[#00843D] text-emerald-200 shadow-2xs">
                 {displayRole(activeUser)}
               </span>
             </div>
@@ -569,12 +569,12 @@ export function UserProfileModal({
               <div className="border border-slate-200 rounded-2xl p-4 bg-white space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FolderGit2 className="w-4 h-4 text-[#0A3C2F]" />
+                    <FolderGit2 className="w-4 h-4 text-[#00843D]" />
                     <h5 className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
                       Assigned Procurement Projects
                     </h5>
                   </div>
-                  <span className="text-xs font-semibold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                  <span className="text-xs font-semibold text-[#00843D] bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
                     {assignedProjects.length} Assigned
                   </span>
                 </div>
@@ -650,7 +650,7 @@ export function UserProfileModal({
                         key={r.role}
                         className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
                           isSelected
-                            ? "border-[#0A3C2F] bg-emerald-50/40 ring-1 ring-[#0A3C2F]"
+                            ? "border-[#00843D] bg-emerald-50/40 ring-1 ring-[#00843D]"
                             : "border-slate-200 hover:bg-slate-50/80"
                         }`}
                       >
@@ -660,7 +660,7 @@ export function UserProfileModal({
                           value={r.role}
                           checked={isSelected}
                           onChange={() => setSelectedRole(r.role)}
-                          className="mt-1 text-[#0A3C2F] focus:ring-[#0A3C2F]"
+                          className="mt-1 text-[#00843D] focus:ring-[#00843D]"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -735,7 +735,7 @@ export function UserProfileModal({
                     <select
                       value={replacementOfficerId}
                       onChange={(e) => setReplacementOfficerId(e.target.value)}
-                      className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs text-slate-900 font-semibold focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/20 outline-none"
+                      className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs text-slate-900 font-semibold focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/20 outline-none"
                     >
                       <option value="">
                         {availableOfficers.length > 0
@@ -797,7 +797,7 @@ export function UserProfileModal({
                       availableOfficers.length > 0 &&
                       !replacementOfficerId)
                   }
-                  className="px-5 py-2 rounded-xl bg-[#0A3C2F] hover:bg-[#083025] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>

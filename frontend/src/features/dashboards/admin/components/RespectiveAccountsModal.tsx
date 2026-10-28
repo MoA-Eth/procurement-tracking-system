@@ -183,7 +183,7 @@ export function RespectiveAccountsModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-[#0A3C2F] text-white p-5 sm:px-6 sm:py-5 flex items-center justify-between gap-4">
+        <div className="bg-[#00843D] text-white p-5 sm:px-6 sm:py-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300">
               <IconComponent className="w-5 h-5" />
@@ -304,7 +304,7 @@ export function RespectiveAccountsModal({
                               type="button"
                               disabled={isWorking}
                               onClick={() => handleReinvite(user)}
-                              className="px-3 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1.5 disabled:opacity-50"
+                              className="px-3 py-1 text-xs font-semibold rounded-full border border-[#00843D] bg-[#ecfdf5] text-[#00843D] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1.5 disabled:opacity-50"
                             >
                               {isWorking ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -364,7 +364,7 @@ export function RespectiveAccountsModal({
             <Link
               href={`/workspace/user-management?status=${header.directoryFilter}`}
               onClick={onClose}
-              className="px-4 py-2 rounded-full bg-[#0A3C2F] hover:bg-[#083025] text-white font-semibold transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+              className="px-4 py-2 rounded-full bg-[#00843D] hover:bg-[#0B6B3A] text-white font-semibold transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
               <span>Manage in Directory</span>
               <ExternalLink className="w-3.5 h-3.5" />

@@ -194,7 +194,7 @@ export function OfficerProjectDetailView({
         <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
-              <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+              <Link className="hover:text-[#00843D]" href="/dashboard/officer">
                 Home
               </Link>
             </li>
@@ -202,7 +202,7 @@ export function OfficerProjectDetailView({
               /
             </li>
             <li>
-              <Link className="hover:text-[#0A3C2F]" href="/workspace/projects">
+              <Link className="hover:text-[#00843D]" href="/workspace/projects">
                 Assigned Projects
               </Link>
             </li>
@@ -232,7 +232,7 @@ export function OfficerProjectDetailView({
 
           <div className="flex shrink-0 items-center gap-2.5">
             <button
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
               onClick={() => exportProjectPlansToExcel(project)}
               type="button"
             >
@@ -241,7 +241,7 @@ export function OfficerProjectDetailView({
             </button>
 
             <button
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
               onClick={() => setIsImportModalOpen(true)}
               type="button"
             >
@@ -250,7 +250,7 @@ export function OfficerProjectDetailView({
             </button>
 
             <Link
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#083025] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F] transition"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-sm font-semibold text-white shadow-sm hover:bg-[#0B6B3A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D] transition"
               href={`/workspace/projects?project=${encodeURIComponent(
                 project.code,
               )}&mode=create-plan`}
@@ -264,7 +264,7 @@ export function OfficerProjectDetailView({
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-3.5">
-          <Info aria-hidden="true" className="h-4.5 w-4.5 text-[#0A3C2F]" />
+          <Info aria-hidden="true" className="h-4.5 w-4.5 text-[#00843D]" />
           <h2 className="font-semibold text-[#16253d]">Project Overview</h2>
         </div>
 
@@ -323,7 +323,7 @@ export function OfficerProjectDetailView({
           <div className="flex items-center gap-2">
             <FileText
               aria-hidden="true"
-              className="h-4.5 w-4.5 text-[#0A3C2F]"
+              className="h-4.5 w-4.5 text-[#00843D]"
             />
             <h2 className="font-semibold text-[#16253d]">Procurement Plans</h2>
           </div>
@@ -335,7 +335,7 @@ export function OfficerProjectDetailView({
                   setSubmitError(null);
                   setIsSubmitModalOpen(true);
                 }}
-                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[#0A3C2F] px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer"
+                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[#00843D] px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5" />
                 <span>
@@ -352,7 +352,7 @@ export function OfficerProjectDetailView({
         <div className="overflow-x-auto">
           <table className="w-full min-w-208 border-collapse text-left">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="w-12 px-3.5 py-3.5 text-center" scope="col">
                   <input
                     type="checkbox"
@@ -360,7 +360,7 @@ export function OfficerProjectDetailView({
                     checked={isAllEligibleSelected}
                     onChange={handleToggleSelectAll}
                     disabled={eligiblePlans.length === 0}
-                    className="h-4 w-4 rounded border-slate-300 text-[#0A3C2F] focus:ring-[#0A3C2F] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="h-4 w-4 rounded border-slate-300 text-[#00843D] focus:ring-[#00843D] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                 </th>
                 <th className="w-[34%] px-5 py-3.5" scope="col">
@@ -413,12 +413,12 @@ export function OfficerProjectDetailView({
                         disabled={!eligible}
                         title={disableReason || undefined}
                         onChange={() => handleTogglePlan(plan.reference)}
-                        className="h-4 w-4 rounded border-slate-300 text-[#0A3C2F] focus:ring-[#0A3C2F] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="h-4 w-4 rounded border-slate-300 text-[#00843D] focus:ring-[#00843D] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                       />
                     </td>
                     <td className="px-5 py-4">
                       <Link
-                        className="font-semibold text-[#1261a8] underline-offset-4 hover:text-[#0A3C2F] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A3C2F]"
+                        className="font-semibold text-[#1261a8] underline-offset-4 hover:text-[#00843D] hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]"
                         href={`/workspace/projects?project=${encodeURIComponent(
                           project.code,
                         )}&plan=${encodeURIComponent(plan.reference)}`}
@@ -427,7 +427,7 @@ export function OfficerProjectDetailView({
                       </Link>
                       <Link
                         aria-label={`Open ${plan.name}`}
-                        className="mt-1 block w-fit font-mono text-[11px] font-medium text-slate-500 hover:text-[#0A3C2F]"
+                        className="mt-1 block w-fit font-mono text-[11px] font-medium text-slate-500 hover:text-[#00843D]"
                         href={`/workspace/projects?project=${encodeURIComponent(
                           project.code,
                         )}&plan=${encodeURIComponent(plan.reference)}`}
@@ -467,7 +467,7 @@ export function OfficerProjectDetailView({
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 bg-slate-50">
               <div className="flex items-center gap-2">
-                <Send className="h-4.5 w-4.5 text-[#0A3C2F]" />
+                <Send className="h-4.5 w-4.5 text-[#00843D]" />
                 <h3 className="font-semibold text-[#16253d] text-base">
                   Submit Plans for Review
                 </h3>
@@ -544,7 +544,7 @@ export function OfficerProjectDetailView({
                     value={revisionNotes}
                     onChange={(e) => setRevisionNotes(e.target.value)}
                     placeholder="Describe the adjustments made to address the Director's feedback..."
-                    className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-800 focus:border-[#0A3C2F] focus:outline-none focus:ring-1 focus:ring-[#0A3C2F]"
+                    className="w-full rounded-xl border border-slate-300 p-2.5 text-xs text-slate-800 focus:border-[#00843D] focus:outline-none focus:ring-1 focus:ring-[#00843D]"
                   />
                 </div>
               )}
@@ -563,7 +563,7 @@ export function OfficerProjectDetailView({
                 type="button"
                 disabled={isSubmitting}
                 onClick={handleConfirmBatchSubmit}
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-60"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-60"
               >
                 {isSubmitting ? (
                   <>
@@ -607,7 +607,7 @@ function ProjectFact({
   return (
     <div className="min-w-0">
       <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">
-        <Icon aria-hidden="true" className="h-3.5 w-3.5 text-[#0A3C2F]" />
+        <Icon aria-hidden="true" className="h-3.5 w-3.5 text-[#00843D]" />
         {label}
       </p>
       <p className="mt-2 text-sm font-semibold leading-5 text-slate-800">

@@ -27,7 +27,7 @@ export function CommitteeDeadlineModal({
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden space-y-4 p-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-50 text-[#0A3C2F] rounded-xl">
+            <div className="p-2 bg-emerald-50 text-[#00843D] rounded-xl">
               <Mail className="h-5 w-5" />
             </div>
             <div>
@@ -67,7 +67,7 @@ export function CommitteeDeadlineModal({
                 type="date"
                 value={committeeDeadlineDate}
                 onChange={(e) => onChangeDeadlineDate(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] font-medium"
+                className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#00843D] font-medium"
               />
             </div>
             <div className="flex items-center gap-1.5 pt-1">
@@ -116,7 +116,7 @@ export function CommitteeDeadlineModal({
           <button
             type="button"
             onClick={() => onConfirm(plan, committeeDeadlineDate)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072F25] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             <Send className="h-3.5 w-3.5 text-emerald-200" />
             <span>Confirm &amp; Send to Committee</span>

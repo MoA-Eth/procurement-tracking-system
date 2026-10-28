@@ -184,7 +184,7 @@ export function DualCalendarInput({
               setGregVisibleYear(current.year);
               setGregOpen((p) => !p);
             }}
-            className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-slate-400 bg-white px-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-[#0A3C2F] cursor-pointer"
+            className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-slate-400 bg-white px-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-[#00843D] cursor-pointer"
           >
             <span
               className={
@@ -215,7 +215,7 @@ export function DualCalendarInput({
                     onChange={(e) =>
                       setGregVisibleMonth(Number(e.target.value))
                     }
-                    className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 px-1 py-0.5 rounded border-0 outline-none cursor-pointer"
+                    className="text-xs font-semibold text-[#00843D] bg-slate-100 px-1 py-0.5 rounded border-0 outline-none cursor-pointer"
                   >
                     {GREGORIAN_MONTHS.map((m, idx) => (
                       <option key={m} value={idx + 1}>
@@ -226,7 +226,7 @@ export function DualCalendarInput({
                   <select
                     value={gregVisibleYear}
                     onChange={(e) => setGregVisibleYear(Number(e.target.value))}
-                    className="text-xs font-semibold text-[#0A3C2F] bg-slate-100 px-1 py-0.5 rounded border-0 outline-none cursor-pointer"
+                    className="text-xs font-semibold text-[#00843D] bg-slate-100 px-1 py-0.5 rounded border-0 outline-none cursor-pointer"
                   >
                     {gregYearsList.map((y) => (
                       <option key={y} value={y}>
@@ -277,8 +277,8 @@ export function DualCalendarInput({
                         }}
                         className={`h-7 rounded-lg transition-colors cursor-pointer ${
                           selected
-                            ? "bg-[#0A3C2F] font-semibold text-white"
-                            : "hover:bg-emerald-50 hover:text-[#0A3C2F] font-semibold text-slate-700"
+                            ? "bg-[#00843D] font-semibold text-white"
+                            : "hover:bg-emerald-50 hover:text-[#00843D] font-semibold text-slate-700"
                         }`}
                       >
                         {day}
@@ -306,7 +306,7 @@ export function DualCalendarInput({
               setVisibleYear(current.year);
               setOpen((p) => !p);
             }}
-            className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-slate-400 bg-white px-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-[#0A3C2F] cursor-pointer"
+            className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-slate-400 bg-white px-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-[#00843D] cursor-pointer"
           >
             <span
               className={
@@ -372,7 +372,7 @@ export function DualCalendarInput({
                             year: visibleYear,
                           })
                         }
-                        className={`h-7 rounded-lg transition-colors cursor-pointer ${selected ? "bg-[#0A3C2F] font-semibold text-white" : "hover:bg-emerald-50 hover:text-[#0A3C2F] font-semibold text-slate-700"}`}
+                        className={`h-7 rounded-lg transition-colors cursor-pointer ${selected ? "bg-[#00843D] font-semibold text-white" : "hover:bg-emerald-50 hover:text-[#00843D] font-semibold text-slate-700"}`}
                       >
                         {day}
                       </button>

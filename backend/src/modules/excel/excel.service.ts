@@ -8,8 +8,8 @@ import type {
   PlanStatus,
 } from '../../generated/prisma/index.js';
 
-// Global Excel Theme Color (ARGB Hex Code). Default: Ministry Dark Green (#0A3C2F)
-export const EXCEL_THEME_COLOR = 'FF0A3C2F';
+// Global Excel Theme Color (ARGB Hex Code). Default: MoA green (#00843D), matching the web app
+export const EXCEL_THEME_COLOR = 'FF00843D';
 
 export class ExcelService {
   /**

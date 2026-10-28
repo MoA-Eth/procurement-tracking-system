@@ -36,7 +36,7 @@ export function TechnicalSupportModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-3">
-            <span className="rounded-xl bg-emerald-50 p-2 text-[#0A3C2F]">
+            <span className="rounded-xl bg-emerald-50 p-2 text-[#00843D]">
               <Headphones />
             </span>
             <div>

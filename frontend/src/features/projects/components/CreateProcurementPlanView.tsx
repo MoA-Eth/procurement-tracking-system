@@ -224,7 +224,7 @@ function extractPlanFormData(
 }
 
 const compactFieldClasses =
-  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15";
+  "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15";
 
 export const procurementCategories = [
   {
@@ -563,7 +563,7 @@ export function CreateProcurementPlanView({
           >
             <CheckCircle2
               aria-hidden="true"
-              className="mt-0.5 h-4 w-4 shrink-0 text-[#0A3C2F]"
+              className="mt-0.5 h-4 w-4 shrink-0 text-[#00843D]"
             />
             <span>
               {isEditing
@@ -707,7 +707,7 @@ export function CreateProcurementPlanView({
                   <button
                     type="button"
                     onClick={() => setIsCustomYear((prev) => !prev)}
-                    className="text-[11px] font-semibold text-[#0A3C2F] hover:text-[#083025] hover:underline transition-colors cursor-pointer"
+                    className="text-[11px] font-semibold text-[#00843D] hover:text-[#0B6B3A] hover:underline transition-colors cursor-pointer"
                   >
                     {isCustomYear ? "Select from list" : "Enter custom year"}
                   </button>
@@ -867,7 +867,7 @@ export function CreateProcurementPlanView({
                   label="Description / Remarks"
                 >
                   <textarea
-                    className="min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+                    className="min-h-24 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
                     id="remarks"
                     onChange={(event) =>
                       updateField("remarks", event.target.value)
@@ -891,7 +891,7 @@ export function CreateProcurementPlanView({
               </h2>
             </div>
             <textarea
-              className="min-h-20 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+              className="min-h-20 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-xs leading-5 text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
               onChange={(e) => setRevisionReason(e.target.value)}
               placeholder="Specify justification for this revision (e.g., Updated budget year and adjusted coverage schedule per Director feedback)..."
               value={revisionReason}
@@ -927,7 +927,7 @@ export function CreateProcurementPlanView({
             </button>
             <button
               disabled={isSubmitting}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#0A3C2F] bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#00843D] bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => handleSubmit(null, "activity")}
               type="button"
             >
@@ -965,19 +965,19 @@ function CreatePlanBreadcrumb({
     <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
       <ol className="flex flex-wrap items-center gap-2">
         <li>
-          <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+          <Link className="hover:text-[#00843D]" href="/dashboard/officer">
             Home
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#0A3C2F]" href="/workspace/projects">
+          <Link className="hover:text-[#00843D]" href="/workspace/projects">
             Projects
           </Link>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link className="hover:text-[#0A3C2F]" href={detailHref}>
+          <Link className="hover:text-[#00843D]" href={detailHref}>
             {project.shortName}
           </Link>
         </li>
@@ -986,7 +986,7 @@ function CreatePlanBreadcrumb({
           <>
             <li>
               <Link
-                className="hover:text-[#0A3C2F]"
+                className="hover:text-[#00843D]"
                 href={`/workspace/projects?project=${encodeURIComponent(
                   project.code,
                 )}&plan=${encodeURIComponent(initialPlan.reference)}`}

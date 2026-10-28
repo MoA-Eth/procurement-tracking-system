@@ -152,7 +152,7 @@ export function ProjectExcelImportModal({
     >
       <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 bg-[#0A3C2F] px-6 py-4 text-white">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-[#00843D] px-6 py-4 text-white">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-emerald-300">
               <FileSpreadsheet className="h-5 w-5" />
@@ -185,11 +185,11 @@ export function ProjectExcelImportModal({
           {/* Template Download Banner */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 text-emerald-950">
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 rounded-lg bg-emerald-100 p-2 text-[#0A3C2F]">
+              <div className="mt-0.5 rounded-lg bg-emerald-100 p-2 text-[#00843D]">
                 <FileText className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-xs font-semibold text-[#0A3C2F]">
+                <h3 className="text-xs font-semibold text-[#00843D]">
                   Need the official Project template?
                 </h3>
                 <p className="mt-0.5 text-xs text-emerald-900/80">
@@ -199,7 +199,7 @@ export function ProjectExcelImportModal({
               </div>
             </div>
             <button
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#006837] px-3.5 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-[#00552c] transition shrink-0 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#00843D] px-3.5 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-[#0B6B3A] transition shrink-0 cursor-pointer"
               disabled={isDownloadingTemplate}
               onClick={handleDownloadTemplate}
               type="button"
@@ -217,7 +217,7 @@ export function ProjectExcelImportModal({
           <div
             className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all cursor-pointer ${
               isDragOver
-                ? "border-[#0A3C2F] bg-emerald-50/50 scale-[0.99]"
+                ? "border-[#00843D] bg-emerald-50/50 scale-[0.99]"
                 : "border-slate-300 bg-slate-50/60 hover:bg-slate-50 hover:border-slate-400"
             }`}
             onClick={() => fileInputRef.current?.click()}
@@ -233,7 +233,7 @@ export function ProjectExcelImportModal({
               type="file"
             />
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs border border-slate-200 text-slate-600 mb-3">
-              <UploadCloud className="h-6 w-6 text-[#0A3C2F]" />
+              <UploadCloud className="h-6 w-6 text-[#00843D]" />
             </div>
             <p className="text-sm font-semibold text-slate-800">
               {file
@@ -248,7 +248,7 @@ export function ProjectExcelImportModal({
           {/* Parsing Spinner */}
           {isParsing && (
             <div className="flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
-              <Loader2 className="h-5 w-5 animate-spin text-[#0A3C2F]" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#00843D]" />
               <span className="text-sm font-medium">
                 Inspecting spreadsheet columns and validating rows...
               </span>
@@ -292,7 +292,7 @@ export function ProjectExcelImportModal({
                   <button
                     className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
                       filterMode === "all"
-                        ? "bg-[#006837] text-white shadow-2xs"
+                        ? "bg-[#00843D] text-white shadow-2xs"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                     onClick={() => setFilterMode("all")}
@@ -303,7 +303,7 @@ export function ProjectExcelImportModal({
                   <button
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
                       filterMode === "valid"
-                        ? "bg-[#006837] text-white shadow-2xs"
+                        ? "bg-[#00843D] text-white shadow-2xs"
                         : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/60"
                     }`}
                     onClick={() => setFilterMode("valid")}
@@ -332,7 +332,7 @@ export function ProjectExcelImportModal({
               {/* Data Table */}
               <div className="max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xs">
                 <table className="w-full border-collapse text-left text-xs">
-                  <thead className="sticky top-0 z-10 bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <thead className="sticky top-0 z-10 bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <tr>
                       <th className="px-3 py-2.5 w-12 text-center">Row</th>
                       <th className="px-3 py-2.5">Project Code</th>
@@ -423,7 +423,7 @@ export function ProjectExcelImportModal({
           </button>
 
           <button
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#006837] px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[#00552c] transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#00843D] px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0B6B3A] transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             disabled={
               !file ||
               isParsing ||

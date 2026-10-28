@@ -2798,7 +2798,7 @@ export function ReportsView() {
           Home
         </Link>
         <span className="text-slate-400 text-xs">›</span>
-        <span className="font-semibold text-[#0A3C2F]">Reports</span>
+        <span className="font-semibold text-[#00843D]">Reports</span>
       </nav>
 
       {/* SESSION EXPIRED BANNER */}
@@ -2820,7 +2820,7 @@ export function ReportsView() {
           </div>
           <Link
             href="/login"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#083025] text-xs font-semibold transition-all shadow-2xs whitespace-nowrap self-start sm:self-auto"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#00843D] text-white hover:bg-[#0B6B3A] text-xs font-semibold transition-all shadow-2xs whitespace-nowrap self-start sm:self-auto"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span>Sign In Again</span>

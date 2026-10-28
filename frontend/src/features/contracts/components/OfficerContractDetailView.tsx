@@ -249,13 +249,13 @@ export function OfficerContractDetailView({
         <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
-              <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+              <Link className="hover:text-[#00843D]" href="/dashboard/officer">
                 Home
               </Link>
             </li>
             <li aria-hidden="true">/</li>
             <li>
-              <Link className="hover:text-[#0A3C2F]" href={backHref}>
+              <Link className="hover:text-[#00843D]" href={backHref}>
                 {fromTracker ? "Activity Tracker" : "Contracts"}
               </Link>
             </li>
@@ -310,7 +310,7 @@ export function OfficerContractDetailView({
             </Link>
             <Link
               aria-label={`Add payment to contract ${contract.contractNumber}`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-emerald-300 bg-[#0A3C2F] text-xs font-semibold text-white hover:bg-[#072a21] transition-colors shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-emerald-300 bg-[#00843D] text-xs font-semibold text-white hover:bg-[#06542D] transition-colors shadow-2xs"
               href={addPaymentHref}
             >
               <Plus aria-hidden="true" className="h-3.5 w-3.5" />
@@ -388,11 +388,11 @@ export function OfficerContractDetailView({
             <span className="text-xs font-medium text-emerald-900">
               Remaining Balance
             </span>
-            <div className="h-8 w-8 rounded-lg bg-emerald-100/80 flex items-center justify-center text-[#0A3C2F]">
+            <div className="h-8 w-8 rounded-lg bg-emerald-100/80 flex items-center justify-center text-[#00843D]">
               <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
-          <p className="mt-2 text-xl font-bold font-mono text-[#0A3C2F]">
+          <p className="mt-2 text-xl font-bold font-mono text-[#00843D]">
             {formatAmount(effectiveRemainingBalance)}
           </p>
           <p className="mt-1 text-xs text-emerald-800 font-medium">
@@ -773,7 +773,7 @@ export function OfficerContractDetailView({
 
           <Link
             aria-label={`Add payment to contract ${contract.contractNumber}`}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-xs font-semibold text-[#0A3C2F] hover:bg-emerald-100 hover:border-emerald-300 transition-colors shadow-2xs shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-xs font-semibold text-[#00843D] hover:bg-emerald-100 hover:border-emerald-300 transition-colors shadow-2xs shrink-0"
             href={addPaymentHref}
           >
             <Plus aria-hidden="true" className="h-3.5 w-3.5" />
@@ -889,7 +889,7 @@ export function OfficerContractDetailView({
               Record payment disbursements as they are processed.
             </p>
             <Link
-              className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0A3C2F] text-white text-xs font-semibold hover:bg-[#072a21] transition-colors shadow-2xs"
+              className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#00843D] text-white text-xs font-semibold hover:bg-[#06542D] transition-colors shadow-2xs"
               href={addPaymentHref}
             >
               <Plus className="h-3.5 w-3.5" />

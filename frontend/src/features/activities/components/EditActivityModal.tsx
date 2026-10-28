@@ -299,7 +299,7 @@ export function EditActivityModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0A3C2F] text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00843D] text-white">
               <Edit3 className="h-4.5 w-4.5" />
             </div>
             <div>
@@ -339,7 +339,7 @@ export function EditActivityModal({
               Activity Description <span className="text-rose-500">*</span>
             </label>
             <textarea
-              className="w-full rounded-lg border border-slate-300 p-3 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+              className="w-full rounded-lg border border-slate-300 p-3 text-xs leading-5 text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -355,7 +355,7 @@ export function EditActivityModal({
                 <input
                   inputMode="decimal"
                   type="text"
-                  className="w-full h-10 rounded-lg border border-slate-300 px-3 pl-8 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 font-semibold"
+                  className="w-full h-10 rounded-lg border border-slate-300 px-3 pl-8 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 font-semibold"
                   value={estimatedAmount}
                   onChange={(e) => setEstimatedAmount(e.target.value)}
                   onBlur={(e) =>
@@ -373,7 +373,7 @@ export function EditActivityModal({
                 Currency
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 bg-white"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
               >
@@ -392,7 +392,7 @@ export function EditActivityModal({
                 Procurement Method
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 bg-white"
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
               >
@@ -410,7 +410,7 @@ export function EditActivityModal({
               </label>
               <input
                 type="text"
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
                 value={fundingSource}
                 onChange={(e) => setFundingSource(e.target.value)}
               />
@@ -423,7 +423,7 @@ export function EditActivityModal({
                 Market Approach
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 bg-white"
                 value={marketApproach}
                 onChange={(e) => setMarketApproach(e.target.value)}
               >
@@ -441,7 +441,7 @@ export function EditActivityModal({
                 Review Type
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 bg-white"
                 value={reviewType}
                 onChange={(e) => setReviewType(e.target.value)}
               >
@@ -455,7 +455,7 @@ export function EditActivityModal({
                 Contract Type
               </label>
               <select
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 bg-white"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 bg-white"
                 value={contractType}
                 onChange={(e) => setContractType(e.target.value)}
               >
@@ -475,7 +475,7 @@ export function EditActivityModal({
             </label>
             <input
               type="text"
-              className="w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+              className="w-full h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
               placeholder="e.g., Updated market estimate, adjusted scope per Director request..."
               value={revisionReason}
               onChange={(e) => setRevisionReason(e.target.value)}
@@ -493,7 +493,7 @@ export function EditActivityModal({
             Cancel
           </button>
           <button
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#00843D] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-50"
             disabled={saving}
             onClick={handleSave}
             type="button"

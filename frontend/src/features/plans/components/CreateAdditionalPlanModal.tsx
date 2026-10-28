@@ -177,7 +177,7 @@ export function CreateAdditionalPlanModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
       <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden my-8">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-100 bg-gradient-to-r from-emerald-900 via-teal-900 to-[#0A3C2F] px-6 py-5 text-white">
+        <div className="flex items-start justify-between border-b border-slate-100 bg-gradient-to-r from-[#06542D] via-[#0B6B3A] to-[#00843D] px-6 py-5 text-white">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-200 border border-emerald-300/30">
@@ -402,7 +402,7 @@ export function CreateAdditionalPlanModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#0A3C2F] px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#072F25] focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 transition cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#00843D] px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#06542D] focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-50 transition cursor-pointer"
             >
               {isSubmitting ? (
                 <span>Submitting Additional Plan...</span>

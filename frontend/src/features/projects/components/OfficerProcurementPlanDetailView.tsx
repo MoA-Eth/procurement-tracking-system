@@ -466,7 +466,7 @@ export function OfficerProcurementPlanDetailView({
         <nav aria-label="Breadcrumb" className="text-xs text-slate-500">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
-              <Link className="hover:text-[#0A3C2F]" href="/dashboard/officer">
+              <Link className="hover:text-[#00843D]" href="/dashboard/officer">
                 Home
               </Link>
             </li>
@@ -474,7 +474,7 @@ export function OfficerProcurementPlanDetailView({
               /
             </li>
             <li>
-              <Link className="hover:text-[#0A3C2F]" href="/workspace/projects">
+              <Link className="hover:text-[#00843D]" href="/workspace/projects">
                 Assigned Projects
               </Link>
             </li>
@@ -482,7 +482,7 @@ export function OfficerProcurementPlanDetailView({
               /
             </li>
             <li>
-              <Link className="hover:text-[#0A3C2F]" href={projectHref}>
+              <Link className="hover:text-[#00843D]" href={projectHref}>
                 {project.shortName}
               </Link>
             </li>
@@ -560,11 +560,11 @@ export function OfficerProcurementPlanDetailView({
             {/* Version History Button (visible when plan has revisions) */}
             {hasPlanRevisions && (
               <button
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
                 onClick={() => setIsVersionHistoryOpen(true)}
                 type="button"
               >
-                <History className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                <History className="h-3.5 w-3.5 text-[#00843D]" />
                 Version History (v{versionNumber})
               </button>
             )}
@@ -572,7 +572,7 @@ export function OfficerProcurementPlanDetailView({
             {/* Edit Plan Details Button (visible when Draft or Returned) */}
             {(activePlanStatus === "Draft" || isReturned) && (
               <Link
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
                 href={
                   "/workspace/projects?project=" +
                   encodeURIComponent(project.code) +
@@ -587,7 +587,7 @@ export function OfficerProcurementPlanDetailView({
             )}
 
             <button
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
               onClick={exportActivities}
               type="button"
             >
@@ -614,7 +614,7 @@ export function OfficerProcurementPlanDetailView({
 
             {!isCancelled && (
               <button
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] transition cursor-pointer"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
                 onClick={() => setIsImportExcelOpen(true)}
                 type="button"
               >
@@ -627,7 +627,7 @@ export function OfficerProcurementPlanDetailView({
             {!isCancelled &&
               (isDraftOrReturned ? (
                 <Link
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] shadow-xs transition cursor-pointer"
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] shadow-xs transition cursor-pointer"
                   href={
                     "/workspace/projects?project=" +
                     encodeURIComponent(project.code) +
@@ -649,7 +649,7 @@ export function OfficerProcurementPlanDetailView({
                     encodeURIComponent(currentPlan.reference) +
                     "&mode=create-additional-activity"
                   }
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white hover:bg-[#083025] shadow-xs transition cursor-pointer"
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] shadow-xs transition cursor-pointer"
                   title="Create an additional procurement plan & activity with mandatory justification"
                 >
                   <Plus
@@ -755,7 +755,7 @@ export function OfficerProcurementPlanDetailView({
                   "&mode=create-activity"
                 }
               >
-                <Plus className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                <Plus className="h-3.5 w-3.5 text-[#00843D]" />
                 Add Activity
               </Link>
               <button
@@ -763,13 +763,13 @@ export function OfficerProcurementPlanDetailView({
                 onClick={() => setIsVersionHistoryOpen(true)}
                 type="button"
               >
-                <History className="h-3.5 w-3.5 text-[#0A3C2F]" />
+                <History className="h-3.5 w-3.5 text-[#00843D]" />
                 Audit Trail &amp; Diff
               </button>
             </div>
 
             <button
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#0A3C2F] px-5 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#00843D] px-5 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={isSubmitting}
               onClick={handleOpenSubmitModal}
               type="button"
@@ -860,7 +860,7 @@ export function OfficerProcurementPlanDetailView({
 
           <div className="flex justify-end pt-2 border-t border-amber-200/60">
             <button
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={isSubmitting}
               onClick={() => handleSubmitToDirector()}
               type="button"
@@ -888,7 +888,7 @@ export function OfficerProcurementPlanDetailView({
           className="flex items-center justify-between gap-3.5 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-2xs"
         >
           <div className="flex items-center gap-3.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[#0A3C2F] border border-emerald-200">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[#00843D] border border-emerald-200">
               <Send aria-hidden="true" className="h-4.5 w-4.5" />
             </div>
             <div>
@@ -907,7 +907,7 @@ export function OfficerProcurementPlanDetailView({
               onClick={() => setIsVersionHistoryOpen(true)}
               type="button"
             >
-              <History className="h-3.5 w-3.5 text-[#0A3C2F]" />
+              <History className="h-3.5 w-3.5 text-[#00843D]" />
               Audit Trail
             </button>
           )}
@@ -1006,7 +1006,7 @@ export function OfficerProcurementPlanDetailView({
             <label className="block w-full sm:max-w-xs sm:flex-1">
               <span className="sr-only">Search procurement activities</span>
               <span
-                className="flex h-9 cursor-text items-center gap-2 rounded-md border border-slate-300 bg-[#fbfcff] px-3 focus-within:border-[#0A3C2F] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0A3C2F]/15"
+                className="flex h-9 cursor-text items-center gap-2 rounded-md border border-slate-300 bg-[#fbfcff] px-3 focus-within:border-[#00843D] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#00843D]/15"
                 onClick={() => searchInputRef.current?.focus()}
               >
                 <Search
@@ -1028,7 +1028,7 @@ export function OfficerProcurementPlanDetailView({
             <label className="relative block min-w-0">
               <span className="sr-only">Filter activities by category</span>
               <select
-                className="h-9 w-full appearance-none rounded-md border border-slate-300 bg-white py-0 pr-9 pl-3 text-xs font-medium text-slate-700 outline-none hover:border-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 sm:w-auto sm:min-w-36"
+                className="h-9 w-full appearance-none rounded-md border border-slate-300 bg-white py-0 pr-9 pl-3 text-xs font-medium text-slate-700 outline-none hover:border-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 sm:w-auto sm:min-w-36"
                 onChange={(event) => setCategoryFilter(event.target.value)}
                 value={categoryFilter}
               >
@@ -1048,7 +1048,7 @@ export function OfficerProcurementPlanDetailView({
             <label className="relative block min-w-0">
               <span className="sr-only">Filter activities by method</span>
               <select
-                className="h-9 w-full appearance-none rounded-md border border-slate-300 bg-white py-0 pr-9 pl-3 text-xs font-medium text-slate-700 outline-none hover:border-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 sm:w-auto sm:min-w-36"
+                className="h-9 w-full appearance-none rounded-md border border-slate-300 bg-white py-0 pr-9 pl-3 text-xs font-medium text-slate-700 outline-none hover:border-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 sm:w-auto sm:min-w-36"
                 onChange={(event) => setMethodFilter(event.target.value)}
                 value={methodFilter}
               >
@@ -1068,7 +1068,7 @@ export function OfficerProcurementPlanDetailView({
             <label className="relative block min-w-0">
               <span className="sr-only">Filter activities by status</span>
               <select
-                className="h-9 w-full appearance-none rounded-md border border-slate-300 bg-white py-0 pr-9 pl-3 text-xs font-medium text-slate-700 outline-none hover:border-slate-400 focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 sm:w-auto sm:min-w-32"
+                className="h-9 w-full appearance-none rounded-md border border-slate-300 bg-white py-0 pr-9 pl-3 text-xs font-medium text-slate-700 outline-none hover:border-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15 sm:w-auto sm:min-w-32"
                 onChange={(event) =>
                   setStatusFilter(event.target.value as "All" | ActivityStatus)
                 }
@@ -1091,7 +1091,7 @@ export function OfficerProcurementPlanDetailView({
         <div className="overflow-x-auto max-h-[620px] overflow-y-auto border-b border-slate-200">
           <table className="w-full table-fixed border-collapse text-left">
             <thead className="sticky top-0 z-10 shadow-xs">
-              <tr className="bg-[#0A3C2F] text-white text-[10px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[10px] font-semibold uppercase tracking-wider">
                 <th className="w-[10%] px-2 py-3" scope="col">
                   Ref
                 </th>
@@ -1228,7 +1228,7 @@ export function OfficerProcurementPlanDetailView({
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0A3C2F] text-white">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00843D] text-white">
                   <Send className="h-4.5 w-4.5" />
                 </div>
                 <div>
@@ -1311,7 +1311,7 @@ export function OfficerProcurementPlanDetailView({
                   </label>
                   <textarea
                     id="resubmit-reason"
-                    className="w-full rounded-lg border border-slate-300 p-2.5 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
+                    className="w-full rounded-lg border border-slate-300 p-2.5 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D]"
                     placeholder="Briefly state revisions made before resubmitting..."
                     rows={2}
                     value={resubmitReason}
@@ -1331,7 +1331,7 @@ export function OfficerProcurementPlanDetailView({
                 Cancel
               </button>
               <button
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0A3C2F] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#00843D] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 disabled={isSubmitting}
                 onClick={async () => {
                   await handleSubmitToDirector(
@@ -1598,7 +1598,7 @@ function ActivityRow({
           {registerContractHref && (
             <Link
               aria-label={`Register contract for activity ${activity.reference}`}
-              className="inline-flex shrink-0 items-center gap-1 rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[9px] font-semibold text-[#0A3C2F] hover:bg-[#0A3C2F] hover:text-white transition-colors cursor-pointer shadow-2xs"
+              className="inline-flex shrink-0 items-center gap-1 rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[9px] font-semibold text-[#00843D] hover:bg-[#00843D] hover:text-white transition-colors cursor-pointer shadow-2xs"
               href={registerContractHref}
               title={`Register contract for ${activity.reference}`}
             >
@@ -1609,7 +1609,7 @@ function ActivityRow({
           {canEdit && (
             <Link
               aria-label={`Edit activity ${activity.reference}`}
-              className="inline-flex shrink-0 items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-700 hover:bg-[#0A3C2F] hover:text-white transition cursor-pointer"
+              className="inline-flex shrink-0 items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-700 hover:bg-[#00843D] hover:text-white transition cursor-pointer"
               href={editHref}
               title={`Edit activity ${activity.reference}`}
             >
@@ -1619,7 +1619,7 @@ function ActivityRow({
           )}
           <Link
             aria-label={`Open activity ${activity.reference}`}
-            className="shrink-0 text-[10px] font-semibold text-[#1261a8] hover:text-[#0A3C2F] hover:underline"
+            className="shrink-0 text-[10px] font-semibold text-[#1261a8] hover:text-[#00843D] hover:underline"
             href={href}
           >
             Open

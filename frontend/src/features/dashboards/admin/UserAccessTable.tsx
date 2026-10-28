@@ -146,7 +146,7 @@ export function UserAccessTable({
         </div>
         <Link
           href={directoryUrl}
-          className="text-[#006837] hover:text-[#00552c] font-semibold text-xs flex items-center gap-1 shrink-0 transition-colors"
+          className="text-[#00843D] hover:text-[#0B6B3A] font-semibold text-xs flex items-center gap-1 shrink-0 transition-colors"
         >
           <span>Full Directory</span>
           <ChevronRight className="h-4 w-4" />
@@ -291,7 +291,7 @@ export function UserAccessTable({
                               e.stopPropagation();
                               handleResendOrReinvite(user);
                             }}
-                            className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                            className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#00843D] bg-[#ecfdf5] text-[#00843D] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
                             title="Send a fresh invitation link to this email"
                           >
                             {isWorking ? (
@@ -331,7 +331,7 @@ export function UserAccessTable({
                               e.stopPropagation();
                               handleResendOrReinvite(user);
                             }}
-                            className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                            className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#00843D] bg-[#ecfdf5] text-[#00843D] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
                           >
                             {isWorking ? (
                               <Loader2 className="w-3 h-3 animate-spin inline" />

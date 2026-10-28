@@ -160,7 +160,7 @@ export function EditPlanDetailsModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0A3C2F] text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00843D] text-white">
               <Edit3 className="h-4.5 w-4.5" />
             </div>
             <div>
@@ -195,7 +195,7 @@ export function EditPlanDetailsModal({
             </label>
             <input
               type="text"
-              className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+              className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -208,7 +208,7 @@ export function EditPlanDetailsModal({
               </label>
               <input
                 type="text"
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
                 value={budgetYear}
                 onChange={(e) => setBudgetYear(e.target.value)}
               />
@@ -220,7 +220,7 @@ export function EditPlanDetailsModal({
               </label>
               <input
                 type="text"
-                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+                className="w-full h-10 rounded-lg border border-slate-300 px-3 text-xs text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
                 value={organizationRegion}
                 onChange={(e) => setOrganizationRegion(e.target.value)}
               />
@@ -258,7 +258,7 @@ export function EditPlanDetailsModal({
               Description / Objectives
             </label>
             <textarea
-              className="w-full rounded-lg border border-slate-300 p-3 text-xs leading-5 text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15"
+              className="w-full rounded-lg border border-slate-300 p-3 text-xs leading-5 text-slate-800 outline-none focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -272,7 +272,7 @@ export function EditPlanDetailsModal({
             </label>
             <input
               type="text"
-              className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F]"
+              className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D]"
               placeholder="e.g., Updated budget year and adjusted coverage schedule per Director feedback..."
               value={revisionReason}
               onChange={(e) => setRevisionReason(e.target.value)}
@@ -290,7 +290,7 @@ export function EditPlanDetailsModal({
             Cancel
           </button>
           <button
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#006837] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#00843D] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer"
             onClick={handleSave}
             type="button"
           >

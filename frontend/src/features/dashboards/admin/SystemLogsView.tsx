@@ -270,7 +270,7 @@ export function SystemLogsView() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[650px]">
                   <thead>
-                    <tr className="bg-[#0A3C2F] text-white text-xs font-semibold">
+                    <tr className="bg-[#00843D] text-white text-xs font-semibold">
                       <th className="py-3.5 px-4 font-semibold tracking-wide w-[220px]">
                         Timestamp
                       </th>
@@ -309,7 +309,7 @@ export function SystemLogsView() {
                           </td>
 
                           <td className="py-4 px-4 whitespace-nowrap align-middle">
-                            <span className="text-[#0A3C2F] text-xs font-semibold uppercase tracking-wider">
+                            <span className="text-[#00843D] text-xs font-semibold uppercase tracking-wider">
                               {log.action}
                             </span>
                           </td>

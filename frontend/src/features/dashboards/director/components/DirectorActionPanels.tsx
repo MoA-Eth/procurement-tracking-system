@@ -44,7 +44,7 @@ export function DirectorActionPanels({
           </div>
           <Link
             href="/workspace/plan-for-review"
-            className="text-[#0A3C2F] hover:text-[#083025] font-semibold text-xs flex items-center gap-0.5 shrink-0 hover:underline cursor-pointer"
+            className="text-[#00843D] hover:text-[#0B6B3A] font-semibold text-xs flex items-center gap-0.5 shrink-0 hover:underline cursor-pointer"
           >
             View All <ChevronRight className="h-3 w-3" />
           </Link>
@@ -115,7 +115,7 @@ export function DirectorActionPanels({
                   </span>
                   <Link
                     href={`/workspace/plan-for-review?plan=${encodeURIComponent(plan.id)}`}
-                    className="inline-flex items-center gap-1 bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold px-3 py-1 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1 bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold px-3 py-1 rounded-lg transition-colors cursor-pointer shadow-2xs"
                   >
                     Review Plan <ChevronRight className="h-3 w-3" />
                   </Link>
@@ -151,7 +151,7 @@ export function DirectorActionPanels({
         {/* Delays Table (scrolls within the panel; header stays visible) */}
         <div className="max-h-[28rem] overflow-auto">
           <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 z-10 bg-[#0A3C2F] text-white text-[10px] uppercase font-semibold tracking-wider">
+            <thead className="sticky top-0 z-10 bg-[#00843D] text-white text-[10px] uppercase font-semibold tracking-wider">
               <tr>
                 <th className="px-3.5 py-2.5">Activity &amp; Project</th>
                 <th className="px-2.5 py-2.5">Owner</th>
@@ -201,7 +201,7 @@ export function DirectorActionPanels({
                     <td className="px-3.5 py-2.5 text-right">
                       <Link
                         href={`/workspace/activity-tracker?activity=${encodeURIComponent(delay.id)}`}
-                        className="whitespace-nowrap text-[#0A3C2F] hover:text-[#083025] font-semibold text-xs hover:underline cursor-pointer"
+                        className="whitespace-nowrap text-[#00843D] hover:text-[#0B6B3A] font-semibold text-xs hover:underline cursor-pointer"
                       >
                         Inspect
                       </Link>

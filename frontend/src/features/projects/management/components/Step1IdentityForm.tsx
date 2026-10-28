@@ -262,7 +262,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
     <div className="space-y-6 animate-in fade-in duration-150">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-[#0A3C2F]" />
+          <Building2 className="h-5 w-5 text-[#00843D]" />
           <h2 className="text-base font-semibold text-slate-900 tracking-tight">
             Step 1: Project Identity & Regional Scope
           </h2>
@@ -274,7 +274,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
       {/* Subsection A: Project Identity */}
       <div className="space-y-4">
-        <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-[#00843D] uppercase tracking-wider">
           A. Project Classification
         </h3>
 
@@ -293,7 +293,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                   setQuickLabel("");
                   setShowQuickAddModal(true);
                 }}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#00843D] hover:text-[#0B6B3A] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
                 title="Quick-add a new code without leaving this wizard"
               >
                 <Plus className="h-3 w-3" />
@@ -315,7 +315,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                 <button
                   type="button"
                   onClick={() => setIsCustomCode(false)}
-                  className="text-[11px] text-[#006837] hover:text-[#00552c] font-semibold underline cursor-pointer"
+                  className="text-[11px] text-[#00843D] hover:text-[#0B6B3A] font-semibold underline cursor-pointer"
                 >
                   &larr; Choose from configured codes
                 </button>
@@ -463,9 +463,9 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                                 setIsDropdownOpen(false);
                                 setShowQuickAddModal(true);
                               }}
-                              className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-slate-100 text-[#006837] font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                              className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-slate-100 text-[#00843D] font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
                             >
-                              <Plus className="h-3.5 w-3.5 text-[#006837]" />
+                              <Plus className="h-3.5 w-3.5 text-[#00843D]" />
                               <span className="text-[11px]">
                                 + Add &ldquo;{searchQuery.trim().toUpperCase()}
                                 &rdquo; to system
@@ -501,7 +501,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                           setIsDropdownOpen(false);
                           setShowQuickAddModal(true);
                         }}
-                        className="text-[#006837] hover:text-[#00552c] font-semibold cursor-pointer flex items-center gap-0.5"
+                        className="text-[#00843D] hover:text-[#0B6B3A] font-semibold cursor-pointer flex items-center gap-0.5"
                       >
                         <Plus className="h-3 w-3" />
                         <span>Add new code</span>
@@ -547,7 +547,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
 
       {/* Subsection B: Governance & Scope */}
       <div className="space-y-4 pt-4 border-t border-slate-100">
-        <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
+        <h3 className="text-xs font-semibold text-[#00843D] uppercase tracking-wider">
           B. Governance & Operational Scope
         </h3>
 
@@ -654,7 +654,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                   setQuickSectorLabel("");
                   setShowQuickAddSectorModal(true);
                 }}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#00843D] hover:text-[#0B6B3A] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
                 title="Quick-add a new sector if not on the list"
               >
                 <Plus className="h-3 w-3" />
@@ -749,7 +749,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                 <button
                   type="submit"
                   disabled={isQuickSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isQuickSubmitting ? "Saving..." : "Save & Select"}
                 </button>
@@ -832,7 +832,7 @@ export function Step1IdentityForm({ data, onChange }: Step1IdentityFormProps) {
                 <button
                   type="submit"
                   disabled={isQuickSectorSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isQuickSectorSubmitting ? "Saving..." : "Save & Select"}
                 </button>

@@ -76,7 +76,7 @@ export function RecentAuditTrailTable({
         </div>
         <Link
           href="/workspace/system-logs"
-          className="text-[#006837] hover:text-[#00552c] font-semibold text-xs flex items-center gap-1 shrink-0 transition-colors"
+          className="text-[#00843D] hover:text-[#0B6B3A] font-semibold text-xs flex items-center gap-1 shrink-0 transition-colors"
         >
           <span>Full Audit Logs</span>
           <ChevronRight className="h-4 w-4" />
@@ -96,7 +96,7 @@ export function RecentAuditTrailTable({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
-                <tr className="bg-[#0A3C2F] text-white text-xs font-semibold uppercase tracking-wider">
+                <tr className="bg-[#00843D] text-white text-xs font-semibold uppercase tracking-wider">
                   <th className="py-3.5 px-4 font-semibold tracking-wide w-[200px]">
                     Timestamp
                   </th>
@@ -135,7 +135,7 @@ export function RecentAuditTrailTable({
                       </td>
 
                       <td className="py-3.5 px-4 whitespace-nowrap align-middle">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border border-emerald-200 bg-emerald-50 text-[#0A3C2F] uppercase tracking-wider">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border border-emerald-200 bg-emerald-50 text-[#00843D] uppercase tracking-wider">
                           {log.action}
                         </span>
                       </td>

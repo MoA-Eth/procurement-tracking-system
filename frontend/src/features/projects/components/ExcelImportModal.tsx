@@ -136,7 +136,7 @@ export function ExcelImportModal({
       {/* Modal Dialog */}
       <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl bg-white shadow-2xl overflow-hidden border border-slate-200">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 bg-[#0A3C2F] px-6 py-4 text-white">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-[#00843D] px-6 py-4 text-white">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-emerald-300">
               <FileSpreadsheet className="h-5 w-5" />
@@ -171,7 +171,7 @@ export function ExcelImportModal({
               <div
                 className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition cursor-pointer ${
                   isDragOver
-                    ? "border-[#006837] bg-emerald-50/50 scale-[0.99]"
+                    ? "border-[#00843D] bg-emerald-50/50 scale-[0.99]"
                     : "border-slate-300 hover:border-slate-400 bg-slate-50/50"
                 }`}
                 onClick={() => fileInputRef.current?.click()}
@@ -189,7 +189,7 @@ export function ExcelImportModal({
 
                 {isParsing ? (
                   <div className="flex flex-col items-center py-6">
-                    <Loader2 className="h-10 w-10 animate-spin text-[#006837]" />
+                    <Loader2 className="h-10 w-10 animate-spin text-[#00843D]" />
                     <p className="mt-3 text-sm font-semibold text-slate-700">
                       Reading and analyzing Excel file...
                     </p>
@@ -199,8 +199,8 @@ export function ExcelImportModal({
                   </div>
                 ) : (
                   <>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs border border-slate-200 text-[#006837] mb-3">
-                      <UploadCloud className="h-6 w-6 text-[#0A3C2F]" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs border border-slate-200 text-[#00843D] mb-3">
+                      <UploadCloud className="h-6 w-6 text-[#00843D]" />
                     </div>
                     <p className="text-sm font-semibold text-slate-800">
                       Click to upload or drag &amp; drop Excel file
@@ -225,11 +225,11 @@ export function ExcelImportModal({
               {/* Template Banner */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 text-emerald-950">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-lg bg-emerald-100 p-2 text-[#0A3C2F]">
+                  <div className="mt-0.5 rounded-lg bg-emerald-100 p-2 text-[#00843D]">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-semibold text-[#0A3C2F]">
+                    <h3 className="text-xs font-semibold text-[#00843D]">
                       Need the standard Activity Excel format?
                     </h3>
                     <p className="mt-0.5 text-xs text-emerald-900/80">
@@ -239,7 +239,7 @@ export function ExcelImportModal({
                   </div>
                 </div>
                 <button
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#006837] px-3.5 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-[#00552c] transition shrink-0 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#00843D] px-3.5 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-[#0B6B3A] transition shrink-0 cursor-pointer"
                   onClick={() =>
                     downloadActivityExcelTemplate(planName || "PLAN-2018-01")
                   }
@@ -256,7 +256,7 @@ export function ExcelImportModal({
               {/* File details & reset */}
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5">
                 <div className="flex items-center gap-2.5">
-                  <FileSpreadsheet className="h-5 w-5 text-[#0A3C2F]" />
+                  <FileSpreadsheet className="h-5 w-5 text-[#00843D]" />
                   <div>
                     <p className="text-xs font-semibold text-slate-800">
                       {parseResult.fileName}
@@ -309,7 +309,7 @@ export function ExcelImportModal({
                   <button
                     className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
                       filterMode === "all"
-                        ? "bg-[#006837] text-white shadow-2xs"
+                        ? "bg-[#00843D] text-white shadow-2xs"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                     onClick={() => setFilterMode("all")}
@@ -320,7 +320,7 @@ export function ExcelImportModal({
                   <button
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer ${
                       filterMode === "valid"
-                        ? "bg-[#006837] text-white shadow-2xs"
+                        ? "bg-[#00843D] text-white shadow-2xs"
                         : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200/60"
                     }`}
                     onClick={() => setFilterMode("valid")}
@@ -350,7 +350,7 @@ export function ExcelImportModal({
               <div className="max-h-64 overflow-x-auto overflow-y-auto rounded-xl border border-slate-200">
                 <table className="w-full min-w-[650px] border-collapse text-left text-xs">
                   <thead>
-                    <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider sticky top-0 z-10">
+                    <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider sticky top-0 z-10">
                       <th className="px-3 py-2.5 w-12 text-center">#</th>
                       <th className="px-3 py-2.5 w-20 text-center">Status</th>
                       <th className="px-3 py-2.5">Reference</th>
@@ -434,7 +434,7 @@ export function ExcelImportModal({
 
           {parseResult && (
             <button
-              className="inline-flex items-center gap-2 rounded-xl bg-[#006837] px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#00552c] disabled:opacity-50 transition cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#00843D] px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] disabled:opacity-50 transition cursor-pointer"
               disabled={parseResult.validCount === 0}
               onClick={handleConfirmImport}
               type="button"

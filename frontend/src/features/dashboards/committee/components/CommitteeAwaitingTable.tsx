@@ -57,7 +57,7 @@ export function CommitteeAwaitingTable({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search plans..."
-            className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-[#0A3C2F] outline-none transition-all shadow-3xs"
+            className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-[#00843D] outline-none transition-all shadow-3xs"
           />
         </div>
       </div>

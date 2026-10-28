@@ -867,22 +867,22 @@ export function UserManagementView({
           <div className="relative overflow-hidden bg-linear-to-r from-[#ecfdf5] via-[#f0fdf4] to-[#e6f4ea] border border-[#a7f3d0] rounded-2xl p-5 sm:p-6 text-xs sm:text-sm shadow-xs">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3.5 min-w-0">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A3C2F] text-white shrink-0 shadow-2xs mt-0.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00843D] text-white shrink-0 shadow-2xs mt-0.5">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <h3 className="text-base font-semibold text-[#0A3C2F] tracking-tight">
+                  <h3 className="text-base font-semibold text-[#00843D] tracking-tight">
                     {invitedInfo.isResend
                       ? "Invitation Email Resent Successfully"
                       : "Invitation Email Sent Successfully"}
                   </h3>
                   <p className="text-emerald-900 font-medium leading-relaxed">
                     An official registration email has been delivered to{" "}
-                    <strong className="font-semibold text-[#0A3C2F] underline decoration-emerald-300">
+                    <strong className="font-semibold text-[#00843D] underline decoration-emerald-300">
                       {invitedInfo.email}
                     </strong>{" "}
                     for the role of{" "}
-                    <strong className="font-semibold text-[#0A3C2F]">
+                    <strong className="font-semibold text-[#00843D]">
                       {ROLE_LABELS[
                         invitedInfo.role as keyof typeof ROLE_LABELS
                       ] || invitedInfo.role}
@@ -903,7 +903,7 @@ export function UserManagementView({
                             setTimeout(() => setCopiedLink(false), 2500);
                           }
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0A3C2F] text-white text-xs font-semibold hover:bg-[#072a21] transition-colors cursor-pointer shadow-2xs shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00843D] text-white text-xs font-semibold hover:bg-[#06542D] transition-colors cursor-pointer shadow-2xs shrink-0"
                         title="Copy the direct password creation link"
                       >
                         {copiedLink ? (
@@ -932,7 +932,7 @@ export function UserManagementView({
               <button
                 type="button"
                 onClick={() => setInvitedInfo(null)}
-                className="text-emerald-800 hover:text-[#0A3C2F] transition-colors p-1 rounded-lg hover:bg-emerald-100/50 cursor-pointer"
+                className="text-emerald-800 hover:text-[#00843D] transition-colors p-1 rounded-lg hover:bg-emerald-100/50 cursor-pointer"
                 title="Dismiss banner"
               >
                 <X className="w-4 h-4" />
@@ -947,10 +947,10 @@ export function UserManagementView({
         <div className="animate-in fade-in slide-in-from-top-2">
           <div className="relative overflow-hidden bg-gradient-to-r from-[#ecfdf5] via-[#f0fdf4] to-[#e6f4ea] border border-[#a7f3d0] rounded-2xl p-4 sm:p-5 text-xs sm:text-sm shadow-xs flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A3C2F] text-white shrink-0 shadow-2xs">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00843D] text-white shrink-0 shadow-2xs">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
-              <p className="text-[#0A3C2F] font-semibold">
+              <p className="text-[#00843D] font-semibold">
                 {roleSuccessMessage}
               </p>
             </div>
@@ -971,10 +971,10 @@ export function UserManagementView({
         <div className="animate-in fade-in slide-in-from-top-2">
           <div className="relative overflow-hidden bg-linear-to-r from-[#ecfdf5] via-[#f0fdf4] to-[#e6f4ea] border border-[#a7f3d0] rounded-2xl p-4 sm:p-5 text-xs sm:text-sm shadow-xs flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A3C2F] text-white shrink-0 shadow-2xs">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00843D] text-white shrink-0 shadow-2xs">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
-              <p className="text-[#0A3C2F] font-semibold">
+              <p className="text-[#00843D] font-semibold">
                 {actionSuccessMessage}
               </p>
             </div>
@@ -1018,7 +1018,7 @@ export function UserManagementView({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <div>
                 <h1 className="text-xl font-semibold text-[#0f172a] tracking-tight flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-[#0A3C2F] stroke-[2.5]" />
+                  <Mail className="w-5 h-5 text-[#00843D] stroke-[2.5]" />
                   Invite New User
                 </h1>
                 <p className="mt-1 text-xs text-[#64748b] font-medium">
@@ -1106,7 +1106,7 @@ export function UserManagementView({
                 <button
                   type="submit"
                   disabled={isInviting}
-                  className="px-6 py-2.5 rounded-full bg-[#0A3C2F] hover:bg-[#083025] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                  className="px-6 py-2.5 rounded-full bg-[#00843D] hover:bg-[#0B6B3A] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                   {isInviting ? "Sending Invitation…" : "Send Invitation"}
@@ -1147,7 +1147,7 @@ export function UserManagementView({
               <button
                 type="button"
                 onClick={() => setViewMode("invite")}
-                className="shrink-0 bg-[#0A3C2F] hover:bg-[#083025] text-white text-xs font-semibold px-4 py-2.5 rounded-full flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                className="shrink-0 bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold px-4 py-2.5 rounded-full flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Invite User</span>
@@ -1258,7 +1258,7 @@ export function UserManagementView({
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-187.5">
                       <thead>
-                        <tr className="bg-[#0A3C2F] text-white text-xs font-semibold">
+                        <tr className="bg-[#00843D] text-white text-xs font-semibold">
                           <th className="py-3.5 px-4 font-semibold tracking-wide">
                             User Name & Details
                           </th>
@@ -1449,7 +1449,7 @@ export function UserManagementView({
                                           e.stopPropagation();
                                           handleResendInvitation(user);
                                         }}
-                                        className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                                        className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#00843D] bg-[#ecfdf5] text-[#00843D] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
                                         title="Send a fresh invitation email to this address"
                                       >
                                         {actionUserId === user.id ? (
@@ -1503,7 +1503,7 @@ export function UserManagementView({
                                           e.stopPropagation();
                                           handleResendInvitation(user);
                                         }}
-                                        className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#0A3C2F] bg-[#ecfdf5] text-[#0A3C2F] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
+                                        className="px-3.5 py-1 text-xs font-semibold rounded-full border border-[#00843D] bg-[#ecfdf5] text-[#00843D] hover:bg-[#d1fae5] transition-all cursor-pointer shadow-2xs hover:shadow-xs disabled:opacity-50 inline-flex items-center gap-1.5"
                                       >
                                         {actionUserId === user.id ? (
                                           <Loader2 className="w-3 h-3 animate-spin inline" />
@@ -1544,7 +1544,7 @@ export function UserManagementView({
                                             setCopyingUserId(null);
                                           }
                                         }}
-                                        className="p-1.5 rounded-full border border-emerald-200 text-[#0A3C2F] bg-white hover:bg-emerald-50 transition-colors cursor-pointer shadow-2xs hover:shadow-xs"
+                                        className="p-1.5 rounded-full border border-emerald-200 text-[#00843D] bg-white hover:bg-emerald-50 transition-colors cursor-pointer shadow-2xs hover:shadow-xs"
                                         title="Copy direct invitation link for this user"
                                       >
                                         {copyingUserId === user.id ? (
@@ -1837,7 +1837,7 @@ export function UserManagementView({
                 onClick={handleExecuteConfirmAction}
                 className={`px-5 py-2 text-xs font-semibold rounded-full text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 ${
                   confirmModal.type === "activate"
-                    ? "bg-emerald-700 hover:bg-emerald-800"
+                    ? "bg-[#00843D] hover:bg-[#0B6B3A]"
                     : confirmModal.type === "cancel_invitation"
                       ? "bg-amber-600 hover:bg-amber-700"
                       : "bg-rose-600 hover:bg-rose-700"
@@ -1946,7 +1946,7 @@ export function UserManagementView({
                 <button
                   type="submit"
                   disabled={isUpdatingEmail || !changeEmailModal.email.trim()}
-                  className="px-5 py-2 text-xs font-semibold rounded-full bg-[#0A3C2F] hover:bg-[#083025] text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-5 py-2 text-xs font-semibold rounded-full bg-[#00843D] hover:bg-[#0B6B3A] text-white shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {isUpdatingEmail ? (
                     <>

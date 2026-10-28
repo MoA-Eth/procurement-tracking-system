@@ -16,6 +16,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
+  /* MoA brand colours as Tailwind tokens (bg-moa-green, text-moa-green…),
+     matching the Asset Tracking System */
+  --color-moa-green: #00843d;
+  --color-moa-green-hover: #0b6b3a;
+  --color-moa-green-deep: #06542d;
+  --color-moa-gold: #fcdd09;
 }
 
 body {
@@ -198,7 +204,7 @@ a {
 }
 
 .auth-input:focus {
-  border-color: #0a3c2f;
+  border-color: #00843d;
   background: #fff;
   box-shadow: 0 0 0 3px rgb(10 60 47 / 14%);
 }
@@ -207,7 +213,7 @@ a {
   width: 100%;
   min-height: 52px;
   border-radius: 16px;
-  background: #006837;
+  background: #00843d;
   color: #fff;
   font-size: 17px;
   font-weight: 700;
@@ -215,7 +221,7 @@ a {
 }
 
 .auth-primary-button:hover:not(:disabled) {
-  background: #00552c;
+  background: #0b6b3a;
   transform: translateY(-1px);
 }
 
@@ -257,13 +263,17 @@ input[type="number"] {
    ═════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* MoA Brand Greens */
-  --moa-forest-dark: #072f25;
-  --moa-forest: #0a3c2f;
-  --moa-action: #006837;
-  --moa-action-hover: #00552c;
+  /* MoA Brand Greens — the same values as the Asset Tracking System:
+     #00843D MoA green (buttons, selected tabs, accents),
+     #0B6B3A hover / top of the side menu,
+     #06542D deep (bottom of the side menu, its header and footer),
+     #FCDD09 gold accent (active menu icon). */
+  --moa-forest-dark: #06542d;
+  --moa-forest: #00843d;
+  --moa-action: #00843d;
+  --moa-action-hover: #0b6b3a;
   --moa-sprout: #a3e635;
-  --moa-sprout-dark: #082920;
+  --moa-sprout-dark: #06542d;
 
   /* Clean Slate Surfaces */
   --slate-canvas: #f8fafc;

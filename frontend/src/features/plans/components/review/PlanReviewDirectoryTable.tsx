@@ -320,10 +320,10 @@ export function PlanReviewDirectoryTable({
         <button
           type="button"
           onClick={() => onSelectProject?.(null)}
-          className={`hover:text-[#0A3C2F] transition-colors ${
+          className={`hover:text-[#00843D] transition-colors ${
             selectedProjectCode
               ? "text-slate-500 hover:underline cursor-pointer"
-              : "font-semibold text-[#0A3C2F]"
+              : "font-semibold text-[#00843D]"
           }`}
         >
           {userRole === "ENDORSING_COMMITTEE"
@@ -335,7 +335,7 @@ export function PlanReviewDirectoryTable({
         {selectedProjectCode && (
           <>
             <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            <span className="font-semibold text-[#0A3C2F]">
+            <span className="font-semibold text-[#00843D]">
               {currentProjectGroup?.projectName || selectedProjectCode}
             </span>
           </>
@@ -373,7 +373,7 @@ export function PlanReviewDirectoryTable({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by Project Name, Code, or Plan..."
-                className="w-full pl-10 pr-4 py-1.5 text-xs rounded-xl border border-slate-300 focus:border-[#0A3C2F] outline-none"
+                className="w-full pl-10 pr-4 py-1.5 text-xs rounded-xl border border-slate-300 focus:border-[#00843D] outline-none"
               />
             </div>
 
@@ -433,7 +433,7 @@ export function PlanReviewDirectoryTable({
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[960px]">
                 <thead>
-                  <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                     <th className="py-3.5 px-4 text-center w-12">#</th>
                     <th className="py-3.5 px-4 w-36">Project Code</th>
                     <th className="py-3.5 px-4 min-w-[260px]">Project Name</th>
@@ -487,12 +487,12 @@ export function PlanReviewDirectoryTable({
                             {index + 1}
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className="font-mono font-medium text-[#0A3C2F] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-xs inline-block">
+                            <span className="font-mono font-medium text-[#00843D] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-xs inline-block">
                               {group.projectCode}
                             </span>
                           </td>
                           <td className="py-3.5 px-4">
-                            <p className="font-semibold text-slate-900 group-hover:text-[#0A3C2F] transition-colors">
+                            <p className="font-semibold text-slate-900 group-hover:text-[#00843D] transition-colors">
                               {group.projectName}
                             </p>
                             <p className="text-[11px] text-slate-400 mt-0.5">
@@ -540,7 +540,7 @@ export function PlanReviewDirectoryTable({
                                 e.stopPropagation();
                                 onSelectProject?.(group.projectCode);
                               }}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0A3C2F] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer"
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-[#00843D] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer"
                             >
                               <span>Enter Project</span>
                               <ChevronRight className="h-3.5 w-3.5" />
@@ -577,7 +577,7 @@ export function PlanReviewDirectoryTable({
                     <h1 className="text-xl font-bold text-slate-900">
                       {currentProjectGroup?.projectName || selectedProjectCode}
                     </h1>
-                    <span className="font-mono text-xs font-medium bg-emerald-50 text-[#0A3C2F] border border-emerald-200 px-2.5 py-0.5 rounded-md">
+                    <span className="font-mono text-xs font-medium bg-emerald-50 text-[#00843D] border border-emerald-200 px-2.5 py-0.5 rounded-md">
                       {selectedProjectCode}
                     </span>
                   </div>
@@ -591,7 +591,7 @@ export function PlanReviewDirectoryTable({
               <button
                 type="button"
                 onClick={() => onSelectProject?.(null)}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#0A3C2F] transition"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#00843D] transition"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span>Back to All Projects</span>
@@ -605,7 +605,7 @@ export function PlanReviewDirectoryTable({
                 onClick={() => setActiveTab("AWAITING_REVIEW")}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   activeTab === "AWAITING_REVIEW"
-                    ? "bg-[#0A3C2F] text-white shadow-xs"
+                    ? "bg-[#00843D] text-white shadow-xs"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
@@ -627,7 +627,7 @@ export function PlanReviewDirectoryTable({
                 onClick={() => setActiveTab("PREVIOUSLY_APPROVED")}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   activeTab === "PREVIOUSLY_APPROVED"
-                    ? "bg-[#0A3C2F] text-white shadow-xs"
+                    ? "bg-[#00843D] text-white shadow-xs"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
@@ -649,7 +649,7 @@ export function PlanReviewDirectoryTable({
                 onClick={() => setActiveTab("RETURNED")}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   activeTab === "RETURNED"
-                    ? "bg-[#0A3C2F] text-white shadow-xs"
+                    ? "bg-[#00843D] text-white shadow-xs"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
@@ -708,7 +708,7 @@ export function PlanReviewDirectoryTable({
                       type="button"
                       disabled={selectedPlanIds.length === 0}
                       onClick={handleOpenApproveSelected}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#00843D] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <Send className="h-3.5 w-3.5" />
                       <span>
@@ -728,7 +728,7 @@ export function PlanReviewDirectoryTable({
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[1040px]">
                     <thead>
-                      <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                      <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                         {userRole === "DIRECTOR" && (
                           <th
                             className="w-12 px-3.5 py-3.5 text-center"
@@ -740,7 +740,7 @@ export function PlanReviewDirectoryTable({
                               checked={isAllPendingSelected}
                               onChange={handleToggleSelectAll}
                               disabled={currentPendingPlans.length === 0}
-                              className="h-4 w-4 rounded border-slate-300 text-[#0A3C2F] focus:ring-[#0A3C2F] cursor-pointer disabled:opacity-40"
+                              className="h-4 w-4 rounded border-slate-300 text-[#00843D] focus:ring-[#00843D] cursor-pointer disabled:opacity-40"
                             />
                           </th>
                         )}
@@ -798,7 +798,7 @@ export function PlanReviewDirectoryTable({
                                     aria-label={`Select plan ${plan.planName}`}
                                     checked={isSelected}
                                     onChange={() => handleTogglePlan(plan.id)}
-                                    className="h-4 w-4 rounded border-slate-300 text-[#0A3C2F] focus:ring-[#0A3C2F] cursor-pointer"
+                                    className="h-4 w-4 rounded border-slate-300 text-[#00843D] focus:ring-[#00843D] cursor-pointer"
                                   />
                                 </td>
                               )}
@@ -807,7 +807,7 @@ export function PlanReviewDirectoryTable({
                                 <button
                                   type="button"
                                   onClick={() => onSelectPlan(plan)}
-                                  className="text-left font-semibold text-[#1261a8] hover:text-[#0A3C2F] hover:underline transition cursor-pointer"
+                                  className="text-left font-semibold text-[#1261a8] hover:text-[#00843D] hover:underline transition cursor-pointer"
                                 >
                                   {plan.planName}
                                 </button>
@@ -872,7 +872,7 @@ export function PlanReviewDirectoryTable({
                                         onClick={() =>
                                           setPendingApprovePlan(plan)
                                         }
-                                        className="rounded-md bg-[#0A3C2F] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#083025] transition cursor-pointer"
+                                        className="rounded-md bg-[#00843D] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#0B6B3A] transition cursor-pointer"
                                       >
                                         Approve
                                       </button>
@@ -917,7 +917,7 @@ export function PlanReviewDirectoryTable({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[960px]">
                   <thead>
-                    <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                    <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                       <th className="py-3.5 px-4 min-w-[280px]">
                         Plan Name / Reference
                       </th>
@@ -953,7 +953,7 @@ export function PlanReviewDirectoryTable({
                             <button
                               type="button"
                               onClick={() => onSelectPlan(plan)}
-                              className="text-left font-semibold text-[#1261a8] hover:text-[#0A3C2F] hover:underline transition cursor-pointer"
+                              className="text-left font-semibold text-[#1261a8] hover:text-[#00843D] hover:underline transition cursor-pointer"
                             >
                               {plan.planName}
                             </button>
@@ -1012,7 +1012,7 @@ export function PlanReviewDirectoryTable({
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[960px]">
                     <thead>
-                      <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                      <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                         <th className="py-3.5 px-4 min-w-[240px]">
                           Plan Name / Reference
                         </th>
@@ -1049,7 +1049,7 @@ export function PlanReviewDirectoryTable({
                               <button
                                 type="button"
                                 onClick={() => onSelectPlan(plan)}
-                                className="text-left font-semibold text-[#1261a8] hover:text-[#0A3C2F] hover:underline transition cursor-pointer"
+                                className="text-left font-semibold text-[#1261a8] hover:text-[#00843D] hover:underline transition cursor-pointer"
                               >
                                 {plan.planName}
                               </button>
@@ -1170,7 +1170,7 @@ export function PlanReviewDirectoryTable({
                   value={singleReturnFeedback}
                   onChange={(e) => setSingleReturnFeedback(e.target.value)}
                   placeholder="Specify the revisions required (e.g. adjust activity budgets, refine timeline milestones, re-evaluate scope)..."
-                  className="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 focus:border-[#0A3C2F] focus:outline-none focus:ring-1 focus:ring-[#0A3C2F]"
+                  className="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 focus:border-[#00843D] focus:outline-none focus:ring-1 focus:ring-[#00843D]"
                 />
               </div>
             </div>

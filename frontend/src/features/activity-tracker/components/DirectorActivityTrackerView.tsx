@@ -919,7 +919,7 @@ function DirectorActivityTrackerList({
           <Home className="h-4 w-4" />
         </Link>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-semibold text-[#0A3C2F]">Activity Tracker</span>
+        <span className="font-semibold text-[#00843D]">Activity Tracker</span>
       </nav>
 
       {/* 2. Page Header & Description */}
@@ -993,7 +993,7 @@ function DirectorActivityTrackerList({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search reference, activity title, officer r..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-medium text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all shadow-2xs placeholder:text-slate-400 hover:border-slate-300"
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-medium text-slate-800 outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] transition-all shadow-2xs placeholder:text-slate-400 hover:border-slate-300"
             />
           </div>
 
@@ -1002,7 +1002,7 @@ function DirectorActivityTrackerList({
             <select
               value={projectCode}
               onChange={(e) => setProjectCode(e.target.value)}
-              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
             >
               <option value="all">All Projects</option>
               {projectOptions.map(([val, name]) => (
@@ -1019,7 +1019,7 @@ function DirectorActivityTrackerList({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
             >
               <option value="all">All Categories</option>
               {categoryOptions.map((c) => (
@@ -1036,7 +1036,7 @@ function DirectorActivityTrackerList({
             <select
               value={method}
               onChange={(e) => setMethod(e.target.value)}
-              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+              className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] transition-all cursor-pointer shadow-2xs hover:border-slate-300"
             >
               <option value="all">All Methods</option>
               {methodOptions.map((m) => (
@@ -1054,14 +1054,14 @@ function DirectorActivityTrackerList({
             onClick={() => setShowMoreFilters((prev) => !prev)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-semibold transition-all cursor-pointer shadow-2xs shrink-0 ${
               showMoreFilters || activeFilterCount > 0
-                ? "bg-emerald-50 text-[#0A3C2F] border-emerald-300"
+                ? "bg-emerald-50 text-[#00843D] border-emerald-300"
                 : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700"
             }`}
           >
-            <Filter className="h-4 w-4 text-[#0A3C2F]" />
+            <Filter className="h-4 w-4 text-[#00843D]" />
             <span>More Filters</span>
             {activeFilterCount > 0 ? (
-              <span className="bg-[#0A3C2F] text-white px-1.5 py-0.5 rounded-md text-[10px] font-medium">
+              <span className="bg-[#00843D] text-white px-1.5 py-0.5 rounded-md text-[10px] font-medium">
                 {activeFilterCount}
               </span>
             ) : null}
@@ -1079,7 +1079,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={planReference}
                     onChange={(e) => setPlanReference(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Procurement Plans</option>
                     {planOptions.map(([val, label]) => (
@@ -1096,7 +1096,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={delayStatus}
                     onChange={(e) => setDelayStatus(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Delay Statuses</option>
                     <option value="delayed">Delayed</option>
@@ -1111,7 +1111,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={organization}
                     onChange={(e) => setOrganization(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Organizations</option>
                     {organizationOptions.map((org) => (
@@ -1131,7 +1131,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={fiscalYear}
                     onChange={(e) => setFiscalYear(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Fiscal Years</option>
                     {fiscalYearOptions.map((fy) => (
@@ -1148,7 +1148,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={currentStage}
                     onChange={(e) => setCurrentStage(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Current Stages</option>
                     {currentStageOptions.map((stg) => (
@@ -1166,7 +1166,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as TrackerSort)}
-                    className="w-full appearance-none pl-10 pr-9 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none pl-10 pr-9 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="attention">Attention Priority</option>
                     <option value="target-asc">Target Date</option>
@@ -1186,7 +1186,7 @@ function DirectorActivityTrackerList({
                   <select
                     value={displayStatus}
                     onChange={(e) => setDisplayStatus(e.target.value)}
-                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#0A3C2F] focus:ring-1 focus:ring-[#0A3C2F] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
+                    className="w-full appearance-none px-4 py-2.5 pr-9 rounded-2xl bg-white border border-slate-200 text-xs font-semibold text-[#1E293B] outline-none focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D] cursor-pointer shadow-2xs hover:border-slate-300 transition-all"
                   >
                     <option value="all">All Statuses</option>
                     <option value="In Progress">In Progress</option>
@@ -1199,7 +1199,7 @@ function DirectorActivityTrackerList({
                 </div>
 
                 {/* Target Date From */}
-                <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-slate-500 shadow-2xs focus-within:border-[#0A3C2F] focus-within:ring-1 focus-within:ring-[#0A3C2F] hover:border-slate-300 transition-all">
+                <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-slate-500 shadow-2xs focus-within:border-[#00843D] focus-within:ring-1 focus-within:ring-[#00843D] hover:border-slate-300 transition-all">
                   <CalendarDays className="h-4 w-4 text-slate-400 shrink-0 mr-2" />
                   <span className="text-slate-500 font-semibold text-xs mr-2 shrink-0">
                     Target From:
@@ -1213,7 +1213,7 @@ function DirectorActivityTrackerList({
                 </div>
 
                 {/* Target Date To */}
-                <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-slate-500 shadow-2xs focus-within:border-[#0A3C2F] focus-within:ring-1 focus-within:ring-[#0A3C2F] hover:border-slate-300 transition-all">
+                <div className="relative flex items-center bg-white border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-medium text-slate-500 shadow-2xs focus-within:border-[#00843D] focus-within:ring-1 focus-within:ring-[#00843D] hover:border-slate-300 transition-all">
                   <CalendarDays className="h-4 w-4 text-slate-400 shrink-0 mr-2" />
                   <span className="text-slate-500 font-semibold text-xs mr-2 shrink-0">
                     Target To:
@@ -1247,8 +1247,8 @@ function DirectorActivityTrackerList({
       <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1240px]">
-            <thead className="bg-[#0A3C2F]">
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="bg-[#00843D]">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3.5 px-4 text-center w-12">#</th>
                 <th className="py-3.5 px-4 min-w-[130px] whitespace-nowrap">
                   Reference No
@@ -1307,7 +1307,7 @@ function DirectorActivityTrackerList({
                             e.stopPropagation();
                             onViewActivity(item);
                           }}
-                          className="font-semibold text-slate-900 hover:text-[#0A3C2F] text-left transition-colors cursor-pointer line-clamp-2 leading-snug break-words break-all [overflow-wrap:anywhere]"
+                          className="font-semibold text-slate-900 hover:text-[#00843D] text-left transition-colors cursor-pointer line-clamp-2 leading-snug break-words break-all [overflow-wrap:anywhere]"
                           title={item.activity.description}
                         >
                           {item.activity.description}
@@ -1384,7 +1384,7 @@ function DirectorActivityTrackerList({
                             onViewActivity(item);
                           }}
                           title="View Activity Details"
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#0A3C2F] text-slate-700 hover:text-white transition-all cursor-pointer inline-flex items-center justify-center"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#00843D] text-slate-700 hover:text-white transition-all cursor-pointer inline-flex items-center justify-center"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
@@ -1467,7 +1467,7 @@ function QuickTabButton({
       onClick={onClick}
       className={`px-4 py-2.5 font-semibold text-xs transition-all flex items-center gap-2 border-b-2 cursor-pointer shrink-0 ${
         active
-          ? "border-[#0A3C2F] text-[#0A3C2F]"
+          ? "border-[#00843D] text-[#00843D]"
           : "border-transparent text-slate-500 hover:text-slate-900"
       }`}
     >
@@ -1526,7 +1526,7 @@ function DirectorActivityDetailView({
           Activity Tracker
         </button>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-semibold text-[#0A3C2F]">
+        <span className="font-semibold text-[#00843D]">
           Activity: {item.activity.reference}
         </span>
       </nav>
@@ -1537,7 +1537,7 @@ function DirectorActivityDetailView({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#00843D] hover:underline cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Activity Tracker List
           </button>
@@ -1547,7 +1547,7 @@ function DirectorActivityDetailView({
                 View-Only
               </span>
             )}
-            <span className="font-mono text-xs font-semibold text-[#0A3C2F] bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+            <span className="font-mono text-xs font-semibold text-[#00843D] bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
               {item.project.code}
             </span>
           </div>
@@ -1558,7 +1558,7 @@ function DirectorActivityDetailView({
             {item.activity.description}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-            <span className="font-mono font-semibold text-[#0A3C2F] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+            <span className="font-mono font-semibold text-[#00843D] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
               {item.activity.reference}
             </span>
             <span>•</span>
@@ -1579,7 +1579,7 @@ function DirectorActivityDetailView({
             onClick={() => setActiveTab("overview")}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-all border-b-2 cursor-pointer ${
               activeTab === "overview"
-                ? "border-[#0A3C2F] text-[#0A3C2F] bg-emerald-50/50 rounded-t-lg"
+                ? "border-[#00843D] text-[#00843D] bg-emerald-50/50 rounded-t-lg"
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
@@ -1591,7 +1591,7 @@ function DirectorActivityDetailView({
             onClick={() => setActiveTab("roadmap")}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-all border-b-2 cursor-pointer ${
               activeTab === "roadmap"
-                ? "border-[#0A3C2F] text-[#0A3C2F] bg-emerald-50/50 rounded-t-lg"
+                ? "border-[#00843D] text-[#00843D] bg-emerald-50/50 rounded-t-lg"
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
@@ -1603,7 +1603,7 @@ function DirectorActivityDetailView({
             onClick={() => setActiveTab("contract")}
             className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-all border-b-2 cursor-pointer ${
               activeTab === "contract"
-                ? "border-[#0A3C2F] text-[#0A3C2F] bg-emerald-50/50 rounded-t-lg"
+                ? "border-[#00843D] text-[#00843D] bg-emerald-50/50 rounded-t-lg"
                 : "border-transparent text-slate-500 hover:text-slate-900"
             }`}
           >
@@ -1619,7 +1619,7 @@ function DirectorActivityDetailView({
           <div className="p-6 sm:p-7 space-y-6">
             <div>
               <h3 className="font-semibold text-slate-950 text-base flex items-center gap-2">
-                <UserCheck className="h-4.5 w-4.5 text-[#0A3C2F]" />
+                <UserCheck className="h-4.5 w-4.5 text-[#00843D]" />
                 Approved Activity & Baseline Information
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -1633,7 +1633,7 @@ function DirectorActivityDetailView({
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Reference No.
                 </p>
-                <p className="font-mono font-semibold text-[#0A3C2F] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block">
+                <p className="font-mono font-semibold text-[#00843D] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block">
                   {item.activity.reference}
                 </p>
               </div>
@@ -1716,7 +1716,7 @@ function DirectorActivityDetailView({
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Assigned Officer(s)
                 </p>
-                <p className="font-semibold text-[#0A3C2F] text-xs">
+                <p className="font-semibold text-[#00843D] text-xs">
                   {officerNames}
                 </p>
               </div>
@@ -1754,7 +1754,7 @@ function DirectorActivityDetailView({
                 </p>
                 <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#0A3C2F] rounded-full transition-all duration-300"
+                    className="h-full bg-[#00843D] rounded-full transition-all duration-300"
                     style={{ width: `${progress.percent}%` }}
                   />
                 </div>
@@ -1780,7 +1780,7 @@ function DirectorActivityDetailView({
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
               <h3 className="font-semibold text-slate-950 text-base flex items-center gap-2">
-                <Route className="h-4.5 w-4.5 text-[#0A3C2F]" />
+                <Route className="h-4.5 w-4.5 text-[#00843D]" />
                 Stage Lifecycle & Milestone Tracking Roadmap
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -1793,7 +1793,7 @@ function DirectorActivityDetailView({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[850px]">
               <thead>
-                <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                   <th className="py-3.5 px-4 text-center w-12">#</th>
                   <th className="py-3.5 px-4 min-w-55">Stage Name</th>
                   <th className="py-3.5 px-4 min-w-35">
@@ -1915,7 +1915,7 @@ function DirectorActivityDetailView({
       {activeTab === "contract" && (
         <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs p-6 space-y-6 animate-in fade-in duration-150">
           <h3 className="font-semibold text-slate-950 text-base border-b border-slate-100 pb-3 flex items-center gap-2">
-            <BriefcaseBusiness className="h-4.5 w-4.5 text-[#0A3C2F]" />
+            <BriefcaseBusiness className="h-4.5 w-4.5 text-[#00843D]" />
             Contract & Award Oversight Information
           </h3>
 
@@ -1936,7 +1936,7 @@ function DirectorActivityDetailView({
               <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Activity Reference
               </p>
-              <p className="font-mono font-semibold text-[#0A3C2F] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block">
+              <p className="font-mono font-semibold text-[#00843D] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block">
                 {item.activity.reference}
               </p>
             </div>

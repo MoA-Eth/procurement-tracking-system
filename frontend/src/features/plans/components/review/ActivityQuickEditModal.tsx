@@ -43,7 +43,7 @@ export function ActivityQuickEditModal({
         <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-mono font-semibold text-[#0A3C2F] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="font-mono font-semibold text-[#00843D] text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                 {editingActivity.activityRefNo}
               </span>
               <span className="text-xs font-semibold text-slate-500">
@@ -86,7 +86,7 @@ export function ActivityQuickEditModal({
                   prev ? { ...prev, description: e.target.value } : null,
                 )
               }
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all leading-relaxed disabled:opacity-75 disabled:cursor-not-allowed"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 p-3 text-xs text-slate-900 outline-none focus:border-[#00843D] focus:bg-white focus:ring-2 focus:ring-[#00843D]/10 transition-all leading-relaxed disabled:opacity-75 disabled:cursor-not-allowed"
               placeholder="Enter activity description..."
             />
           </div>
@@ -137,7 +137,7 @@ export function ActivityQuickEditModal({
                   ? "Enter management feedback, directives or comments on this activity..."
                   : "Add clarification notes..."
               }
-              className={`w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all leading-relaxed ${
+              className={`w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#00843D] focus:bg-white focus:ring-2 focus:ring-[#00843D]/10 transition-all leading-relaxed ${
                 isCommittee
                   ? "bg-slate-50/50 opacity-75 cursor-not-allowed"
                   : "bg-white"
@@ -160,7 +160,7 @@ export function ActivityQuickEditModal({
                 )
               }
               placeholder="Add technical notes..."
-              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-2 focus:ring-[#0A3C2F]/10 transition-all disabled:opacity-75 disabled:cursor-not-allowed"
+              className="w-full rounded-xl border border-slate-300 bg-slate-50/50 px-3.5 py-2.5 text-xs text-slate-900 outline-none focus:border-[#00843D] focus:bg-white focus:ring-2 focus:ring-[#00843D]/10 transition-all disabled:opacity-75 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -171,7 +171,7 @@ export function ActivityQuickEditModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               Close
             </button>
@@ -197,7 +197,7 @@ export function ActivityQuickEditModal({
                     onClose();
                   }
                 }}
-                className="px-5 py-2.5 rounded-xl bg-[#0A3C2F] text-white hover:bg-[#072b22] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 {isManagement
                   ? "Save Management Comment"

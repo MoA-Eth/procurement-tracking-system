@@ -156,7 +156,7 @@ export function SearchableMultiSelect({
             <button
               type="button"
               onClick={handleSelectAll}
-              className="text-[#0A3C2F] hover:underline cursor-pointer"
+              className="text-[#00843D] hover:underline cursor-pointer"
             >
               Select All ({selectableOptions.length})
             </button>
@@ -183,14 +183,14 @@ export function SearchableMultiSelect({
               }}
               className={`w-full text-left px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer flex items-center gap-2 ${
                 isAllSelected
-                  ? "bg-emerald-50/70 text-[#0A3C2F] font-semibold"
+                  ? "bg-emerald-50/70 text-[#00843D] font-semibold"
                   : "hover:bg-slate-50 text-slate-700 font-medium"
               }`}
             >
               <div
                 className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
                   isAllSelected
-                    ? "bg-[#0A3C2F] border-[#0A3C2F] text-white"
+                    ? "bg-[#00843D] border-[#00843D] text-white"
                     : "border-slate-300 bg-white"
                 }`}
               >
@@ -227,7 +227,7 @@ export function SearchableMultiSelect({
                     <div
                       className={`w-4 h-4 rounded flex items-center justify-center border transition-colors shrink-0 ${
                         isSelected
-                          ? "bg-[#0A3C2F] border-[#0A3C2F] text-white"
+                          ? "bg-[#00843D] border-[#00843D] text-white"
                           : "border-slate-300 bg-white"
                       }`}
                     >
@@ -250,7 +250,7 @@ export function SearchableMultiSelect({
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="px-2.5 py-1 bg-[#0A3C2F] hover:bg-[#082d23] text-white font-semibold rounded-lg transition-colors cursor-pointer"
+              className="px-2.5 py-1 bg-[#00843D] hover:bg-[#06542D] text-white font-semibold rounded-lg transition-colors cursor-pointer"
             >
               Done
             </button>

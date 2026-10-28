@@ -155,7 +155,7 @@ export function ProjectsDirectoryView({
           <Home className="h-4 w-4" />
         </Link>
         <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-        <span className="font-semibold text-[#0A3C2F]">
+        <span className="font-semibold text-[#00843D]">
           Projects Management
         </span>
       </nav>
@@ -175,7 +175,7 @@ export function ProjectsDirectoryView({
             {onImportClick && (
               <button
                 onClick={onImportClick}
-                className="border border-slate-300 bg-white hover:border-[#0A3C2F] hover:bg-emerald-50 hover:text-[#0A3C2F] text-slate-700 font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+                className="border border-slate-300 bg-white hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] text-slate-700 font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
                 type="button"
               >
                 <Upload className="h-4 w-4 text-slate-500" />
@@ -184,7 +184,7 @@ export function ProjectsDirectoryView({
             )}
             <button
               onClick={onCreateClick}
-              className="bg-[#0A3C2F] hover:bg-[#083025] text-white font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
+              className="bg-[#00843D] hover:bg-[#0B6B3A] text-white font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-2xs transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-98"
               type="button"
             >
               <Plus className="h-4 w-4 stroke-[2.5]" />
@@ -257,7 +257,7 @@ export function ProjectsDirectoryView({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1250px]">
             <thead>
-              <tr className="bg-[#0A3C2F] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
                 <th className="py-3.5 px-4 text-center w-12">#</th>
                 <th className="py-3.5 px-4 min-w-[140px]">Code / SAP ID</th>
                 <th className="py-3.5 px-4 min-w-[300px] w-[28%]">

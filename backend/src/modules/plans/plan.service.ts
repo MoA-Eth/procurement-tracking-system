@@ -741,7 +741,7 @@ export const sendToCommitteeService = async (
             <tr><td style="padding:4px 12px 4px 0;color:#555">Organization:</td><td>${plan.organization ?? 'N/A'}</td></tr>
             <tr><td style="padding:4px 12px 4px 0;color:#555">Voting Deadline:</td><td><strong>${deadlineText}</strong></td></tr>
           </table>
-          <p><a href="${planUrl}" style="background:#0A3C2F;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Review &amp; Vote</a></p>
+          <p><a href="${planUrl}" style="background:#00843D;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Review &amp; Vote</a></p>
           <p style="color:#888;font-size:12px">MoA Procurement Tracking System</p>
         `,
       }).catch((emailErr: unknown) => {
@@ -1241,7 +1241,7 @@ export const submitCommitteeVoteService = async (
                   : `<tr><td style="padding:4px 12px 4px 0;color:#555">Reason:</td><td>${plan.rejectionReason ?? comment ?? 'Rejected by majority vote'}</td></tr>`
               }
             </table>
-            <p><a href="${planUrl}" style="background:#0A3C2F;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">View Plan</a></p>
+            <p><a href="${planUrl}" style="background:#00843D;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">View Plan</a></p>
             <p style="color:#888;font-size:12px">MoA Procurement Tracking System</p>
           `,
         }).catch((emailErr: unknown) => {

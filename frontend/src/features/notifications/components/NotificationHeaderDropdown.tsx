@@ -162,9 +162,9 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label={`Notifications, ${unreadCount} unread`}
-        className={`relative p-2 rounded-lg border text-slate-600 hover:bg-slate-50 hover:text-[#0A3C2F] transition-all cursor-pointer flex items-center justify-center ${
+        className={`relative p-2 rounded-lg border text-slate-600 hover:bg-slate-50 hover:text-[#00843D] transition-all cursor-pointer flex items-center justify-center ${
           isOpen
-            ? "bg-emerald-50 border-emerald-300 text-[#0A3C2F]"
+            ? "bg-emerald-50 border-emerald-300 text-[#00843D]"
             : "border-slate-200"
         }`}
       >
@@ -262,7 +262,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
                         {n.timestamp}
                       </span>
                       {n.link && (
-                        <span className="text-[11px] font-semibold text-[#0A3C2F] hover:underline inline-flex items-center gap-0.5">
+                        <span className="text-[11px] font-semibold text-[#00843D] hover:underline inline-flex items-center gap-0.5">
                           <span>{n.actionLabel || "View"}</span>
                           <ExternalLink size={10} />
                         </span>
@@ -279,7 +279,7 @@ export function NotificationHeaderDropdown({ user }: { user?: AuthUser }) {
             <Link
               href="/workspace/notifications"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-semibold text-[#0A3C2F] hover:underline inline-flex items-center gap-1"
+              className="text-xs font-semibold text-[#00843D] hover:underline inline-flex items-center gap-1"
             >
               <span>See All Notifications ({roleNotifications.length})</span>
               <span>→</span>

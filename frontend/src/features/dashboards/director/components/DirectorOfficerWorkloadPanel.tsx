@@ -308,7 +308,7 @@ export function DirectorOfficerWorkloadPanel() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#0A3C2F] border border-emerald-200">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#00843D] border border-emerald-200">
               <Users className="h-4 w-4" />
             </div>
             <h3 className="text-sm font-semibold text-slate-900">
@@ -325,7 +325,7 @@ export function DirectorOfficerWorkloadPanel() {
             placeholder="Search officer or project..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-8 pr-3 py-1.5 text-xs text-slate-900 outline-none focus:border-[#0A3C2F] focus:bg-white focus:ring-1 focus:ring-[#0A3C2F]"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-8 pr-3 py-1.5 text-xs text-slate-900 outline-none focus:border-[#00843D] focus:bg-white focus:ring-1 focus:ring-[#00843D]"
           />
         </div>
       </div>
@@ -357,7 +357,7 @@ export function DirectorOfficerWorkloadPanel() {
                   {/* Officer Info */}
                   <td className="py-3.5 px-4 min-w-[180px]">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100/70 text-[#0A3C2F] font-semibold text-xs shrink-0">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100/70 text-[#00843D] font-semibold text-xs shrink-0">
                         {officer.officerName
                           .split(" ")
                           .map((n) => n[0])
@@ -459,7 +459,7 @@ export function DirectorOfficerWorkloadPanel() {
                           <button
                             type="button"
                             onClick={() => toggleOfficer(officer.officerId)}
-                            className="text-[10px] font-semibold text-[#0A3C2F] hover:underline cursor-pointer"
+                            className="text-[10px] font-semibold text-[#00843D] hover:underline cursor-pointer"
                           >
                             {expandedOfficers.has(officer.officerId)
                               ? "Show less"

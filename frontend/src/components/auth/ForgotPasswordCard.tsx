@@ -39,7 +39,7 @@ export function ForgotPasswordCard({
         <div className="mt-3 text-center">
           <h1
             id="reset-title"
-            className="auth-flow-title text-3xl font-semibold tracking-tight text-[#0A3C2F]"
+            className="auth-flow-title text-3xl font-semibold tracking-tight text-[#00843D]"
           >
             Reset Your Password
           </h1>
@@ -96,14 +96,14 @@ export function ForgotPasswordCard({
           <button
             type="button"
             onClick={() => setViewState("LOGIN")}
-            className="flex items-center gap-2 font-medium text-[#58709a] hover:text-[#0A3C2F]"
+            className="flex items-center gap-2 font-medium text-[#58709a] hover:text-[#00843D]"
           >
             <ArrowLeft size={18} /> Back to Sign In
           </button>
           <button
             type="button"
             onClick={onOpenTechSupport}
-            className="flex items-center gap-2 font-medium text-[#58709a] hover:text-[#0A3C2F]"
+            className="flex items-center gap-2 font-medium text-[#58709a] hover:text-[#00843D]"
           >
             <Headphones size={18} /> Technical Support
           </button>

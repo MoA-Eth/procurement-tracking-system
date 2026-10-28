@@ -517,7 +517,7 @@ export function Step2FinancialsForm({
     <div className="space-y-6 animate-in fade-in duration-150">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
-          <CircleDollarSign className="h-5 w-5 text-[#0A3C2F]" />
+          <CircleDollarSign className="h-5 w-5 text-[#00843D]" />
           <h2 className="text-base font-semibold text-slate-900 tracking-tight">
             Step 2: Financial Configuration & Donor Allocation
           </h2>
@@ -543,7 +543,7 @@ export function Step2FinancialsForm({
                   setQuickLabel("");
                   setShowQuickAddModal(true);
                 }}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#00843D] hover:text-[#0B6B3A] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
                 title="Quick-add a new donor or funding source"
               >
                 <Plus className="h-3 w-3" />
@@ -579,7 +579,7 @@ export function Step2FinancialsForm({
                   setQuickTypeLabel("");
                   setShowQuickAddTypeModal(true);
                 }}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#00843D] hover:text-[#0B6B3A] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
                 title="Quick-add a new funding type / instrument"
               >
                 <Plus className="h-3 w-3" />
@@ -633,7 +633,7 @@ export function Step2FinancialsForm({
                   setQuickCurrencyLabel("");
                   setShowQuickAddCurrencyModal(true);
                 }}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006837] hover:text-[#00552c] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#00843D] hover:text-[#0B6B3A] bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-2 py-0.5 rounded-lg transition-colors cursor-pointer"
                 title="Quick-add a new currency"
               >
                 <Plus className="h-3 w-3" />
@@ -658,7 +658,7 @@ export function Step2FinancialsForm({
         <div className="space-y-3 pt-4 border-t border-slate-100">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xs font-semibold text-[#0A3C2F] uppercase tracking-wider">
+              <h3 className="text-xs font-semibold text-[#00843D] uppercase tracking-wider">
                 Loan / Credit / Grant Number(s)
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
@@ -668,7 +668,7 @@ export function Step2FinancialsForm({
             <button
               type="button"
               onClick={handleAddLoanNumber}
-              className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#0A3C2F] text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-200/80 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#00843D] text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-200/80 transition-colors cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Add Agreement ID</span>
@@ -773,7 +773,7 @@ export function Step2FinancialsForm({
                 <button
                   type="submit"
                   disabled={isQuickSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isQuickSubmitting ? "Saving..." : "Save & Select"}
                 </button>
@@ -869,7 +869,7 @@ export function Step2FinancialsForm({
                 <button
                   type="submit"
                   disabled={isQuickTypeSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isQuickTypeSubmitting ? "Saving..." : "Save & Select"}
                 </button>
@@ -955,7 +955,7 @@ export function Step2FinancialsForm({
                 <button
                   type="submit"
                   disabled={isQuickCurrencySubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-[#006837] hover:bg-[#00552c] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {isQuickCurrencySubmitting ? "Saving..." : "Save & Select"}
                 </button>
