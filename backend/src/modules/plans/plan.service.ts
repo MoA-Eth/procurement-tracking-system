@@ -446,18 +446,6 @@ export const updatePlanService = async (
         );
       }
 
-      if (
-        data.procurementCategory !== undefined &&
-        oldPlan.procurementCategory &&
-        data.procurementCategory !== oldPlan.procurementCategory &&
-        oldPlan.activities &&
-        oldPlan.activities.length > 0
-      ) {
-        throw ApiError.badRequest(
-          'Cannot edit procurement category for a plan that already contains procurement activities.',
-        );
-      }
-
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
         data,
