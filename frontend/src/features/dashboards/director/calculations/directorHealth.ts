@@ -5,6 +5,16 @@ import type {
   FinancialCapitalSummary,
 } from "../directorData";
 
+// Only plans in execution can have delayed activities; draft, submitted and
+// under-review plans have not started their schedules.
+const EXECUTION_PLAN_STATUSES = new Set([
+  "APPROVED",
+  "MANAGEMENT_APPROVED",
+  "UPDATE_REQUESTED",
+]);
+const FINISHED_ACTIVITY_STATUSES = new Set(["COMPLETED", "CANCELLED"]);
+const CRITICAL_DELAY_DAYS = 7;
+
 /**
  * Identify critical delays (>7 days past scheduled end date)
  */
@@ -16,7 +26,9 @@ export function computeCriticalDelays(
   const now = currentTime;
 
   for (const plan of filteredPlans) {
+    if (!EXECUTION_PLAN_STATUSES.has(String(plan.status))) continue;
     for (const act of plan.activities || []) {
+      if (FINISHED_ACTIVITY_STATUSES.has(String(act.status))) continue;
       const delayedStage = (act.stages || []).find((s: any) => {
         if (s.isNotApplicable || s.status === "COMPLETED") return false;
         if (s.status === "DELAYED") return true;
@@ -41,6 +53,11 @@ export function computeCriticalDelays(
                 ),
               )
             : 0;
+        const stageDeadline =
+          delayedStage?.currentTargetEndDate || delayedStage?.plannedEndDate;
+        // Only delays beyond the threshold are critical (when the stage
+        // deadline is known; an explicit DELAYED status without dates counts).
+        if (stageDeadline && daysOverdue <= CRITICAL_DELAY_DAYS) continue;
 
         const stageLabel =
           delayedStage?.stageType?.label ||

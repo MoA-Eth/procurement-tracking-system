@@ -173,8 +173,9 @@ export function DirectorOfficerWorkloadPanel() {
           memberUsers.forEach((u) => {
             let summary = officerMap.get(u.id);
             if (!summary) {
-              // Officer assigned to project but not in the officers list (different role maybe)
-              // Still show them
+              // Members who are not procurement officers (e.g. the director)
+              // do not belong in this table when the officer list is known.
+              if (realOfficers.length > 0) return;
               summary = {
                 officerId: u.id,
                 officerName: u.name,
@@ -230,12 +231,15 @@ export function DirectorOfficerWorkloadPanel() {
           ).toUpperCase();
           const stages = act.stages || act.details?.roadmap || [];
           const actDelay = calculateRealActivityDelay(stages);
-          const assignedOfficerIds = projectOfficersMap.get(projCode) || [];
-
-          const targetOfficerIds = new Set<string>(assignedOfficerIds);
-          if (act.createdById && officerMap.has(act.createdById)) {
-            targetOfficerIds.add(act.createdById);
-          }
+          // Credit the activity to its responsible officer (creator of the
+          // activity, else of its plan). Crediting every project member made
+          // all officers on a project show the same delays.
+          const responsibleId = act.createdById || act.plan?.createdBy;
+          const targetOfficerIds = new Set<string>(
+            responsibleId && officerMap.has(responsibleId)
+              ? [responsibleId]
+              : projectOfficersMap.get(projCode) || [],
+          );
 
           targetOfficerIds.forEach((offId) => {
             const summary = officerMap.get(offId);
