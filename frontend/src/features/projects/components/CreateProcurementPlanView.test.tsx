@@ -193,6 +193,10 @@ describe("CreateProcurementPlanView", () => {
       description:
         "Procurement of drought-resilient forage seeds and establishment of community seed banks",
       estimatedValue: 500_000,
+      contractAwardDate: {
+        gregorian: "2025-08-03",
+        ethiopian: "27-Hamle-2017",
+      },
       generalProcurementNoticeDate: {
         gregorian: "2025-07-15",
         ethiopian: "08-Hamle-2017",
@@ -219,6 +223,8 @@ describe("CreateProcurementPlanView", () => {
     expect(markup).toContain("2025-07-08");
     expect(markup).toContain("2026-07-07");
     expect(markup).toContain("2025-07-15");
+    expect(markup).toContain("Contract Award Date (Reference Only)");
+    expect(markup).toContain("2025-08-03");
     expect(markup).toContain(
       "Procurement of drought-resilient forage seeds and establishment of community seed banks",
     );

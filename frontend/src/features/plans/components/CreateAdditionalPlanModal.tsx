@@ -16,6 +16,10 @@ import {
   getInitialLookups,
   subscribeToLookups,
 } from "@/lib/lookupsApi";
+import {
+  formatNumberWithCommas,
+  parseNumberWithCommas,
+} from "@/lib/numberFormatting";
 
 interface CreateAdditionalPlanModalProps {
   isOpen: boolean;
@@ -120,8 +124,8 @@ export function CreateAdditionalPlanModal({
       return;
     }
 
-    const budgetNum = parseFloat(estimatedBudget);
-    if (isNaN(budgetNum) || budgetNum <= 0) {
+    const budgetNum = parseNumberWithCommas(estimatedBudget);
+    if (!Number.isFinite(budgetNum) || budgetNum <= 0) {
       setErrorMsg("Please enter a valid estimated budget greater than 0.");
       return;
     }
@@ -327,12 +331,14 @@ export function CreateAdditionalPlanModal({
                 </label>
                 <input
                   id="estimated-budget"
-                  type="number"
+                  inputMode="decimal"
+                  type="text"
                   required
-                  min="1"
-                  step="0.01"
                   value={estimatedBudget}
                   onChange={(e) => setEstimatedBudget(e.target.value)}
+                  onBlur={(e) =>
+                    setEstimatedBudget(formatNumberWithCommas(e.target.value))
+                  }
                   placeholder="e.g. 2500000"
                   className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none"
                 />

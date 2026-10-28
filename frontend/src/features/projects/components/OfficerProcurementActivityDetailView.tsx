@@ -28,6 +28,7 @@ import {
   calculateRealActivityDelay,
 } from "./PhaseDelayBreakdownModal";
 import { getPlanVersionHistory } from "@/features/plans/data/planRevisions";
+import { parseNumberWithCommas } from "@/lib/numberFormatting";
 
 interface DetailValue {
   label: string;
@@ -101,6 +102,10 @@ export function OfficerProcurementActivityDetailView({
   const keyDetails = compactValues([
     { label: "Procurement Category", value: activity.category },
     { label: "Procurement Method", value: activity.method },
+    {
+      label: "Contract Award Date (Reference Only)",
+      value: form?.contractAwardDate ?? "",
+    },
     { label: "Specific Method / Approach", value: form?.specificMethod ?? "" },
     { label: "Market Approach", value: form?.marketApproach ?? "" },
     { label: "Contract Type", value: form?.contractType ?? "" },
@@ -410,12 +415,15 @@ export function OfficerProcurementActivityDetailView({
                 const isSame =
                   contrib.currency?.trim().toUpperCase() ===
                   targetCur.trim().toUpperCase();
-                const rateNum = Number(contrib.exchangeRate);
+                const rateNum = parseNumberWithCommas(
+                  contrib.exchangeRate || "",
+                );
                 const effectiveRate = isSame ? 1 : rateNum > 0 ? rateNum : 1;
-                const equiv = (Number(contrib.amount) || 0) * effectiveRate;
+                const equiv =
+                  (parseNumberWithCommas(contrib.amount) || 0) * effectiveRate;
                 return [
                   contrib.fundingSource,
-                  `${formatAmount(Number(contrib.amount))} ${contrib.currency}`,
+                  `${formatAmount(parseNumberWithCommas(contrib.amount))} ${contrib.currency}`,
                   isSame
                     ? "1.00 (Native)"
                     : rateNum > 0
@@ -439,7 +447,7 @@ export function OfficerProcurementActivityDetailView({
             rows={details.lots.map((lot) => [
               lot.number,
               lot.description,
-              formatAmount(Number(lot.amount)),
+              formatAmount(parseNumberWithCommas(lot.amount)),
             ])}
             title="Lots"
           />

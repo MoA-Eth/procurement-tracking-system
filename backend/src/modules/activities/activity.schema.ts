@@ -22,6 +22,11 @@ const optionalCoord = z.preprocess((val) => {
   return isNaN(num) ? undefined : num;
 }, z.number().optional());
 
+const optionalAwardDate = z.preprocess(
+  (val) => (val === '' ? null : val),
+  z.coerce.date().nullable().optional(),
+);
+
 export const createActivityStep1Schema = z.object({
   planId: z.string().trim().min(1, 'Plan ID is required'),
   reference: z.string().trim().max(255).optional(),
@@ -123,6 +128,7 @@ const step2BaseSchema = z.object({
     .number()
     .nonnegative('Estimated budget must be zero or positive'),
   currency: z.string().trim().min(1, 'Currency is required').max(10),
+  contractAwardDate: optionalAwardDate,
   bidReferenceNo: z.string().trim().max(100).optional(),
   pricingBasis: z.enum(['LUMP_SUM', 'BOQ']).optional(),
   scopeNotes: z.string().trim().max(2000).optional(),

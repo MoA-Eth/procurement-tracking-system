@@ -142,6 +142,7 @@ export interface BackendPlan {
   organization?: string | null;
   description?: string | null;
   gpnDate?: string | null;
+  contractAwardDate?: string | null;
   approvalDate?: string | null;
   rejectionReason?: string | null;
   cancellationReason?: string | null;
@@ -204,6 +205,7 @@ export interface CreatePlanInput {
   periodStart: string;
   periodEnd: string;
   gpnDate?: string;
+  contractAwardDate?: string;
   parentPlanId?: string;
   planType?: "ANNUAL" | "ADDITIONAL" | string;
   additionalPlanReason?: string;
@@ -218,6 +220,7 @@ export interface UpdatePlanInput {
   periodStart?: string;
   periodEnd?: string;
   gpnDate?: string;
+  contractAwardDate?: string | null;
   status?: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
   parentPlanId?: string;
   planType?: "ANNUAL" | "ADDITIONAL" | string;
@@ -936,6 +939,12 @@ export function mapBackendPlanToOfficerPlanSummary(
     return !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : "";
   })();
 
+  const contractAwardDateIso = (() => {
+    if (!backendPlan.contractAwardDate) return "";
+    const d = new Date(backendPlan.contractAwardDate);
+    return !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : "";
+  })();
+
   const startIso = (() => {
     const raw =
       backendPlan.periodStart ||
@@ -993,6 +1002,12 @@ export function mapBackendPlanToOfficerPlanSummary(
       ? {
           gregorian: gpnIso,
           ethiopian: toEthiopianDateString(gpnIso),
+        }
+      : undefined,
+    contractAwardDate: contractAwardDateIso
+      ? {
+          gregorian: contractAwardDateIso,
+          ethiopian: toEthiopianDateString(contractAwardDateIso),
         }
       : undefined,
     planPeriod:

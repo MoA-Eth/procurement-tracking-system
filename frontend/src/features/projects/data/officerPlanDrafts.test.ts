@@ -73,6 +73,8 @@ const mockProjects: readonly OfficerProject[] = [mockProject];
 const draftInput: ProcurementPlanDraftInput = {
   budgetYear: "2017",
   category: "Goods",
+  contractAwardDate: "2026-09-10",
+  contractAwardDateEthiopian: "04-Meskerem-2019",
   generalProcurementNoticeDate: "2026-08-28",
   generalProcurementNoticeDateEthiopian: "22-Nehase-2018",
   organizationRegion: "FPCU / Federal",
@@ -95,6 +97,7 @@ describe("officer plan draft persistence", () => {
     expect(plan.organizationRegion).toBe("FPCU / Federal");
     expect(plan.planPeriod?.from.gregorian).toBe("2026-07-08");
     expect(plan.generalProcurementNoticeDate?.ethiopian).toBe("22-Nehase-2018");
+    expect(plan.contractAwardDate?.gregorian).toBe("2026-09-10");
   });
 
   it("merges a saved plan into its project and updates the plan count", () => {

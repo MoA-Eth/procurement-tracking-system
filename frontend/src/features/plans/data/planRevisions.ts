@@ -652,6 +652,7 @@ export const PLAN_FIELD_LABELS: Record<string, string> = {
   planPeriodFrom: "Coverage Period Start",
   periodTo: "Coverage Period End",
   planPeriodTo: "Coverage Period End",
+  contractAwardDate: "Contract Award Date (Reference)",
   organizationRegion: "Organization / Region",
   description: "Description / Objectives",
   estimatedValue: "Estimated Total Value",

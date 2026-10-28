@@ -26,6 +26,10 @@ import { fetchPlans, mapBackendPlanToOfficerPlanSummary } from "@/lib/plansApi";
 import { fetchActivities } from "@/lib/activitiesApi";
 import { getInitialLookups } from "@/lib/lookupsApi";
 import {
+  formatNumberWithCommas,
+  parseNumberWithCommas,
+} from "@/lib/numberFormatting";
+import {
   formatEthiopianDate,
   gregorianToEthiopian,
 } from "../../projects/utils/ethiopianCalendar";
@@ -772,9 +776,14 @@ export function RegisterContractView({
                   className={
                     inputClasses + " text-right font-mono tabular-nums"
                   }
-                  min="0"
                   onChange={(event) =>
                     updateField("originalAmount", event.target.value)
+                  }
+                  onBlur={(event) =>
+                    updateField(
+                      "originalAmount",
+                      formatNumberWithCommas(event.target.value),
+                    )
                   }
                   onKeyDown={(event) => {
                     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -783,8 +792,8 @@ export function RegisterContractView({
                   }}
                   onWheel={(event) => event.currentTarget.blur()}
                   placeholder="0.00"
-                  step="0.01"
-                  type="number"
+                  inputMode="decimal"
+                  type="text"
                   value={form.originalAmount}
                 />
               </Field>
@@ -845,9 +854,14 @@ export function RegisterContractView({
                         inputClasses +
                         " pr-12 text-right font-mono tabular-nums"
                       }
-                      min="0"
                       onChange={(event) =>
                         updateField("exchangeRate", event.target.value)
+                      }
+                      onBlur={(event) =>
+                        updateField(
+                          "exchangeRate",
+                          formatNumberWithCommas(event.target.value),
+                        )
                       }
                       onKeyDown={(event) => {
                         if (
@@ -859,8 +873,8 @@ export function RegisterContractView({
                       }}
                       onWheel={(event) => event.currentTarget.blur()}
                       placeholder="e.g. 125.00"
-                      step="0.0001"
-                      type="number"
+                      inputMode="decimal"
+                      type="text"
                       value={form.exchangeRate}
                     />
                     <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[11px] font-semibold text-slate-500">
@@ -978,6 +992,21 @@ export function RegisterContractView({
                             ),
                           )
                         }
+                        onBlur={() =>
+                          updateField(
+                            "amendments",
+                            form.amendments.map((item) =>
+                              item.id === amendment.id
+                                ? {
+                                    ...item,
+                                    amount: formatNumberWithCommas(
+                                      amendment.amount,
+                                    ),
+                                  }
+                                : item,
+                            ),
+                          )
+                        }
                         onKeyDown={(event) => {
                           if (
                             event.key === "ArrowUp" ||
@@ -988,8 +1017,8 @@ export function RegisterContractView({
                         }}
                         onWheel={(event) => event.currentTarget.blur()}
                         placeholder="Negative value for a reduction"
-                        step="0.01"
-                        type="number"
+                        inputMode="decimal"
+                        type="text"
                         value={amendment.amount}
                       />
                       <button
@@ -1566,7 +1595,7 @@ function validateDateOrder(form: ContractFormState) {
 }
 
 function toAmount(value: string) {
-  const amount = Number(value.replaceAll(",", ""));
+  const amount = parseNumberWithCommas(value);
   return Number.isFinite(amount) ? amount : 0;
 }
 

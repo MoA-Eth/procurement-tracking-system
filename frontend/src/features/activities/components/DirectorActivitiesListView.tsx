@@ -49,6 +49,10 @@ import {
 } from "@/features/projects/data/officerActivityDrafts";
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
 import { getCurrentPlanVersionNumber } from "@/features/plans/data/planRevisions";
+import {
+  formatNumberWithCommas,
+  parseNumberWithCommas,
+} from "@/lib/numberFormatting";
 
 interface DirectorActivitiesListViewProps {
   plan: ProcurementPlan;
@@ -733,7 +737,20 @@ export function DirectorActivitiesListView({
   // Selected Activity for Detailed 4-Step Stepper View
   const [selectedActivity, setSelectedActivity] =
     useState<ProcurementActivity | null>(null);
+  const [estimatedAmountInput, setEstimatedAmountInput] = useState("");
   const [directorReturnRemarks, setDirectorReturnRemarks] = useState("");
+  const selectedActivityIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const activityId = selectedActivity?.id ?? null;
+    if (selectedActivityIdRef.current === activityId) return;
+    selectedActivityIdRef.current = activityId;
+    setEstimatedAmountInput(
+      selectedActivity
+        ? formatNumberWithCommas(String(selectedActivity.estimatedAmount))
+        : "",
+    );
+  }, [selectedActivity]);
 
   const [committeeRejectionScope, setCommitteeRejectionScope] = useState<
     "ALL" | "SPECIFIC"
@@ -1477,15 +1494,36 @@ export function DirectorActivitiesListView({
                   {isEditable ? (
                     <div className="flex items-center gap-2 max-w-xs w-full">
                       <input
-                        type="number"
-                        value={selectedActivity.estimatedAmount}
-                        onChange={(e) =>
-                          handleUpdateActivityField(
-                            selectedActivity.id,
-                            "estimatedAmount",
-                            Number(e.target.value) || 0,
-                          )
-                        }
+                        type="text"
+                        inputMode="decimal"
+                        value={estimatedAmountInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setEstimatedAmountInput(value);
+                          const amount = parseNumberWithCommas(value);
+                          if (Number.isFinite(amount)) {
+                            handleUpdateActivityField(
+                              selectedActivity.id,
+                              "estimatedAmount",
+                              amount,
+                            );
+                          }
+                        }}
+                        onBlur={() => {
+                          const amount =
+                            parseNumberWithCommas(estimatedAmountInput);
+                          if (Number.isFinite(amount)) {
+                            setEstimatedAmountInput(
+                              formatNumberWithCommas(estimatedAmountInput),
+                            );
+                          } else {
+                            setEstimatedAmountInput(
+                              formatNumberWithCommas(
+                                String(selectedActivity.estimatedAmount),
+                              ),
+                            );
+                          }
+                        }}
                         className="w-full rounded-xl border-2 border-slate-400 hover:border-slate-600 bg-white px-3 py-2 text-xs font-semibold font-mono text-[#0A3C2F] shadow-2xs outline-none transition-all focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/10"
                       />
                       <span className="text-xs font-semibold text-slate-600 font-mono">

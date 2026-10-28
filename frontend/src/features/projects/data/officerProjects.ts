@@ -30,6 +30,7 @@ export interface ProcurementPlanSummary {
   description?: string;
   estimatedValue: number;
   generalProcurementNoticeDate?: DualCalendarDateValue;
+  contractAwardDate?: DualCalendarDateValue;
   inProgressActivities: number;
   name: string;
   organizationRegion?: string;

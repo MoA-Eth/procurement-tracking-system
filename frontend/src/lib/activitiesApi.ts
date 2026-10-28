@@ -55,6 +55,7 @@ export interface BackendActivity {
   description: string;
   estimatedBudget: number;
   currency: string;
+  contractAwardDate?: string | null;
   marketApproach?:
     "OPEN_INTERNATIONAL" | "OPEN_NATIONAL" | "LIMITED" | "DIRECT" | null;
   reviewType?: "PRIOR" | "POST" | null;
@@ -95,6 +96,7 @@ export interface CreateActivityInput {
   description: string;
   estimatedBudget: number;
   currency: string;
+  contractAwardDate?: string | null;
   marketApproach?:
     "OPEN_INTERNATIONAL" | "OPEN_NATIONAL" | "LIMITED" | "DIRECT";
   reviewType?: "PRIOR" | "POST";

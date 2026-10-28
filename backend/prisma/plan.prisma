@@ -12,6 +12,7 @@ model Plan {
   periodStart           DateTime
   periodEnd             DateTime
   gpnDate               DateTime?
+  contractAwardDate     DateTime?
   
   status                PlanStatus @default(DRAFT)
   committeeRound        Int        @default(0)

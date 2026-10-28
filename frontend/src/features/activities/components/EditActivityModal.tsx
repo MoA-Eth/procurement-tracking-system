@@ -19,6 +19,10 @@ import {
   getInitialLookups,
   subscribeToLookups,
 } from "@/lib/lookupsApi";
+import {
+  formatNumberWithCommas,
+  parseNumberWithCommas,
+} from "@/lib/numberFormatting";
 
 interface EditActivityModalProps {
   isOpen: boolean;
@@ -158,8 +162,8 @@ export function EditActivityModal({
       setError("Activity description is required.");
       return;
     }
-    const numAmount = Number(estimatedAmount);
-    if (isNaN(numAmount) || numAmount <= 0) {
+    const numAmount = parseNumberWithCommas(estimatedAmount);
+    if (!Number.isFinite(numAmount) || numAmount <= 0) {
       setError("Please enter a valid estimated budget greater than zero.");
       return;
     }
@@ -349,10 +353,14 @@ export function EditActivityModal({
               </label>
               <div className="relative">
                 <input
-                  type="number"
+                  inputMode="decimal"
+                  type="text"
                   className="w-full h-10 rounded-lg border border-slate-300 px-3 pl-8 text-xs text-slate-800 outline-none focus:border-[#0A3C2F] focus:ring-2 focus:ring-[#0A3C2F]/15 font-semibold"
                   value={estimatedAmount}
                   onChange={(e) => setEstimatedAmount(e.target.value)}
+                  onBlur={(e) =>
+                    setEstimatedAmount(formatNumberWithCommas(e.target.value))
+                  }
                 />
                 <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 font-semibold">
                   {getCurrencySymbol(currency)}

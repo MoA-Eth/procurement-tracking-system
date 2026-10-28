@@ -74,6 +74,7 @@ export interface ProcurementActivityFormValues {
   activityDescription: string;
   classificationCode: string;
   comments: string;
+  contractAwardDate?: string;
   contractType: string;
   currency: string;
   exchangeRate?: string;
@@ -681,6 +682,9 @@ export function mapBackendActivityToProcurementActivitySummary(
         selected: true,
       })),
       form: {
+        contractAwardDate: ba.contractAwardDate
+          ? new Date(ba.contractAwardDate).toISOString().slice(0, 10)
+          : "",
         activityDescription: ba.description || "",
         additionalReferences:
           Array.isArray(ba.additionalReferences) &&

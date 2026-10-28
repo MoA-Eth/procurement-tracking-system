@@ -25,6 +25,10 @@ import {
   fetchContractAmendments,
   type BackendContractAmendment,
 } from "@/lib/contractsApi";
+import {
+  formatNumberWithCommas,
+  parseNumberWithCommas,
+} from "@/lib/numberFormatting";
 
 interface AmendmentFormState {
   variationType: "ADDITION" | "REDUCTION";
@@ -114,7 +118,7 @@ export function AddContractAmendmentView({
       : Math.max(0, contractCurrentAmount - contractTotalPaid);
 
   const amountEntered = form.amount.trim().length > 0;
-  const parsedAmount = Number(form.amount.replaceAll(",", ""));
+  const parsedAmount = parseNumberWithCommas(form.amount);
   const amountValid =
     amountEntered && Number.isFinite(parsedAmount) && parsedAmount > 0;
   const variationMagnitude = amountValid ? parsedAmount : 0;
@@ -513,9 +517,14 @@ export function AddContractAmendmentView({
                         inputClasses +
                         " pr-14 text-right font-mono tabular-nums font-semibold text-slate-800"
                       }
-                      min="0"
                       onChange={(event) =>
                         updateField("amount", event.target.value)
+                      }
+                      onBlur={(event) =>
+                        updateField(
+                          "amount",
+                          formatNumberWithCommas(event.target.value),
+                        )
                       }
                       onKeyDown={(event) => {
                         if (
@@ -527,8 +536,8 @@ export function AddContractAmendmentView({
                       }}
                       onWheel={(event) => event.currentTarget.blur()}
                       placeholder="0.00"
-                      step="0.01"
-                      type="number"
+                      inputMode="decimal"
+                      type="text"
                       value={form.amount}
                     />
                     <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[10px] font-semibold text-slate-500">

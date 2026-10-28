@@ -26,6 +26,7 @@ model Activity {
   description               String?
   estimatedBudget           Float
   currency                  String?
+  contractAwardDate         DateTime?
   bidReferenceNo            String?
   pricingBasis              String?
   scopeNotes                String?

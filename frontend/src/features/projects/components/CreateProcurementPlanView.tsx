@@ -47,6 +47,8 @@ type SaveAction = "activity" | "draft" | null;
 
 interface PlanFormState {
   budgetYear: string;
+  contractAwardDate: string;
+  contractAwardDateEthiopian: string;
   generalProcurementNoticeDate: string;
   generalProcurementNoticeDateEthiopian: string;
   organizationRegion: string;
@@ -179,11 +181,31 @@ function extractPlanFormData(
     rawGpnEth,
   );
 
+  const rawContractAwardDateGreg =
+    initialPlan?.contractAwardDate?.gregorian ||
+    (typeof planAny?.contractAwardDate === "string"
+      ? planAny.contractAwardDate
+      : "") ||
+    "";
+  const contractAwardDate = toInputDate(rawContractAwardDateGreg);
+  const rawContractAwardDateEth =
+    initialPlan?.contractAwardDate?.ethiopian ||
+    (typeof planAny?.contractAwardDateEthiopian === "string"
+      ? planAny.contractAwardDateEthiopian
+      : "") ||
+    "";
+  const contractAwardDateEthiopian = toEthDate(
+    contractAwardDate,
+    rawContractAwardDateEth,
+  );
+
   return {
     budgetYear:
       initialPlan?.budgetYear?.replace(/ EFY/i, "").trim() ||
       planAny?.fiscalYear?.replace(/ EFY/i, "").trim() ||
       "2017",
+    contractAwardDate,
+    contractAwardDateEthiopian,
     generalProcurementNoticeDate,
     generalProcurementNoticeDateEthiopian,
     organizationRegion:
@@ -307,7 +329,7 @@ export function CreateProcurementPlanView({
     if (!initialPlan) return;
     const planKey = initialPlan.id || initialPlan.reference || initialPlan.name;
     const extracted = extractPlanFormData(initialPlan, project);
-    const planSignature = `${planKey}|${extracted.periodFrom}|${extracted.periodTo}|${extracted.generalProcurementNoticeDate}|${extracted.remarks}|${extracted.planName}|${extracted.budgetYear}|${extracted.organizationRegion}`;
+    const planSignature = `${planKey}|${extracted.periodFrom}|${extracted.periodTo}|${extracted.generalProcurementNoticeDate}|${extracted.contractAwardDate}|${extracted.remarks}|${extracted.planName}|${extracted.budgetYear}|${extracted.organizationRegion}`;
 
     if (lastLoadedPlanRef.current === planSignature) return;
     lastLoadedPlanRef.current = planSignature;
@@ -361,7 +383,7 @@ export function CreateProcurementPlanView({
   }
 
   function updateDatePair(
-    period: "from" | "notice" | "to",
+    period: "award" | "from" | "notice" | "to",
     gregorianValue: string,
     ethiopianValue: string,
   ) {
@@ -380,6 +402,14 @@ export function CreateProcurementPlanView({
           ...current,
           periodTo: gregorianValue,
           periodToEthiopian: ethiopianValue,
+        };
+      }
+
+      if (period === "award") {
+        return {
+          ...current,
+          contractAwardDate: gregorianValue,
+          contractAwardDateEthiopian: ethiopianValue,
         };
       }
 
@@ -804,6 +834,20 @@ export function CreateProcurementPlanView({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
+              <DualCalendarField
+                ethiopianValue={form.contractAwardDateEthiopian}
+                gregorianValue={form.contractAwardDate}
+                id="contractAwardDate"
+                label="Contract Award Date (Reference Only)"
+                onChange={(gregorianValue, ethiopianValue) =>
+                  updateDatePair("award", gregorianValue, ethiopianValue)
+                }
+                required={false}
+              />
+              <p className="self-end text-[10px] text-slate-500">
+                Reference only; this date does not change the plan coverage
+                period.
+              </p>
               {form.generalProcurementNoticeDate ||
               !form.generalProcurementNoticeDateEthiopian ? (
                 <DualCalendarField

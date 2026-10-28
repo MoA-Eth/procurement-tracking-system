@@ -35,6 +35,15 @@ import {
   subscribeToLookups,
 } from "@/lib/lookupsApi";
 import {
+  formatNumberWithCommas,
+  parseNumberWithCommas,
+} from "@/lib/numberFormatting";
+import {
+  formatEthiopianDate,
+  gregorianToEthiopian,
+} from "../utils/ethiopianCalendar";
+import { DualCalendarField } from "./CreateProcurementPlanView";
+import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
@@ -306,13 +315,13 @@ export function CreateProcurementActivityView({
         (c) =>
           !c.fundingSource.trim() ||
           !c.currency.trim() ||
-          !(Number(c.amount) > 0),
+          !(parseNumberWithCommas(c.amount) > 0),
       )),
   );
 
   const stepTwoInvalid =
     !form.activityDescription.trim() ||
-    !(Number(form.estimatedAmount) > 0) ||
+    !(parseNumberWithCommas(form.estimatedAmount) > 0) ||
     !form.currency ||
     !form.fundingSource ||
     (category === "Works" && !form.pricingBasis) ||
@@ -323,7 +332,7 @@ export function CreateProcurementActivityView({
           !lot.number.trim() ||
           !lot.description.trim() ||
           !lot.amount.trim() ||
-          !(Number(lot.amount) >= 0),
+          !(parseNumberWithCommas(lot.amount) >= 0),
       ));
   const stepThreeInvalid =
     !allocationTotalIsValid(financingAllocations) ||
@@ -344,7 +353,7 @@ export function CreateProcurementActivityView({
     ].filter(Boolean).length,
     2: [
       !form.activityDescription.trim(),
-      !(Number(form.estimatedAmount) > 0),
+      !(parseNumberWithCommas(form.estimatedAmount) > 0),
       !form.currency,
       !form.fundingSource,
       category === "Works" && !form.pricingBasis,
@@ -355,7 +364,7 @@ export function CreateProcurementActivityView({
             !lot.number.trim() ||
             !lot.description.trim() ||
             !lot.amount.trim() ||
-            !(Number(lot.amount) >= 0),
+            !(parseNumberWithCommas(lot.amount) >= 0),
         ),
     ].filter(Boolean).length,
     3:
@@ -513,7 +522,9 @@ export function CreateProcurementActivityView({
               hasMultiFunding: form.hasMultiFunding,
               fundingContributions: form.hasMultiFunding
                 ? (form.fundingContributions || []).filter(
-                    (c) => c.fundingSource.trim() || Number(c.amount) > 0,
+                    (c) =>
+                      c.fundingSource.trim() ||
+                      parseNumberWithCommas(c.amount) > 0,
                   )
                 : undefined,
               additionalReferences: cleanAdditionalRefs,
@@ -521,7 +532,9 @@ export function CreateProcurementActivityView({
             },
             fundingContributions: form.hasMultiFunding
               ? (form.fundingContributions || []).filter(
-                  (c) => c.fundingSource.trim() || Number(c.amount) > 0,
+                  (c) =>
+                    c.fundingSource.trim() ||
+                    parseNumberWithCommas(c.amount) > 0,
                 )
               : undefined,
             lots: form.lotRequired ? lots.map((lot) => ({ ...lot })) : [],
@@ -531,11 +544,12 @@ export function CreateProcurementActivityView({
           fundingSource: form.fundingSource || undefined,
           fundingContributions: form.hasMultiFunding
             ? (form.fundingContributions || []).filter(
-                (c) => c.fundingSource.trim() || Number(c.amount) > 0,
+                (c) =>
+                  c.fundingSource.trim() || parseNumberWithCommas(c.amount) > 0,
               )
             : undefined,
           hasMultiFunding: form.hasMultiFunding,
-          estimatedAmount: Number(form.estimatedAmount),
+          estimatedAmount: parseNumberWithCommas(form.estimatedAmount),
           method: selectedMethod?.label ?? form.method,
           reference: activityReference,
           status: form.inProcess
@@ -900,6 +914,16 @@ export function normalizeProcurementProcess(value: string | undefined): string {
   return trimmed;
 }
 
+function normalizeActivityDate(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return "";
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime())
+    ? ""
+    : parsed.toISOString().slice(0, 10);
+}
+
 function createInitialForm(
   project: OfficerProject,
   plan: ProcurementPlanSummary,
@@ -929,6 +953,11 @@ function createInitialForm(
         anyAct.procurementClassificationCode ||
         "",
       comments: d?.comments || anyAct.comments || anyAct.remarks || "",
+      contractAwardDate: normalizeActivityDate(
+        d?.contractAwardDate ||
+          anyAct.contractAwardDate ||
+          plan.contractAwardDate?.gregorian,
+      ),
       contractType: d?.contractType || anyAct.contractType || "Lump Sum",
       currency:
         d?.currency ||
@@ -959,11 +988,13 @@ function createInitialForm(
               anyAct.domesticPreference === "false"
             ? "No"
             : d?.domesticPreference || anyAct.domesticPreference || "No",
-      estimatedAmount: String(
-        initialActivity.estimatedAmount ??
-          d?.estimatedAmount ??
-          anyAct.estimatedBudget ??
-          "",
+      estimatedAmount: formatNumberWithCommas(
+        String(
+          initialActivity.estimatedAmount ??
+            d?.estimatedAmount ??
+            anyAct.estimatedBudget ??
+            "",
+        ),
       ),
       evaluationOptionCode:
         d?.evaluationOptionCode ||
@@ -1077,10 +1108,12 @@ function createInitialForm(
           return raw.map((c) => ({
             id: c.id || `contrib-${Math.random().toString(36).slice(2, 7)}`,
             fundingSource: c.fundingSource || "",
-            amount: String(c.amount ?? ""),
+            amount: formatNumberWithCommas(String(c.amount ?? "")),
             currency: c.currency || "ETB",
             exchangeRate:
-              c.exchangeRate !== undefined ? String(c.exchangeRate) : "",
+              c.exchangeRate !== undefined
+                ? formatNumberWithCommas(String(c.exchangeRate))
+                : "",
           }));
         }
         return [];
@@ -1092,6 +1125,7 @@ function createInitialForm(
     activityDescription: "",
     classificationCode: "",
     comments: "",
+    contractAwardDate: plan.contractAwardDate?.gregorian || "",
     contractType: "",
     currency: "",
     exchangeRate: "",
@@ -1234,7 +1268,9 @@ function extractInitialLots(
       id: lot.id ?? index + 1,
       number: String(lot.lotNumber ?? lot.number ?? index + 1),
       description: lot.description || "",
-      amount: String(lot.estimatedAmount ?? lot.amount ?? ""),
+      amount: formatNumberWithCommas(
+        String(lot.estimatedAmount ?? lot.amount ?? ""),
+      ),
     }));
   }
   return [{ amount: "", description: "", id: 1, number: "1" }];
@@ -2481,6 +2517,11 @@ export function RelatedInformationStep({
     }
     return fromProject;
   }, [project, form.fundingSource]);
+  const contractAwardDateEthiopian = useMemo(() => {
+    if (!form.contractAwardDate) return "";
+    const date = gregorianToEthiopian(form.contractAwardDate);
+    return date ? formatEthiopianDate(date) : "";
+  }, [form.contractAwardDate]);
 
   useEffect(() => {
     if (!form.fundingSource && inheritedFundingSources.length > 0) {
@@ -2525,10 +2566,10 @@ export function RelatedInformationStep({
   const totalComputed = useMemo(() => {
     const target = (form.currency || "ETB").trim().toUpperCase();
     return contributions.reduce((sum, item) => {
-      const amt = Number(item.amount) || 0;
+      const amt = parseNumberWithCommas(item.amount) || 0;
       const cur = (item.currency || target).trim().toUpperCase();
       const isSame = cur === target;
-      const rateNum = Number(item.exchangeRate);
+      const rateNum = parseNumberWithCommas(item.exchangeRate);
       const effectiveRate = isSame ? 1 : rateNum > 0 ? rateNum : 1;
       return sum + amt * effectiveRate;
     }, 0);
@@ -2543,7 +2584,7 @@ export function RelatedInformationStep({
           (c) =>
             !c.fundingSource.trim() ||
             !c.currency.trim() ||
-            !(Number(c.amount) > 0),
+            !(parseNumberWithCommas(c.amount) > 0),
         )),
     );
   }, [form.hasMultiFunding, form.fundingContributions]);
@@ -2555,10 +2596,10 @@ export function RelatedInformationStep({
     const target = (targetCurrency || "ETB").trim().toUpperCase();
     let total = 0;
     for (const item of items) {
-      const amt = Number(item.amount) || 0;
+      const amt = parseNumberWithCommas(item.amount) || 0;
       const cur = (item.currency || target).trim().toUpperCase();
       const isSame = cur === target;
-      const rateNum = Number(item.exchangeRate);
+      const rateNum = parseNumberWithCommas(item.exchangeRate);
       const effectiveRate = isSame ? 1 : rateNum > 0 ? rateNum : 1;
       total += amt * effectiveRate;
     }
@@ -2772,7 +2813,7 @@ export function RelatedInformationStep({
         <ActivityContext {...context} />
         {attempted &&
         (!form.activityDescription.trim() ||
-          !(Number(form.estimatedAmount) > 0) ||
+          !(parseNumberWithCommas(form.estimatedAmount) > 0) ||
           !form.currency ||
           !form.fundingSource ||
           (category === "Works" && !form.pricingBasis) ||
@@ -2783,7 +2824,7 @@ export function RelatedInformationStep({
                 (c) =>
                   !c.fundingSource.trim() ||
                   !c.currency.trim() ||
-                  !(Number(c.amount) > 0),
+                  !(parseNumberWithCommas(c.amount) > 0),
               ))) ||
           (form.lotRequired &&
             lots.some(
@@ -2791,7 +2832,7 @@ export function RelatedInformationStep({
                 !lot.number.trim() ||
                 !lot.description.trim() ||
                 !lot.amount.trim() ||
-                !(Number(lot.amount) >= 0),
+                !(parseNumberWithCommas(lot.amount) >= 0),
             ))) ? (
           <div
             className="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700"
@@ -2943,6 +2984,22 @@ export function RelatedInformationStep({
             </Field>
           </div>
 
+          <div className="md:col-span-1 xl:col-span-2">
+            <DualCalendarField
+              ethiopianValue={contractAwardDateEthiopian}
+              gregorianValue={form.contractAwardDate || ""}
+              id="activityContractAwardDate"
+              label="Contract Award Date (Reference Only)"
+              onChange={(gregorianValue) =>
+                onChange("contractAwardDate", gregorianValue)
+              }
+              required={false}
+            />
+            <p className="mt-1 text-[10px] text-slate-500">
+              This reference date does not change the procurement roadmap.
+            </p>
+          </div>
+
           {/* Budget & Funding Structure Toggle Header */}
           <div className="md:col-span-2 xl:col-span-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 pb-1 border-t border-slate-200">
             <div>
@@ -2986,16 +3043,17 @@ export function RelatedInformationStep({
             <>
               <Field
                 error={
-                  attempted && !(Number(form.estimatedAmount) > 0)
+                  attempted &&
+                  !(parseNumberWithCommas(form.estimatedAmount) > 0)
                     ? "Enter an estimated amount greater than zero."
                     : undefined
                 }
                 hint={
                   form.currency &&
                   form.currency.trim().toUpperCase() !== "ETB" &&
-                  Number(form.estimatedAmount) > 0 &&
-                  Number(form.exchangeRate) > 0
-                    ? `≈ ${(Number(form.estimatedAmount) * Number(form.exchangeRate)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB equivalent`
+                  parseNumberWithCommas(form.estimatedAmount) > 0 &&
+                  parseNumberWithCommas(form.exchangeRate) > 0
+                    ? `≈ ${(parseNumberWithCommas(form.estimatedAmount) * parseNumberWithCommas(form.exchangeRate)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB equivalent`
                     : undefined
                 }
                 label="Estimated Amount"
@@ -3003,19 +3061,26 @@ export function RelatedInformationStep({
               >
                 <input
                   aria-invalid={
-                    attempted && !(Number(form.estimatedAmount) > 0)
+                    attempted &&
+                    !(parseNumberWithCommas(form.estimatedAmount) > 0)
                       ? "true"
                       : undefined
                   }
                   className={
                     inputClasses +
-                    (attempted && !(Number(form.estimatedAmount) > 0)
+                    (attempted &&
+                    !(parseNumberWithCommas(form.estimatedAmount) > 0)
                       ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
                       : "")
                   }
-                  min="0"
                   onChange={(event) =>
                     onChange("estimatedAmount", event.target.value)
+                  }
+                  onBlur={(event) =>
+                    onChange(
+                      "estimatedAmount",
+                      formatNumberWithCommas(event.target.value),
+                    )
                   }
                   onKeyDown={(event) => {
                     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -3024,8 +3089,8 @@ export function RelatedInformationStep({
                   }}
                   onWheel={(event) => event.currentTarget.blur()}
                   placeholder="0.00"
-                  step="0.01"
-                  type="number"
+                  inputMode="decimal"
+                  type="text"
                   value={form.estimatedAmount}
                 />
               </Field>
@@ -3071,9 +3136,9 @@ export function RelatedInformationStep({
               {form.currency && form.currency.trim().toUpperCase() !== "ETB" ? (
                 <Field
                   hint={
-                    Number(form.estimatedAmount) > 0 &&
-                    Number(form.exchangeRate) > 0
-                      ? `Rate: 1 ${form.currency} = ${Number(form.exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ETB`
+                    parseNumberWithCommas(form.estimatedAmount) > 0 &&
+                    parseNumberWithCommas(form.exchangeRate) > 0
+                      ? `Rate: 1 ${form.currency} = ${parseNumberWithCommas(form.exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ETB`
                       : `Conversion rate to Ethiopian Birr (1 ${form.currency} = ... ETB).`
                   }
                   label="Exchange Rate (to ETB)"
@@ -3084,9 +3149,14 @@ export function RelatedInformationStep({
                         inputClasses +
                         " pr-12 text-right font-mono tabular-nums"
                       }
-                      min="0"
                       onChange={(event) =>
                         onChange("exchangeRate", event.target.value)
+                      }
+                      onBlur={(event) =>
+                        onChange(
+                          "exchangeRate",
+                          formatNumberWithCommas(event.target.value),
+                        )
                       }
                       onKeyDown={(event) => {
                         if (
@@ -3098,8 +3168,8 @@ export function RelatedInformationStep({
                       }}
                       onWheel={(event) => event.currentTarget.blur()}
                       placeholder="e.g. 125.00"
-                      step="0.0001"
-                      type="number"
+                      inputMode="decimal"
+                      type="text"
                       value={form.exchangeRate || ""}
                     />
                     <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[11px] font-semibold text-slate-500">
@@ -3183,7 +3253,8 @@ export function RelatedInformationStep({
 
               <Field
                 error={
-                  attempted && !(Number(form.estimatedAmount) > 0)
+                  attempted &&
+                  !(parseNumberWithCommas(form.estimatedAmount) > 0)
                     ? "Enter native funds greater than zero below."
                     : undefined
                 }
@@ -3271,17 +3342,21 @@ export function RelatedInformationStep({
                       form.currency &&
                       contrib.currency.trim().toUpperCase() ===
                         form.currency.trim().toUpperCase();
-                    const rateNum = Number(contrib.exchangeRate);
+                    const rateNum = parseNumberWithCommas(
+                      contrib.exchangeRate || "",
+                    );
                     const effectiveRate = isSameCurrency
                       ? 1
                       : rateNum > 0
                         ? rateNum
                         : 1;
-                    const equiv = (Number(contrib.amount) || 0) * effectiveRate;
+                    const equiv =
+                      (parseNumberWithCommas(contrib.amount) || 0) *
+                      effectiveRate;
                     const hasRowError =
                       attempted &&
                       (!contrib.fundingSource.trim() ||
-                        !(Number(contrib.amount) > 0));
+                        !(parseNumberWithCommas(contrib.amount) > 0));
 
                     return (
                       <div
@@ -3461,16 +3536,23 @@ export function RelatedInformationStep({
                               className={
                                 inputClasses +
                                 " text-xs font-mono tabular-nums" +
-                                (attempted && !(Number(contrib.amount) > 0)
+                                (attempted &&
+                                !(parseNumberWithCommas(contrib.amount) > 0)
                                   ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500"
                                   : "")
                               }
-                              min="0"
                               onChange={(e) =>
                                 handleUpdateContribution(
                                   contrib.id,
                                   "amount",
                                   e.target.value,
+                                )
+                              }
+                              onBlur={(e) =>
+                                handleUpdateContribution(
+                                  contrib.id,
+                                  "amount",
+                                  formatNumberWithCommas(e.target.value),
                                 )
                               }
                               onKeyDown={(e) => {
@@ -3483,8 +3565,8 @@ export function RelatedInformationStep({
                               }}
                               onWheel={(e) => e.currentTarget.blur()}
                               placeholder="0.00"
-                              step="0.01"
-                              type="number"
+                              inputMode="decimal"
+                              type="text"
                               value={contrib.amount}
                             />
                           </div>
@@ -3514,12 +3596,18 @@ export function RelatedInformationStep({
                                     inputClasses +
                                     " pr-12 text-right font-mono tabular-nums text-xs"
                                   }
-                                  min="0"
                                   onChange={(e) =>
                                     handleUpdateContribution(
                                       contrib.id,
                                       "exchangeRate",
                                       e.target.value,
+                                    )
+                                  }
+                                  onBlur={(e) =>
+                                    handleUpdateContribution(
+                                      contrib.id,
+                                      "exchangeRate",
+                                      formatNumberWithCommas(e.target.value),
                                     )
                                   }
                                   onKeyDown={(e) => {
@@ -3532,8 +3620,8 @@ export function RelatedInformationStep({
                                   }}
                                   onWheel={(e) => e.currentTarget.blur()}
                                   placeholder="e.g. 125.00"
-                                  step="0.0001"
-                                  type="number"
+                                  inputMode="decimal"
+                                  type="text"
                                   value={contrib.exchangeRate || ""}
                                 />
                                 <span className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-[10px] font-bold text-slate-500">
@@ -3543,8 +3631,10 @@ export function RelatedInformationStep({
                             )}
                             {!isSameCurrency ? (
                               <span className="text-[10px] text-slate-500 mt-0.5">
-                                {Number(contrib.exchangeRate) > 0
-                                  ? `1 ${contrib.currency} = ${Number(contrib.exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${form.currency || "ETB"}`
+                                {parseNumberWithCommas(
+                                  contrib.exchangeRate || "",
+                                ) > 0
+                                  ? `1 ${contrib.currency} = ${parseNumberWithCommas(contrib.exchangeRate || "").toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${form.currency || "ETB"}`
                                   : `1:1 applied if omitted`}
                               </span>
                             ) : null}
@@ -3558,22 +3648,24 @@ export function RelatedInformationStep({
                               Registered:
                             </span>
                             <span className="font-mono font-medium text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                              {Number(contrib.amount) > 0
-                                ? Number(contrib.amount).toLocaleString(
-                                    undefined,
-                                    {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2,
-                                    },
-                                  )
+                              {parseNumberWithCommas(contrib.amount) > 0
+                                ? parseNumberWithCommas(
+                                    contrib.amount,
+                                  ).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })
                                 : "0.00"}{" "}
                               {contrib.currency || "Native"}
                             </span>
                             {!isSameCurrency &&
-                            Number(contrib.exchangeRate) > 0 ? (
+                            parseNumberWithCommas(contrib.exchangeRate || "") >
+                              0 ? (
                               <span className="text-[11px] text-slate-500">
                                 ×{" "}
-                                {Number(contrib.exchangeRate).toLocaleString()}{" "}
+                                {parseNumberWithCommas(
+                                  contrib.exchangeRate || "",
+                                ).toLocaleString()}{" "}
                                 rate
                               </span>
                             ) : null}
@@ -3793,7 +3885,8 @@ export function RelatedInformationStep({
                 <Field
                   error={
                     attempted &&
-                    (!lot.amount.trim() || !(Number(lot.amount) >= 0))
+                    (!lot.amount.trim() ||
+                      !(parseNumberWithCommas(lot.amount) >= 0))
                       ? "Enter a valid lot amount."
                       : undefined
                   }
@@ -3803,20 +3896,28 @@ export function RelatedInformationStep({
                   <input
                     aria-invalid={
                       attempted &&
-                      (!lot.amount.trim() || !(Number(lot.amount) >= 0))
+                      (!lot.amount.trim() ||
+                        !(parseNumberWithCommas(lot.amount) >= 0))
                         ? "true"
                         : undefined
                     }
                     className={
                       inputClasses +
                       (attempted &&
-                      (!lot.amount.trim() || !(Number(lot.amount) >= 0))
+                      (!lot.amount.trim() ||
+                        !(parseNumberWithCommas(lot.amount) >= 0))
                         ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
                         : "")
                     }
-                    min="0"
                     onChange={(event) =>
                       updateLot(lot.id, "amount", event.target.value)
+                    }
+                    onBlur={(event) =>
+                      updateLot(
+                        lot.id,
+                        "amount",
+                        formatNumberWithCommas(event.target.value),
+                      )
                     }
                     onKeyDown={(event) => {
                       if (
@@ -3828,8 +3929,8 @@ export function RelatedInformationStep({
                     }}
                     onWheel={(event) => event.currentTarget.blur()}
                     placeholder="0.00"
-                    step="0.01"
-                    type="number"
+                    inputMode="decimal"
+                    type="text"
                     value={lot.amount}
                   />
                 </Field>

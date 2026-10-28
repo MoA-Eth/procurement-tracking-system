@@ -417,6 +417,51 @@ describe("CreateProcurementActivityView", () => {
     expect(markupWithRefs).toContain("AFDB-AGRI-2024-05");
     expect(markupWithRefs).toContain("Add Another");
     expect(markupWithRefs).toContain("Remove reference");
+
+    const markupWithLots = renderToStaticMarkup(
+      <RelatedInformationStep
+        additionalReferences={[]}
+        attempted={false}
+        context={dummyContext}
+        currencyOptions={[{ code: "ETB", label: "ETB - Ethiopian Birr" }]}
+        financingAllocations={[]}
+        form={{
+          ...dummyForm,
+          estimatedAmount: "1,234,567.89",
+          lotRequired: true,
+        }}
+        lots={[
+          {
+            amount: "1,000.00",
+            description: "First package",
+            id: 1,
+            number: "1A",
+          },
+          {
+            amount: "234,567.89",
+            description: "Second package",
+            id: 2,
+            number: "2B",
+          },
+        ]}
+        onAddAdditionalReference={() => {}}
+        onChange={() => {}}
+        onFinancingChange={() => {}}
+        onLotsChange={() => {}}
+        onRemoveAdditionalReference={() => {}}
+        onUpdateAdditionalReference={() => {}}
+      />,
+    );
+    expect(markupWithLots).toContain('value="1,234,567.89"');
+    expect(markupWithLots).toContain("Contract Award Date (Reference Only)");
+    expect(markupWithLots).toContain(
+      "This reference date does not change the procurement roadmap.",
+    );
+    expect(markupWithLots).toContain('value="1A"');
+    expect(markupWithLots).toContain('value="2B"');
+    expect(markupWithLots).toContain("Add another lot");
+    expect(markupWithLots).toContain("Remove lot 1");
+    expect(markupWithLots).toContain("Remove lot 2");
   });
 
   it("renders '+ Add currency if not listed...' dropdown option in Related Information step", () => {

@@ -12,6 +12,8 @@ export interface ProcurementPlanDraftInput {
   category: ProcurementCategory;
   generalProcurementNoticeDate: string;
   generalProcurementNoticeDateEthiopian: string;
+  contractAwardDate?: string;
+  contractAwardDateEthiopian?: string;
   organizationRegion: string;
   periodFrom: string;
   periodFromEthiopian: string;
@@ -43,6 +45,12 @@ export function createDraftPlan(
       ? {
           ethiopian: input.generalProcurementNoticeDateEthiopian,
           gregorian: input.generalProcurementNoticeDate,
+        }
+      : undefined,
+    contractAwardDate: input.contractAwardDate
+      ? {
+          ethiopian: input.contractAwardDateEthiopian || "",
+          gregorian: input.contractAwardDate,
         }
       : undefined,
     inProgressActivities: 0,
@@ -144,6 +152,9 @@ export function mergeSavedPlans(
             ? plan.generalProcurementNoticeDate
             : saved.generalProcurementNoticeDate ||
               plan.generalProcurementNoticeDate,
+        contractAwardDate: plan.contractAwardDate?.gregorian
+          ? plan.contractAwardDate
+          : saved.contractAwardDate || plan.contractAwardDate,
         description: plan.description || saved.description,
         organizationRegion: plan.organizationRegion || saved.organizationRegion,
         status: resolvedStatus,

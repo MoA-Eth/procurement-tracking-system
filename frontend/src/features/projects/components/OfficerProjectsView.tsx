@@ -65,6 +65,7 @@ import {
   formatEthiopianDate,
   formatGregorianDate,
 } from "@/features/projects/utils/ethiopianCalendar";
+import { parseNumberWithCommas } from "@/lib/numberFormatting";
 import { apiClient } from "@/lib/apiClient";
 import {
   keepAvailablePlan,
@@ -729,6 +730,9 @@ export function OfficerProjectsView({
     const gpnDate = input.generalProcurementNoticeDate
       ? safeIsoDate(input.generalProcurementNoticeDate, "2025-07-08")
       : undefined;
+    const contractAwardDate = input.contractAwardDate
+      ? safeIsoDate(input.contractAwardDate, "2025-07-08")
+      : undefined;
 
     // Resolve target project database UUID
     let targetProjectId =
@@ -775,6 +779,8 @@ export function OfficerProjectsView({
         organizationRegion: selectedPlan.organizationRegion,
         periodFrom: selectedPlan.planPeriod?.from?.gregorian,
         periodTo: selectedPlan.planPeriod?.to?.gregorian,
+        contractAwardDate:
+          selectedPlan.contractAwardDate?.gregorian || undefined,
         description: selectedPlan.description,
       };
 
@@ -785,6 +791,7 @@ export function OfficerProjectsView({
         organizationRegion: input.organizationRegion,
         periodFrom: input.periodFrom,
         periodTo: input.periodTo,
+        contractAwardDate: input.contractAwardDate || undefined,
         description: input.remarks,
       };
 
@@ -800,6 +807,12 @@ export function OfficerProjectsView({
         budgetYear: `${input.budgetYear} EFY`,
         category: input.category,
         organizationRegion: input.organizationRegion,
+        contractAwardDate: input.contractAwardDate
+          ? {
+              gregorian: input.contractAwardDate,
+              ethiopian: input.contractAwardDateEthiopian || "",
+            }
+          : undefined,
         description: input.remarks || selectedPlan.description,
         planPeriod: {
           from: {
@@ -850,6 +863,9 @@ export function OfficerProjectsView({
             periodStart,
             periodEnd,
             gpnDate,
+            contractAwardDate: input.contractAwardDate
+              ? contractAwardDate
+              : null,
           });
           if (updated && updated.id) {
             updatedPlan.id = updated.id;
@@ -872,6 +888,7 @@ export function OfficerProjectsView({
           periodStart,
           periodEnd,
           gpnDate,
+          contractAwardDate,
         });
         if (created && created.id) {
           updatedPlan.id = created.id;
@@ -927,6 +944,7 @@ export function OfficerProjectsView({
       periodStart,
       periodEnd,
       gpnDate,
+      contractAwardDate,
     });
 
     if (!dbPlan || !dbPlan.id) {
@@ -960,6 +978,12 @@ export function OfficerProjectsView({
         ? {
             gregorian: input.generalProcurementNoticeDate,
             ethiopian: input.generalProcurementNoticeDateEthiopian,
+          }
+        : undefined,
+      contractAwardDate: input.contractAwardDate
+        ? {
+            gregorian: input.contractAwardDate,
+            ethiopian: input.contractAwardDateEthiopian || "",
           }
         : undefined,
       activities: 0,
@@ -1144,6 +1168,12 @@ export function OfficerProjectsView({
           description: `Supplementary plan: ${additionalPlanReason}`,
           periodStart: now.toISOString(),
           periodEnd: oneYearLater.toISOString(),
+          contractAwardDate: selectedPlan.contractAwardDate?.gregorian
+            ? safeIsoDate(
+                selectedPlan.contractAwardDate.gregorian,
+                "2025-07-08",
+              )
+            : undefined,
           parentPlanId: matchingParentBackendPlan?.id || undefined,
           planType: "ADDITIONAL",
           additionalPlanReason: additionalPlanReason,
@@ -1323,6 +1353,12 @@ export function OfficerProjectsView({
               selectedPlan.planPeriod?.to?.gregorian,
               "2026-07-07",
             ),
+            contractAwardDate: selectedPlan.contractAwardDate?.gregorian
+              ? safeIsoDate(
+                  selectedPlan.contractAwardDate.gregorian,
+                  "2025-07-08",
+                )
+              : undefined,
           });
           if (created && created.id) {
             targetBackendPlanId = created.id;
@@ -1434,7 +1470,9 @@ export function OfficerProjectsView({
                   lotNumber: String(l.number).trim(),
                   description: l.description?.trim() || undefined,
                   estimatedAmount:
-                    Number(l.amount) > 0 ? Number(l.amount) : undefined,
+                    parseNumberWithCommas(l.amount) > 0
+                      ? parseNumberWithCommas(l.amount)
+                      : undefined,
                 }))
             : undefined;
         const lotsPayload =
@@ -1448,6 +1486,7 @@ export function OfficerProjectsView({
             (activity as any).currency ||
             selectedPlan.currency ||
             "ETB",
+          contractAwardDate: formDetails.contractAwardDate || null,
           procurementMethodId: resolvedMethodId,
           marketApproach: formDetails.marketApproach || undefined,
           qualificationApproach: formDetails.qualificationApproach || undefined,
@@ -1518,6 +1557,7 @@ export function OfficerProjectsView({
                   (activity as any).currency ||
                   selectedPlan.currency ||
                   "ETB",
+                contractAwardDate: formDetails.contractAwardDate || null,
                 fundings: [
                   {
                     fundingSource:
@@ -1713,6 +1753,9 @@ export function OfficerProjectsView({
         description: targetPlan.description || undefined,
         periodStart: targetPlan.planPeriod?.from?.gregorian || "2025-07-08",
         periodEnd: targetPlan.planPeriod?.to?.gregorian || "2026-07-07",
+        contractAwardDate: targetPlan.contractAwardDate?.gregorian
+          ? safeIsoDate(targetPlan.contractAwardDate.gregorian, "2025-07-08")
+          : undefined,
       });
 
       if (!created || !created.id) {
@@ -2023,6 +2066,9 @@ export function OfficerProjectsView({
           description: plan.description || undefined,
           periodStart: new Date(periodStart).toISOString(),
           periodEnd: new Date(periodEnd).toISOString(),
+          contractAwardDate: plan.contractAwardDate?.gregorian
+            ? safeIsoDate(plan.contractAwardDate.gregorian, "2025-07-08")
+            : undefined,
         });
         if (created && created.id) {
           plan.reference = created.id;
@@ -2113,6 +2159,12 @@ export function OfficerProjectsView({
           description: selectedPlan.description || undefined,
           periodStart: selectedPlan.planPeriod?.from?.gregorian || "2025-07-08",
           periodEnd: selectedPlan.planPeriod?.to?.gregorian || "2026-07-07",
+          contractAwardDate: selectedPlan.contractAwardDate?.gregorian
+            ? safeIsoDate(
+                selectedPlan.contractAwardDate.gregorian,
+                "2025-07-08",
+              )
+            : undefined,
         });
         if (created && created.id) {
           targetBackendPlanId = created.id;
