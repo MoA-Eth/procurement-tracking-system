@@ -1475,8 +1475,14 @@ export function OfficerProjectsView({
                       : undefined,
                 }))
             : undefined;
-        const lotsPayload =
-          mappedLots && mappedLots.length > 0 ? mappedLots : undefined;
+        // When the form details are available, always send the full lot list
+        // (possibly empty) so lots removed in the form are also removed on the
+        // server. Without form details, leave the server's lots untouched.
+        const lotsPayload = activity.details?.form
+          ? formDetails.lotRequired
+            ? (mappedLots ?? [])
+            : []
+          : undefined;
 
         const baseActivityPayload: any = {
           description: activity.description || "Activity description",
@@ -1518,7 +1524,8 @@ export function OfficerProjectsView({
                 : undefined,
           scopeNotes: formDetails.scopeNotes?.trim() || undefined,
           remarks: formDetails.remarks?.trim() || undefined,
-          lotRequired: Boolean(formDetails.lotRequired && lotsPayload),
+          // Lots may still be undefined at the planning stage.
+          lotRequired: Boolean(formDetails.lotRequired),
           lots: lotsPayload,
           fundings: fundingsPayload,
           components: componentsPayload,

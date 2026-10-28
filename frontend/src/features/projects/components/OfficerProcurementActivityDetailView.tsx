@@ -446,8 +446,10 @@ export function OfficerProcurementActivityDetailView({
             ]}
             rows={details.lots.map((lot) => [
               lot.number,
-              lot.description,
-              formatAmount(parseNumberWithCommas(lot.amount)),
+              lot.description || "—",
+              lot.amount?.trim()
+                ? formatAmount(parseNumberWithCommas(lot.amount))
+                : "—",
             ])}
             title="Lots"
           />

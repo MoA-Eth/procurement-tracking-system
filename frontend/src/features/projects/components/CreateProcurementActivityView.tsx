@@ -326,14 +326,7 @@ export function CreateProcurementActivityView({
     !form.fundingSource ||
     (category === "Works" && !form.pricingBasis) ||
     multiFundingInvalid ||
-    (form.lotRequired &&
-      lots.some(
-        (lot) =>
-          !lot.number.trim() ||
-          !lot.description.trim() ||
-          !lot.amount.trim() ||
-          !(parseNumberWithCommas(lot.amount) >= 0),
-      ));
+    (form.lotRequired && lots.some(lotEntryInvalid));
   const stepThreeInvalid =
     !allocationTotalIsValid(financingAllocations) ||
     !allocationTotalIsValid(componentAllocations);
@@ -358,14 +351,7 @@ export function CreateProcurementActivityView({
       !form.fundingSource,
       category === "Works" && !form.pricingBasis,
       multiFundingInvalid,
-      form.lotRequired &&
-        lots.some(
-          (lot) =>
-            !lot.number.trim() ||
-            !lot.description.trim() ||
-            !lot.amount.trim() ||
-            !(parseNumberWithCommas(lot.amount) >= 0),
-        ),
+      form.lotRequired && lots.some(lotEntryInvalid),
     ].filter(Boolean).length,
     3:
       Number(!allocationTotalIsValid(financingAllocations)) +
@@ -1256,6 +1242,17 @@ function extractInitialRoadmap(
     }));
   }
   return [];
+}
+
+// The number of lots is often unknown at the planning stage, so lots may be
+// added later and only the lot number is required. An amount, when entered,
+// must still be a valid non-negative number.
+function lotAmountInvalid(lot: LotEntry): boolean {
+  return lot.amount.trim() !== "" && !(parseNumberWithCommas(lot.amount) >= 0);
+}
+
+function lotEntryInvalid(lot: LotEntry): boolean {
+  return !lot.number.trim() || lotAmountInvalid(lot);
 }
 
 function extractInitialLots(
@@ -2826,14 +2823,7 @@ export function RelatedInformationStep({
                   !c.currency.trim() ||
                   !(parseNumberWithCommas(c.amount) > 0),
               ))) ||
-          (form.lotRequired &&
-            lots.some(
-              (lot) =>
-                !lot.number.trim() ||
-                !lot.description.trim() ||
-                !lot.amount.trim() ||
-                !(parseNumberWithCommas(lot.amount) >= 0),
-            ))) ? (
+          (form.lotRequired && lots.some(lotEntryInvalid))) ? (
           <div
             className="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700"
             role="alert"
@@ -3828,6 +3818,12 @@ export function RelatedInformationStep({
 
         {form.lotRequired ? (
           <div className="mt-4 space-y-3">
+            {lots.length === 0 ? (
+              <p className="rounded-md border border-dashed border-slate-300 bg-[#fbfcfd] px-3 py-2.5 text-xs text-slate-600">
+                No lots added yet. You can add them later, once the number of
+                lots is known.
+              </p>
+            ) : null}
             {lots.map((lot, index) => (
               <div
                 className="grid gap-3 rounded-md border border-slate-200 bg-[#fbfcfd] p-3 sm:grid-cols-[0.35fr_1.4fr_0.65fr_auto]"
@@ -3856,25 +3852,9 @@ export function RelatedInformationStep({
                     value={lot.number}
                   />
                 </Field>
-                <Field
-                  error={
-                    attempted && !lot.description.trim()
-                      ? "Enter a lot description."
-                      : undefined
-                  }
-                  label="Lot Description"
-                  required
-                >
+                <Field label="Lot Description">
                   <input
-                    aria-invalid={
-                      attempted && !lot.description.trim() ? "true" : undefined
-                    }
-                    className={
-                      inputClasses +
-                      (attempted && !lot.description.trim()
-                        ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
-                        : "")
-                    }
+                    className={inputClasses}
                     onChange={(event) =>
                       updateLot(lot.id, "description", event.target.value)
                     }
@@ -3884,28 +3864,19 @@ export function RelatedInformationStep({
                 </Field>
                 <Field
                   error={
-                    attempted &&
-                    (!lot.amount.trim() ||
-                      !(parseNumberWithCommas(lot.amount) >= 0))
+                    attempted && lotAmountInvalid(lot)
                       ? "Enter a valid lot amount."
                       : undefined
                   }
                   label="Estimated Lot Amount"
-                  required
                 >
                   <input
                     aria-invalid={
-                      attempted &&
-                      (!lot.amount.trim() ||
-                        !(parseNumberWithCommas(lot.amount) >= 0))
-                        ? "true"
-                        : undefined
+                      attempted && lotAmountInvalid(lot) ? "true" : undefined
                     }
                     className={
                       inputClasses +
-                      (attempted &&
-                      (!lot.amount.trim() ||
-                        !(parseNumberWithCommas(lot.amount) >= 0))
+                      (attempted && lotAmountInvalid(lot)
                         ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
                         : "")
                     }
@@ -3937,7 +3908,6 @@ export function RelatedInformationStep({
                 <button
                   aria-label={"Remove lot " + String(index + 1)}
                   className="mt-[1.35rem] flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 text-slate-500 hover:border-red-300 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={lots.length === 1}
                   onClick={() =>
                     onLotsChange(lots.filter((entry) => entry.id !== lot.id))
                   }
@@ -3953,7 +3923,7 @@ export function RelatedInformationStep({
               type="button"
             >
               <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-              Add another lot
+              {lots.length === 0 ? "Add lot" : "Add another lot"}
             </button>
           </div>
         ) : null}

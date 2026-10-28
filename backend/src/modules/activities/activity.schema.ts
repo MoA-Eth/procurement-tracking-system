@@ -156,18 +156,9 @@ const step2BaseSchema = z.object({
   components: z.array(activityComponentSchema).optional(),
 });
 
-export const createActivityStep2Schema = step2BaseSchema.refine(
-  (data) => {
-    if (data.lotRequired) {
-      return Array.isArray(data.lots) && data.lots.length > 0;
-    }
-    return true;
-  },
-  {
-    message: 'At least one lot is required when Lot Required is enabled.',
-    path: ['lots'],
-  },
-);
+// Lots may be left empty even when lotRequired is true: the number of lots is
+// often unknown at the planning stage and is filled in later.
+export const createActivityStep2Schema = step2BaseSchema;
 
 // ─── Step 3: Roadmap Template ────────────────────────────────────────────────
 
@@ -247,16 +238,6 @@ export const createActivitySchema = registry.register(
         message:
           'Component allocations must total 100% when multiple components are used.',
         path: ['components'],
-      },
-    )
-    .refine(
-      (data) => {
-        if (!data.lotRequired) return true;
-        return Boolean(data.lots && data.lots.length > 0);
-      },
-      {
-        message: 'At least one lot is required when Lot Required is enabled.',
-        path: ['lots'],
       },
     ),
 );
