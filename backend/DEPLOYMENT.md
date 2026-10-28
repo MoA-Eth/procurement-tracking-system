@@ -304,7 +304,24 @@ npx prisma migrate deploy
 
 ## 6. Automated Backups
 
-The database backup script is located in `scripts/backup-db.sh`. It automatically compresses database backups, keeps logs, and prunes files older than 7 days.
+The backup script is located in `scripts/backup-db.sh`. Each run writes two files to `backups/`:
+
+- `procurement_<timestamp>.sql.gz` — a compressed `pg_dump` of the database
+- `uploads_<timestamp>.tar.gz` — the uploaded documents folder (`uploads/`, or `UPLOADS_DIR`)
+
+Backups are kept locally and are **not** pruned automatically. Copying them to a second server is still a TODO in the script — until that is configured, a disk failure on this server loses the backups too.
+
+### Docker Compose
+
+`docker-compose.prod.yml` stores uploads and backups in the `uploads_prod_data` and `backups_prod_data` volumes, so they survive container rebuilds. Set `BACKUP_ENABLED=true` in `.env` to run the backup automatically at 02:00 (EAT) on the 1st of every month, or run it on demand:
+
+```bash
+docker exec procurement-app bash scripts/backup-db.sh
+```
+
+> [!IMPORTANT]
+> If a deployment already ran without the uploads volume, copy existing files out **before** recreating the container, then copy them into the new volume:
+> `docker cp procurement-app:/usr/src/app/uploads ./uploads-before-volume`
 
 ### Schedule Daily Backups (Nginx/Ubuntu VPS)
 
