@@ -150,8 +150,8 @@ export function DirectorActionPanels({
 
         {/* Delays Table (scrolls within the panel; header stays visible) */}
         <div className="max-h-[28rem] overflow-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 z-10 bg-[#00843D] text-white text-[10px] uppercase font-semibold tracking-wider">
+          <table className="w-full text-left text-[13px]">
+            <thead className="sticky top-0 z-10 table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
               <tr>
                 <th className="px-3.5 py-2.5">Activity &amp; Project</th>
                 <th className="px-2.5 py-2.5">Owner</th>
@@ -159,7 +159,7 @@ export function DirectorActionPanels({
                 <th className="px-3.5 py-2.5 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-200">
               {criticalDelays.length === 0 ? (
                 <tr>
                   <td
@@ -173,7 +173,7 @@ export function DirectorActionPanels({
                 criticalDelays.map((delay) => (
                   <tr
                     key={delay.id}
-                    className="hover:bg-slate-50/60 transition-colors"
+                    className="hover:bg-slate-50 transition-colors"
                   >
                     <td className="px-3.5 py-2.5">
                       <p className="font-semibold text-slate-900 text-xs leading-tight">

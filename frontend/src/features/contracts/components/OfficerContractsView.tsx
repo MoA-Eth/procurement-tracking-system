@@ -785,8 +785,8 @@ export function OfficerContractsView({
           tabIndex={0}
         >
           <table className="w-full min-w-[2500px] table-fixed border-collapse text-left">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="w-12 px-3 py-3 text-center" scope="col">
                   <input
                     aria-label="Select all visible contracts"
@@ -855,7 +855,7 @@ export function OfficerContractsView({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
+            <tbody className="divide-y divide-slate-200 text-xs">
               {paginatedContracts.length > 0 ? (
                 paginatedContracts.map((contract) => {
                   const isDelayed = contract.status === "Delayed";
@@ -863,7 +863,7 @@ export function OfficerContractsView({
                   return (
                     <tr
                       key={contract.id}
-                      className="even:bg-slate-50/50 hover:bg-slate-50/80"
+                      className="even:bg-slate-50/50 hover:bg-slate-50"
                     >
                       <td className="px-3 py-2.5 text-center align-top">
                         <input

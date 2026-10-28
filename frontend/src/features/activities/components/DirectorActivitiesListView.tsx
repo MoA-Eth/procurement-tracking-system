@@ -1746,8 +1746,8 @@ export function DirectorActivitiesListView({
               </div>
 
               <div className="overflow-x-auto rounded-lg border border-slate-200">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-[#00843D] text-white text-[11px] font-semibold uppercase">
+                <table className="w-full text-left text-[13px] border-collapse">
+                  <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                     <tr>
                       <th className="py-2.5 px-3 w-8 text-center">#</th>
                       <th className="py-2.5 px-3">Stage Name</th>
@@ -1763,7 +1763,7 @@ export function DirectorActivitiesListView({
                   </thead>
                   <tbody className="divide-y divide-slate-200/80 text-slate-700 bg-white">
                     {selectedActivity.roadmap.map((stage, idx) => (
-                      <tr key={stage.id} className="hover:bg-slate-50/70">
+                      <tr key={stage.id} className="hover:bg-slate-50">
                         <td className="py-2 px-3 text-center font-semibold text-slate-400">
                           {idx + 1}
                         </td>
@@ -2339,8 +2339,8 @@ export function DirectorActivitiesListView({
           <div className="rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse min-w-[900px]">
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-xs font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-xs font-semibold">
                     <th className="py-3 px-3.5 w-10 text-center">#</th>
                     <th className="py-3 px-3.5 min-w-[170px]">
                       Activity Ref No
@@ -2363,7 +2363,7 @@ export function DirectorActivitiesListView({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {loading && activities.length === 0 ? (
                     <tr>
                       <td
@@ -2415,7 +2415,7 @@ export function DirectorActivitiesListView({
                           className={`transition-all duration-200 cursor-pointer ${
                             isTargeted
                               ? "bg-slate-100/90 ring-2 ring-slate-400 shadow-xs"
-                              : "hover:bg-slate-50/80"
+                              : "hover:bg-slate-50"
                           }`}
                         >
                           <td className="py-3 px-3.5 font-mono text-slate-500 font-medium text-xs text-center">

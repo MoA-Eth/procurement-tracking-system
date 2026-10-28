@@ -221,7 +221,7 @@ export function Step4OfficersReview({
         <div className="rounded-xl border border-slate-200/90 overflow-hidden bg-white shadow-2xs">
           <div className="max-h-80 sm:max-h-96 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs min-w-[680px]">
-              <thead className="sticky top-0 bg-slate-50/95 backdrop-blur-xs z-10 border-b border-slate-200 text-slate-600 text-[11px] font-semibold uppercase tracking-wider select-none">
+              <thead className="sticky top-0 backdrop-blur-xs z-10 select-none table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                 <tr>
                   <th className="w-12 py-3 px-3 text-center">
                     <button
@@ -237,9 +237,9 @@ export function Step4OfficersReview({
                       }
                       className={`h-4.5 w-4.5 mx-auto rounded border flex items-center justify-center transition-colors cursor-pointer ${
                         allFilteredSelected
-                          ? "bg-[#00843D] border-[#00843D] text-white"
+                          ? "bg-slate-100 border-slate-200 text-slate-600"
                           : someFilteredSelected
-                            ? "bg-emerald-100 border-[#00843D] text-[#00843D]"
+                            ? "bg-emerald-100 border-slate-200 text-[#00843D]"
                             : "border-slate-300 bg-white hover:border-slate-400"
                       }`}
                     >
@@ -262,7 +262,7 @@ export function Step4OfficersReview({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
                 {filteredOfficers.map((off) => {
                   const isSelected = selectedOfficerIds.includes(off.id);
                   const initial = off.name
@@ -277,7 +277,7 @@ export function Step4OfficersReview({
                       className={`cursor-pointer transition-colors select-none text-xs ${
                         isSelected
                           ? "bg-emerald-50/70 hover:bg-emerald-50/90"
-                          : "bg-white hover:bg-slate-50/80"
+                          : "bg-white hover:bg-slate-50"
                       }`}
                     >
                       {/* Checkbox */}

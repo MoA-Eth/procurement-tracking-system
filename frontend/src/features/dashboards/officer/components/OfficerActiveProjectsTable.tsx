@@ -40,8 +40,8 @@ export function OfficerActiveProjectsTable({
         tabIndex={0}
       >
         <table className="w-full table-fixed border-collapse text-left">
-          <thead className="bg-[#00843D]">
-            <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+          <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+            <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
               <th className="w-[36%] px-5 py-3.5" scope="col">
                 Project name &amp; code
               </th>

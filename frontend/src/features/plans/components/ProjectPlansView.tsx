@@ -498,8 +498,8 @@ export function ProjectPlansView({
       <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1080px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3.5 px-3.5 text-center w-12">#</th>
                 <th className="py-3.5 px-3.5 min-w-64 max-w-80">Plan Name</th>
                 <th className="py-3.5 px-3.5 w-36">Category</th>
@@ -511,7 +511,7 @@ export function ProjectPlansView({
                 <th className="py-3.5 px-3.5 text-center w-24">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
               {filteredPlans.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-slate-500">

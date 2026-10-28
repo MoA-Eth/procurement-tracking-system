@@ -288,8 +288,8 @@ export function ReportTables({
         {/* 1. Annual Procurement Plan */}
         {activeReport === "annual-plan" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">Project</th>
                 <th className="py-3 px-3">Plan</th>
                 <th className="py-3 px-3">Activity Ref</th>
@@ -307,7 +307,7 @@ export function ReportTables({
                 <th className="py-3 px-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {annualPlanRows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3">
@@ -367,8 +367,8 @@ export function ReportTables({
             {/* Check if rows are milestone-based (legacy test format) or stage-based */}
             {planVsActualRows[0]?.plannedAdvertisingDate !== undefined ? (
               <>
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3 px-3">Activity Ref</th>
                     <th className="py-3 px-3">Description</th>
                     <th className="py-3 px-3">Method</th>
@@ -383,7 +383,7 @@ export function ReportTables({
                     <th className="py-3 px-3">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {planVsActualRows.map((row: any) => (
                     <tr key={row.id} className="hover:bg-slate-50">
                       <td className="py-2.5 px-3">
@@ -440,8 +440,8 @@ export function ReportTables({
               </>
             ) : (
               <>
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3 px-3">Activity Ref</th>
                     <th className="py-3 px-3">Description</th>
                     <th className="py-3 px-3">Project</th>
@@ -462,7 +462,7 @@ export function ReportTables({
                     <th className="py-3 px-3">Remarks</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {planVsActualRows.map((row: any) => (
                     <tr key={row.id} className="hover:bg-slate-50">
                       <td className="py-2.5 px-3">
@@ -525,8 +525,8 @@ export function ReportTables({
         {/* 3. Procurement Step Report */}
         {activeReport === "procurement-step" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1250px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">Activity Ref</th>
                 <th className="py-3 px-3">Description</th>
                 <th className="py-3 px-3">Project</th>
@@ -547,7 +547,7 @@ export function ReportTables({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {stepReportRows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3">
@@ -606,8 +606,8 @@ export function ReportTables({
         {/* 4. Delayed Procurement */}
         {activeReport === "delayed-procurement" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1150px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">Activity Ref</th>
                 <th className="py-3 px-3">Description</th>
                 <th className="py-3 px-3">Project</th>
@@ -623,7 +623,7 @@ export function ReportTables({
                 <th className="py-3 px-3">Remarks</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {delayedProcurementRows.map((row: any) => (
                 <tr key={row.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3">
@@ -689,8 +689,8 @@ export function ReportTables({
             {/* If rows are in aggregated format with monthYear and packageCount */}
             {effectiveMonthlyRows[0]?.packageCount !== undefined ? (
               <>
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3 px-3">Month</th>
                     <th className="py-3 px-3">Category</th>
                     <th className="py-3 px-3">Procurement Method</th>
@@ -703,7 +703,7 @@ export function ReportTables({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {effectiveMonthlyRows.map((row: any) => (
                     <tr key={row.id} className="hover:bg-slate-50">
                       <td className="py-2.5 px-3 font-semibold text-slate-800">
@@ -725,8 +725,8 @@ export function ReportTables({
               </>
             ) : (
               <>
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3 px-3">Reporting Month</th>
                     <th className="py-3 px-3">Activity Ref</th>
                     <th className="py-3 px-3">Description</th>
@@ -743,7 +743,7 @@ export function ReportTables({
                     <th className="py-3 px-3">Next Scheduled Activity</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {effectiveMonthlyRows.map((row: any) => (
                     <tr key={row.id} className="hover:bg-slate-50">
                       <td className="py-2.5 px-3 font-semibold text-slate-800">
@@ -816,8 +816,8 @@ export function ReportTables({
         {/* 6. Quarterly Procurement Summary */}
         {activeReport === "quarterly-summary" && (
           <table className="w-full text-left border-collapse text-xs min-w-[750px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">Procurement Method</th>
                 <th className="py-3 px-3">Category</th>
                 <th className="py-3 px-3">Funding Type</th>
@@ -831,7 +831,7 @@ export function ReportTables({
                 <th className="py-3 px-3">Reporting Period</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {quarterlySummaryRows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3 font-semibold text-slate-800">
@@ -867,8 +867,8 @@ export function ReportTables({
         {(activeReport === "quarterly-detailed" ||
           activeReport === "detailed-procurement") && (
           <table className="w-full text-left border-collapse text-xs min-w-[1150px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">No.</th>
                 <th className="py-3 px-3">Description</th>
                 <th className="py-3 px-3">Category</th>
@@ -886,7 +886,7 @@ export function ReportTables({
                 <th className="py-3 px-3">Officer</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {effectiveQuarterlyDetailed.map((row: any, idx) => (
                 <tr key={row.id || idx} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3 font-sans font-medium text-slate-600 tabular-nums">
@@ -954,8 +954,8 @@ export function ReportTables({
         {/* 8. Contract Register */}
         {activeReport === "contract-register" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1250px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">Contract No</th>
                 <th className="py-3 px-3">Activity Ref</th>
                 <th className="py-3 px-3">Project</th>
@@ -980,7 +980,7 @@ export function ReportTables({
                 <th className="py-3 px-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {contractRegisterRows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3">
@@ -1059,8 +1059,8 @@ export function ReportTables({
         {/* 9. Contract & Payment Status */}
         {activeReport === "contract-payment" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1200px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">Contract No</th>
                 <th className="py-3 px-3">Supplier</th>
                 <th className="py-3 px-3">Currency</th>
@@ -1088,7 +1088,7 @@ export function ReportTables({
                 <th className="py-3 px-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {contractPaymentRows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3">
@@ -1160,8 +1160,8 @@ export function ReportTables({
         {/* 10. Regional / Sector Summary */}
         {activeReport === "regional-sector-summary" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">Organization / Sector / Region</th>
                 <th className="py-3 px-3 text-center font-semibold">
                   Total Activities
@@ -1189,7 +1189,7 @@ export function ReportTables({
                 <th className="py-3 px-3">Delay Measure</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {regionalSectorRows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3 font-semibold text-slate-800">
@@ -1234,8 +1234,8 @@ export function ReportTables({
         {/* 11. Project Summary */}
         {activeReport === "project-summary" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1100px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">Project Code & Name</th>
                 <th className="py-3 px-3 text-center font-semibold">
                   Packages
@@ -1262,7 +1262,7 @@ export function ReportTables({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {projectSummaryRows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3 font-semibold text-slate-800">
@@ -1308,8 +1308,8 @@ export function ReportTables({
             {/* If rows are in ProjectOfficerSummaryRow format */}
             {effectiveOfficerRows[0]?.projectCode !== undefined ? (
               <>
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3 px-3">Project Code</th>
                     <th className="py-3 px-3">Assigned Officer</th>
                     <th className="py-3 px-3 text-right font-semibold">
@@ -1329,7 +1329,7 @@ export function ReportTables({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {effectiveOfficerRows.map((row: any) => (
                     <tr key={row.id} className="hover:bg-slate-50">
                       <td className="py-2.5 px-3">
@@ -1361,8 +1361,8 @@ export function ReportTables({
               </>
             ) : (
               <>
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3 px-3">Responsible Officer</th>
                     <th className="py-3 px-3 text-center font-semibold">
                       Assigned Activities
@@ -1394,7 +1394,7 @@ export function ReportTables({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {effectiveOfficerRows.map((row: any) => (
                     <tr key={row.id} className="hover:bg-slate-50">
                       <td className="py-2.5 px-3 font-semibold text-slate-800">
@@ -1443,8 +1443,8 @@ export function ReportTables({
         {/* 13. Committee / Approval Progress */}
         {activeReport === "committee-approval" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1250px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3.5 min-w-[200px] whitespace-nowrap">
                   Plan Title
                 </th>
@@ -1481,7 +1481,7 @@ export function ReportTables({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {committeeApprovalRows.map((row) => {
                 const dirDec = formatDirectorDecision(row.directorDecision);
                 const commRes = formatCommitteeResult(row.committeeResult);
@@ -1559,8 +1559,8 @@ export function ReportTables({
         {/* 14. Supplier Performance */}
         {activeReport === "supplier-performance" && (
           <table className="w-full text-left border-collapse text-xs min-w-[1150px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-3">Supplier / Contractor Name</th>
                 <th className="py-3 px-3">TIN Number</th>
                 <th className="py-3 px-3 text-center font-semibold">
@@ -1590,7 +1590,7 @@ export function ReportTables({
                 <th className="py-3 px-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-slate-200 text-slate-700">
               {supplierPerformanceRows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3 font-semibold text-slate-900">

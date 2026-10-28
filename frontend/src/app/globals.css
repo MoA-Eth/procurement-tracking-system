@@ -258,6 +258,18 @@ input[type="number"] {
   appearance: textfield;
 }
 
+/* Table headers, as in the Asset Tracking System: light grey row, 13px
+   regular-weight labels in normal case, compact vertical padding. The class
+   wins over per-cell utilities so every table header looks the same. */
+thead.table-head th {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 /* ═════════════════════════════════════════════════════════════════
    MINISTRY OF AGRICULTURE (MoA) — STANDARDIZED DESIGN SYSTEM TOKENS
    ═════════════════════════════════════════════════════════════════ */

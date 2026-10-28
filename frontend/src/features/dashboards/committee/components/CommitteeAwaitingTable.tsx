@@ -65,8 +65,8 @@ export function CommitteeAwaitingTable({
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse text-xs min-w-[600px]">
-          <thead>
-            <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+          <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+            <tr className="bg-slate-100 border-b border-slate-100 text-slate-600 font-semibold text-[10px]">
               <th className="py-3 px-4">Plan</th>
               <th className="py-3 px-4">Project</th>
               <th className="py-3 px-4">Category</th>
@@ -75,7 +75,7 @@ export function CommitteeAwaitingTable({
               <th className="py-3 px-4">Voting Progress</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-700">
+          <tbody className="divide-y divide-slate-200 text-slate-700">
             {loading ? (
               <tr>
                 <td

@@ -1090,8 +1090,8 @@ export function OfficerProcurementPlanDetailView({
 
         <div className="overflow-x-auto max-h-[620px] overflow-y-auto border-b border-slate-200">
           <table className="w-full table-fixed border-collapse text-left">
-            <thead className="sticky top-0 z-10 shadow-xs">
-              <tr className="bg-[#00843D] text-white text-[10px] font-semibold uppercase tracking-wider">
+            <thead className="sticky top-0 z-10 table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[10px] font-semibold">
                 <th className="w-[10%] px-2 py-3" scope="col">
                   Ref
                 </th>

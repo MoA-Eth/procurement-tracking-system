@@ -651,7 +651,7 @@ export function UserProfileModal({
                         className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${
                           isSelected
                             ? "border-[#00843D] bg-emerald-50/40 ring-1 ring-[#00843D]"
-                            : "border-slate-200 hover:bg-slate-50/80"
+                            : "border-slate-200 hover:bg-slate-50"
                         }`}
                       >
                         <input

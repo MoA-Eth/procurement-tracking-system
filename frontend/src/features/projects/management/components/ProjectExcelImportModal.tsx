@@ -331,8 +331,8 @@ export function ProjectExcelImportModal({
 
               {/* Data Table */}
               <div className="max-h-60 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xs">
-                <table className="w-full border-collapse text-left text-xs">
-                  <thead className="sticky top-0 z-10 bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <table className="w-full border-collapse text-left text-[13px]">
+                  <thead className="sticky top-0 z-10 table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                     <tr>
                       <th className="px-3 py-2.5 w-12 text-center">Row</th>
                       <th className="px-3 py-2.5">Project Code</th>
@@ -343,7 +343,7 @@ export function ProjectExcelImportModal({
                       <th className="px-3 py-2.5 text-center">Validation</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-200">
                     {displayedRows.length === 0 ? (
                       <tr>
                         <td

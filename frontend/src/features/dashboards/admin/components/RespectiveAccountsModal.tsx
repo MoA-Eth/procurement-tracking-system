@@ -237,9 +237,9 @@ export function RespectiveAccountsModal({
             </div>
           ) : (
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+              <table className="w-full text-left border-collapse text-[13px]">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 border-b border-slate-200 text-slate-600 font-semibold">
                     <th className="py-3 px-4">User Name</th>
                     <th className="py-3 px-4">Email</th>
                     <th className="py-3 px-4">Role</th>
@@ -247,7 +247,7 @@ export function RespectiveAccountsModal({
                     <th className="py-3 px-4 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-200">
                   {filteredUsers.map((user) => {
                     const detailed = getDetailedAccountStatus(user);
                     const isWorking = workingUserId === user.id;
@@ -255,7 +255,7 @@ export function RespectiveAccountsModal({
                     return (
                       <tr
                         key={user.id}
-                        className="hover:bg-slate-50/70 transition-colors"
+                        className="hover:bg-slate-50 transition-colors"
                       >
                         <td className="py-3.5 px-4 font-semibold text-slate-900">
                           {user.displayName || user.name || "Unnamed"}

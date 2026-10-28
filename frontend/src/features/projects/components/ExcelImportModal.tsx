@@ -349,8 +349,8 @@ export function ExcelImportModal({
               {/* Table Preview */}
               <div className="max-h-64 overflow-x-auto overflow-y-auto rounded-xl border border-slate-200">
                 <table className="w-full min-w-[650px] border-collapse text-left text-xs">
-                  <thead>
-                    <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider sticky top-0 z-10">
+                  <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                    <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold sticky top-0 z-10">
                       <th className="px-3 py-2.5 w-12 text-center">#</th>
                       <th className="px-3 py-2.5 w-20 text-center">Status</th>
                       <th className="px-3 py-2.5">Reference</th>

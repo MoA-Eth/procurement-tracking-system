@@ -269,18 +269,18 @@ export function SystemLogsView() {
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[650px]">
-                  <thead>
-                    <tr className="bg-[#00843D] text-white text-xs font-semibold">
-                      <th className="py-3.5 px-4 font-semibold tracking-wide w-[220px]">
+                  <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                    <tr className="bg-slate-100 text-slate-600 text-xs font-semibold">
+                      <th className="py-3.5 px-4 font-semibold w-[220px]">
                         Timestamp
                       </th>
-                      <th className="py-3.5 px-4 font-semibold tracking-wide w-[180px]">
+                      <th className="py-3.5 px-4 font-semibold w-[180px]">
                         User & Details
                       </th>
-                      <th className="py-3.5 px-4 font-semibold tracking-wide w-[180px]">
+                      <th className="py-3.5 px-4 font-semibold w-[180px]">
                         Action
                       </th>
-                      <th className="py-3.5 px-4 font-semibold tracking-wide">
+                      <th className="py-3.5 px-4 font-semibold">
                         Details / Activity Description
                       </th>
                     </tr>

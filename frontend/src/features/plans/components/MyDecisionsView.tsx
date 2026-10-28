@@ -985,8 +985,8 @@ export function MyDecisionsView({
               {/* Activities Table */}
               <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
                 <table className="w-full text-left border-collapse text-xs min-w-[850px]">
-                  <thead>
-                    <tr className="bg-[#00843D] text-white text-[10px] font-semibold uppercase tracking-wider">
+                  <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                    <tr className="bg-slate-100 text-slate-600 text-[10px] font-semibold">
                       <th className="py-3 px-3.5 w-10 text-center">#</th>
                       <th className="py-3 px-3.5 min-w-36">Activity Ref</th>
                       <th className="py-3 px-3.5 min-w-64">Description</th>
@@ -1000,7 +1000,7 @@ export function MyDecisionsView({
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                  <tbody className="divide-y divide-slate-200 text-slate-700">
                     {loadingActivities ? (
                       <tr>
                         <td
@@ -1174,8 +1174,8 @@ export function MyDecisionsView({
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[1050px] text-xs">
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3.5 px-4 min-w-[260px]">Plan</th>
                     <th className="py-3.5 px-4 min-w-[140px]">Project</th>
                     <th className="py-3.5 px-4 min-w-[120px]">Category</th>
@@ -1189,7 +1189,7 @@ export function MyDecisionsView({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-slate-700">
                   {loading ? (
                     <tr>
                       <td
@@ -1216,7 +1216,7 @@ export function MyDecisionsView({
                       <tr
                         key={plan.id}
                         onClick={() => handleSelectPlan(plan)}
-                        className="hover:bg-slate-50/70 transition-colors cursor-pointer"
+                        className="hover:bg-slate-50 transition-colors cursor-pointer"
                       >
                         <td className="py-3.5 px-4 max-w-xs wrap-break-word">
                           <p className="font-semibold text-slate-900 text-xs wrap-break-word line-clamp-2 leading-snug">

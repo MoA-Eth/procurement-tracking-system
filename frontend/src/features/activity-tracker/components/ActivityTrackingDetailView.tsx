@@ -683,8 +683,8 @@ function RoadmapTrackingSection({
           tabIndex={0}
         >
           <table className="w-304 min-w-304 table-fixed border-collapse text-left">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="w-64 px-4 py-3.5" scope="col">
                   Stage
                 </th>

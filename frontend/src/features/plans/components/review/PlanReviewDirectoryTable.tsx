@@ -432,8 +432,8 @@ export function PlanReviewDirectoryTable({
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[960px]">
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3.5 px-4 text-center w-12">#</th>
                     <th className="py-3.5 px-4 w-36">Project Code</th>
                     <th className="py-3.5 px-4 min-w-[260px]">Project Name</th>
@@ -448,7 +448,7 @@ export function PlanReviewDirectoryTable({
                     <th className="py-3.5 px-4 text-right w-36">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
                   {loading ? (
                     <tr>
                       <td
@@ -487,7 +487,7 @@ export function PlanReviewDirectoryTable({
                             {index + 1}
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className="font-mono font-medium text-[#00843D] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-xs inline-block">
+                            <span className="font-mono font-medium text-[#00843D] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-xs inline-block whitespace-nowrap">
                               {group.projectCode}
                             </span>
                           </td>
@@ -577,7 +577,7 @@ export function PlanReviewDirectoryTable({
                     <h1 className="text-xl font-bold text-slate-900">
                       {currentProjectGroup?.projectName || selectedProjectCode}
                     </h1>
-                    <span className="font-mono text-xs font-medium bg-emerald-50 text-[#00843D] border border-emerald-200 px-2.5 py-0.5 rounded-md">
+                    <span className="whitespace-nowrap font-mono text-xs font-medium bg-emerald-50 text-[#00843D] border border-emerald-200 px-2.5 py-0.5 rounded-md">
                       {selectedProjectCode}
                     </span>
                   </div>
@@ -727,8 +727,8 @@ export function PlanReviewDirectoryTable({
               <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[1040px]">
-                    <thead>
-                      <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                    <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                      <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                         {userRole === "DIRECTOR" && (
                           <th
                             className="w-12 px-3.5 py-3.5 text-center"
@@ -757,7 +757,7 @@ export function PlanReviewDirectoryTable({
                         <th className="py-3.5 px-4 text-right w-52">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                    <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
                       {currentPendingPlans.length === 0 ? (
                         <tr>
                           <td
@@ -916,8 +916,8 @@ export function PlanReviewDirectoryTable({
             <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[960px]">
-                  <thead>
-                    <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                  <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                    <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                       <th className="py-3.5 px-4 min-w-[280px]">
                         Plan Name / Reference
                       </th>
@@ -930,7 +930,7 @@ export function PlanReviewDirectoryTable({
                       <th className="py-3.5 px-4 text-right w-36">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                  <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
                     {currentApprovedPlans.length === 0 ? (
                       <tr>
                         <td
@@ -1011,8 +1011,8 @@ export function PlanReviewDirectoryTable({
               <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[960px]">
-                    <thead>
-                      <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                    <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                      <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                         <th className="py-3.5 px-4 min-w-[240px]">
                           Plan Name / Reference
                         </th>
@@ -1026,7 +1026,7 @@ export function PlanReviewDirectoryTable({
                         <th className="py-3.5 px-4 text-right w-36">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                    <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
                       {currentReturnedPlans.length === 0 ? (
                         <tr>
                           <td

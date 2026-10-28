@@ -165,21 +165,15 @@ export function UserAccessTable({
         <div className="overflow-hidden bg-white">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[650px]">
-              <thead>
+              <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                 <tr className="bg-[#f8fafc] text-[#334155] text-xs font-semibold border-b border-slate-200/80">
-                  <th className="py-3.5 px-4 font-semibold tracking-wide">
+                  <th className="py-3.5 px-4 font-semibold">
                     User Name &amp; Details
                   </th>
-                  <th className="py-3.5 px-4 font-semibold tracking-wide">
-                    Email Address
-                  </th>
-                  <th className="py-3.5 px-4 font-semibold tracking-wide">
-                    Assigned Role
-                  </th>
-                  <th className="py-3.5 px-4 font-semibold tracking-wide">
-                    Account Status
-                  </th>
-                  <th className="py-3.5 px-4 font-semibold text-center tracking-wide">
+                  <th className="py-3.5 px-4 font-semibold">Email Address</th>
+                  <th className="py-3.5 px-4 font-semibold">Assigned Role</th>
+                  <th className="py-3.5 px-4 font-semibold">Account Status</th>
+                  <th className="py-3.5 px-4 font-semibold text-center">
                     Actions
                   </th>
                 </tr>

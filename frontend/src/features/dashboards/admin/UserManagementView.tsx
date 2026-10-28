@@ -1257,27 +1257,27 @@ export function UserManagementView({
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-187.5">
-                      <thead>
-                        <tr className="bg-[#00843D] text-white text-xs font-semibold">
-                          <th className="py-3.5 px-4 font-semibold tracking-wide">
+                      <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                        <tr className="bg-slate-100 text-slate-600 text-xs font-semibold">
+                          <th className="py-3.5 px-4 font-semibold">
                             User Name & Details
                           </th>
-                          <th className="py-3.5 px-4 font-semibold tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold">
                             Email Address
                           </th>
-                          <th className="py-3.5 px-4 font-semibold tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold">
                             Assigned Role
                           </th>
-                          <th className="py-3.5 px-4 font-semibold tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold">
                             Account Status
                           </th>
-                          <th className="py-3.5 px-4 font-semibold tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold">
                             Last Login
                           </th>
-                          <th className="py-3.5 px-4 font-semibold text-center tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold text-center">
                             Cancel Invitation
                           </th>
-                          <th className="py-3.5 px-4 font-semibold text-center tracking-wide">
+                          <th className="py-3.5 px-4 font-semibold text-center">
                             Actions
                           </th>
                         </tr>

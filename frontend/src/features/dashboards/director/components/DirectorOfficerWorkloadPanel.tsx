@@ -332,16 +332,16 @@ export function DirectorOfficerWorkloadPanel() {
 
       {/* Table of Officers */}
       <div className="overflow-x-auto rounded-xl border border-slate-200">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+        <table className="w-full text-left text-[13px] border-collapse">
+          <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+            <tr className="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200">
               <th className="py-3 px-4">Procurement Officer</th>
               <th className="py-3 px-4 text-center">Projects Assigned</th>
               <th className="py-3 px-4 text-center">Delayed Activities</th>
               <th className="py-3 px-4">Where & Why Delay Happened</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
+          <tbody className="divide-y divide-slate-200 text-slate-800 font-medium">
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={4} className="py-8 text-center text-slate-400">
@@ -352,7 +352,7 @@ export function DirectorOfficerWorkloadPanel() {
               filtered.map((officer) => (
                 <tr
                   key={officer.officerId}
-                  className="align-top hover:bg-slate-50/70 transition-colors"
+                  className="align-top hover:bg-slate-50 transition-colors"
                 >
                   {/* Officer Info */}
                   <td className="py-3.5 px-4 min-w-[180px]">

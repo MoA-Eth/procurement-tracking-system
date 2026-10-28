@@ -32,7 +32,7 @@ export function CommitteeRecentDecisions({
           recentDecisions.map((plan) => (
             <div
               key={plan.id}
-              className="p-4.5 space-y-3 hover:bg-slate-50/50 transition-colors"
+              className="p-4.5 space-y-3 hover:bg-slate-50 transition-colors"
             >
               <div className="flex items-start justify-between gap-2">
                 <Link

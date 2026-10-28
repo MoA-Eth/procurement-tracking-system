@@ -1777,8 +1777,8 @@ export function CommitteeProgressView({
                 </div>
 
                 <div className="overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-[#00843D] text-white font-semibold uppercase text-[10px] tracking-wider">
+                  <table className="w-full text-left text-[13px] border-collapse">
+                    <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                       <tr>
                         <th className="py-2.5 px-3 w-10 text-center">#</th>
                         <th className="py-2.5 px-3">Ref No</th>
@@ -1790,7 +1790,7 @@ export function CommitteeProgressView({
                         <th className="py-2.5 px-3 text-center">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-200">
                       {displayedActivities.map((act: any, idx: number) => {
                         const ref =
                           act.reference ||
@@ -2091,8 +2091,8 @@ export function CommitteeProgressView({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[880px]">
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3 px-4 min-w-36">Plan Number</th>
                     <th className="py-3 px-4 min-w-56">
                       Plan Title &amp; Project
@@ -2107,7 +2107,7 @@ export function CommitteeProgressView({
                     <th className="py-3 px-4 text-center min-w-28">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
                   {committeeItems.length === 0 ? (
                     <tr>
                       <td
@@ -2124,7 +2124,7 @@ export function CommitteeProgressView({
                     committeeItems.map((item) => (
                       <tr
                         key={item.id}
-                        className="hover:bg-slate-50/70 transition-colors"
+                        className="hover:bg-slate-50 transition-colors"
                       >
                         {/* Plan Number */}
                         <td className="py-3 px-4 whitespace-nowrap">
@@ -2270,8 +2270,8 @@ export function CommitteeProgressView({
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[880px]">
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-3 px-4 min-w-36">Plan Number</th>
                     <th className="py-3 px-4 min-w-56">
                       Plan Title &amp; Project
@@ -2286,7 +2286,7 @@ export function CommitteeProgressView({
                     <th className="py-3 px-4 text-center min-w-28">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
                   {managementItems.length === 0 ? (
                     <tr>
                       <td
@@ -2303,7 +2303,7 @@ export function CommitteeProgressView({
                     managementItems.map((item) => (
                       <tr
                         key={item.id}
-                        className="hover:bg-slate-50/70 transition-colors"
+                        className="hover:bg-slate-50 transition-colors"
                       >
                         {/* Plan Number */}
                         <td className="py-3 px-4 whitespace-nowrap">

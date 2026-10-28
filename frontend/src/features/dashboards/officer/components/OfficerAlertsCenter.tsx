@@ -65,7 +65,7 @@ export function OfficerAlertsCenter({
                   <Link
                     key={alert.id}
                     href={alert.href}
-                    className="group flex items-stretch gap-3 sm:gap-3.5 rounded-md border border-slate-200/90 bg-white p-3 sm:p-3.5 shadow-2xs transition-all hover:border-[#00843D]/40 hover:bg-slate-50/40 hover:shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]"
+                    className="group flex items-stretch gap-3 sm:gap-3.5 rounded-md border border-slate-200/90 bg-white p-3 sm:p-3.5 shadow-2xs transition-all hover:border-[#00843D]/40 hover:bg-slate-50 hover:shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]"
                   >
                     {/* Left vertical accent bar */}
                     <div

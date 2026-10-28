@@ -581,7 +581,7 @@ export function PlanFullScreenReviewView({
           {/* Clean View-First Package Activities Table */}
           <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
             <table className="w-full text-left text-xs border-collapse min-w-[840px]">
-              <thead className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+              <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                 <tr>
                   <th className="py-3 px-3.5 w-8 text-center">#</th>
                   <th className="py-3 px-3.5 min-w-[170px] w-44">

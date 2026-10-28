@@ -576,9 +576,9 @@ export function OfficerContractDetailView({
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/60 font-semibold text-slate-600">
+            <table className="w-full text-left text-[13px] border-collapse">
+              <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                <tr className="border-b border-slate-200 bg-slate-100 font-semibold text-slate-600">
                   <th className="px-4 py-3 w-12 text-center">#</th>
                   <th className="px-4 py-3">Variation Type</th>
                   <th className="px-4 py-3 text-right">Variation Amount</th>
@@ -594,7 +594,7 @@ export function OfficerContractDetailView({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
                 {mergedAmendments.map((amendment, index) => {
                   const isAddition = amendment.amount > 0;
                   const isReduction = amendment.amount < 0;
@@ -610,7 +610,7 @@ export function OfficerContractDetailView({
                   return (
                     <tr
                       key={amendment.id || `amendment-${index}`}
-                      className="hover:bg-slate-50/70 transition-colors"
+                      className="hover:bg-slate-50 transition-colors"
                     >
                       <td className="px-4 py-3 text-center font-mono text-slate-400 text-xs">
                         {amendment.id || index + 1}
@@ -783,9 +783,9 @@ export function OfficerContractDetailView({
 
         {payments.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/60 font-semibold text-slate-600">
+            <table className="w-full text-left text-[13px] border-collapse">
+              <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                <tr className="border-b border-slate-200 bg-slate-100 font-semibold text-slate-600">
                   <th className="px-4 py-3 w-12 text-center">#</th>
                   <th className="px-4 py-3">Payment Type</th>
                   <th className="px-4 py-3 text-right">Amount</th>
@@ -795,14 +795,14 @@ export function OfficerContractDetailView({
                   <th className="px-4 py-3">Remarks / Notes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
                 {payments.map((payment, index) => {
                   const paymentCurrency =
                     payment.currency || contract.currency || "ETB";
                   return (
                     <tr
                       key={payment.id || `payment-${index}`}
-                      className="hover:bg-slate-50/70 transition-colors"
+                      className="hover:bg-slate-50 transition-colors"
                     >
                       <td className="px-4 py-3 text-center font-mono text-slate-400 text-xs">
                         {index + 1}

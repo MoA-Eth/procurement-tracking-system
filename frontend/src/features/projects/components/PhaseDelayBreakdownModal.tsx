@@ -682,9 +682,9 @@ export function PhaseDelayBreakdownModal({
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-100/70 text-slate-600 text-[10px] font-bold uppercase tracking-[0.06em] border-b border-slate-200/80">
+              <table className="w-full text-left border-collapse text-[13px]">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[10px] font-bold tracking-[0.06em] border-b border-slate-200/80">
                     <th className="py-2.5 px-3.5 w-10 text-center">#</th>
                     <th className="py-2.5 px-4 font-bold">
                       Process / Phase Name
@@ -712,7 +712,7 @@ export function PhaseDelayBreakdownModal({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-200">
                   {displayedPhases.length === 0 ? (
                     <tr>
                       <td
@@ -746,8 +746,8 @@ export function PhaseDelayBreakdownModal({
                             isDelayed
                               ? "bg-rose-50/30 hover:bg-rose-50/60"
                               : isCompleted
-                                ? "bg-white hover:bg-slate-50/70"
-                                : "bg-slate-50/20 hover:bg-slate-50/60"
+                                ? "bg-white hover:bg-slate-50"
+                                : "bg-slate-50/20 hover:bg-slate-50"
                           }`}
                         >
                           <td className="py-3 px-3.5 text-center">

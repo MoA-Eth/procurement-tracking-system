@@ -95,18 +95,18 @@ export function RecentAuditTrailTable({
         <div className="overflow-hidden bg-white">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[600px]">
-              <thead>
-                <tr className="bg-[#00843D] text-white text-xs font-semibold uppercase tracking-wider">
-                  <th className="py-3.5 px-4 font-semibold tracking-wide w-[200px]">
+              <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                <tr className="bg-slate-100 text-slate-600 text-xs font-semibold">
+                  <th className="py-3.5 px-4 font-semibold w-[200px]">
                     Timestamp
                   </th>
-                  <th className="py-3.5 px-4 font-semibold tracking-wide w-[170px]">
+                  <th className="py-3.5 px-4 font-semibold w-[170px]">
                     User & Details
                   </th>
-                  <th className="py-3.5 px-4 font-semibold tracking-wide w-[170px]">
+                  <th className="py-3.5 px-4 font-semibold w-[170px]">
                     Action
                   </th>
-                  <th className="py-3.5 px-4 font-semibold tracking-wide">
+                  <th className="py-3.5 px-4 font-semibold">
                     Details / Activity Description
                   </th>
                 </tr>
@@ -118,7 +118,7 @@ export function RecentAuditTrailTable({
                   return (
                     <tr
                       key={log.id}
-                      className={`border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50/80 cursor-default ${
+                      className={`border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50 cursor-default ${
                         isOddRow ? "bg-[#f8fafc]/60" : "bg-white"
                       }`}
                     >

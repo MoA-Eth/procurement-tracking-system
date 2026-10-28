@@ -538,8 +538,8 @@ export function SettingsManagementView({
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[650px]">
-            <thead>
-              <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                 <th className="py-3 px-4 w-12 text-center">#</th>
                 <th className="py-3 px-4 w-44">
                   {activeTab === "PROJECT_CODE" ? "Project Short Code" : "Code"}
@@ -551,7 +551,7 @@ export function SettingsManagementView({
                 <th className="py-3 px-4 w-28 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs">
+            <tbody className="divide-y divide-slate-200 text-xs">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="py-10 text-center text-slate-400">
@@ -601,7 +601,7 @@ export function SettingsManagementView({
                 filteredLookups.map((item, idx) => (
                   <tr
                     key={item.id || item.code}
-                    className="hover:bg-slate-50/80 transition-colors"
+                    className="hover:bg-slate-50 transition-colors"
                   >
                     <td className="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">
                       {idx + 1}

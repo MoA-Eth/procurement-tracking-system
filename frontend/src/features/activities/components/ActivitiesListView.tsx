@@ -750,7 +750,7 @@ export function ActivitiesListView({
               <div className="rounded-lg border border-slate-200 overflow-hidden text-xs">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[650px]">
-                    <thead className="bg-[#00843D] text-white text-[11px] font-semibold uppercase">
+                    <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                       <tr>
                         <th className="py-2.5 px-3 w-8 text-center">#</th>
                         <th className="py-2.5 px-3 min-w-[180px]">
@@ -768,7 +768,7 @@ export function ActivitiesListView({
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
+                    <tbody className="divide-y divide-slate-200 bg-white">
                       {selectedActivity.roadmap.map((stage, idx) => (
                         <tr key={stage.id} className="hover:bg-slate-50">
                           <td className="py-2 px-3 text-center font-semibold text-slate-400">
@@ -971,8 +971,8 @@ export function ActivitiesListView({
           <div className="rounded-xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[920px]">
-                <thead>
-                  <tr className="bg-[#00843D] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                     <th className="py-2.5 px-3 text-center w-10">#</th>
                     <th className="py-2.5 px-3 min-w-[140px]">
                       Activity Ref No
@@ -995,7 +995,7 @@ export function ActivitiesListView({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                <tbody className="divide-y divide-slate-200 text-xs text-slate-700">
                   {filteredActivities.length === 0 ? (
                     <tr>
                       <td
@@ -1057,7 +1057,7 @@ export function ActivitiesListView({
                         <tr
                           key={act.id}
                           onClick={() => setSelectedActivity(act)}
-                          className="hover:bg-slate-50/70 transition-colors cursor-pointer"
+                          className="hover:bg-slate-50 transition-colors cursor-pointer"
                         >
                           <td className="py-2 px-3 font-mono text-slate-400 font-semibold text-center">
                             {index + 1}
