@@ -12,6 +12,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5000
+    volumes:
+      # Uploaded documents and backups must survive container rebuilds
+      - uploads_prod_data:/usr/src/app/uploads
+      - backups_prod_data:/usr/src/app/backups
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,3 +52,5 @@ services:
 volumes:
   postgres_prod_data:
   redis_prod_data:
+  uploads_prod_data:
+  backups_prod_data:

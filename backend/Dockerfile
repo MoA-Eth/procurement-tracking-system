@@ -24,6 +24,9 @@ WORKDIR /usr/src/app
 
 ENV NODE_ENV=production
 
+# bash and pg_dump (matching the Postgres 17 server) for scripts/backup-db.sh
+RUN apk add --no-cache bash postgresql17-client
+
 # Copy package files and prisma schema for postinstall script
 COPY package*.json ./
 COPY prisma.config.ts ./
@@ -37,8 +40,11 @@ COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/src/generated ./src/generated
 COPY --from=builder /usr/src/app/src/generated ./dist/generated
 
-# Create uploads directory and assign ownership to node user
-RUN mkdir -p uploads && chown -R node:node /usr/src/app
+# Backup script run by the in-app backup job (src/jobs/backup.job.ts)
+COPY scripts/ ./scripts/
+
+# Create uploads and backups directories and assign ownership to node user
+RUN mkdir -p uploads backups && chown -R node:node /usr/src/app
 
 USER node
 
