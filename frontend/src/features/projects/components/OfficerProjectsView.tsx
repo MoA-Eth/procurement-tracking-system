@@ -2287,14 +2287,6 @@ export function OfficerProjectsView({
   }
 
   if (selectedProject && (mode === "create-plan" || mode === "edit-plan")) {
-    const actCount =
-      mode === "edit-plan" && selectedPlan
-        ? selectedPlanActivities.length ||
-          selectedPlan.activities ||
-          selectedPlan.planActivities?.length ||
-          0
-        : 0;
-
     return (
       <CreateProcurementPlanView
         key={
@@ -2302,7 +2294,6 @@ export function OfficerProjectsView({
             ? selectedPlan?.reference || "edit-plan"
             : "create-plan"
         }
-        activityCount={actCount}
         initialPlan={mode === "edit-plan" ? selectedPlan : undefined}
         onSavePlan={savePlan}
         project={selectedProject}

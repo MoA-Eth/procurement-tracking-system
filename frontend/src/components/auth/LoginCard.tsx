@@ -53,6 +53,7 @@ export function LoginCard({ onOpenTechSupport }: LoginCardProps) {
         </div>
 
         <div className="mt-3 text-center">
+          <p className="text-sm font-medium text-[#58709a]">Welcome</p>
           <h1
             id="sign-in-title"
             className="auth-page-title font-semibold tracking-tight text-[#0A3C2F]"

@@ -142,7 +142,7 @@ describe("CreateProcurementPlanView", () => {
     expect(markup).toContain("Enter custom year");
   });
 
-  it("locks the procurement category when the plan already has activities", () => {
+  it("allows editing the procurement category when the plan already has activities", () => {
     const planWithActivities = {
       activities: 3,
       budgetYear: "2017 EFY",
@@ -172,9 +172,13 @@ describe("CreateProcurementPlanView", () => {
       />,
     );
 
-    expect(markup).toContain('disabled=""');
-    expect(markup).toContain(
-      "Procurement category cannot be edited because this plan already contains 3 activities",
+    const categorySelect = markup.match(
+      /<select[^>]*id="procurementCategory"[^>]*>/,
+    )?.[0];
+    expect(categorySelect).toBeDefined();
+    expect(categorySelect).not.toContain("disabled");
+    expect(markup).not.toContain(
+      "Procurement category cannot be edited because this plan already contains",
     );
   });
 

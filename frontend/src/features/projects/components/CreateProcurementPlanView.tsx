@@ -258,12 +258,10 @@ export function suggestedPlanName(
 }
 
 export function CreateProcurementPlanView({
-  activityCount,
   initialPlan,
   onSavePlan,
   project,
 }: {
-  activityCount?: number;
   initialPlan?: ProcurementPlanSummary;
   onSavePlan: (
     input: ProcurementPlanDraftInput,
@@ -273,11 +271,6 @@ export function CreateProcurementPlanView({
   project: OfficerProject;
 }) {
   const isEditing = Boolean(initialPlan);
-  const effectiveActivityCount =
-    activityCount !== undefined
-      ? activityCount
-      : (initialPlan?.activities ?? initialPlan?.planActivities?.length ?? 0);
-  const hasActivities = effectiveActivityCount > 0;
   const [selectedCategory, setSelectedCategory] =
     useState<ProcurementCategory | null>(
       () =>
@@ -626,12 +619,7 @@ export function CreateProcurementPlanView({
                 <select
                   aria-invalid={categoryError}
                   aria-required="true"
-                  className={`${compactFieldClasses} appearance-none pr-9 ${
-                    hasActivities
-                      ? "bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200"
-                      : ""
-                  }`}
-                  disabled={hasActivities}
+                  className={`${compactFieldClasses} appearance-none pr-9`}
                   id="procurementCategory"
                   name="procurementCategory"
                   onChange={(event) =>
@@ -655,19 +643,7 @@ export function CreateProcurementPlanView({
                   className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-slate-500"
                 />
               </div>
-              {hasActivities ? (
-                <p className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-700">
-                  <LockKeyhole
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 shrink-0 text-amber-600"
-                  />
-                  <span>
-                    Procurement category cannot be edited because this plan
-                    already contains {effectiveActivityCount}{" "}
-                    {effectiveActivityCount === 1 ? "activity" : "activities"}.
-                  </span>
-                </p>
-              ) : categoryError ? (
+              {categoryError ? (
                 <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
                   <Info aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                   Please select a procurement category.
