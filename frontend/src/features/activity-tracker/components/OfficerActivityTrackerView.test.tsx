@@ -115,6 +115,48 @@ describe("OfficerActivityTrackerView", () => {
       "Contracted",
     );
   });
+
+  it("does not report earlier stages as delayed when no tracking is saved in this browser", () => {
+    const base = makeTrackedItem();
+    const roadmap = base.activity.details!.roadmap.map((stage) =>
+      stage.name === "Bid Opening"
+        ? { ...stage, gregorianDate: "2026-08-25" }
+        : stage,
+    );
+    const item: OfficerTrackedActivityItem = {
+      ...base,
+      activity: {
+        ...base.activity,
+        details: { ...base.activity.details!, roadmap },
+      },
+      tracking: { ...base.tracking, stages: [] },
+    };
+
+    // "Preparation of Specification" (2026-07-08) comes before the current
+    // stage, so it is finished; "Bid Opening" is not due until 2026-08-25.
+    expect(trackerDisplayStatus(item, "2026-08-22")).toBe("In Progress");
+    // Once the current stage passes its date, the activity is delayed.
+    expect(trackerDisplayStatus(item, "2026-08-27")).toBe("Delayed");
+  });
+
+  it("uses the server stage status when no tracking is saved in this browser", () => {
+    const base = makeTrackedItem();
+    const roadmap = base.activity.details!.roadmap.map((stage) => ({
+      ...stage,
+      status: stage.name === "Signed Contract" ? "NOT_STARTED" : "COMPLETED",
+    }));
+    const item: OfficerTrackedActivityItem = {
+      ...base,
+      activity: {
+        ...base.activity,
+        currentStage: "Signed Contract",
+        details: { ...base.activity.details!, roadmap },
+      },
+      tracking: { ...base.tracking, stages: [] },
+    };
+
+    expect(trackerDisplayStatus(item, "2026-08-22")).toBe("In Progress");
+  });
 });
 
 function makeTrackedItem({

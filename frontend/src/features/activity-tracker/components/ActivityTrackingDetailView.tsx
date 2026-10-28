@@ -10,6 +10,7 @@ import {
 import type { OfficerTrackedActivityItem } from "./OfficerActivityTrackerView";
 import {
   calculateDelayDays,
+  defaultStageTracking,
   effectiveTargetDate,
   type ActivityStageStatus,
   type ActivityStageTracking,
@@ -957,17 +958,8 @@ function trackingForStage(
   item: OfficerTrackedActivityItem,
 ): ActivityStageTracking {
   return (
-    record.stages.find((tracking) => tracking.stageName === stage.name) ?? {
-      remarks: stage.remarks || "",
-      revisions: [],
-      stageName: stage.name,
-      status: stage.notApplicable
-        ? "Not Applicable"
-        : stage.name === item.activity.currentStage &&
-            item.activity.status !== "Not Started"
-          ? "In Progress"
-          : "Not Started",
-    }
+    record.stages.find((tracking) => tracking.stageName === stage.name) ??
+    defaultStageTracking(item.activity, stage)
   );
 }
 

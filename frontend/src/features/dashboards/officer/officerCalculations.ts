@@ -378,10 +378,11 @@ export function extractLiveDelayedActivities(
           st.status !== "NOT_STARTED" &&
           st.status !== "Not Started" &&
           st.status !== "Pending" &&
-          ((st.currentTargetEndDate &&
-            new Date(st.currentTargetEndDate).getTime() < currentTime) ||
-            (st.plannedEndDate &&
-              new Date(st.plannedEndDate).getTime() < currentTime))),
+          // A replanned stage is due on its revised target, not the original
+          // plan, so only fall back to plannedEndDate when it was never revised.
+          Boolean(st.currentTargetEndDate || st.plannedEndDate) &&
+          new Date(st.currentTargetEndDate || st.plannedEndDate).getTime() <
+            currentTime),
     );
 
     const isDelayed =

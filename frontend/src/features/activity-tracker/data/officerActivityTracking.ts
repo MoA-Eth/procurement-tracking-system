@@ -1,6 +1,8 @@
 import {
+  type ProcurementActivityRoadmapStage,
   type ProcurementActivitySummary,
   isTestOrJunkActivity,
+  toEthiopianDateString,
 } from "@/features/projects/data/officerActivityDrafts";
 
 export const OFFICER_ACTIVITY_TRACKING_STORAGE_KEY =
@@ -210,6 +212,82 @@ function summaryTrackingRecord(
     projectCode,
     stages: [],
     updatedAt: "",
+  };
+}
+
+// Server StageStatus values (and their display labels) mapped to tracker labels.
+// A DELAYED stage is still running; its delay is calculated from the dates.
+const SERVER_STAGE_STATUS: Record<string, ActivityStageStatus> = {
+  COMPLETED: "Completed",
+  Completed: "Completed",
+  IN_PROGRESS: "In Progress",
+  "In Progress": "In Progress",
+  DELAYED: "In Progress",
+  Delayed: "In Progress",
+  NOT_APPLICABLE: "Not Applicable",
+  "Not Applicable": "Not Applicable",
+};
+
+/**
+ * Tracking for a roadmap stage that has no tracking record saved in this
+ * browser. Uses what the server knows about the stage (status and actual
+ * completion date) and treats stages before the activity's current stage as
+ * completed, so finished stages with past dates are not reported as delayed.
+ */
+export function defaultStageTracking(
+  activity: Pick<
+    ProcurementActivitySummary,
+    "currentStage" | "details" | "status"
+  >,
+  stage: ProcurementActivityRoadmapStage,
+): ActivityStageTracking {
+  const actualIso = (stage.actualEndDate || stage.actualDate || "").slice(
+    0,
+    10,
+  );
+  const roadmap = activity.details?.roadmap ?? [];
+  const currentIndex = roadmap.findIndex(
+    (entry) => entry.name === activity.currentStage,
+  );
+  const stageIndex = roadmap.findIndex((entry) => entry.name === stage.name);
+
+  let status: ActivityStageStatus;
+  if (stage.notApplicable) {
+    status = "Not Applicable";
+  } else if (activity.status === "Completed") {
+    status = "Completed";
+  } else if (stage.status && SERVER_STAGE_STATUS[stage.status]) {
+    status = SERVER_STAGE_STATUS[stage.status];
+  } else if (actualIso) {
+    status = "Completed";
+  } else if (
+    stage.name === activity.currentStage &&
+    activity.status !== "Not Started"
+  ) {
+    status = "In Progress";
+  } else if (
+    currentIndex >= 0 &&
+    stageIndex >= 0 &&
+    stageIndex < currentIndex
+  ) {
+    status = "Completed";
+  } else {
+    status = "Not Started";
+  }
+
+  return {
+    ...(actualIso
+      ? {
+          actualDate: {
+            ethiopian: toEthiopianDateString(actualIso),
+            gregorian: actualIso,
+          },
+        }
+      : {}),
+    remarks: stage.remarks || "",
+    revisions: [],
+    stageName: stage.name,
+    status,
   };
 }
 

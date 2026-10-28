@@ -3,6 +3,7 @@
 import { StatusText } from "../../../components/dashboard/StatusText";
 import {
   calculateDelayDays,
+  defaultStageTracking,
   createInitialActivityTrackingRecord,
   effectiveTargetDate,
   findActivityTrackingRecord,
@@ -575,19 +576,7 @@ function resolvedStageTracking(
   return (
     item.tracking.stages.find(
       (tracking) => tracking.stageName === stage.name,
-    ) ?? {
-      remarks: stage.remarks || "",
-      revisions: [],
-      stageName: stage.name,
-      status: stage.notApplicable
-        ? "Not Applicable"
-        : item.activity.status === "Completed"
-          ? "Completed"
-          : stage.name === item.activity.currentStage &&
-              item.activity.status !== "Not Started"
-            ? "In Progress"
-            : "Not Started",
-    }
+    ) ?? defaultStageTracking(item.activity, stage)
   );
 }
 

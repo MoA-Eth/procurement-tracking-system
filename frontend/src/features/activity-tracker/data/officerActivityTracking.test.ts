@@ -4,6 +4,7 @@ import type { ProcurementActivitySummary } from "@/features/projects/data/office
 import {
   calculateDelayDays,
   createInitialActivityTrackingRecord,
+  defaultStageTracking,
   effectiveTargetDate,
   parseActivityTrackingRecords,
   upsertActivityTrackingRecord,
@@ -496,5 +497,63 @@ describe("officer activity tracking", () => {
         progressPercent: 75,
       }),
     ).toEqual([{ ...record, progressPercent: 75 }]);
+  });
+});
+
+describe("defaultStageTracking", () => {
+  const stage = (name: string, extra: Record<string, unknown> = {}) => ({
+    allowNotApplicable: false,
+    days: "14",
+    ethiopianDate: "",
+    gregorianDate: "2026-07-08",
+    name,
+    notApplicable: false,
+    remarks: "",
+    ...extra,
+  });
+  const roadmapActivity = (
+    currentStage: string,
+    roadmap: ReturnType<typeof stage>[],
+  ): ProcurementActivitySummary => ({
+    ...activity,
+    currentStage,
+    details: {
+      ...completedActivity.details!,
+      roadmap,
+    },
+  });
+
+  it("maps server stage statuses", () => {
+    const roadmap = [
+      stage("Preparation", { status: "COMPLETED" }),
+      stage("Bid Opening", { status: "DELAYED" }),
+      stage("Evaluation", { status: "NOT_APPLICABLE" }),
+    ];
+    const act = roadmapActivity("Bid Opening", roadmap);
+    expect(defaultStageTracking(act, roadmap[0]).status).toBe("Completed");
+    expect(defaultStageTracking(act, roadmap[1]).status).toBe("In Progress");
+    expect(defaultStageTracking(act, roadmap[2]).status).toBe("Not Applicable");
+  });
+
+  it("treats a stage with an actual completion date as completed", () => {
+    const roadmap = [stage("Preparation", { actualEndDate: "2026-07-10" })];
+    const tracking = defaultStageTracking(
+      roadmapActivity("Bid Opening", roadmap),
+      roadmap[0],
+    );
+    expect(tracking.status).toBe("Completed");
+    expect(tracking.actualDate?.gregorian).toBe("2026-07-10");
+  });
+
+  it("treats stages before the current stage as completed and later ones as not started", () => {
+    const roadmap = [
+      stage("Preparation"),
+      stage("Bid Opening"),
+      stage("Signed Contract"),
+    ];
+    const act = roadmapActivity("Bid Opening", roadmap);
+    expect(defaultStageTracking(act, roadmap[0]).status).toBe("Completed");
+    expect(defaultStageTracking(act, roadmap[1]).status).toBe("In Progress");
+    expect(defaultStageTracking(act, roadmap[2]).status).toBe("Not Started");
   });
 });

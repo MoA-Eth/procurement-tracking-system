@@ -407,6 +407,38 @@ describe("Real Data Synchronization - Officer Dashboard & Alerts Center", () => 
     expect(liveDelayed).toHaveLength(0);
   });
 
+  it("extractLiveDelayedActivities uses the revised target of a replanned stage", () => {
+    const now = new Date("2026-09-04T08:00:00Z").getTime();
+    const mockPlans: any[] = [
+      {
+        id: "plan-1",
+        status: "APPROVED",
+        project: { code: "PRJ-24-001" },
+        activities: [
+          {
+            id: "act-replanned",
+            reference: "ACT-REPLANNED",
+            status: "IN_PROGRESS",
+            stages: [
+              {
+                id: "st-1",
+                name: "Bid Evaluation",
+                status: "IN_PROGRESS",
+                // Original end date has passed, but the stage was replanned
+                plannedEndDate: "2026-08-01T00:00:00Z",
+                currentTargetEndDate: "2026-09-30T00:00:00Z",
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    expect(extractLiveDelayedActivities(mockPlans, now, [], [])).toHaveLength(
+      0,
+    );
+  });
+
   it("calculateOverviewStatusItems accurately tallies draft, submitted, returned, and approved plans", () => {
     const mockPlans: any[] = [
       { id: "p1", status: "DRAFT" },

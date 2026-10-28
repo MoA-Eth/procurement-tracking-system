@@ -440,7 +440,7 @@ function isActivityRoadmapStage(
   return typeof stage.name === "string";
 }
 
-function toEthiopianDateString(isoDate?: string | null): string {
+export function toEthiopianDateString(isoDate?: string | null): string {
   if (!isoDate) return "";
   const cleanIso = isoDate.slice(0, 10);
   const ethiopianObj = gregorianToEthiopian(cleanIso);
