@@ -52,7 +52,7 @@ afterAll(async () => {
 });
 
 describe('executive module access', () => {
-  it.each(['ADMIN', 'DIRECTOR', 'MANAGEMENT'])(
+  it.each(['DIRECTOR', 'MANAGEMENT'])(
     'allows authenticated %s',
     async (role) => {
       const response = await fetch(origin, {
@@ -63,7 +63,7 @@ describe('executive module access', () => {
       expect((await response.json()).records).toEqual([]);
     },
   );
-  it.each(['OFFICER', 'ENDORSING_COMMITTEE', 'UNKNOWN'])(
+  it.each(['ADMIN', 'OFFICER', 'ENDORSING_COMMITTEE', 'UNKNOWN'])(
     'denies %s without reading procurement data',
     async (role) => {
       vi.mocked(getExecutiveSnapshot).mockClear();
