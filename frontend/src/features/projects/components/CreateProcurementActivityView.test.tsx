@@ -103,7 +103,6 @@ describe("CreateProcurementActivityView", () => {
       "Quality-Based Selection (QBS)",
       "Consultant's Qualifications Selection (CQS)",
       "Individual Consultant Selection (INDV)",
-      "Direct Selection",
     ]);
   });
 
@@ -1305,11 +1304,11 @@ describe("CreateProcurementActivityView", () => {
     expect(singleStageOneEnvOptions).toHaveLength(1);
   });
 
-  it("renders Direct Selection in Procurement Method dropdown for Consultancy Services", () => {
+  it("renders only consulting selection methods for Consulting Services", () => {
     const consultancyPlan: ProcurementPlanSummary = {
       ...plan,
       category: "Consultancy Services",
-      name: "Consultancy Services Plan 2017",
+      name: "Consulting Services Plan 2017",
     };
 
     const markup = renderToStaticMarkup(
@@ -1319,8 +1318,18 @@ describe("CreateProcurementActivityView", () => {
       />,
     );
 
-    expect(markup).toContain("Direct Selection");
-    expect(markup).toContain(
+    expect(markup).toContain("Consulting Services");
+    for (const method of [
+      "Quality- and Cost-Based Selection (QCBS)",
+      "Fixed Budget Selection (FBS)",
+      "Least-Cost Selection (LCS)",
+      "Quality-Based Selection (QBS)",
+      "Consultant&#x27;s Qualifications Selection (CQS)",
+      "Individual Consultant Selection (INDV)",
+    ]) {
+      expect(markup).toContain(method);
+    }
+    expect(markup).not.toContain(
       '<option value="direct">Direct Selection</option>',
     );
   });

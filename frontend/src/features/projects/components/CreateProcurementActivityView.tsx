@@ -2153,7 +2153,11 @@ function KeyDetailsStep({
                 inputClasses + " flex items-center justify-between bg-slate-50"
               }
             >
-              <span className="font-semibold">{category}</span>
+              <span className="font-semibold">
+                {category === "Consultancy Services"
+                  ? "Consulting Services"
+                  : category}
+              </span>
               <LockKeyhole
                 aria-hidden="true"
                 className="h-3.5 w-3.5 text-slate-400"

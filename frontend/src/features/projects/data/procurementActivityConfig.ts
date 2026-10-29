@@ -108,12 +108,6 @@ export const procurementMethodOptions: readonly ProcurementMethodOption[] = [
     label: "Individual Consultant Selection (INDV)",
     roadmap: "individual",
   },
-  {
-    appliesTo: ["Consultancy Services"],
-    key: "direct",
-    label: "Direct Selection",
-    roadmap: "direct",
-  },
 ];
 
 export const legacyProcurementMethodOptions: readonly ProcurementMethodOption[] =

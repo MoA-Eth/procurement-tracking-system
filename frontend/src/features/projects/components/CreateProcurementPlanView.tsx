@@ -664,7 +664,9 @@ export function CreateProcurementPlanView({
                   </option>
                   {procurementCategories.map((cat) => (
                     <option key={cat.value} value={cat.value}>
-                      {cat.value}
+                      {cat.value === "Consultancy Services"
+                        ? "Consulting Services"
+                        : cat.value}
                     </option>
                   ))}
                 </select>

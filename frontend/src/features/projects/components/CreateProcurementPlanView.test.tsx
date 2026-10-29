@@ -51,7 +51,7 @@ describe("CreateProcurementPlanView", () => {
     expect(markup).toContain("Goods");
     expect(markup).toContain("Works");
     expect(markup).toContain("Non-Consulting Services");
-    expect(markup).toContain("Consultancy Services");
+    expect(markup).toContain("Consulting Services");
   });
 
   it("builds the editable suggested name from project, category, and fiscal year", () => {
