@@ -35,7 +35,6 @@ describe("role navigation permission matrix", () => {
     [
       "ADMIN",
       [
-        "Executive Dashboard",
         "Dashboard",
         "User Management",
         "System Logs (Timestamp)",
@@ -49,7 +48,7 @@ describe("role navigation permission matrix", () => {
 
   it("enforces shared and role-only workspace access", () => {
     expect(canAccessWorkspaceSection("ADMIN", "executive-dashboard")).toBe(
-      true,
+      false,
     );
     expect(canAccessWorkspaceSection("DIRECTOR", "executive-dashboard")).toBe(
       true,

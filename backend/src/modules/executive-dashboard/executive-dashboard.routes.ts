@@ -7,11 +7,11 @@ router.use(loadSession, requireAuthenticated);
 router.get('/', async (req, res, next) => {
   if (
     !req.auth ||
-    !['ADMIN', 'DIRECTOR', 'MANAGEMENT'].includes(req.auth.user.role)
+    !['DIRECTOR', 'MANAGEMENT'].includes(req.auth.user.role)
   ) {
     res.status(403).json({
       message:
-        'Executive dashboard access is limited to Management, Directors and Administrators.',
+        'Executive dashboard access is limited to Management and Directors.',
     });
     return;
   }

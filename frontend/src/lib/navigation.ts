@@ -35,7 +35,7 @@ const workspaceSections = {
     icon: "reports",
     description:
       "Read-only oversight of works, goods and services procurement.",
-    allowedRoles: ["ADMIN", "DIRECTOR", "MANAGEMENT"],
+    allowedRoles: ["DIRECTOR", "MANAGEMENT"],
   },
   projects: {
     section: "projects",
@@ -184,7 +184,7 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "reports",
   ],
   ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],
-  ADMIN: ["executive-dashboard", "user-management", "system-logs"],
+  ADMIN: ["user-management", "system-logs"],
 };
 
 export function getNavigationForRole(role: UserRole): NavigationItem[] {
