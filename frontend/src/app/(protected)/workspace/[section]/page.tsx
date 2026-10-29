@@ -1,4 +1,5 @@
 import { ReportsView } from "@/features/reports/components/ReportsView";
+import { ExecutiveDashboard } from "@/features/executive-dashboard/ExecutiveDashboard";
 import { CommitteeProgressView } from "@/features/plans/components/CommitteeProgressView";
 import { SystemLogsView } from "@/features/dashboards/admin/SystemLogsView";
 import { UserManagementView } from "@/features/dashboards/admin/UserManagementView";
@@ -50,6 +51,8 @@ export default async function WorkspaceSectionPage({
   if (!canAccessWorkspaceSection(userRole, section)) {
     redirect("/access-denied");
   }
+
+  if (section === "executive-dashboard") return <ExecutiveDashboard />;
 
   if (section === "projects" && userRole === "OFFICER") {
     const selectedProjectCode =

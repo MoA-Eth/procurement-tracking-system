@@ -1,0 +1,79 @@
+.dashboard {
+  min-width: 0;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.dashboard section,
+.dashboard details,
+.dashboard label,
+.dashboard header > div,
+.dashboard dl > div {
+  min-width: 0;
+}
+
+.dashboard select,
+.dashboard input {
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  .dashboard button,
+  .dashboard select,
+  .dashboard input,
+  .dashboard summary {
+    min-height: 44px;
+  }
+
+  .dashboard [role="tablist"] {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .dashboard [role="tab"] {
+    flex: 1 1 140px;
+    white-space: normal;
+  }
+
+  .dashboard [role="dialog"] {
+    max-height: calc(100dvh - 24px);
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 639px) {
+  .dashboard > header {
+    gap: 16px;
+  }
+
+  .dashboard > header > div:last-child {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard > header button {
+    justify-content: center;
+  }
+
+  .dashboard [role="dialog"] {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .dashboard [role="dialog"] h2,
+  .dashboard [role="dialog"] dd {
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard [aria-label="All 13 procurement register columns; scroll horizontally"] th,
+  .dashboard [aria-label="All 13 procurement register columns; scroll horizontally"] td {
+    position: static;
+  }
+
+  .dashboard [aria-label="All 13 procurement register columns; scroll horizontally"] {
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+  }
+}
