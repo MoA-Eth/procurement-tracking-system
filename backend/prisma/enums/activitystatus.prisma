@@ -1,4 +1,5 @@
 enum ActivityStatus {
+  DRAFT
   PLANNED
   IN_PROGRESS
   CONTRACTED

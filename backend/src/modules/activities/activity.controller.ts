@@ -86,6 +86,22 @@ export const updateActivity = async (
   }
 };
 
+export const deleteDraftActivity = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const activity = await activityService.deleteDraftActivityService(
+      req.params.id as string,
+      req.auth!.user.id,
+    );
+    res.status(200).json(activity);
+  } catch (e) {
+    next(e);
+  }
+};
+
 // ─── Stage: Update Planning Dates
 
 export const updateStage = async (

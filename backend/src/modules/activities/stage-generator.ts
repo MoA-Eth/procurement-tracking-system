@@ -10,9 +10,101 @@ export interface CustomStageInput {
   status?: string | undefined;
   plannedStartDate?: string | Date | undefined;
   plannedEndDate?: string | Date | undefined;
+  currentTargetStartDate?: string | Date | undefined;
+  currentTargetEndDate?: string | Date | undefined;
   gregorianDate?: string | Date | undefined;
   plannedDays?: number | undefined;
   remarks?: string | undefined;
+}
+
+function getStageStatus(custom: CustomStageInput | undefined, isNA: boolean) {
+  if (isNA) return StageStatus.NOT_APPLICABLE;
+  if (custom?.status === 'IN_PROGRESS' || custom?.status === 'In Progress') {
+    return StageStatus.IN_PROGRESS;
+  }
+  if (custom?.status === 'COMPLETED' || custom?.status === 'Completed') {
+    return StageStatus.COMPLETED;
+  }
+  return StageStatus.NOT_STARTED;
+}
+
+function getStageDates(custom: CustomStageInput | undefined, isNA: boolean) {
+  if (isNA) {
+    return {
+      plannedStartDate: null,
+      plannedEndDate: null,
+      currentTargetStartDate: null,
+      currentTargetEndDate: null,
+      plannedDays: 0,
+    };
+  }
+
+  const rawStartDate =
+    custom?.plannedStartDate ||
+    custom?.gregorianDate ||
+    custom?.currentTargetStartDate;
+  let plannedStartDate: Date | null = null;
+  if (rawStartDate) {
+    const parsedDate = new Date(rawStartDate);
+    if (!isNaN(parsedDate.getTime())) plannedStartDate = parsedDate;
+  }
+
+  const rawEndDate = custom?.plannedEndDate || custom?.currentTargetEndDate;
+  let plannedEndDate: Date | null = null;
+  if (rawEndDate) {
+    const parsedDate = new Date(rawEndDate);
+    if (!isNaN(parsedDate.getTime())) plannedEndDate = parsedDate;
+  }
+
+  const plannedDays = custom?.plannedDays || 14;
+  if (!plannedEndDate && plannedStartDate) {
+    plannedEndDate = new Date(plannedStartDate);
+    plannedEndDate.setUTCDate(plannedStartDate.getUTCDate() + plannedDays);
+  }
+
+  return {
+    plannedStartDate,
+    plannedEndDate,
+    currentTargetStartDate: plannedStartDate,
+    currentTargetEndDate: plannedEndDate,
+    plannedDays,
+  };
+}
+
+function isStageNotApplicable(custom: CustomStageInput | undefined) {
+  return Boolean(
+    custom?.notApplicable ||
+    custom?.isNotApplicable ||
+    custom?.status === 'NOT_APPLICABLE' ||
+    custom?.status === 'Not Applicable',
+  );
+}
+
+async function resolveCustomStageType(
+  tx: Prisma.TransactionClient,
+  custom: CustomStageInput,
+  sequence: number,
+) {
+  if (custom.stageTypeId) {
+    const existing = await tx.lookupValue.findUnique({
+      where: { id: custom.stageTypeId },
+    });
+    if (existing) return existing;
+  }
+
+  const label = custom.name?.trim() || `Stage ${sequence}`;
+  const codeSuffix =
+    label
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || String(sequence);
+  const code = `STAGE_${codeSuffix}`;
+
+  return tx.lookupValue.upsert({
+    where: { type_code: { type: 'STAGE_TYPE', code } },
+    create: { type: 'STAGE_TYPE', code, label },
+    update: { label, isActive: true },
+  });
 }
 
 export async function generateStagesForActivity(
@@ -29,8 +121,28 @@ export async function generateStagesForActivity(
   });
 
   if (templates.length === 0) {
-    // No templates defined for this method yet.
-    return [];
+    if (!customStages?.length) return [];
+
+    const stagesToCreate = [];
+    for (let index = 0; index < customStages.length; index++) {
+      const custom = customStages[index]!;
+      const sequence = custom.sequence ?? index + 1;
+      const isNA = isStageNotApplicable(custom);
+      const stageType = await resolveCustomStageType(tx, custom, sequence);
+      const dates = getStageDates(custom, isNA);
+      stagesToCreate.push({
+        activityId,
+        stageTypeId: stageType.id,
+        sequence,
+        status: getStageStatus(custom, isNA),
+        ...dates,
+        isNotApplicable: isNA,
+        remarks: custom.remarks || null,
+      });
+    }
+
+    await tx.stage.createMany({ data: stagesToCreate });
+    return stagesToCreate;
   }
 
   // 2. Create the Stage records for the activity
@@ -45,47 +157,15 @@ export async function generateStagesForActivity(
         csIdx === idx,
     );
 
-    const isNA = custom
-      ? Boolean(
-          custom.notApplicable ||
-          custom.isNotApplicable ||
-          custom.status === 'NOT_APPLICABLE' ||
-          custom.status === 'Not Applicable',
-        )
-      : false; // Default to NOT_STARTED, never auto-mark N/A without officer input
-
-    let plannedStart: Date | null = null;
-    if (!isNA) {
-      if (custom?.plannedStartDate || custom?.gregorianDate) {
-        const rawDate = custom.plannedStartDate || custom.gregorianDate;
-        plannedStart = new Date(rawDate!);
-        if (isNaN(plannedStart.getTime())) plannedStart = null;
-      }
-    }
-
-    const plannedDays = custom?.plannedDays || 14;
-    let plannedEnd: Date | null = null;
-    if (plannedStart && !isNaN(plannedStart.getTime())) {
-      plannedEnd = new Date(plannedStart);
-      plannedEnd.setUTCDate(plannedStart.getUTCDate() + plannedDays);
-    }
+    const isNA = isStageNotApplicable(custom);
+    const dates = getStageDates(custom, isNA);
 
     return {
       activityId,
       stageTypeId: template.stageTypeId,
       sequence: template.sequence,
-      status: isNA
-        ? StageStatus.NOT_APPLICABLE
-        : custom?.status === 'IN_PROGRESS' || custom?.status === 'In Progress'
-          ? StageStatus.IN_PROGRESS
-          : custom?.status === 'COMPLETED' || custom?.status === 'Completed'
-            ? StageStatus.COMPLETED
-            : StageStatus.NOT_STARTED,
-      plannedStartDate: isNA ? null : plannedStart,
-      plannedEndDate: isNA ? null : plannedEnd,
-      currentTargetStartDate: isNA ? null : plannedStart,
-      currentTargetEndDate: isNA ? null : plannedEnd,
-      plannedDays: isNA ? 0 : plannedDays,
+      status: getStageStatus(custom, isNA),
+      ...dates,
       isNotApplicable: isNA,
       remarks: custom?.remarks || null,
     };

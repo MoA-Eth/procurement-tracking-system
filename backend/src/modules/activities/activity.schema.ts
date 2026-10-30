@@ -34,6 +34,10 @@ export const createActivityStep1Schema = z.object({
     .string()
     .trim()
     .min(1, 'Procurement Method is required'),
+  procurementCategory: z
+    .enum(['GOODS', 'WORKS', 'CONSULTANCY', 'NON_CONSULTING'])
+    .optional(),
+  status: z.enum(['DRAFT', 'PLANNED']).optional(),
   specificMethod: z.string().trim().max(255).optional(),
   marketApproach: z.preprocess(
     (val) => {

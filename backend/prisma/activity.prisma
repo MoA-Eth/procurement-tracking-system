@@ -6,6 +6,7 @@ model Activity {
   plan   Plan   @relation(fields: [planId], references: [id])
 
   // Step 1 — Key Details
+  procurementCategory     String?
   procurementMethodId       String
   procurementMethod         LookupValue @relation("ActivityMethod", fields: [procurementMethodId], references: [id])
   specificMethod            String?

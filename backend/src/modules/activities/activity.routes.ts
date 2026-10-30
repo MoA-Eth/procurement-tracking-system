@@ -4,11 +4,12 @@ import {
   getActivityById,
   createActivity,
   updateActivity,
+  deleteDraftActivity,
   updateStage,
   updateStageActual,
   replanStage,
 } from './activity.controller.js';
-import { authenticate } from '../../middleware/auth.js';
+import { authenticate, authorize } from '../../middleware/auth.js';
 import './activity.schema.js';
 
 const router = Router();
@@ -20,6 +21,11 @@ router.get('/', getActivities);
 router.get('/:id', getActivityById);
 router.post('/', createActivity);
 router.patch('/:id', updateActivity);
+router.delete(
+  '/:id',
+  authorize('ProcurementOfficer', 'OFFICER', 'Administrator', 'ADMIN'),
+  deleteDraftActivity,
+);
 router.patch('/:id/stages/:stageId', updateStage);
 router.patch('/:id/stages/:stageId/actual', updateStageActual);
 router.post('/:id/stages/:stageId/replan', replanStage);

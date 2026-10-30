@@ -1,4 +1,5 @@
 import {
+  ActivityStatus,
   Prisma,
   PlanStatus,
   RevisionEntityType,
@@ -524,9 +525,8 @@ export const submitPlanService = async (id: string, userId: string) => {
           include: { activities: true, committeeVotes: true },
         }));
       if (!oldPlan) {
-        throw new Error(`Plan not found with id: ${id}`);
+        throw ApiError.notFound(`Plan not found with id: ${id}`);
       }
-
       const submittableStatuses: PlanStatus[] = [
         PlanStatus.DRAFT,
         PlanStatus.RETURNED_FOR_REVISION,
@@ -549,6 +549,11 @@ export const submitPlanService = async (id: string, userId: string) => {
         throw new Error(`Authenticated user not found with id: ${userId}`);
       }
       const validUserId = user.id;
+
+      await tx.activity.updateMany({
+        where: { planId: oldPlan.id, status: ActivityStatus.DRAFT },
+        data: { status: ActivityStatus.PLANNED },
+      });
 
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
@@ -602,7 +607,6 @@ export const submitPlanService = async (id: string, userId: string) => {
     severity: 'HIGH',
     link: '/workspace/plan-for-review',
   }).catch(() => {});
-
   return plan;
 };
 
@@ -1336,14 +1340,35 @@ export const requestPlanUpdateService = async (id: string, userId: string) => {
           include: { activities: true, committeeVotes: true },
         }));
       if (!oldPlan) {
-        throw new Error(`Plan not found with id: ${id}`);
+        throw ApiError.notFound(`Plan not found with id: ${id}`);
+      }
+      if (
+        oldPlan.status !== PlanStatus.APPROVED &&
+        oldPlan.status !== PlanStatus.MANAGEMENT_APPROVED
+      ) {
+        throw ApiError.conflict(
+          'Only approved plans can be requested for amendment.',
+        );
       }
 
       const user = await tx.user.findUnique({ where: { id: userId } });
       if (!user) {
-        throw new Error(`Authenticated user not found with id: ${userId}`);
+        throw ApiError.unauthorized('Authenticated user not found.');
       }
       const validUserId = user.id;
+      const isOfficer =
+        user.authRole === UserRole.OFFICER ||
+        (user as { role?: string }).role === 'ProcurementOfficer';
+      if (isOfficer) {
+        const assignment = await tx.userProject.findUnique({
+          where: {
+            userId_projectId: { userId, projectId: oldPlan.projectId },
+          },
+        });
+        if (!assignment) {
+          throw ApiError.forbidden('You are not assigned to this project.');
+        }
+      }
 
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
@@ -1376,19 +1401,24 @@ export const requestPlanUpdateService = async (id: string, userId: string) => {
     },
   );
 
-  const commentMsg = plan.directorRevisionComment
-    ? ` Comment: ${plan.directorRevisionComment}`
-    : '';
   notifyOfficersOnEntityChange({
     planId: plan.id,
     projectId: plan.projectId,
     creatorId: plan.creator?.id || plan.createdBy,
     actorUserId: userId,
-    title: `Revision Requested: ${plan.title}`,
-    message: `Director has requested updates on procurement plan "${plan.title}".${commentMsg}`,
+    title: `Amendment Requested: ${plan.title}`,
+    message: `An officer has requested Director authorization to amend approved procurement plan "${plan.title}".`,
     type: 'DECISION',
     severity: 'HIGH',
     link: '/workspace/plan-management',
+  }).catch(() => {});
+  createNotification({
+    targetRole: 'DIRECTOR',
+    title: `Plan Amendment Authorization: ${plan.title}`,
+    message: `An officer requested authorization to reopen "${plan.title}" for amendments.`,
+    type: 'PLAN_REVIEW',
+    severity: 'HIGH',
+    link: '/workspace/plan-for-review',
   }).catch(() => {});
 
   return plan;
@@ -1407,7 +1437,12 @@ export const approvePlanUpdateService = async (id: string, userId: string) => {
           include: { activities: true, committeeVotes: true },
         }));
       if (!oldPlan) {
-        throw new Error(`Plan not found with id: ${id}`);
+        throw ApiError.notFound(`Plan not found with id: ${id}`);
+      }
+      if (oldPlan.status !== PlanStatus.UPDATE_REQUESTED) {
+        throw ApiError.conflict(
+          'Only plans with a pending amendment request can be reopened.',
+        );
       }
 
       const user = await tx.user.findUnique({ where: { id: userId } });
@@ -1418,7 +1453,20 @@ export const approvePlanUpdateService = async (id: string, userId: string) => {
 
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
-        data: { status: PlanStatus.DRAFT },
+        data: {
+          status: PlanStatus.DRAFT,
+          approvedById: null,
+          approvedAt: null,
+          rejectedById: null,
+          rejectedAt: null,
+          rejectionReason: null,
+          managementDecision: null,
+          managementComment: null,
+          managementById: null,
+          managementAt: null,
+          directorRevisionComment: null,
+          committeeVoteDeadline: null,
+        },
         include: {
           project: true,
           creator: true,

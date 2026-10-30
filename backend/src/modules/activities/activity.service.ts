@@ -10,6 +10,7 @@ import {
 import { prisma } from '../../config/database.js';
 import { logRevision } from '../../shared/audit/revision.service.js';
 import { createAuditLog } from '../../shared/audit/audit-logger.js';
+import { ApiError } from '../../utils/errors.js';
 import {
   generateStagesForActivity,
   type CustomStageInput,
@@ -78,8 +79,8 @@ export const getActivitiesService = async (planId?: string) => {
 // ─── Get Activity By ID ───────────────────────────────────────────────────────
 
 export const getActivityByIdService = async (id: string) => {
-  return prisma.activity.findUnique({
-    where: { id },
+  return prisma.activity.findFirst({
+    where: { id, isActive: true },
     include: {
       plan: true,
       creator: true,
@@ -210,7 +211,8 @@ export const createActivityService = async (
       reference,
       plan: { connect: { id: plan.id } },
       procurementMethod: { connect: { id: resolvedMethodId } },
-      status: ActivityStatus.PLANNED,
+      status:
+        data.status === 'DRAFT' ? ActivityStatus.DRAFT : ActivityStatus.PLANNED,
       ...(validActUserId
         ? {
             creator: { connect: { id: validActUserId } },
@@ -249,17 +251,13 @@ export const createActivityService = async (
       },
     });
 
-    // Auto-generate roadmap stages based on procurement method
-    try {
-      await generateStagesForActivity(
-        tx,
-        activity.id,
-        activity.procurementMethodId,
-        data.stages || data.roadmap,
-      );
-    } catch (stageErr) {
-      console.warn('generateStagesForActivity note:', stageErr);
-    }
+    // Generate stages from templates or persist the submitted custom roadmap.
+    await generateStagesForActivity(
+      tx,
+      activity.id,
+      activity.procurementMethodId,
+      data.stages || data.roadmap,
+    );
 
     try {
       if (userId) {
@@ -296,6 +294,67 @@ export const createActivityService = async (
   });
 };
 
+export const deleteDraftActivityService = async (
+  id: string,
+  userId: string,
+) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const activity = await tx.activity.findFirst({
+      where: { id, isActive: true },
+      include: { plan: true },
+    });
+    if (!activity) throw ApiError.notFound('Activity not found');
+    const isLegacyDraft =
+      activity.status === ActivityStatus.PLANNED &&
+      activity.plan.status === PlanStatus.DRAFT;
+    if (activity.status !== ActivityStatus.DRAFT && !isLegacyDraft) {
+      throw ApiError.conflict('Only draft activities can be deleted.');
+    }
+
+    const editableStatuses: PlanStatus[] = [
+      PlanStatus.DRAFT,
+      PlanStatus.REJECTED,
+      PlanStatus.RETURNED_FOR_REVISION,
+    ];
+    if (!editableStatuses.includes(activity.plan.status)) {
+      throw ApiError.conflict(
+        'Activities can only be deleted while their plan is editable.',
+      );
+    }
+
+    const user = await tx.user.findUnique({ where: { id: userId } });
+    if (!user) throw ApiError.unauthorized();
+    const isOfficer =
+      user.authRole === UserRole.OFFICER ||
+      (user as { role?: string }).role === 'ProcurementOfficer';
+    if (isOfficer) {
+      const assignment = await tx.userProject.findUnique({
+        where: {
+          userId_projectId: { userId, projectId: activity.plan.projectId },
+        },
+      });
+      if (!assignment) {
+        throw ApiError.forbidden('You are not assigned to this project.');
+      }
+    }
+
+    const deletedActivity = await tx.activity.update({
+      where: { id },
+      data: { isActive: false },
+    });
+    await logRevision(
+      tx,
+      RevisionEntityType.ACTIVITY,
+      RevisionChangeType.SOFT_DELETE,
+      id,
+      userId,
+      activity,
+      deletedActivity,
+    );
+    return deletedActivity;
+  });
+};
+
 // ─── Update Activity ──────────────────────────────────────────────────────────
 
 export const updateActivityService = async (
@@ -327,7 +386,6 @@ export const updateActivityService = async (
           PlanStatus.DRAFT,
           PlanStatus.REJECTED,
           PlanStatus.RETURNED_FOR_REVISION,
-          PlanStatus.UPDATE_REQUESTED,
         ];
         if (!editableStatuses.includes(oldActivity.plan.status)) {
           throw new Error(
@@ -449,7 +507,10 @@ export const updateActivityService = async (
               );
               let plannedStart: Date | null = null;
               if (!isNA) {
-                const rawDate = custom.plannedStartDate || custom.gregorianDate;
+                const rawDate =
+                  custom.plannedStartDate ||
+                  custom.gregorianDate ||
+                  custom.currentTargetStartDate;
                 if (rawDate) {
                   const d = new Date(rawDate);
                   if (!isNaN(d.getTime())) plannedStart = d;
@@ -458,7 +519,19 @@ export const updateActivityService = async (
               const plannedDays =
                 Number(custom.plannedDays) || st.plannedDays || 14;
               let plannedEnd: Date | null = null;
-              if (plannedStart && !isNaN(plannedStart.getTime())) {
+              const rawEndDate =
+                custom.plannedEndDate || custom.currentTargetEndDate;
+              if (rawEndDate) {
+                const parsedEndDate = new Date(rawEndDate);
+                if (!isNaN(parsedEndDate.getTime())) {
+                  plannedEnd = parsedEndDate;
+                }
+              }
+              if (
+                !plannedEnd &&
+                plannedStart &&
+                !isNaN(plannedStart.getTime())
+              ) {
                 plannedEnd = new Date(plannedStart);
                 plannedEnd.setUTCDate(plannedStart.getUTCDate() + plannedDays);
               }
@@ -496,16 +569,12 @@ export const updateActivityService = async (
             }
           }
         } else {
-          try {
-            await generateStagesForActivity(
-              tx,
-              activity.id,
-              activity.procurementMethodId,
-              stageInputs,
-            );
-          } catch (genErr) {
-            console.warn('generateStagesForActivity on update note:', genErr);
-          }
+          await generateStagesForActivity(
+            tx,
+            activity.id,
+            activity.procurementMethodId,
+            stageInputs,
+          );
         }
       }
 
