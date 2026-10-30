@@ -28,6 +28,15 @@ export interface WorkspaceSection extends NavigationItem {
 }
 
 const workspaceSections = {
+  "executive-dashboard": {
+    section: "executive-dashboard",
+    label: "Executive Dashboard",
+    href: "/workspace/executive-dashboard",
+    icon: "reports",
+    description:
+      "Read-only oversight of works, goods and services procurement.",
+    allowedRoles: ["DIRECTOR", "MANAGEMENT"],
+  },
   projects: {
     section: "projects",
     label: "Projects",
@@ -159,6 +168,7 @@ type WorkspaceSectionKey = keyof typeof workspaceSections;
 const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
   OFFICER: ["projects", "contracts", "activity-tracker", "reports"],
   DIRECTOR: [
+    "executive-dashboard",
     "projects",
     "plan-for-review",
     "vote-progress",
@@ -166,6 +176,7 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "reports",
   ],
   MANAGEMENT: [
+    "executive-dashboard",
     "projects",
     "plan-for-review",
     "vote-progress",
@@ -180,12 +191,13 @@ export function getNavigationForRole(role: UserRole): NavigationItem[] {
   const normRole = normalizeUserRole(role);
   const sections = roleSectionOrder[role] || roleSectionOrder[normRole] || [];
   return [
+    ...sections.filter((section) => section === "executive-dashboard").map((section) => workspaceSections[section]),
     {
       label: "Dashboard",
       href: dashboardPath(role),
       icon: "dashboard",
     },
-    ...sections.map((section) => workspaceSections[section]),
+    ...sections.filter((section) => section !== "executive-dashboard").map((section) => workspaceSections[section]),
   ];
 }
 

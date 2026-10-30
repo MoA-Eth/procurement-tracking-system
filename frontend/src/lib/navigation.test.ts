@@ -10,6 +10,7 @@ describe("role navigation permission matrix", () => {
     [
       "DIRECTOR",
       [
+        "Executive Dashboard",
         "Dashboard",
         "Projects",
         "Plan for Review",
@@ -21,6 +22,7 @@ describe("role navigation permission matrix", () => {
     [
       "MANAGEMENT",
       [
+        "Executive Dashboard",
         "Dashboard",
         "Projects",
         "Plan for Review",
@@ -30,7 +32,14 @@ describe("role navigation permission matrix", () => {
       ],
     ],
     ["ENDORSING_COMMITTEE", ["Dashboard", "Plan for Review", "My Decisions"]],
-    ["ADMIN", ["Dashboard", "User Management", "System Logs (Timestamp)"]],
+    [
+      "ADMIN",
+      [
+        "Dashboard",
+        "User Management",
+        "System Logs (Timestamp)",
+      ],
+    ],
   ] as const)("shows only %s menu items", (role, labels) => {
     expect(getNavigationForRole(role).map((item) => item.label)).toEqual(
       labels,
@@ -38,6 +47,21 @@ describe("role navigation permission matrix", () => {
   });
 
   it("enforces shared and role-only workspace access", () => {
+    expect(canAccessWorkspaceSection("ADMIN", "executive-dashboard")).toBe(
+      false,
+    );
+    expect(canAccessWorkspaceSection("DIRECTOR", "executive-dashboard")).toBe(
+      true,
+    );
+    expect(canAccessWorkspaceSection("MANAGEMENT", "executive-dashboard")).toBe(
+      true,
+    );
+    expect(canAccessWorkspaceSection("OFFICER", "executive-dashboard")).toBe(
+      false,
+    );
+    expect(
+      canAccessWorkspaceSection("ENDORSING_COMMITTEE", "executive-dashboard"),
+    ).toBe(false);
     expect(canAccessWorkspaceSection("OFFICER", "projects")).toBe(true);
     expect(canAccessWorkspaceSection("DIRECTOR", "projects")).toBe(true);
     expect(canAccessWorkspaceSection("ADMIN", "projects")).toBe(false);
