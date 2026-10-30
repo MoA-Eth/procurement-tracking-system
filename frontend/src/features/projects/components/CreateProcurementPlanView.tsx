@@ -15,6 +15,7 @@ import {
   parseEthiopianDate,
   type EthiopianDate,
 } from "../utils/ethiopianCalendar";
+import { parseExcelDateToIso } from "../utils/projectExcelUtils";
 import { DualCalendarField } from "./DualCalendarField";
 import {
   AlertTriangle,
@@ -55,21 +56,9 @@ interface PlanFormState {
   remarks: string;
 }
 
-function toInputDate(val?: unknown): string {
+export function toInputDate(val?: unknown): string {
   if (!val) return "";
-  if (val instanceof Date) {
-    if (isNaN(val.getTime())) return "";
-    return val.toISOString().slice(0, 10);
-  }
-  if (typeof val === "string") {
-    const trimmed = val.trim();
-    if (!trimmed) return "";
-    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-    const d = new Date(trimmed);
-    if (isNaN(d.getTime())) return "";
-    return d.toISOString().slice(0, 10);
-  }
-  return "";
+  return parseExcelDateToIso(val);
 }
 
 function toEthDate(greg?: unknown, eth?: unknown): string {

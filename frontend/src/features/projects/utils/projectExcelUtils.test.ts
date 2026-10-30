@@ -9,6 +9,7 @@ import {
   exportOfficerProjectsToExcel,
   formatActivityFundingSources,
   parseActivitiesFromExcel,
+  parseExcelDateToIso,
   parsePlansFromExcel,
   parseProjectsFromExcel,
 } from "./projectExcelUtils";
@@ -405,6 +406,39 @@ describe("projectExcelUtils", () => {
       expect(
         formatActivityFundingSources({}, "Federal Ministry of Agriculture"),
       ).toBe("Federal Ministry of Agriculture");
+    });
+  });
+
+  describe("parseExcelDateToIso", () => {
+    it("converts Excel serial numbers and numeric strings to YYYY-MM-DD", () => {
+      // 45846 in Excel serial is 2025-07-08
+      expect(parseExcelDateToIso(45846)).toBe("2025-07-08");
+      expect(parseExcelDateToIso("45846")).toBe("2025-07-08");
+      expect(parseExcelDateToIso("45846.125")).toBe("2025-07-08");
+    });
+
+    it("converts Date objects and ISO strings", () => {
+      expect(parseExcelDateToIso(new Date("2025-07-08T00:00:00.000Z"))).toBe(
+        "2025-07-08",
+      );
+      expect(parseExcelDateToIso("2025-07-08T14:30:00.000Z")).toBe(
+        "2025-07-08",
+      );
+      expect(parseExcelDateToIso("2025-07-08")).toBe("2025-07-08");
+    });
+
+    it("converts European / Ethiopian DD/MM/YYYY and DD-MM-YYYY formats", () => {
+      expect(parseExcelDateToIso("08/07/2025")).toBe("2025-07-08");
+      expect(parseExcelDateToIso("08-07-2025")).toBe("2025-07-08");
+      expect(parseExcelDateToIso("25/12/2026")).toBe("2026-12-25");
+    });
+
+    it("handles named months and invalid inputs gracefully", () => {
+      expect(parseExcelDateToIso("08-Jul-2025")).toBe("2025-07-08");
+      expect(parseExcelDateToIso("")).toBe("");
+      expect(parseExcelDateToIso(null)).toBe("");
+      expect(parseExcelDateToIso(undefined)).toBe("");
+      expect(parseExcelDateToIso("invalid-date-string")).toBe("");
     });
   });
 });

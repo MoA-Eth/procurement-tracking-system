@@ -233,8 +233,8 @@ export function ExcelImportModal({
                       Need the standard Activity Excel format?
                     </h3>
                     <p className="mt-0.5 text-xs text-emerald-900/80">
-                      Download our pre-formatted template with sample columns
-                      &amp; rows
+                      Download our pre-formatted template with standard columns
+                      &amp; field guide
                     </p>
                   </div>
                 </div>

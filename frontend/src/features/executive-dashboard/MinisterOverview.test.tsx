@@ -40,9 +40,30 @@ const render = (rows: ExecutiveRecord[]) =>
 describe("ministerial overview", () => {
   it("prioritizes overdue exposure and upcoming targets without combining currencies", () => {
     const html = render([
-      { ...base, initialCompletionDate: "2026-10-01", initialAmount: 200, currency: "USD" },
-      { ...base, id: "c2", contractId: "c2", activityId: "a2", reference: "DUE-SOON", initialCompletionDate: "2026-11-01", completionPct: 40 },
-      { ...base, id: "c3", contractId: "c3", activityId: "a3", reference: "CLOSED", initialCompletionDate: "2026-11-01", status: "CANCELLED" },
+      {
+        ...base,
+        initialCompletionDate: "2026-10-01",
+        initialAmount: 200,
+        currency: "USD",
+      },
+      {
+        ...base,
+        id: "c2",
+        contractId: "c2",
+        activityId: "a2",
+        reference: "DUE-SOON",
+        initialCompletionDate: "2026-11-01",
+        completionPct: 40,
+      },
+      {
+        ...base,
+        id: "c3",
+        contractId: "c3",
+        activityId: "a3",
+        reference: "CLOSED",
+        initialCompletionDate: "2026-11-01",
+        status: "CANCELLED",
+      },
     ]);
     expect(html).toContain("Escalate delivery delays");
     expect(html).toContain("200 USD");

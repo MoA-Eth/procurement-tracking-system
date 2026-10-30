@@ -29,6 +29,8 @@ import type { ProcurementPlan } from "../../plansData";
 import { VersionHistoryModal } from "../VersionHistoryModal";
 import { CommitteeDeadlineModal } from "./CommitteeDeadlineModal";
 import { PlanBatchReviewModal } from "./PlanBatchReviewModal";
+import { CommitteeBatchReviewModal } from "./CommitteeBatchReviewModal";
+import { ManagementBatchReviewModal } from "./ManagementBatchReviewModal";
 import { StatusText } from "@/components/dashboard/StatusText";
 import type { ProjectItem } from "@/features/projects/management/projectsData";
 
@@ -63,6 +65,27 @@ export interface PlanReviewDirectoryTableProps {
     unapprovedComments: Record<string, string>;
     deadlineDate?: string;
   }) => Promise<void> | void;
+  onBatchCommitteeVote?: (data: {
+    decision: "APPROVE" | "REJECT";
+    plans: ProcurementPlan[];
+    remarks?: string;
+    planDetails?: Record<
+      string,
+      {
+        planId: string;
+        scope: "ALL" | "SPECIFIC";
+        rejectedActivityIds?: string[];
+        rejectedActivityRefs?: string[];
+        remarks?: string;
+      }
+    >;
+  }) => Promise<void> | void;
+  onBatchManagementDecision?: (data: {
+    decision: "APPROVE" | "REJECT";
+    plans: ProcurementPlan[];
+    minuteReference?: string;
+    remarks?: string;
+  }) => Promise<void> | void;
   getProjectForPlan?: (projectCode: string) => ProjectItem;
 }
 
@@ -93,6 +116,8 @@ export function PlanReviewDirectoryTable({
   onApprovePlanUpdate,
   onReturnPlan,
   onBatchReviewPlans,
+  onBatchCommitteeVote,
+  onBatchManagementDecision,
   getProjectForPlan,
 }: PlanReviewDirectoryTableProps) {
   // Tabs within project view
@@ -106,6 +131,20 @@ export function PlanReviewDirectoryTable({
   const [batchActionType, setBatchActionType] = useState<"ALL" | "SELECTED">(
     "SELECTED",
   );
+
+  // Committee batch modal state
+  const [isCommitteeBatchModalOpen, setIsCommitteeBatchModalOpen] =
+    useState(false);
+  const [committeeBatchMode, setCommitteeBatchMode] = useState<
+    "APPROVE" | "REJECT"
+  >("APPROVE");
+
+  // Management batch modal state
+  const [isManagementBatchModalOpen, setIsManagementBatchModalOpen] =
+    useState(false);
+  const [managementBatchMode, setManagementBatchMode] = useState<
+    "APPROVE" | "REJECT"
+  >("APPROVE");
 
   // Single plan return modal
   const [singleReturnModalPlan, setSingleReturnModalPlan] =
@@ -283,6 +322,75 @@ export function PlanReviewDirectoryTable({
     }
     setSelectedPlanIds([]);
     setIsBatchModalOpen(false);
+  };
+
+  // Committee batch action handlers
+  const handleOpenCommitteeApproveAll = () => {
+    setSelectedPlanIds(currentPendingPlans.map((p) => p.id));
+    setCommitteeBatchMode("APPROVE");
+    setIsCommitteeBatchModalOpen(true);
+  };
+
+  const handleOpenCommitteeApproveSelected = () => {
+    setCommitteeBatchMode("APPROVE");
+    setIsCommitteeBatchModalOpen(true);
+  };
+
+  const handleOpenCommitteeRejectSelected = () => {
+    setCommitteeBatchMode("REJECT");
+    setIsCommitteeBatchModalOpen(true);
+  };
+
+  const handleCommitteeBatchConfirm = async (data: {
+    decision: "APPROVE" | "REJECT";
+    plans: ProcurementPlan[];
+    remarks?: string;
+    planDetails?: Record<
+      string,
+      {
+        planId: string;
+        scope: "ALL" | "SPECIFIC";
+        rejectedActivityIds?: string[];
+        rejectedActivityRefs?: string[];
+        remarks?: string;
+      }
+    >;
+  }) => {
+    if (onBatchCommitteeVote) {
+      await onBatchCommitteeVote(data);
+    }
+    setSelectedPlanIds([]);
+    setIsCommitteeBatchModalOpen(false);
+  };
+
+  // Management batch action handlers
+  const handleOpenManagementApproveAll = () => {
+    setSelectedPlanIds(currentPendingPlans.map((p) => p.id));
+    setManagementBatchMode("APPROVE");
+    setIsManagementBatchModalOpen(true);
+  };
+
+  const handleOpenManagementApproveSelected = () => {
+    setManagementBatchMode("APPROVE");
+    setIsManagementBatchModalOpen(true);
+  };
+
+  const handleOpenManagementRejectSelected = () => {
+    setManagementBatchMode("REJECT");
+    setIsManagementBatchModalOpen(true);
+  };
+
+  const handleManagementBatchConfirm = async (data: {
+    decision: "APPROVE" | "REJECT";
+    plans: ProcurementPlan[];
+    minuteReference?: string;
+    remarks?: string;
+  }) => {
+    if (onBatchManagementDecision) {
+      await onBatchManagementDecision(data);
+    }
+    setSelectedPlanIds([]);
+    setIsManagementBatchModalOpen(false);
   };
 
   // Single plan return
@@ -729,13 +837,131 @@ export function PlanReviewDirectoryTable({
                 </div>
               )}
 
+              {/* Committee Batch Action Bar */}
+              {userRole === "ENDORSING_COMMITTEE" &&
+                currentPendingPlans.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs font-semibold text-slate-700">
+                        {selectedPlanIds.length} of {currentPendingPlans.length}{" "}
+                        plans selected
+                      </span>
+                      {selectedPlanIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPlanIds([])}
+                          className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                        >
+                          Clear selection
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleOpenCommitteeApproveAll}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+                        <span>
+                          Endorse All Plans ({currentPendingPlans.length})
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={selectedPlanIds.length === 0}
+                        onClick={handleOpenCommitteeApproveSelected}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>
+                          Vote: Endorse Selected ({selectedPlanIds.length})
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={selectedPlanIds.length === 0}
+                        onClick={handleOpenCommitteeRejectSelected}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 text-rose-600" />
+                        <span>
+                          Vote: Reject Selected ({selectedPlanIds.length})
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              {/* Management Batch Action Bar */}
+              {userRole === "MANAGEMENT" && currentPendingPlans.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs font-semibold text-slate-700">
+                      {selectedPlanIds.length} of {currentPendingPlans.length}{" "}
+                      plans selected
+                    </span>
+                    {selectedPlanIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlanIds([])}
+                        className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                      >
+                        Clear selection
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleOpenManagementApproveAll}
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+                      <span>
+                        Grant Authorization to All ({currentPendingPlans.length}
+                        )
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={selectedPlanIds.length === 0}
+                      onClick={handleOpenManagementApproveSelected}
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>Authorize Selected ({selectedPlanIds.length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={selectedPlanIds.length === 0}
+                      onClick={handleOpenManagementRejectSelected}
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5 text-rose-600" />
+                      <span>
+                        Return / Reject Selected ({selectedPlanIds.length})
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Table of Plans Awaiting Review */}
               <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[1040px]">
                     <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                       <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
-                        {userRole === "DIRECTOR" && (
+                        {(userRole === "DIRECTOR" ||
+                          userRole === "ENDORSING_COMMITTEE" ||
+                          userRole === "MANAGEMENT") && (
                           <th
                             className="w-12 px-3.5 py-3.5 text-center"
                             scope="col"
@@ -767,7 +993,13 @@ export function PlanReviewDirectoryTable({
                       {currentPendingPlans.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={userRole === "DIRECTOR" ? 8 : 7}
+                            colSpan={
+                              userRole === "DIRECTOR" ||
+                              userRole === "ENDORSING_COMMITTEE" ||
+                              userRole === "MANAGEMENT"
+                                ? 8
+                                : 7
+                            }
                             className="py-12 text-center text-slate-500"
                           >
                             <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400 mb-2" />
@@ -800,7 +1032,9 @@ export function PlanReviewDirectoryTable({
                                 isSelected ? "bg-emerald-50/50" : ""
                               }`}
                             >
-                              {userRole === "DIRECTOR" && (
+                              {(userRole === "DIRECTOR" ||
+                                userRole === "ENDORSING_COMMITTEE" ||
+                                userRole === "MANAGEMENT") && (
                                 <td className="w-12 px-3.5 py-3.5 text-center">
                                   <input
                                     type="checkbox"
@@ -921,6 +1155,33 @@ export function PlanReviewDirectoryTable({
                                         </button>
                                       </>
                                     )}
+
+                                  {userRole === "MANAGEMENT" && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedPlanIds([plan.id]);
+                                          setManagementBatchMode("APPROVE");
+                                          setIsManagementBatchModalOpen(true);
+                                        }}
+                                        className="rounded-md bg-[#0A3C2F] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#083025] transition cursor-pointer"
+                                      >
+                                        Authorize
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedPlanIds([plan.id]);
+                                          setManagementBatchMode("REJECT");
+                                          setIsManagementBatchModalOpen(true);
+                                        }}
+                                        className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer"
+                                      >
+                                        Return
+                                      </button>
+                                    </>
+                                  )}
 
                                   <button
                                     type="button"
@@ -1158,6 +1419,26 @@ export function PlanReviewDirectoryTable({
         committeeDeadlineDate={committeeDeadlineDate}
         setCommitteeDeadlineDate={setCommitteeDeadlineDate}
         onConfirm={handleBatchConfirm}
+      />
+
+      {/* ── COMMITTEE BATCH REVIEW MODAL ── */}
+      <CommitteeBatchReviewModal
+        isOpen={isCommitteeBatchModalOpen}
+        onClose={() => setIsCommitteeBatchModalOpen(false)}
+        mode={committeeBatchMode}
+        plans={batchSelectedPlans}
+        projectCode={selectedProjectCode || ""}
+        onConfirm={handleCommitteeBatchConfirm}
+      />
+
+      {/* ── MANAGEMENT BATCH REVIEW MODAL ── */}
+      <ManagementBatchReviewModal
+        isOpen={isManagementBatchModalOpen}
+        onClose={() => setIsManagementBatchModalOpen(false)}
+        mode={managementBatchMode}
+        plans={batchSelectedPlans}
+        projectCode={selectedProjectCode || ""}
+        onConfirm={handleManagementBatchConfirm}
       />
 
       {/* ── SINGLE PLAN RETURN MODAL ── */}

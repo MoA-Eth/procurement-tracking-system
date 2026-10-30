@@ -236,6 +236,8 @@ export function PlanForReviewView({
       onApprovePlanUpdate={review.handleApprovePlanUpdate}
       onReturnPlan={review.handleReturnPlan}
       onBatchReviewPlans={review.handleBatchReviewPlans}
+      onBatchCommitteeVote={review.handleBatchCommitteeVote}
+      onBatchManagementDecision={review.handleBatchManagementDecision}
       getProjectForPlan={review.getProjectForPlan}
     />
   );

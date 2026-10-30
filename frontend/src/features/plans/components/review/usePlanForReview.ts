@@ -1112,6 +1112,64 @@ export function usePlanForReview({
     );
   };
 
+  // Committee Batch Decision: Approve or Reject Multiple Plans
+  const handleBatchCommitteeVote = async ({
+    decision,
+    plans,
+    remarks,
+    planDetails,
+  }: {
+    decision: "APPROVE" | "REJECT";
+    plans: ProcurementPlan[];
+    remarks?: string;
+    planDetails?: Record<
+      string,
+      {
+        planId: string;
+        scope: "ALL" | "SPECIFIC";
+        rejectedActivityIds?: string[];
+        rejectedActivityRefs?: string[];
+        remarks?: string;
+      }
+    >;
+  }) => {
+    let count = 0;
+    for (const plan of plans) {
+      if (decision === "APPROVE") {
+        try {
+          await handleCommitteeVote(plan, "APPROVE", remarks);
+          count++;
+        } catch (err) {
+          console.warn(`Failed to vote approve for plan ${plan.id}:`, err);
+        }
+      } else {
+        const detail = planDetails?.[plan.id];
+        const planRemarks = detail?.remarks || remarks;
+        try {
+          await handleCommitteeVote(plan, "REJECT", planRemarks, {
+            scope: detail?.scope || "ALL",
+            rejectedActivityIds: detail?.rejectedActivityIds || [],
+            rejectedActivityRefs: detail?.rejectedActivityRefs || [],
+          });
+          count++;
+        } catch (err) {
+          console.warn(`Failed to vote reject for plan ${plan.id}:`, err);
+        }
+      }
+    }
+
+    await loadPlans();
+    showToast(
+      decision === "APPROVE"
+        ? `Endorsement votes successfully recorded for ${count} ${
+            count === 1 ? "plan" : "plans"
+          }.`
+        : `Rejection votes successfully recorded for ${count} ${
+            count === 1 ? "plan" : "plans"
+          }.`,
+    );
+  };
+
   const handleSavePlanEdits = (savedPlan: ProcurementPlan) => {
     setPlans((prev) =>
       prev.map((p) => (p.id === savedPlan.id ? savedPlan : p)),
@@ -1171,6 +1229,47 @@ export function usePlanForReview({
       decision === "APPROVE"
         ? `Executive Authorization granted for plan "${plan.planName}".`
         : `Executive Decision "Rejected" recorded for plan "${plan.planName}".`,
+    );
+  };
+
+  // Management Batch Decision: Authorize or Return Multiple Plans
+  const handleBatchManagementDecision = async ({
+    decision,
+    plans,
+    minuteReference,
+    remarks,
+  }: {
+    decision: "APPROVE" | "REJECT";
+    plans: ProcurementPlan[];
+    minuteReference?: string;
+    remarks?: string;
+  }) => {
+    let count = 0;
+    const combinedRemarks = minuteReference
+      ? `[Minute Ref: ${minuteReference}] ${remarks || ""}`.trim()
+      : remarks;
+
+    for (const plan of plans) {
+      try {
+        await handleManagementDecision(plan, decision, combinedRemarks);
+        count++;
+      } catch (err) {
+        console.warn(
+          `Failed to process management decision for plan ${plan.id}:`,
+          err,
+        );
+      }
+    }
+
+    await loadPlans();
+    showToast(
+      decision === "APPROVE"
+        ? `Executive Authorization successfully granted for ${count} ${
+            count === 1 ? "plan" : "plans"
+          }.`
+        : `Executive Return recorded for ${count} ${
+            count === 1 ? "plan" : "plans"
+          }.`,
     );
   };
 
@@ -1241,7 +1340,9 @@ export function usePlanForReview({
     handleRejectPlanCancellation,
     handleBatchReviewPlans,
     handleCommitteeVote,
+    handleBatchCommitteeVote,
     handleManagementDecision,
+    handleBatchManagementDecision,
     handleAddActivityComment,
     handleSavePlanEdits,
     isCommitteeChair,

@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import type { OfficerContract } from "../data/officerContracts";
 import type { OfficerContractPayment } from "../data/officerPayments";
+import { parseExcelDateToIso } from "../../projects/utils/projectExcelUtils";
 
 /**
  * Utility functions for downloading contract Excel templates, exporting contracts, and parsing/validating uploaded contract spreadsheets.
@@ -95,22 +96,12 @@ function parseExcelNumber(val: unknown): number {
 
 function parseExcelDate(val: unknown): string | undefined {
   if (!val) return undefined;
-  if (val instanceof Date) {
-    return isNaN(val.getTime()) ? undefined : val.toISOString().slice(0, 10);
-  }
-  if (typeof val === "number") {
-    // Excel date serial number to Gregorian
-    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-    return isNaN(d.getTime()) ? undefined : d.toISOString().slice(0, 10);
-  }
-  const str = String(val).trim();
-  if (!str) return undefined;
-  const d = new Date(str);
-  return isNaN(d.getTime()) ? undefined : d.toISOString().slice(0, 10);
+  const iso = parseExcelDateToIso(val);
+  return iso || undefined;
 }
 
 /**
- * Downloads a pre-formatted Excel template for importing Contracts with sample data.
+ * Downloads a pre-formatted Excel template for importing Contracts.
  */
 export async function downloadContractExcelTemplate(): Promise<void> {
   try {
@@ -119,56 +110,31 @@ export async function downloadContractExcelTemplate(): Promise<void> {
   } catch {
     // Client-side fallback generation
     const XLSX = await import("xlsx");
-    const sampleData = [
-      {
-        Project: "Second Agricultural Growth Program (AGP-II)",
-        Activity: "ET-MoA-001-GO-RFQ",
-        Supplier: "Afro Agricultural Implements PLC",
-        Region: "Oromia",
-        "Contract Number": "MOA-CON-2024-001",
-        "Contract Award Date": "2025-08-10",
-        "Contract Signature Date": "2025-08-15",
-        "Start Date": "2025-09-01",
-        "End Date": "2026-06-30",
-        "Original Contract Amount": 2500000,
-        Amendment: 0,
-        "Final Contract Amount": 2500000,
-        "Total Paid": 500000,
-        "Remaining Balance": 2000000,
-        "Contract Status": "Active",
-        Advance: 500000,
-        "1st Payment": 0,
-        "2nd Payment": 0,
-        "Final Payment": 0,
-        "Retention Payment": 0,
-        "Retention Withholding": 125000,
-      },
-      {
-        Project: "Lowlands Livelihood Resilience Project (LLRP)",
-        Activity: "ET-MoA-002-CW-RFB",
-        Supplier: "National Water Works Construction Enterprise",
-        Region: "Somali",
-        "Contract Number": "MOA-CON-2024-002",
-        "Contract Award Date": "2025-09-05",
-        "Contract Signature Date": "2025-09-12",
-        "Start Date": "2025-10-01",
-        "End Date": "2026-09-30",
-        "Original Contract Amount": 12000000,
-        Amendment: 500000,
-        "Final Contract Amount": 12500000,
-        "Total Paid": 3750000,
-        "Remaining Balance": 8750000,
-        "Contract Status": "Active",
-        Advance: 2500000,
-        "1st Payment": 1250000,
-        "2nd Payment": 0,
-        "Final Payment": 0,
-        "Retention Payment": 0,
-        "Retention Withholding": 625000,
-      },
+    const headers = [
+      "Project",
+      "Activity",
+      "Supplier",
+      "Region",
+      "Contract Number",
+      "Contract Award Date",
+      "Contract Signature Date",
+      "Start Date",
+      "End Date",
+      "Original Contract Amount",
+      "Amendment",
+      "Final Contract Amount",
+      "Total Paid",
+      "Remaining Balance",
+      "Contract Status",
+      "Advance",
+      "1st Payment",
+      "2nd Payment",
+      "Final Payment",
+      "Retention Payment",
+      "Retention Withholding",
     ];
 
-    const ws = XLSX.utils.json_to_sheet(sampleData);
+    const ws = XLSX.utils.aoa_to_sheet([headers]);
     ws["!cols"] = [
       { wch: 35 }, // Project
       { wch: 22 }, // Activity
@@ -207,7 +173,7 @@ export async function parseContractsFromExcel(
 ): Promise<ParsedContractsResult> {
   const XLSX = await import("xlsx");
   const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
 
   if (!firstSheetName) {
@@ -482,7 +448,7 @@ export function exportContractsToExcel(
       Project: c.project || "",
       Activity: c.procurementActivity || "",
       Supplier: c.supplier || "",
-      Region: c.details?.organizationRegion || "Federal",
+      Region: c.details?.organizationRegion || (c as any).region || "",
       "Contract Number": c.contractNumber || "",
       "Contract Award Date":
         c.details?.awardDate?.gregorian ||
@@ -502,7 +468,7 @@ export function exportContractsToExcel(
         Number(c.currentAmount) || Number(c.originalAmount) || 0,
       "Total Paid": Number(c.totalPaid) || 0,
       "Remaining Balance": Number(c.remainingBalance) || 0,
-      "Contract Status": c.status || "Active",
+      "Contract Status": c.status || "",
       Advance: advance,
       "1st Payment": firstPayment,
       "2nd Payment": secondPayment,
@@ -512,7 +478,34 @@ export function exportContractsToExcel(
     };
   });
 
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const contractExportHeaders = [
+    "Project",
+    "Activity",
+    "Supplier",
+    "Region",
+    "Contract Number",
+    "Contract Award Date",
+    "Contract Signature Date",
+    "Start Date",
+    "End Date",
+    "Original Contract Amount",
+    "Amendment",
+    "Final Contract Amount",
+    "Total Paid",
+    "Remaining Balance",
+    "Contract Status",
+    "Advance",
+    "1st Payment",
+    "2nd Payment",
+    "Final Payment",
+    "Retention Payment",
+    "Retention Withholding",
+  ];
+
+  const worksheet =
+    rows.length > 0
+      ? XLSX.utils.json_to_sheet(rows)
+      : XLSX.utils.aoa_to_sheet([contractExportHeaders]);
   const colWidths = [
     { wch: 35 }, // Project
     { wch: 25 }, // Activity

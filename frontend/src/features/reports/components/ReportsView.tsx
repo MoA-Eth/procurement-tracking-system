@@ -2484,7 +2484,7 @@ export function ReportsView() {
         case "annual-plan":
           await downloadAnnualProcurementPlanReport({
             budgetYear:
-              filters.efy && filters.efy !== "ALL" ? filters.efy : "2017 EFY",
+              filters.efy && filters.efy !== "ALL" ? filters.efy : undefined,
             projectId: effectiveProjectId,
             sector: effectiveSector,
             category: filters.category !== "ALL" ? filters.category : undefined,

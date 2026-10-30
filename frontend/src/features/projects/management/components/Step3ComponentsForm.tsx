@@ -217,7 +217,7 @@ export function Step3ComponentsForm({
         <DualCalendarInput
           id="project-start-date"
           label="Project Start Date *"
-          gregorianValue={data.startDate}
+          gregorianValue={data.startDate ? data.startDate.slice(0, 10) : ""}
           ethiopianValue={
             data.startDate && gregorianToEthiopian(data.startDate)
               ? formatEthiopianDate(gregorianToEthiopian(data.startDate)!)
@@ -229,7 +229,7 @@ export function Step3ComponentsForm({
         <DualCalendarInput
           id="project-end-date"
           label="Project End Date *"
-          gregorianValue={data.endDate}
+          gregorianValue={data.endDate ? data.endDate.slice(0, 10) : ""}
           ethiopianValue={
             data.endDate && gregorianToEthiopian(data.endDate)
               ? formatEthiopianDate(gregorianToEthiopian(data.endDate)!)
