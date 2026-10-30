@@ -606,8 +606,10 @@ export function mapBackendActivityToProcurementActivitySummary(
             s.isNotApplicable ||
             s.notApplicable ||
             s.status === "NOT_APPLICABLE" ||
-            s.status === "Not Applicable" ||
-            (!hasExplicitDates && isTemplateOptional),
+            s.status === "Not Applicable",
+            // Removed: (!hasExplicitDates && isTemplateOptional)
+            // allowNotApplicable means the checkbox is *enabled*, not that the
+            // stage should default to N/A. Officers must opt-in explicitly.
           );
 
           let rawPlannedDate = s.plannedStartDate
@@ -658,7 +660,6 @@ export function mapBackendActivityToProcurementActivitySummary(
           };
         })
       : templateRoadmap.map((tpl, idx) => {
-          const isNA = Boolean(tpl.allowNotApplicable);
           const greg = "";
           const eth = "";
           return {
@@ -667,9 +668,9 @@ export function mapBackendActivityToProcurementActivitySummary(
             days: "14",
             ethiopianDate: eth,
             gregorianDate: greg,
-            notApplicable: isNA,
+            notApplicable: false, // officers opt-in; allowNotApplicable only enables the checkbox
             remarks: "",
-            status: isNA ? "Not Applicable" : "Not Started",
+            status: "Not Started",
           };
         });
 
