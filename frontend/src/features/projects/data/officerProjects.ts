@@ -70,6 +70,8 @@ export interface ProcurementPlanSummary {
   cancellationRequestedBy?: string;
   cancellationApprovedAt?: string;
   cancellationApprovedBy?: string;
+  activitiesCount?: number;
+  parentActivities?: readonly any[];
 }
 
 export interface OfficerProject {

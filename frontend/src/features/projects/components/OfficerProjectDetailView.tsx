@@ -45,6 +45,13 @@ function formatProjectPeriod(project: OfficerProject): string | undefined {
   return undefined;
 }
 
+function getPlanActivitiesCount(plan: ProcurementPlanSummary): number {
+  const direct = plan.activities || 0;
+  const listCount = plan.planActivities?.length || 0;
+  const parentCount = (plan as any).parentActivities?.length || 0;
+  return Math.max(plan.activitiesCount || 0, direct, listCount, listCount + parentCount);
+}
+
 export function OfficerProjectDetailView({
   project,
   onImportPlans,
@@ -72,7 +79,7 @@ export function OfficerProjectDetailView({
       s === "returned" ||
       s === "returned for revision" ||
       s === "returned_for_revision";
-    const actCount = plan.activities || plan.planActivities?.length || 0;
+    const actCount = getPlanActivitiesCount(plan);
     return isDraftOrReturned && actCount > 0;
   };
 
@@ -390,8 +397,7 @@ export function OfficerProjectDetailView({
                   s === "returned" ||
                   s === "returned for revision" ||
                   s === "returned_for_revision";
-                const actCount =
-                  plan.activities || plan.planActivities?.length || 0;
+                const actCount = getPlanActivitiesCount(plan);
                 const disableReason = !isDraftOrReturned
                   ? `Plan status is "${plan.status}" (already under review or approved)`
                   : actCount === 0
@@ -444,7 +450,7 @@ export function OfficerProjectDetailView({
                       </span>
                     </td>
                     <td className="px-5 py-4 text-center text-sm font-semibold text-slate-800">
-                      {plan.activities}
+                      {actCount}
                     </td>
                     <td className="px-5 py-4">
                       <StatusText className="text-xs" label={plan.status} />
@@ -522,8 +528,7 @@ export function OfficerProjectDetailView({
                         </p>
                       </div>
                       <span className="shrink-0 font-medium text-slate-600 bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px]">
-                        {p.activities || p.planActivities?.length || 0}{" "}
-                        activities
+                        {getPlanActivitiesCount(p)} activities
                       </span>
                     </div>
                   );

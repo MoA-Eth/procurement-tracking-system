@@ -316,7 +316,13 @@ export function CommitteeBatchReviewModal({
                           <span>{plan.category}</span>
                           <span>•</span>
                           <span>
-                            {(plan.activities || []).length} Activities
+                            {Math.max(
+                              plan.activitiesCount || 0,
+                              (plan.activities?.length || 0) +
+                                ((plan as any).parentActivities?.length || 0),
+                              (plan.activities || []).length,
+                            )}{" "}
+                            Activities
                           </span>
                         </div>
                       </div>

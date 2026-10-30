@@ -461,11 +461,49 @@ export function OfficerProjectsView({
 
       if (matchingBackendPlans.length === 0) return proj;
 
+      const plansWithEffectiveCounts = matchingBackendPlans.map((plan) => {
+        const planRef = (plan.reference || "").toLowerCase().trim();
+        const planId = (plan.id || "").toLowerCase().trim();
+        const planName = (plan.name || "").toLowerCase().trim();
+
+        const matchingDraftCount = effectiveSavedActivityRecords.filter(
+          (rec) => {
+            if (
+              isTestOrJunkActivity(
+                rec.activity?.reference,
+                rec.activity?.description,
+              )
+            ) {
+              return false;
+            }
+            const pCode = (rec.projectCode || "").toLowerCase().trim();
+            if (pCode !== projCode && pCode !== projId) return false;
+            const rRef = (rec.planReference || "").toLowerCase().trim();
+            return (
+              (planId && rRef === planId) ||
+              (planRef && rRef === planRef) ||
+              (planName && rRef === planName)
+            );
+          },
+        ).length;
+
+        const effectiveCount = Math.max(
+          plan.activities || 0,
+          plan.planActivities?.length || 0,
+          matchingDraftCount,
+        );
+        return {
+          ...plan,
+          activities: effectiveCount,
+          activitiesCount: effectiveCount,
+        };
+      });
+
       const existingPlanRefs = new Set(
-        matchingBackendPlans.map((p) => p.reference.toLowerCase()),
+        plansWithEffectiveCounts.map((p) => p.reference.toLowerCase()),
       );
       const existingPlanNames = new Set(
-        matchingBackendPlans.map((p) => p.name.toLowerCase()),
+        plansWithEffectiveCounts.map((p) => p.name.toLowerCase()),
       );
       const remainingBaselinePlans = proj.plans.filter(
         (p) =>
@@ -476,11 +514,11 @@ export function OfficerProjectsView({
       return {
         ...proj,
         activePlans:
-          matchingBackendPlans.length + remainingBaselinePlans.length,
-        plans: [...matchingBackendPlans, ...remainingBaselinePlans],
+          plansWithEffectiveCounts.length + remainingBaselinePlans.length,
+        plans: [...plansWithEffectiveCounts, ...remainingBaselinePlans],
       };
     });
-  }, [backendProjects, backendPlans]);
+  }, [backendProjects, backendPlans, effectiveSavedActivityRecords]);
 
   const {
     availability,
@@ -565,6 +603,16 @@ export function OfficerProjectsView({
       .filter((ba) => !isTestOrJunkActivity(ba.reference, ba.description))
       .map(mapBackendActivityToProcurementActivitySummary);
 
+    const parentBackendActivities = (
+      matchingBackendPlan?.parentPlan?.activities || []
+    )
+      .filter((ba) => !isTestOrJunkActivity(ba.reference, ba.description))
+      .map((ba) => {
+        const s = mapBackendActivityToProcurementActivitySummary(ba);
+        (s as any).isParentApproved = true;
+        return s;
+      });
+
     const matchingSaved = effectiveSavedActivityRecords
       .filter((record) => {
         if (
@@ -625,6 +673,12 @@ export function OfficerProjectsView({
         .forEach((a) => upsertSummaryActivity(combined, a));
     }
     directBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
+    parentBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
+    if (selectedPlan.parentActivities && selectedPlan.parentActivities.length > 0) {
+      selectedPlan.parentActivities.forEach((a: any) =>
+        upsertSummaryActivity(combined, { ...a, isParentApproved: true }),
+      );
+    }
     matchingSaved.forEach((a) => upsertSummaryActivity(combined, a));
 
     const activitiesList = combined.map((act) => {
@@ -2406,7 +2460,7 @@ export function OfficerProjectsView({
               : "create-activity"
         }
         existingActivityCount={
-          selectedPlan.activities + selectedPlanActivities.length
+          Math.max(selectedPlan.activities || 0, selectedPlanActivities.length)
         }
         initialActivity={
           mode === "edit-activity" ? selectedActivity : undefined

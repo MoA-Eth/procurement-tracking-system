@@ -27,6 +27,14 @@ export interface ManagementBatchReviewModalProps {
   }) => Promise<void> | void;
 }
 
+function getPlanActivitiesCount(p: ProcurementPlan): number {
+  return Math.max(
+    p.activitiesCount || 0,
+    (p.activities?.length || 0) + ((p as any).parentActivities?.length || 0),
+    p.activities?.length || 0,
+  );
+}
+
 export function ManagementBatchReviewModal({
   isOpen,
   onClose,
@@ -61,7 +69,7 @@ export function ManagementBatchReviewModal({
 
   const totalActivities = useMemo(() => {
     return plans.reduce((acc, p) => {
-      const count = p.activitiesCount || p.activities?.length || 0;
+      const count = getPlanActivitiesCount(p);
       return acc + count;
     }, 0);
   }, [plans]);
@@ -260,8 +268,7 @@ export function ManagementBatchReviewModal({
                           <span>{p.category}</span>
                           <span>•</span>
                           <span>
-                            {p.activitiesCount || p.activities?.length || 0}{" "}
-                            Activities
+                            {getPlanActivitiesCount(p)} Activities
                           </span>
                         </div>
                       </div>
@@ -353,8 +360,7 @@ export function ManagementBatchReviewModal({
                             </span>
                             <span className="text-[11px] text-slate-500 font-mono">
                               {p.reference || p.id} • {p.category} (
-                              {p.activitiesCount || p.activities?.length || 0}{" "}
-                              Activities)
+                              {getPlanActivitiesCount(p)} Activities)
                             </span>
                           </div>
                         </div>

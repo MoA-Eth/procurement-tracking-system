@@ -122,7 +122,12 @@ export function CommitteeAwaitingTable({
                       >
                         {plan.isPriority
                           ? "▲ Priority Review"
-                          : `${plan.budgetYear} • ${plan.activitiesCount} Activities`}
+                          : `${plan.budgetYear} • ${Math.max(
+                              plan.activitiesCount || 0,
+                              (plan.activities?.length || 0) +
+                                ((plan as any).parentActivities?.length || 0),
+                              plan.activities?.length || 0,
+                            )} Activities`}
                       </span>
                       {plan.deadlineText && (
                         <>

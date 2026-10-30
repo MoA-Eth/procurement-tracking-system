@@ -446,10 +446,25 @@ export function CommitteeProgressView({
             overallStatus = "Pending Approval";
           }
 
-          const effectiveActivities =
+          const directActs =
             bp.activities && bp.activities.length > 0
               ? bp.activities
               : matchingDraft?.planActivities || [];
+          const parentActs = bp.parentPlan?.activities || [];
+          const directKeys = new Set(
+            directActs
+              .map((a: any) =>
+                (a.reference || a.activityRefNo || a.id || "").toLowerCase().trim(),
+              )
+              .filter(Boolean),
+          );
+          const uniqueParents = parentActs.filter(
+            (pa: any) =>
+              !directKeys.has(
+                (pa.reference || pa.activityRefNo || pa.id || "").toLowerCase().trim(),
+              ),
+          );
+          const effectiveActivities = [...directActs, ...uniqueParents];
 
           const totalBudget = effectiveActivities.reduce(
             (sum: number, a: any) =>
@@ -656,6 +671,13 @@ export function CommitteeProgressView({
         };
 
         const combined = [...(selectedPlan?.activities || [])];
+        if (selectedPlan?.backendPlan?.parentPlan?.activities) {
+          for (const pa of selectedPlan.backendPlan.parentPlan.activities) {
+            if (!combined.some((x: any) => isDuplicateAct(x, pa))) {
+              combined.push({ ...pa, isParentApproved: true });
+            }
+          }
+        }
         for (const ba of [...planBackendActs, ...allBackendActs]) {
           const baPlanId = (ba.planId || ba.plan?.id || "")
             .toLowerCase()
@@ -1023,7 +1045,12 @@ export function CommitteeProgressView({
       activitiesCount:
         acts.length > 0
           ? acts.length
-          : basePlan.activitiesCount || (basePlan.activities || []).length,
+          : Math.max(
+              basePlan.activitiesCount || 0,
+              (basePlan.activities || []).length +
+                ((basePlan as any).parentActivities || []).length,
+              (basePlan.activities || []).length,
+            ),
     };
   }, [selectedPlan, currentUser, selectedPlanActivities]);
 

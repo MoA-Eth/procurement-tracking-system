@@ -542,7 +542,12 @@ export function usePlanForReview({
         status: "Committee Review",
         estimatedTotal: Number(plan.estimatedValue || plan.estimatedTotal) || 0,
         currency: "ETB",
-        activitiesCount: (plan.activities || []).length,
+        activitiesCount: Math.max(
+          plan.activitiesCount || 0,
+          (plan.activities || []).length +
+            ((plan as any).parentActivities || []).length,
+          (plan.activities || []).length,
+        ),
       },
       activities: (plan.activities || []).map((a: any) => ({
         id: a.id,
@@ -683,7 +688,12 @@ export function usePlanForReview({
         status: "Returned for Revision",
         estimatedTotal: Number(plan.estimatedValue || plan.estimatedTotal) || 0,
         currency: "ETB",
-        activitiesCount: (plan.activities || []).length,
+        activitiesCount: Math.max(
+          plan.activitiesCount || 0,
+          (plan.activities || []).length +
+            ((plan as any).parentActivities || []).length,
+          (plan.activities || []).length,
+        ),
       },
       activities: (plan.activities || []).map((a: any) => ({
         id: a.id,
@@ -865,7 +875,12 @@ export function usePlanForReview({
           estimatedTotal:
             Number(plan.estimatedValue || plan.estimatedTotal) || 0,
           currency: "ETB",
-          activitiesCount: (plan.activities || []).length,
+          activitiesCount: Math.max(
+            plan.activitiesCount || 0,
+            (plan.activities || []).length +
+              ((plan as any).parentActivities || []).length,
+            (plan.activities || []).length,
+          ),
         },
         activities: (plan.activities || []).map((a: any) => ({
           id: a.id,
@@ -929,7 +944,12 @@ export function usePlanForReview({
           estimatedTotal:
             Number(plan.estimatedValue || plan.estimatedTotal) || 0,
           currency: "ETB",
-          activitiesCount: (plan.activities || []).length,
+          activitiesCount: Math.max(
+            plan.activitiesCount || 0,
+            (plan.activities || []).length +
+              ((plan as any).parentActivities || []).length,
+            (plan.activities || []).length,
+          ),
         },
         activities: (plan.activities || []).map((a: any) => ({
           id: a.id,

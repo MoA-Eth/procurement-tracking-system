@@ -48,11 +48,32 @@ export const getActivitiesService = async (planId?: string) => {
   let where: Prisma.ActivityWhereInput = { isActive: true };
   if (planId) {
     const trimmed = planId.trim();
+    const targetPlan = await prisma.plan.findFirst({
+      where: {
+        OR: [
+          { id: trimmed },
+          { title: { equals: trimmed, mode: 'insensitive' } },
+        ],
+        isActive: true,
+      },
+      select: { id: true, parentPlanId: true },
+    });
+
+    const planIds = [trimmed];
+    if (targetPlan) {
+      if (targetPlan.id && !planIds.includes(targetPlan.id)) {
+        planIds.push(targetPlan.id);
+      }
+      if (targetPlan.parentPlanId && !planIds.includes(targetPlan.parentPlanId)) {
+        planIds.push(targetPlan.parentPlanId);
+      }
+    }
+
     where = {
       isActive: true,
       OR: [
-        { planId: trimmed },
-        { plan: { id: trimmed } },
+        { planId: { in: planIds } },
+        { plan: { id: { in: planIds } } },
         { plan: { title: { equals: trimmed, mode: 'insensitive' } } },
       ],
     };

@@ -309,16 +309,29 @@ export function OfficerProcurementPlanDetailView({
 
   const activities = useMemo(() => {
     const list = [...savedActivities];
+    const existingRefs = new Set(
+      list.map((a) => (a.reference || a.id || "").toLowerCase()).filter(Boolean),
+    );
     if (currentPlan.planActivities && currentPlan.planActivities.length > 0) {
-      const existingRefs = new Set(list.map((a) => a.reference.toLowerCase()));
       currentPlan.planActivities.forEach((pa) => {
-        if (!existingRefs.has(pa.reference.toLowerCase())) {
+        const ref = (pa.reference || pa.id || "").toLowerCase();
+        if (ref && !existingRefs.has(ref)) {
+          existingRefs.add(ref);
           list.push(pa);
         }
       });
     }
+    if (currentPlan.parentActivities && currentPlan.parentActivities.length > 0) {
+      currentPlan.parentActivities.forEach((pa: any) => {
+        const ref = (pa.reference || pa.id || "").toLowerCase();
+        if (ref && !existingRefs.has(ref)) {
+          existingRefs.add(ref);
+          list.push({ ...pa, isParentApproved: true });
+        }
+      });
+    }
     return list;
-  }, [savedActivities, currentPlan.planActivities]);
+  }, [savedActivities, currentPlan.planActivities, currentPlan.parentActivities]);
 
   const totalActivitiesCount =
     activities.length > 0 ? activities.length : (currentPlan.activities ?? 0);

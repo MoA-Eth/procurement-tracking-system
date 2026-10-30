@@ -176,7 +176,12 @@ export function PlanBatchReviewModal({
                     </p>
                   </div>
                   <span className="shrink-0 font-medium text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px]">
-                    {plan.activitiesCount || plan.activities?.length || 0}{" "}
+                    {Math.max(
+                      plan.activitiesCount || 0,
+                      (plan.activities?.length || 0) +
+                        ((plan as any).parentActivities?.length || 0),
+                      plan.activities?.length || 0,
+                    )}{" "}
                     activities
                   </span>
                 </div>

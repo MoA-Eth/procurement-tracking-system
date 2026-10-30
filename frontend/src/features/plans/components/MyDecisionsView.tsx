@@ -1223,7 +1223,13 @@ export function MyDecisionsView({
                             {plan.planName}
                           </p>
                           <div className="text-[10px] text-slate-400 font-normal mt-0.5 wrap-break-word line-clamp-2">
-                            {plan.budgetYear} • {plan.activitiesCount}{" "}
+                            {plan.budgetYear} •{" "}
+                            {Math.max(
+                              plan.activitiesCount || 0,
+                              (plan.activities?.length || 0) +
+                                ((plan as any).parentActivities?.length || 0),
+                              plan.activities?.length || 0,
+                            )}{" "}
                             Activities
                           </div>
                         </td>

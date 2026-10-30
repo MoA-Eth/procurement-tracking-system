@@ -62,7 +62,18 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
         creator: true,
         parentPlan: {
           include: {
-            activities: true,
+            activities: {
+              include: {
+                procurementMethod: true,
+                stages: {
+                  include: {
+                    stageType: true,
+                    revisions: { orderBy: { revisionNo: 'asc' } },
+                  },
+                  orderBy: { sequence: 'asc' },
+                },
+              },
+            },
           },
         },
         childPlans: true,
@@ -164,7 +175,18 @@ export const getPlanByIdService = async (id: string) => {
         creator: true,
         parentPlan: {
           include: {
-            activities: true,
+            activities: {
+              include: {
+                procurementMethod: true,
+                stages: {
+                  include: {
+                    stageType: true,
+                    revisions: { orderBy: { revisionNo: 'asc' } },
+                  },
+                  orderBy: { sequence: 'asc' },
+                },
+              },
+            },
           },
         },
         childPlans: true,

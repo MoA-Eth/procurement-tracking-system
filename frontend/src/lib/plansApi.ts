@@ -5,6 +5,7 @@ import {
   parseRejectionDetails,
 } from "@/features/plans/plansData";
 import { roadmapForMethod } from "@/features/projects/data/procurementActivityConfig";
+import { mapBackendActivityToProcurementActivitySummary } from "@/features/projects/data/officerActivityDrafts";
 import {
   gregorianToEthiopian,
   formatEthiopianDate,
@@ -482,11 +483,27 @@ export function mapBackendPlanToFrontend(
     status = "Update Requested";
   else if (backendPlan.status === "DRAFT") status = "Draft";
 
-  // Calculate estimated total from activities if included
-  let estimatedTotalNum = 0;
-  if (backendPlan.activities && backendPlan.activities.length > 0) {
-    estimatedTotalNum = backendPlan.activities.reduce(
-      (sum, act) => sum + (act.estimatedBudget || 0),
+  // Calculate estimated total and activities count from activities and parentPlan activities
+  const directActs = backendPlan.activities || [];
+  const parentActs = backendPlan.parentPlan?.activities || [];
+  const directActKeys = new Set(
+    directActs
+      .map((a: any) => (a.reference || a.id || "").toLowerCase().trim())
+      .filter(Boolean),
+  );
+  const uniqueParentActs = parentActs.filter(
+    (pa: any) =>
+      !directActKeys.has((pa.reference || pa.id || "").toLowerCase().trim()),
+  );
+  const totalActivitiesCount = directActs.length + uniqueParentActs.length;
+
+  let estimatedTotalNum = directActs.reduce(
+    (sum, act) => sum + (act.estimatedBudget || 0),
+    0,
+  );
+  if (uniqueParentActs.length > 0) {
+    estimatedTotalNum += uniqueParentActs.reduce(
+      (sum: number, act: any) => sum + (act.estimatedBudget || 0),
       0,
     );
   }
@@ -599,7 +616,7 @@ export function mapBackendPlanToFrontend(
       (backendPlan as any).creator?.name ||
       "Assigned Officer",
     createdAt: backendPlan.createdAt,
-    activitiesCount: backendPlan.activities ? backendPlan.activities.length : 0,
+    activitiesCount: totalActivitiesCount,
     estimatedTotal,
     isPriority: backendPlan.committeeVoteDeadline
       ? new Date(backendPlan.committeeVoteDeadline).getTime() -
@@ -1038,6 +1055,30 @@ export function mapBackendPlanToOfficerPlanSummary(
     return !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : "";
   })();
 
+  const parentActivities = backendPlan.parentPlan?.activities || [];
+  const existingRefs = new Set(
+    planActivities
+      .map((a) => (a.reference || a.id || "").toLowerCase().trim())
+      .filter(Boolean),
+  );
+  const mappedParentActivities: import("@/features/projects/data/officerActivityDrafts").ProcurementActivitySummary[] =
+    parentActivities
+      .filter(
+        (pa: any) =>
+          !existingRefs.has((pa.reference || pa.id || "").toLowerCase().trim()),
+      )
+      .map((pa: any) => {
+        const summary = mapBackendActivityToProcurementActivitySummary(pa);
+        (summary as any).isParentApproved = true;
+        return summary;
+      });
+
+  const allPlanActivities = [...planActivities, ...mappedParentActivities];
+  const totalPlanEstimatedValue = allPlanActivities.reduce(
+    (sum, a) => sum + (Number(a.estimatedAmount) || 0),
+    0,
+  );
+
   return {
     reference: backendPlan.id,
     id: backendPlan.id,
@@ -1048,17 +1089,23 @@ export function mapBackendPlanToOfficerPlanSummary(
     rejectionReason: backendPlan.rejectionReason || undefined,
     directorRevisionComment: backendPlan.directorRevisionComment || undefined,
     managementComment: backendPlan.managementComment || undefined,
-    activities: activities.length,
-    completedActivities: activities.filter((a) => a.status === "COMPLETED")
-      .length,
-    inProgressActivities: activities.filter((a) => a.status === "IN_PROGRESS")
-      .length,
-    delayedActivities: activities.filter((a) => a.status === "DELAYED").length,
+    activities: allPlanActivities.length,
+    activitiesCount: allPlanActivities.length,
+    completedActivities: allPlanActivities.filter(
+      (a) => a.status === "Completed",
+    ).length,
+    inProgressActivities: allPlanActivities.filter(
+      (a) => a.status === "In Progress",
+    ).length,
+    delayedActivities: allPlanActivities.filter(
+      (a) => a.status === "Delayed",
+    ).length,
     currency: "ETB",
-    estimatedValue,
+    estimatedValue: totalPlanEstimatedValue > 0 ? totalPlanEstimatedValue : estimatedValue,
     organizationRegion: backendPlan.organization || "",
     description: backendPlan.description || undefined,
-    planActivities,
+    planActivities: allPlanActivities,
+    parentActivities: mappedParentActivities,
     createdById: backendPlan.createdBy,
     createdByName:
       backendPlan.creator?.displayName || backendPlan.creator?.name || "",

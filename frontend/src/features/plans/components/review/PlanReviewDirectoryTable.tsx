@@ -89,6 +89,16 @@ export interface PlanReviewDirectoryTableProps {
   getProjectForPlan?: (projectCode: string) => ProjectItem;
 }
 
+function getPlanActivitiesCount(plan: ProcurementPlan): number {
+  const direct = plan.activities?.length || 0;
+  const parent = plan.parentActivities?.length || 0;
+  return Math.max(
+    plan.activitiesCount || 0,
+    direct + parent,
+    direct,
+  );
+}
+
 export function PlanReviewDirectoryTable({
   userRole,
   toastMessage,
@@ -1094,9 +1104,7 @@ export function PlanReviewDirectoryTable({
                               </td>
 
                               <td className="py-3.5 px-4 text-center font-semibold text-slate-800">
-                                {plan.activitiesCount ||
-                                  plan.activities?.length ||
-                                  0}
+                                {getPlanActivitiesCount(plan)}
                               </td>
 
                               <td className="py-3.5 px-4 text-center">
@@ -1263,9 +1271,7 @@ export function PlanReviewDirectoryTable({
                             {plan.budgetYear}
                           </td>
                           <td className="py-3.5 px-4 text-center font-semibold text-slate-800">
-                            {plan.activitiesCount ||
-                              plan.activities?.length ||
-                              0}
+                            {getPlanActivitiesCount(plan)}
                           </td>
                           <td className="py-3.5 px-4 text-center">
                             <StatusText label={plan.status} />
@@ -1370,9 +1376,7 @@ export function PlanReviewDirectoryTable({
                             </td>
 
                             <td className="py-3.5 px-4 text-center font-semibold text-slate-800">
-                              {plan.activitiesCount ||
-                                plan.activities?.length ||
-                                0}
+                              {getPlanActivitiesCount(plan)}
                             </td>
 
                             <td className="py-3.5 px-4 text-center">
