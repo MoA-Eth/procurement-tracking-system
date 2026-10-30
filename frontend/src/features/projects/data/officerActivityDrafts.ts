@@ -614,18 +614,13 @@ export function mapBackendActivityToProcurementActivitySummary(
 
           let rawPlannedDate = s.plannedStartDate
             ? new Date(s.plannedStartDate).toISOString().slice(0, 10)
-            : "";
+            : (s.gregorianDate || "");
           let rawTargetDate = s.currentTargetStartDate
             ? new Date(s.currentTargetStartDate).toISOString().slice(0, 10)
-            : rawPlannedDate;
+            : (rawPlannedDate || s.gregorianDate || "");
 
-          if (!isNA && !rawPlannedDate) {
-            rawPlannedDate = "";
-            rawTargetDate = "";
-          }
-
-          const greg = isNA ? "" : rawTargetDate || rawPlannedDate;
-          const eth = isNA ? "" : toEthiopianDateString(greg);
+          const greg = isNA ? "" : rawTargetDate || rawPlannedDate || s.gregorianDate || "";
+          const eth = isNA ? "" : (s.ethiopianDate || toEthiopianDateString(greg));
 
           return {
             id: s.id,

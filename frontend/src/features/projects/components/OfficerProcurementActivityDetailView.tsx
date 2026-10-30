@@ -1,8 +1,9 @@
 import { StatusText } from "../../../components/dashboard/StatusText";
-import type {
-  ProcurementActivityAllocation,
-  ProcurementActivityRoadmapStage,
-  ProcurementActivitySummary,
+import {
+  toEthiopianDateString,
+  type ProcurementActivityAllocation,
+  type ProcurementActivityRoadmapStage,
+  type ProcurementActivitySummary,
 } from "@/features/projects/data/officerActivityDrafts";
 import type {
   OfficerProject,
@@ -20,7 +21,7 @@ import {
   Clock,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { EditActivityModal } from "@/features/activities/components/EditActivityModal";
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
 import {
@@ -201,17 +202,56 @@ export function OfficerProcurementActivityDetailView({
     details?.componentAllocations.filter((item) => item.selected) ?? [];
   const selectedFinancing =
     details?.financingAllocations.filter((item) => item.selected) ?? [];
-  const signedContractIndex =
-    details?.roadmap.findIndex((stage) => stage.name === "Signed Contract") ??
-    -1;
-  const planningStages =
-    details?.roadmap.slice(
-      0,
-      signedContractIndex >= 0 ? signedContractIndex + 1 : undefined,
-    ) ?? [];
+  const allRoadmapStages: ProcurementActivityRoadmapStage[] = useMemo(() => {
+    if (details?.roadmap && details.roadmap.length > 0) {
+      return details.roadmap;
+    }
+    if (
+      Array.isArray((activity as any).roadmap) &&
+      (activity as any).roadmap.length > 0
+    ) {
+      return (activity as any).roadmap;
+    }
+    if (
+      Array.isArray((activity as any).stages) &&
+      (activity as any).stages.length > 0
+    ) {
+      return (activity as any).stages.map((st: any, idx: number) => {
+        const rawDate = st.plannedStartDate
+          ? new Date(st.plannedStartDate).toISOString().slice(0, 10)
+          : st.gregorianDate || "";
+        const targetDate = st.currentTargetStartDate
+          ? new Date(st.currentTargetStartDate).toISOString().slice(0, 10)
+          : rawDate;
+        const finalDate = rawDate || targetDate;
+        return {
+          id: st.id || `stage-${idx + 1}`,
+          name:
+            st.stageType?.label || st.name || `Stage ${st.sequence || idx + 1}`,
+          allowNotApplicable: true,
+          days: String(st.plannedDays || 14),
+          ethiopianDate: st.ethiopianDate || toEthiopianDateString(finalDate),
+          gregorianDate: finalDate,
+          plannedStartDate: rawDate,
+          currentTargetStartDate: targetDate,
+          notApplicable: Boolean(st.isNotApplicable || st.notApplicable),
+          remarks: st.remarks || "",
+        };
+      });
+    }
+    return [];
+  }, [details?.roadmap, activity]);
+
+  const signedContractIndex = allRoadmapStages.findIndex((stage) =>
+    stage.name.toLowerCase().includes("signed contract"),
+  );
+  const planningStages = allRoadmapStages.slice(
+    0,
+    signedContractIndex >= 0 ? signedContractIndex + 1 : undefined,
+  );
   const monitoringStages =
     signedContractIndex >= 0
-      ? (details?.roadmap.slice(signedContractIndex + 1) ?? [])
+      ? allRoadmapStages.slice(signedContractIndex + 1)
       : [];
 
   return (
@@ -500,7 +540,7 @@ export function OfficerProcurementActivityDetailView({
       >
         {planningStages.length ? (
           <RoadmapTable
-            allStages={details?.roadmap ?? []}
+            allStages={allRoadmapStages}
             stages={planningStages}
             title="Procurement Planning Roadmap"
           />
@@ -513,7 +553,7 @@ export function OfficerProcurementActivityDetailView({
         {monitoringStages.length ? (
           <div className="mt-4">
             <RoadmapTable
-              allStages={details?.roadmap ?? []}
+              allStages={allRoadmapStages}
               stages={monitoringStages}
               title="Procurement Monitoring"
             />

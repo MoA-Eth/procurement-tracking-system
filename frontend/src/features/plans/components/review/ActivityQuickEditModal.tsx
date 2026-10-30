@@ -97,17 +97,42 @@ export function ActivityQuickEditModal({
             label="Target Planned Date (Roadmap Milestone)"
             disabled={isSpecsReadOnly}
             gregorianValue={
-              editingActivity.roadmap.find(
+              editingActivity.roadmap?.find(
                 (s: ActivityStage) =>
                   s.revisedTargetDate || s.originalPlannedDate,
               )?.revisedTargetDate ||
-              editingActivity.roadmap[0]?.originalPlannedDate ||
-              ""
+              editingActivity.roadmap?.[0]?.originalPlannedDate ||
+              (Array.isArray((editingActivity as any).stages) &&
+              (editingActivity as any).stages[0]?.plannedStartDate
+                ? new Date(
+                    (editingActivity as any).stages[0].plannedStartDate,
+                  )
+                    .toISOString()
+                    .slice(0, 10)
+                : "")
             }
             onChange={(newDate) => {
-              const updatedRoadmap = editingActivity.roadmap.map(
+              const currentRoadmap =
+                editingActivity.roadmap && editingActivity.roadmap.length > 0
+                  ? editingActivity.roadmap
+                  : [
+                      {
+                        id: "stage-1",
+                        stageName: "Preparation of Specification",
+                        originalPlannedDate: newDate,
+                        revisedTargetDate: newDate,
+                        stageStatus: "Not Started" as const,
+                      },
+                    ];
+              const updatedRoadmap = currentRoadmap.map(
                 (s: ActivityStage, sIdx: number) =>
-                  sIdx === 0 ? { ...s, revisedTargetDate: newDate } : s,
+                  sIdx === 0
+                    ? {
+                        ...s,
+                        originalPlannedDate: s.originalPlannedDate || newDate,
+                        revisedTargetDate: newDate,
+                      }
+                    : s,
               );
               setEditingActivity((prev) =>
                 prev ? { ...prev, roadmap: updatedRoadmap } : null,

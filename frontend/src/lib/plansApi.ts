@@ -635,13 +635,54 @@ export function mapBackendPlanToFrontend(
     comments: backendPlan.comments || [],
     rejectionScope: effectiveRejectionScope,
     rejectedActivityRefs: allRejectedActivityRefs,
-    activities: (backendPlan.activities || []).map((activity) => ({
-      ...activity,
-      category: mapBackendActivityCategory(
+    activities: (backendPlan.activities || []).map((activity) => {
+      const actCategory = mapBackendActivityCategory(
         activity.procurementCategory,
         category,
-      ),
-    })),
+      );
+      const actRoadmap =
+        activity.stages && activity.stages.length > 0
+          ? activity.stages.map((st: any, idx: number) => {
+              const plannedDate = st.plannedStartDate
+                ? new Date(st.plannedStartDate).toISOString().slice(0, 10)
+                : st.gregorianDate || "";
+              const targetDate = st.currentTargetStartDate
+                ? new Date(st.currentTargetStartDate).toISOString().slice(0, 10)
+                : plannedDate;
+              const actualDate = st.actualStartDate
+                ? new Date(st.actualStartDate).toISOString().slice(0, 10)
+                : st.actualDate || "";
+              const isNA = Boolean(st.isNotApplicable || st.notApplicable);
+              return {
+                id: st.id || `stage-${idx + 1}`,
+                stageName:
+                  st.stageType?.label || st.name || `Stage ${idx + 1}`,
+                originalPlannedDate: isNA ? "Not applicable" : plannedDate || "",
+                revisedTargetDate: isNA
+                  ? "Not applicable"
+                  : targetDate || plannedDate || "",
+                actualDate: isNA ? "" : actualDate,
+                stageStatus: isNA
+                  ? "Not Applicable"
+                  : st.status === "COMPLETED"
+                    ? "Completed"
+                    : st.status === "IN_PROGRESS"
+                      ? "In Progress"
+                      : "Not Started",
+                notApplicable: isNA,
+                remarks: st.remarks || "",
+              };
+            })
+          : (activity as any).roadmap || [];
+
+      return {
+        ...activity,
+        activityRefNo:
+          (activity as any).activityRefNo || activity.reference || "",
+        category: actCategory,
+        roadmap: actRoadmap,
+      };
+    }),
     parentPlanId: backendPlan.parentPlanId || undefined,
     parentPlanReference:
       backendPlan.parentPlan?.reference ||
@@ -764,21 +805,17 @@ export function mapBackendPlanToOfficerPlanSummary(
                 st.isNotApplicable ||
                 st.notApplicable ||
                 st.status === "NOT_APPLICABLE" ||
-                st.status === "Not Applicable" ||
-                (!hasExplicitDates && isTemplateOptional),
+                st.status === "Not Applicable",
               );
 
               let rawPlannedDate = st.plannedStartDate
                 ? new Date(st.plannedStartDate).toISOString().slice(0, 10)
-                : "";
+                : (st.gregorianDate || "");
               let rawTargetDate = st.currentTargetStartDate
                 ? new Date(st.currentTargetStartDate).toISOString().slice(0, 10)
-                : rawPlannedDate;
+                : (rawPlannedDate || st.gregorianDate || "");
 
-              if (!isNA && !rawPlannedDate) {
-                rawPlannedDate = "";
-                rawTargetDate = "";
-              }
+              const dateToUse = isNA ? "" : rawTargetDate || rawPlannedDate || st.gregorianDate || "";
 
               const rawActualDate =
                 st.actualEndDate || st.actualStartDate
@@ -805,15 +842,15 @@ export function mapBackendPlanToOfficerPlanSummary(
                 days: String(st.plannedDays || 14),
                 ethiopianDate: isNA
                   ? ""
-                  : toEthiopianDateString(rawTargetDate || rawPlannedDate),
-                gregorianDate: isNA ? "" : rawTargetDate || rawPlannedDate,
-                plannedStartDate: isNA ? "" : rawPlannedDate,
+                  : (st.ethiopianDate || toEthiopianDateString(dateToUse)),
+                gregorianDate: isNA ? "" : dateToUse,
+                plannedStartDate: isNA ? "" : rawPlannedDate || dateToUse,
                 plannedEndDate: isNA
                   ? ""
                   : st.plannedEndDate
                     ? new Date(st.plannedEndDate).toISOString().slice(0, 10)
                     : "",
-                currentTargetStartDate: isNA ? "" : rawTargetDate,
+                currentTargetStartDate: isNA ? "" : rawTargetDate || dateToUse,
                 currentTargetEndDate: isNA
                   ? ""
                   : st.currentTargetEndDate
@@ -859,25 +896,25 @@ export function mapBackendPlanToOfficerPlanSummary(
               };
             })
           : templateRoadmap.map((tpl, idx) => {
-              const isNA = Boolean(tpl.allowNotApplicable);
+              const isNA = false;
               const dateStr = "";
               return {
                 id: `tpl-stage-${idx + 1}`,
                 sequence: idx + 1,
                 name: tpl.name,
-                allowNotApplicable: true,
+                allowNotApplicable: Boolean(tpl.allowNotApplicable),
                 days: "14",
-                ethiopianDate: isNA ? "" : toEthiopianDateString(dateStr),
-                gregorianDate: isNA ? "" : dateStr,
-                plannedStartDate: isNA ? "" : dateStr,
-                plannedEndDate: isNA ? "" : dateStr,
-                currentTargetStartDate: isNA ? "" : dateStr,
-                currentTargetEndDate: isNA ? "" : dateStr,
+                ethiopianDate: "",
+                gregorianDate: "",
+                plannedStartDate: "",
+                plannedEndDate: "",
+                currentTargetStartDate: "",
+                currentTargetEndDate: "",
                 actualStartDate: "",
                 actualEndDate: "",
                 actualDate: "",
-                status: isNA ? "Not Applicable" : "Not Started",
-                notApplicable: isNA,
+                status: "Not Started",
+                notApplicable: false,
                 remarks: "",
                 revisions: [],
               };

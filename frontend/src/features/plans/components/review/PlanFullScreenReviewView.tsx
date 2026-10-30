@@ -605,12 +605,17 @@ export function PlanFullScreenReviewView({
                 {effectiveActivities.length > 0 ? (
                   effectiveActivities.map((act, idx) => {
                     const currentTargetDate =
-                      act.roadmap.find(
+                      act.roadmap?.find(
                         (s: ActivityStage) =>
                           s.revisedTargetDate || s.originalPlannedDate,
                       )?.revisedTargetDate ||
-                      act.roadmap[0]?.originalPlannedDate ||
-                      "N/A";
+                      act.roadmap?.[0]?.originalPlannedDate ||
+                      (Array.isArray((act as any).stages) &&
+                      (act as any).stages[0]?.plannedStartDate
+                        ? new Date((act as any).stages[0].plannedStartDate)
+                            .toISOString()
+                            .slice(0, 10)
+                        : "N/A");
 
                     const isTargeted =
                       selectedActivityRef &&
