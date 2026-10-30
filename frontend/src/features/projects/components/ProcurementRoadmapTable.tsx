@@ -27,7 +27,10 @@ export function ProcurementRoadmapTable({
   stages: ProcurementRoadmapStage[];
 }) {
   const incompleteCount = stages.filter(
-    (stage) => !stage.notApplicable && !stage.gregorianDate,
+    (stage) =>
+      isRoadmapStageMandatory(stage) &&
+      !stage.notApplicable &&
+      !stage.gregorianDate,
   ).length;
   const orderErrorCount = countRoadmapOrderErrors(stages);
   const signedContractIndex = stages.findIndex((stage) =>
@@ -193,7 +196,10 @@ function RoadmapSection({
             {stages.map((stage, localIndex) => {
               const index = offset + localIndex;
               const missing =
-                attempted && !stage.notApplicable && !stage.gregorianDate;
+                attempted &&
+                isRoadmapStageMandatory(stage) &&
+                !stage.notApplicable &&
+                !stage.gregorianDate;
               const outOfOrder =
                 attempted && roadmapStageIsOutOfOrder(allStages, index);
               const duration = plannedDurationDays(allStages, index);
@@ -239,7 +245,9 @@ function RoadmapSection({
                             ? "Planned date is required"
                             : outOfOrder
                               ? "Date must be chronologically ordered"
-                              : undefined
+                              : !isRoadmapStageMandatory(stage)
+                                ? "Optional date..."
+                                : undefined
                         }
                         ethiopianValue={stage.ethiopianDate}
                         gregorianValue={stage.gregorianDate}
@@ -427,4 +435,11 @@ export function countRoadmapOrderErrors(stages: ProcurementRoadmapStage[]) {
       count + Number(roadmapStageIsOutOfOrder(stages, index)),
     0,
   );
+}
+
+export function isRoadmapStageMandatory(
+  stage: Pick<ProcurementRoadmapStage, "name" | "allowNotApplicable">,
+): boolean {
+  if (stage.name.toLowerCase().includes("amendment")) return false;
+  return !stage.allowNotApplicable;
 }
