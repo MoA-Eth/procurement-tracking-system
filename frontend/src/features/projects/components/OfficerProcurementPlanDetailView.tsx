@@ -30,10 +30,11 @@ import {
   X,
   AlertTriangle,
   XCircle,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState, useEffect } from "react";
-import { requestPlanCancellation } from "@/lib/plansApi";
+import { requestPlanCancellation, requestPlanUpdate } from "@/lib/plansApi";
 import {
   getCurrentPlanVersionNumber,
   getPlanVersionHistory,
@@ -56,6 +57,7 @@ export function OfficerProcurementPlanDetailView({
   onSubmitToDirector,
   onUpdatePlan,
   onUpdateActivity,
+  onDeleteDraftActivity,
   onBulkImportActivities,
   plan,
   project,
@@ -68,6 +70,9 @@ export function OfficerProcurementPlanDetailView({
   ) => Promise<void> | void;
   onUpdatePlan?: (plan: ProcurementPlanSummary) => void;
   onUpdateActivity?: (activity: ProcurementActivitySummary) => void;
+  onDeleteDraftActivity?: (
+    activity: ProcurementActivitySummary,
+  ) => Promise<void>;
   onBulkImportActivities?: (
     activities: ProcurementActivitySummary[],
   ) => Promise<void> | void;
@@ -145,6 +150,38 @@ export function OfficerProcurementPlanDetailView({
   const [cancellationError, setCancellationError] = useState<string | null>(
     null,
   );
+  const [isRequestingPlanUpdate, setIsRequestingPlanUpdate] = useState(false);
+  const [planUpdateError, setPlanUpdateError] = useState<string | null>(null);
+
+  const handleRequestPlanUpdate = async () => {
+    if (
+      !window.confirm(
+        "Request Director authorization to reopen this approved plan for amendment?",
+      )
+    ) {
+      return;
+    }
+
+    setIsRequestingPlanUpdate(true);
+    setPlanUpdateError(null);
+    try {
+      await requestPlanUpdate(currentPlan.id || currentPlan.reference);
+      const updatedPlan: ProcurementPlanSummary = {
+        ...currentPlan,
+        status: "Update Requested",
+      };
+      setCurrentPlan(updatedPlan);
+      onUpdatePlan?.(updatedPlan);
+    } catch (error) {
+      setPlanUpdateError(
+        error instanceof Error
+          ? error.message
+          : "Could not request authorization to amend this plan.",
+      );
+    } finally {
+      setIsRequestingPlanUpdate(false);
+    }
+  };
 
   const handleRequestCancellation = async () => {
     if (!cancellationReason.trim()) return;
@@ -612,6 +649,19 @@ export function OfficerProcurementPlanDetailView({
               </button>
             )}
 
+            {isFinallyApproved && (
+              <button
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-900 shadow-2xs hover:bg-amber-100 transition cursor-pointer disabled:opacity-60"
+                disabled={isRequestingPlanUpdate}
+                onClick={handleRequestPlanUpdate}
+                type="button"
+                title="Ask a Director to reopen this approved plan before making amendments"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                {isRequestingPlanUpdate ? "Requesting..." : "Request Amendment"}
+              </button>
+            )}
+
             {!isCancelled && (
               <button
                 className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition cursor-pointer"
@@ -679,6 +729,26 @@ export function OfficerProcurementPlanDetailView({
             </p>
           </div>
         </div>
+      )}
+
+      {planUpdateError && (
+        <div
+          className="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-4 text-xs text-rose-900"
+          role="alert"
+        >
+          {planUpdateError}
+        </div>
+      )}
+
+      {activePlanStatus === "Update Requested" && (
+        <section
+          aria-label="Plan amendment request status"
+          className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-950"
+        >
+          Amendment request sent. A Director must authorize reopening before
+          activities can be edited. After approval, edit the activity and
+          resubmit the plan through the normal review workflow.
+        </section>
       )}
 
       {/* ── RETURNED FEEDBACK ALERT BANNER ───────────────────────────── */}
@@ -1128,8 +1198,13 @@ export function OfficerProcurementPlanDetailView({
                     key={activity.reference}
                     activity={activity}
                     canEdit={activePlanStatus === "Draft" || isReturned}
+                    canDeleteDraft={
+                      (activePlanStatus === "Draft" || isReturned) &&
+                      activity.status === "Draft"
+                    }
                     isMultiOfficer={isMultiOfficerProject}
                     onSelectDelay={handleSelectActivityDelay}
+                    onDeleteDraft={onDeleteDraftActivity}
                     editHref={
                       "/workspace/projects?project=" +
                       encodeURIComponent(project.code) +
@@ -1504,20 +1579,26 @@ export function OfficerProcurementPlanDetailView({
 function ActivityRow({
   activity,
   canEdit = true,
+  canDeleteDraft = false,
   editHref,
   href,
   isMultiOfficer = false,
   onSelectDelay,
+  onDeleteDraft,
   registerContractHref,
 }: {
   activity: PlanActivity;
   canEdit?: boolean;
+  canDeleteDraft?: boolean;
   editHref: string;
   href: string;
   isMultiOfficer?: boolean;
   onSelectDelay?: (activity: PlanActivity) => void;
+  onDeleteDraft?: (activity: PlanActivity) => Promise<void>;
   registerContractHref?: string;
 }) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const rowStages =
     (activity as any).stages ||
     activity.details?.roadmap ||
@@ -1617,6 +1698,40 @@ function ActivityRow({
               Edit
             </Link>
           )}
+          {canDeleteDraft && onDeleteDraft && (
+            <button
+              aria-label={`Delete draft activity ${activity.reference}`}
+              className="inline-flex shrink-0 items-center gap-1 rounded bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[9px] font-semibold text-rose-700 hover:bg-rose-600 hover:text-white transition cursor-pointer disabled:opacity-50"
+              disabled={isDeleting}
+              onClick={async () => {
+                if (
+                  !window.confirm(
+                    `Delete draft activity ${activity.reference}? This cannot be undone.`,
+                  )
+                ) {
+                  return;
+                }
+                setIsDeleting(true);
+                setDeleteError(null);
+                try {
+                  await onDeleteDraft(activity);
+                } catch (error) {
+                  setDeleteError(
+                    error instanceof Error
+                      ? error.message
+                      : "Could not delete the draft activity.",
+                  );
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+              title={`Delete draft activity ${activity.reference}`}
+              type="button"
+            >
+              <Trash2 className="h-2.5 w-2.5" />
+              {isDeleting ? "Deleting..." : "Delete"}
+            </button>
+          )}
           <Link
             aria-label={`Open activity ${activity.reference}`}
             className="shrink-0 text-[10px] font-semibold text-[#1261a8] hover:text-[#00843D] hover:underline"
@@ -1625,6 +1740,14 @@ function ActivityRow({
             Open
           </Link>
         </div>
+        {deleteError && (
+          <p
+            className="mt-1 whitespace-normal text-left text-[10px] text-rose-700"
+            role="alert"
+          >
+            {deleteError}
+          </p>
+        )}
       </td>
     </tr>
   );

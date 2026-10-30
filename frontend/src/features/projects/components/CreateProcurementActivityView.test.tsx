@@ -49,7 +49,7 @@ const project: OfficerProject = {
 };
 
 describe("CreateProcurementActivityView", () => {
-  it("starts with the document-defined four-step structure and locked context", () => {
+  it("starts with the four-step structure and lets each activity select its category", () => {
     const markup = renderToStaticMarkup(
       <CreateProcurementActivityView plan={plan} project={project} />,
     );
@@ -60,12 +60,13 @@ describe("CreateProcurementActivityView", () => {
     expect(markup).toContain("Additional Details");
     expect(markup).toContain("Roadmap");
     expect(markup).toContain(plan.name);
-    expect(markup).toContain("Inherited from the procurement plan");
-    expect(markup).toContain(plan.category);
+    expect(markup).toContain("This category applies to the activity only");
+    expect(markup).toContain("Procurement Category");
+    expect(markup).toContain("Consulting Services");
     expect(markup).not.toContain("legacy multi-category plan");
   });
 
-  it("filters procurement methods by the inherited plan category", () => {
+  it("filters procurement methods by the selected activity category", () => {
     const goodsMethods = methodsForCategory("Goods").map((m) => m.label);
     const worksMethods = methodsForCategory("Works").map((m) => m.label);
     const nonConsultingMethods = methodsForCategory(

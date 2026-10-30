@@ -62,6 +62,111 @@ export interface ProcurementActivityRoadmapStage {
   }[];
 }
 
+function nonEmptyRoadmapDate(...values: (string | undefined)[]) {
+  return values.find((value) => {
+    const normalized = value?.trim().toLowerCase();
+    return (
+      normalized &&
+      normalized !== "null" &&
+      normalized !== "undefined" &&
+      normalized !== "n/a" &&
+      normalized !== "not applicable" &&
+      normalized !== "date not recorded"
+    );
+  });
+}
+
+export function mergeActivityRoadmaps(
+  existing: readonly ProcurementActivityRoadmapStage[],
+  incoming: readonly ProcurementActivityRoadmapStage[],
+): ProcurementActivityRoadmapStage[] {
+  const usedExisting = new Set<number>();
+  const mergedIncoming = incoming.map((stage, index) => {
+    const matchesStage = (candidate: ProcurementActivityRoadmapStage) =>
+      (stage.id && candidate.id === stage.id) ||
+      (stage.stageTypeId && candidate.stageTypeId === stage.stageTypeId) ||
+      (stage.sequence !== undefined && candidate.sequence === stage.sequence) ||
+      candidate.name.trim().toLowerCase() === stage.name.trim().toLowerCase();
+    const matchingIndex = existing.findIndex(
+      (candidate, candidateIndex) =>
+        !usedExisting.has(candidateIndex) && matchesStage(candidate),
+    );
+    const existingIndex =
+      matchingIndex < 0 && !usedExisting.has(index) && existing[index]
+        ? index
+        : matchingIndex;
+    const previous = existingIndex >= 0 ? existing[existingIndex] : undefined;
+    if (existingIndex >= 0) usedExisting.add(existingIndex);
+
+    const baselineDate = nonEmptyRoadmapDate(
+      stage.plannedStartDate,
+      stage.gregorianDate,
+      previous?.plannedStartDate,
+      previous?.gregorianDate,
+      stage.currentTargetStartDate,
+      previous?.currentTargetStartDate,
+    );
+    const targetDate = nonEmptyRoadmapDate(
+      stage.currentTargetStartDate,
+      previous?.currentTargetStartDate,
+      stage.plannedStartDate,
+      stage.gregorianDate,
+      previous?.plannedStartDate,
+      previous?.gregorianDate,
+    );
+
+    return {
+      ...previous,
+      ...stage,
+      plannedStartDate: baselineDate,
+      gregorianDate: baselineDate || "",
+      currentTargetStartDate: targetDate,
+      ethiopianDate:
+        nonEmptyRoadmapDate(stage.ethiopianDate, previous?.ethiopianDate) || "",
+      notApplicable: baselineDate
+        ? false
+        : (stage.notApplicable ?? previous?.notApplicable ?? false),
+    };
+  });
+
+  return [
+    ...mergedIncoming,
+    ...existing.filter((_, index) => !usedExisting.has(index)),
+  ];
+}
+
+export function mapRoadmapStagesForBackend(
+  stages: readonly (Partial<ProcurementActivityRoadmapStage> & {
+    name?: string;
+    stageName?: string;
+    isNotApplicable?: boolean;
+  })[],
+) {
+  return stages.map((stage, index) => {
+    const plannedStartDate =
+      stage.gregorianDate ||
+      stage.plannedStartDate ||
+      stage.currentTargetStartDate ||
+      undefined;
+    const plannedEndDate =
+      stage.plannedEndDate || stage.currentTargetEndDate || undefined;
+
+    return {
+      name: stage.name || stage.stageName || "",
+      sequence: stage.sequence ?? index + 1,
+      plannedStartDate,
+      plannedEndDate,
+      currentTargetStartDate: plannedStartDate,
+      currentTargetEndDate: plannedEndDate,
+      gregorianDate: plannedStartDate,
+      ethiopianDate: stage.ethiopianDate || undefined,
+      isNotApplicable: Boolean(stage.notApplicable || stage.isNotApplicable),
+      notApplicable: Boolean(stage.notApplicable || stage.isNotApplicable),
+      remarks: stage.remarks || undefined,
+    };
+  });
+}
+
 export interface FundingContribution {
   id: string;
   fundingSource: string;
@@ -528,6 +633,8 @@ export function mapBackendActivityToProcurementActivitySummary(
             days: String(s.plannedDays || 14),
             ethiopianDate: eth,
             gregorianDate: greg,
+            plannedStartDate: rawPlannedDate,
+            currentTargetStartDate: rawTargetDate,
             name:
               s.stageType?.label ||
               s.name ||
@@ -542,8 +649,8 @@ export function mapBackendActivityToProcurementActivitySummary(
             actualEndDate: s.actualEndDate
               ? new Date(s.actualEndDate).toISOString().slice(0, 10)
               : undefined,
-            currentTargetStartDate: s.currentTargetStartDate
-              ? new Date(s.currentTargetStartDate).toISOString().slice(0, 10)
+            plannedEndDate: s.plannedEndDate
+              ? new Date(s.plannedEndDate).toISOString().slice(0, 10)
               : undefined,
             currentTargetEndDate: s.currentTargetEndDate
               ? new Date(s.currentTargetEndDate).toISOString().slice(0, 10)
@@ -573,7 +680,12 @@ export function mapBackendActivityToProcurementActivitySummary(
     "Draft";
 
   let status: ProcurementActivityStatus = "Not Started";
-  if (ba.status === "COMPLETED") status = "Completed";
+  if (
+    ba.status === "DRAFT" ||
+    (ba.status === "PLANNED" && ba.plan?.status === "DRAFT")
+  ) {
+    status = "Draft";
+  } else if (ba.status === "COMPLETED") status = "Completed";
   else if (ba.status === "IN_PROGRESS") status = "In Progress";
   else if (ba.stages?.some((s: any) => s.status === "DELAYED"))
     status = "Delayed";

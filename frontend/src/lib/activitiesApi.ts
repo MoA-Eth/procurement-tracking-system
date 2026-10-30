@@ -52,6 +52,8 @@ export interface BackendActivity {
     code: string;
     label: string;
   };
+  procurementCategory?:
+    "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" | null;
   description: string;
   estimatedBudget: number;
   currency: string;
@@ -63,6 +65,7 @@ export interface BackendActivity {
   lotRequired?: boolean;
   status:
     | "DRAFT"
+    | "PLANNED"
     | "PENDING_REVIEW"
     | "APPROVED"
     | "IN_PROGRESS"
@@ -74,6 +77,7 @@ export interface BackendActivity {
   plan?: {
     id: string;
     title: string;
+    status?: string;
     project?: { id: string; code: string; name: string };
   };
   createdById?: string;
@@ -92,6 +96,8 @@ export interface BackendActivity {
 export interface CreateActivityInput {
   planId: string;
   reference?: string;
+  procurementCategory?: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING";
+  status?: "DRAFT" | "PLANNED";
   procurementMethodId: string;
   description: string;
   estimatedBudget: number;

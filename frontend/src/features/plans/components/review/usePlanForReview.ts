@@ -13,6 +13,7 @@ import {
   type BackendPlan,
   approvePlanCancellation,
   rejectPlanCancellation,
+  approvePlanUpdate,
 } from "../../../../lib/plansApi";
 import type { AuthUser } from "../../../../lib/authTypes";
 import {
@@ -273,10 +274,12 @@ export function usePlanForReview({
         p.status === "Cancellation Requested" ||
         p.status === "Returned" ||
         p.status === "Returned for Revision" ||
+        p.status === "Update Requested" ||
         p.status === "Committee Rejected" ||
         (p as any).status === "SUBMITTED" ||
         (p as any).status === "CANCELLATION_REQUESTED" ||
         (p as any).status === "RETURNED_FOR_REVISION" ||
+        (p as any).status === "UPDATE_REQUESTED" ||
         (p as any).status === "REJECTED" ||
         (p as any).status === "COMMITTEE_REJECTED";
     }
@@ -571,6 +574,21 @@ export function usePlanForReview({
     showToast(
       `Plan "${plan.planName}" approved and forwarded to Endorsement Committee (Deadline: ${committeeDeadlineDate})!`,
     );
+  };
+
+  const handleApprovePlanUpdate = async (plan: ProcurementPlan) => {
+    try {
+      await approvePlanUpdate(plan.id);
+      await loadPlans();
+      showToast(`Plan reopened for officer amendments: ${plan.planName}.`);
+    } catch (error) {
+      console.error("Could not approve plan reopening:", error);
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "Could not authorize reopening this plan.",
+      );
+    }
   };
 
   // Committee Chair Gatekeeping (Req 1)
@@ -1217,6 +1235,7 @@ export function usePlanForReview({
     showSavedFeedback,
     handleActivityUpdate,
     handleApprovePlan,
+    handleApprovePlanUpdate,
     handleReturnPlan,
     handleApprovePlanCancellation,
     handleRejectPlanCancellation,

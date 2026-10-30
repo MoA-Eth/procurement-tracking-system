@@ -18,7 +18,7 @@ import {
   type TrackingDateValue,
 } from "../data/officerActivityTracking";
 import { DualCalendarField } from "../../projects/components/CreateProcurementPlanView";
-import { formatGregorianDate as formatGregorianDateHelper } from "../../projects/utils/ethiopianCalendar";
+import { formatDualCalendarDate } from "../../projects/utils/ethiopianCalendar";
 import type { ProcurementActivityRoadmapStage } from "../../projects/data/officerActivityDrafts";
 import {
   recordActualStageDates,
@@ -1265,7 +1265,10 @@ function StageEditor({
                   </span>
                 </div>
                 <p className="mt-1 text-[10px] font-semibold text-slate-700">
-                  {formatGregorianDate(revision.targetDate.gregorian)}
+                  {formatDualCalendarDate(
+                    revision.targetDate.gregorian,
+                    revision.targetDate.ethiopian,
+                  )}
                 </p>
                 <p className="mt-1 text-[10px] leading-4 text-slate-500">
                   {revision.reason}
@@ -1391,15 +1394,14 @@ function DateValue({
   date: TrackingDateValue;
   revised?: boolean;
 }) {
-  if (!date.gregorian) return <span className="text-slate-400">—</span>;
+  if (!date.gregorian && !date.ethiopian) {
+    return <span className="text-slate-400">—</span>;
+  }
   return (
     <div>
       <p className="font-semibold text-slate-700">
-        {formatGregorianDate(date.gregorian)}
+        {formatDualCalendarDate(date.gregorian, date.ethiopian)}
       </p>
-      {date.ethiopian ? (
-        <p className="mt-1 text-[9px] text-slate-500">{date.ethiopian}</p>
-      ) : null}
       {revised ? (
         <p className="mt-1 text-[9px] font-semibold text-[#7c3aed]">Revised</p>
       ) : null}
@@ -1420,15 +1422,10 @@ function MiniDate({
         {label}
       </p>
       <p className="mt-1 truncate text-[10px] font-semibold text-slate-700">
-        {value.gregorian
-          ? formatGregorianDate(value.gregorian)
+        {value.gregorian || value.ethiopian
+          ? formatDualCalendarDate(value.gregorian, value.ethiopian)
           : "Not recorded"}
       </p>
-      {value.ethiopian ? (
-        <p className="mt-0.5 truncate text-[9px] text-slate-500">
-          {value.ethiopian}
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -1450,10 +1447,6 @@ function formatAmount(value: number) {
     maximumFractionDigits: 2,
     minimumFractionDigits: 0,
   }).format(value);
-}
-
-function formatGregorianDate(value: string) {
-  return formatGregorianDateHelper(value) || value;
 }
 
 function formatDateTime(value: string) {

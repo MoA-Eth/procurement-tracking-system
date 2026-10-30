@@ -221,5 +221,40 @@ export function formatGregorianDate(
     d = parsed.day;
   }
   if (m < 1 || m > 12) return "";
-  return `${String(d).padStart(2, "0")}-${GREGORIAN_MONTHS[m - 1]}-${y}`;
+  return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+}
+
+export function formatDualCalendarDate(
+  gregorianValue?: string | GregorianDate | null,
+  ethiopianValue?: string | null,
+): string {
+  const parsedGregorian =
+    typeof gregorianValue === "string"
+      ? parseGregorianDate(gregorianValue)
+      : gregorianValue || null;
+  const parsedEthiopian = ethiopianValue
+    ? parseEthiopianDate(ethiopianValue)
+    : null;
+
+  if (parsedGregorian) {
+    const gregorian = formatGregorianDate(parsedGregorian);
+    const ethiopian =
+      parsedEthiopian || gregorianToEthiopian(gregorianToIso(parsedGregorian));
+    return ethiopian
+      ? `${gregorian} (${formatEthiopianDate(ethiopian)})`
+      : gregorian;
+  }
+
+  if (parsedEthiopian) {
+    const gregorian = ethiopianToGregorian(
+      parsedEthiopian.year,
+      parsedEthiopian.month,
+      parsedEthiopian.day,
+    );
+    return `${formatGregorianDate(gregorian)} (${formatEthiopianDate(parsedEthiopian)})`;
+  }
+
+  return typeof gregorianValue === "string"
+    ? gregorianValue
+    : ethiopianValue || "";
 }

@@ -6,11 +6,16 @@ export type ProcurementPlanStatus =
   | "Finally Approved"
   | "Returned"
   | "Returned for Revision"
+  | "Update Requested"
   | "Submitted to Director"
   | "Cancellation Requested"
   | "Cancelled";
 export type ProcurementCategory =
-  "Goods" | "Works" | "Non-Consulting Services" | "Consultancy Services";
+  | "Goods"
+  | "Works"
+  | "Non-Consulting Services"
+  | "Consultancy Services"
+  | "Per Activity";
 
 export interface DualCalendarDateValue {
   ethiopian: string;

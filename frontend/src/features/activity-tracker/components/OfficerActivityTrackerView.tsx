@@ -33,7 +33,7 @@ import {
   type OfficerProject,
   type ProcurementPlanSummary,
 } from "../../projects/data/officerProjects";
-import { formatGregorianDate as formatGregorianDateHelper } from "../../projects/utils/ethiopianCalendar";
+import { formatDualCalendarDate } from "../../projects/utils/ethiopianCalendar";
 import {
   fetchProjects,
   isProjectAssignedToOfficer,
@@ -1504,15 +1504,14 @@ function QuickFilterButton({
 }
 
 function DateValue({ date }: { date: TrackingDateValue }) {
-  if (!date.gregorian) return <span className="text-slate-400">—</span>;
+  if (!date.gregorian && !date.ethiopian) {
+    return <span className="text-slate-400">—</span>;
+  }
   return (
     <div>
       <p className="font-semibold text-slate-700">
-        {formatGregorianDate(date.gregorian)}
+        {formatDualCalendarDate(date.gregorian, date.ethiopian)}
       </p>
-      {date.ethiopian ? (
-        <p className="mt-1 text-[10px] text-slate-500">{date.ethiopian}</p>
-      ) : null}
     </div>
   );
 }
@@ -1521,8 +1520,4 @@ function trackerItemKey(item: OfficerTrackedActivityItem) {
   return [item.project.code, item.plan.reference, item.activity.reference].join(
     "::",
   );
-}
-
-function formatGregorianDate(value: string) {
-  return formatGregorianDateHelper(value) || value;
 }

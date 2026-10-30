@@ -39,6 +39,7 @@ import {
   type ProcurementActivitySummary,
   type SavedOfficerActivityRecord,
 } from "../../projects/data/officerActivityDrafts";
+import { formatDualCalendarDate } from "../../projects/utils/ethiopianCalendar";
 import {
   mergeSavedPlans,
   OFFICER_PLAN_DRAFTS_STORAGE_KEY,
@@ -1352,13 +1353,11 @@ function DirectorActivityTrackerList({
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <p className="font-semibold text-slate-800">
-                          {stage.targetDate.gregorian || "—"}
+                          {formatDualCalendarDate(
+                            stage.targetDate.gregorian,
+                            stage.targetDate.ethiopian,
+                          ) || "—"}
                         </p>
-                        {stage.targetDate.ethiopian && (
-                          <p className="text-[10px] text-slate-500 font-medium">
-                            {stage.targetDate.ethiopian}
-                          </p>
-                        )}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         {stage.delayDays && stage.delayDays > 0 ? (
@@ -1811,6 +1810,13 @@ function DirectorActivityDetailView({
                   const tracking = resolvedStageTracking(item, stg);
                   const isNotApp = tracking.status === "Not Applicable";
                   const isComp = tracking.status === "Completed";
+                  const targetDate = effectiveTargetDate(
+                    {
+                      ethiopian: stg.ethiopianDate || "",
+                      gregorian: stg.gregorianDate || "",
+                    },
+                    tracking,
+                  );
                   const delay = calculateDelayDays(
                     {
                       ethiopian: stg.ethiopianDate || "",
@@ -1843,13 +1849,11 @@ function DirectorActivityDetailView({
                         ) : (
                           <>
                             <p className="font-semibold text-slate-800">
-                              {stg.gregorianDate || "—"}
+                              {formatDualCalendarDate(
+                                stg.gregorianDate,
+                                stg.ethiopianDate,
+                              ) || "—"}
                             </p>
-                            {stg.ethiopianDate && (
-                              <p className="text-[10px] text-slate-500">
-                                {stg.ethiopianDate}
-                              </p>
-                            )}
                           </>
                         )}
                       </td>
@@ -1860,23 +1864,27 @@ function DirectorActivityDetailView({
                           </span>
                         ) : (
                           <p className="font-semibold text-slate-900">
-                            {effectiveTargetDate(
-                              {
-                                ethiopian: stg.ethiopianDate || "",
-                                gregorian: stg.gregorianDate || "",
-                              },
-                              tracking,
-                            ).gregorian || "—"}
+                            {formatDualCalendarDate(
+                              targetDate.gregorian,
+                              targetDate.ethiopian,
+                            ) || "—"}
                           </p>
                         )}
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-800">
                         {isNotApp
                           ? "—"
-                          : tracking.actualDate?.gregorian ||
-                            tracking.actualDate?.ethiopian ||
-                            stg.actualDate ||
-                            "—"}
+                          : tracking.actualDate?.gregorian
+                            ? formatDualCalendarDate(
+                                tracking.actualDate.gregorian,
+                                tracking.actualDate.ethiopian,
+                              ) || "—"
+                            : formatDualCalendarDate(
+                                undefined,
+                                tracking.actualDate?.ethiopian,
+                              ) ||
+                              formatDualCalendarDate(stg.actualDate) ||
+                              "—"}
                       </td>
                       <td className="py-3.5 px-4">
                         <StatusText
@@ -1974,7 +1982,8 @@ function DirectorActivityDetailView({
                 Record Updated
               </p>
               <p className="font-semibold text-slate-700 text-xs pt-0.5">
-                {new Date(item.tracking.updatedAt).toLocaleDateString()}
+                {formatDualCalendarDate(item.tracking.updatedAt) ||
+                  item.tracking.updatedAt}
               </p>
             </div>
           </div>

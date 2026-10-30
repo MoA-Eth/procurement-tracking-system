@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   addSavedActivityRecord,
+  mergeActivityRoadmaps,
+  mapBackendActivityToProcurementActivitySummary,
+  mapRoadmapStagesForBackend,
   parseSavedActivityRecords,
   type SavedOfficerActivityRecord,
 } from "./officerActivityDrafts";
@@ -77,6 +80,121 @@ const detailedRecord: SavedOfficerActivityRecord = {
 };
 
 describe("officer activity draft storage", () => {
+  it("maps backend draft status and per-activity procurement category", () => {
+    const activity = mapBackendActivityToProcurementActivitySummary({
+      id: "activity-id",
+      reference: "ACT-001",
+      status: "DRAFT",
+      description: "Supply of equipment",
+      estimatedBudget: 500,
+      procurementCategory: "WORKS",
+      procurementMethod: { label: "Request for Bids" },
+      plan: { procurementCategory: "GOODS" },
+      stages: [],
+    });
+
+    expect(activity.status).toBe("Draft");
+    expect(activity.category).toBe("Works");
+  });
+
+  it("maps entered roadmap dates into backend stage payloads", () => {
+    expect(
+      mapRoadmapStagesForBackend([
+        {
+          allowNotApplicable: true,
+          days: "14",
+          ethiopianDate: "02-Hamle-2018",
+          gregorianDate: "2026-07-12",
+          name: "Preparation of Specification",
+          notApplicable: false,
+          remarks: "",
+        },
+      ]),
+    ).toEqual([
+      {
+        name: "Preparation of Specification",
+        sequence: 1,
+        plannedStartDate: "2026-07-12",
+        plannedEndDate: undefined,
+        currentTargetStartDate: "2026-07-12",
+        currentTargetEndDate: undefined,
+        gregorianDate: "2026-07-12",
+        ethiopianDate: "02-Hamle-2018",
+        isNotApplicable: false,
+        notApplicable: false,
+        remarks: undefined,
+      },
+    ]);
+  });
+
+  it("uses a saved target date when the planned date is absent", () => {
+    expect(
+      mapRoadmapStagesForBackend([
+        {
+          allowNotApplicable: false,
+          days: "14",
+          ethiopianDate: "",
+          gregorianDate: "",
+          currentTargetStartDate: "2026-08-03",
+          name: "Bid Evaluation",
+          notApplicable: false,
+          remarks: "",
+        },
+      ]),
+    ).toEqual([
+      {
+        name: "Bid Evaluation",
+        sequence: 1,
+        plannedStartDate: "2026-08-03",
+        plannedEndDate: undefined,
+        currentTargetStartDate: "2026-08-03",
+        currentTargetEndDate: undefined,
+        gregorianDate: "2026-08-03",
+        ethiopianDate: undefined,
+        isNotApplicable: false,
+        notApplicable: false,
+        remarks: undefined,
+      },
+    ]);
+  });
+
+  it("preserves backend milestone dates when a local activity copy has blanks", () => {
+    const merged = mergeActivityRoadmaps(
+      [
+        {
+          allowNotApplicable: false,
+          days: "14",
+          ethiopianDate: "02-Hamle-2018",
+          gregorianDate: "2026-07-12",
+          name: "Preparation of Specification",
+          notApplicable: false,
+          plannedStartDate: "2026-07-12",
+          currentTargetStartDate: "2026-07-12",
+          remarks: "",
+        },
+      ],
+      [
+        {
+          allowNotApplicable: false,
+          days: "14",
+          ethiopianDate: "",
+          gregorianDate: "",
+          name: "Preparation of Specification",
+          notApplicable: false,
+          remarks: "",
+        },
+      ],
+    );
+
+    expect(merged[0]).toMatchObject({
+      gregorianDate: "2026-07-12",
+      plannedStartDate: "2026-07-12",
+      currentTargetStartDate: "2026-07-12",
+      ethiopianDate: "02-Hamle-2018",
+      notApplicable: false,
+    });
+  });
+
   it("round-trips valid saved activity records", () => {
     expect(parseSavedActivityRecords(JSON.stringify([record]))).toEqual([
       record,

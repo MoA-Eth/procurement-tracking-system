@@ -159,6 +159,38 @@ describe("OfficerProcurementActivityDetailView", () => {
     expect(markup).not.toContain("Classification Code");
   });
 
+  it("shows a saved target date when the reopened roadmap has no baseline field", () => {
+    const activityWithTargetOnly: ProcurementActivitySummary = {
+      ...detailedActivity,
+      details: {
+        ...detailedActivity.details!,
+        roadmap: [
+          {
+            allowNotApplicable: false,
+            days: "14",
+            ethiopianDate: "",
+            gregorianDate: "",
+            currentTargetStartDate: "2026-08-03",
+            name: "Preparation of Specification",
+            notApplicable: false,
+            remarks: "",
+          },
+        ],
+      },
+    };
+
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={activityWithTargetOnly}
+        plan={plan}
+        project={project}
+      />,
+    );
+
+    expect(markup).toContain("03/08/2026 (27-Hamle-2018)");
+    expect(markup).not.toContain("Date not recorded");
+  });
+
   it("links back to Activity Tracker when navigated from tracker", () => {
     const markup = renderToStaticMarkup(
       <OfficerProcurementActivityDetailView

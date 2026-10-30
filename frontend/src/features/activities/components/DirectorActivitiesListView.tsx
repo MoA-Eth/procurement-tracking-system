@@ -27,6 +27,7 @@ import {
 import Link from "next/link";
 import {
   type ProcurementPlan,
+  type PlanCategory,
   parseRejectionDetails,
   isPlanAwaitingManagementReview,
 } from "../../plans/plansData";
@@ -53,6 +54,7 @@ import {
   formatNumberWithCommas,
   parseNumberWithCommas,
 } from "@/lib/numberFormatting";
+import { formatDualCalendarDate } from "@/features/projects/utils/ethiopianCalendar";
 
 interface DirectorActivitiesListViewProps {
   plan: ProcurementPlan;
@@ -90,7 +92,26 @@ interface DirectorActivitiesListViewProps {
   onAddActivityComment?: (activityId: string, comment: string) => Promise<void>;
 }
 
-function mapBackendActivityToProcurementActivity(
+function firstRoadmapDate(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (value instanceof Date) {
+      if (!Number.isNaN(value.getTime())) return value.toISOString();
+      continue;
+    }
+    if (typeof value !== "string") continue;
+    const date = value.trim();
+    if (
+      date &&
+      date.toLowerCase() !== "null" &&
+      date.toLowerCase() !== "undefined"
+    ) {
+      return date;
+    }
+  }
+  return undefined;
+}
+
+export function mapBackendActivityToProcurementActivity(
   bAct: BackendActivity | any,
   plan: ProcurementPlan,
 ): ProcurementActivity {
@@ -120,14 +141,28 @@ function mapBackendActivityToProcurementActivity(
                         : "RFB - National"
   ) as ProcurementMethod;
 
+  const rawActivityCategory = String(
+    bAct.procurementCategory || bAct.category || "",
+  ).toUpperCase();
+  let activityCategory: PlanCategory =
+    plan.category === "Per Activity" ? "Goods" : plan.category;
+  if (rawActivityCategory.includes("WORK")) activityCategory = "Works";
+  else if (rawActivityCategory.includes("NON_CONSULT"))
+    activityCategory = "Non-Consulting Services";
+  else if (rawActivityCategory.includes("CONSULT"))
+    activityCategory = "Consultancy Services";
+  else if (rawActivityCategory.includes("GOOD")) activityCategory = "Goods";
+
   const defaultRoadmap = generateRoadmapForMethod(
-    plan.category,
+    activityCategory,
     mappedMethod,
     bAct.fundings?.[0]?.fundingSource || "African Development Bank (AfDB)",
   );
 
   const roadmap: ActivityStage[] =
-    bAct.details?.roadmap && bAct.details.roadmap.length > 0
+    (!bAct.stages || bAct.stages.length === 0) &&
+    bAct.details?.roadmap &&
+    bAct.details.roadmap.length > 0
       ? bAct.details.roadmap.map((st: any, idx: number) => {
           const isNA = Boolean(
             st.notApplicable ||
@@ -141,13 +176,21 @@ function mapBackendActivityToProcurementActivity(
             stageName: st.name || st.stageName,
             originalPlannedDate: isNA
               ? "Not applicable"
-              : st.gregorianDate || st.originalPlannedDate || "",
+              : firstRoadmapDate(
+                  st.plannedStartDate,
+                  st.originalPlannedDate,
+                  st.gregorianDate,
+                  st.currentTargetStartDate,
+                ) || "",
             revisedTargetDate: isNA
               ? "Not applicable"
-              : st.gregorianDate ||
-                st.revisedTargetDate ||
-                st.originalPlannedDate ||
-                "",
+              : firstRoadmapDate(
+                  st.currentTargetStartDate,
+                  st.revisedTargetDate,
+                  st.plannedStartDate,
+                  st.gregorianDate,
+                  st.originalPlannedDate,
+                ) || "",
             actualDate: st.actualDate || "",
             stageStatus: (isNA
               ? "Not Applicable"
@@ -164,12 +207,32 @@ function mapBackendActivityToProcurementActivity(
       : bAct.stages && bAct.stages.length > 0
         ? bAct.stages.map((st: any, idx: number) => {
             const fallback = defaultRoadmap[idx] || defaultRoadmap[0];
+            const hasRecordedDate = Boolean(
+              st.plannedStartDate ||
+              st.currentTargetStartDate ||
+              st.actualStartDate ||
+              st.actualEndDate,
+            );
             const isNA = Boolean(
               st.notApplicable ||
               st.isNotApplicable ||
               st.status === "NOT_APPLICABLE" ||
               st.status === "Not Applicable" ||
-              fallback?.notApplicable,
+              (!hasRecordedDate && fallback?.notApplicable),
+            );
+            const plannedDate = firstRoadmapDate(
+              st.plannedStartDate,
+              st.originalPlannedDate,
+              st.gregorianDate,
+              st.currentTargetStartDate,
+              fallback?.originalPlannedDate,
+            );
+            const targetDate = firstRoadmapDate(
+              st.currentTargetStartDate,
+              st.revisedTargetDate,
+              st.plannedStartDate,
+              st.gregorianDate,
+              fallback?.revisedTargetDate,
             );
             return {
               id: st.id || `stage-${idx + 1}`,
@@ -178,17 +241,8 @@ function mapBackendActivityToProcurementActivity(
                 st.name ||
                 fallback?.stageName ||
                 `Stage ${st.sequence || idx + 1}`,
-              originalPlannedDate: isNA
-                ? "Not applicable"
-                : st.plannedStartDate ||
-                  st.originalPlannedDate ||
-                  fallback?.originalPlannedDate,
-              revisedTargetDate: isNA
-                ? "Not applicable"
-                : st.currentTargetStartDate ||
-                  st.plannedStartDate ||
-                  st.revisedTargetDate ||
-                  fallback?.revisedTargetDate,
+              originalPlannedDate: isNA ? "Not applicable" : plannedDate || "",
+              revisedTargetDate: isNA ? "Not applicable" : targetDate || "",
               actualDate: st.actualStartDate || st.actualDate,
               stageStatus: (isNA
                 ? "Not Applicable"
@@ -245,7 +299,7 @@ function mapBackendActivityToProcurementActivity(
     planId: plan.id,
     planName: plan.planName,
     projectCode: plan.projectCode,
-    category: plan.category,
+    category: activityCategory,
     method: mappedMethod,
     specificMethod: bAct.procurementMethod?.label || bAct.specificMethod,
     marketApproach: (bAct.marketApproach === "OPEN_INTERNATIONAL"
@@ -1774,7 +1828,9 @@ export function DirectorActivitiesListView({
                           {stage.notApplicable ||
                           stage.originalPlannedDate === "Not applicable"
                             ? "Not applicable"
-                            : stage.originalPlannedDate || "—"}
+                            : formatDualCalendarDate(
+                                stage.originalPlannedDate,
+                              ) || "—"}
                         </td>
                         <td className="py-2 px-3 font-mono">
                           {stage.notApplicable ||
@@ -1801,14 +1857,15 @@ export function DirectorActivitiesListView({
                             />
                           ) : (
                             <span className="font-semibold text-slate-800">
-                              {stage.revisedTargetDate ||
-                                stage.originalPlannedDate ||
-                                "—"}
+                              {formatDualCalendarDate(
+                                stage.revisedTargetDate ||
+                                  stage.originalPlannedDate,
+                              ) || "—"}
                             </span>
                           )}
                         </td>
                         <td className="py-2 px-3 font-mono font-semibold text-emerald-700">
-                          {stage.actualDate || "—"}
+                          {formatDualCalendarDate(stage.actualDate) || "—"}
                         </td>
                         <td className="py-2 px-3 text-center">
                           <span

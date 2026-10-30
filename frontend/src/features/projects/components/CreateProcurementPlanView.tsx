@@ -2,7 +2,6 @@
 
 import type {
   OfficerProject,
-  ProcurementCategory,
   ProcurementPlanSummary,
 } from "../data/officerProjects";
 import type { ProcurementPlanDraftInput } from "../data/officerPlanDrafts";
@@ -22,15 +21,11 @@ import {
   ArrowLeft,
   CheckCircle2,
   ChevronDown,
-  Hammer,
   Info,
-  Lightbulb,
   LockKeyhole,
   MessageSquare,
   RotateCcw,
   Save,
-  Settings,
-  ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -83,26 +78,6 @@ function toEthDate(greg?: unknown, eth?: unknown): string {
   if (!iso) return "";
   const ethObj = gregorianToEthiopian(iso);
   return ethObj ? formatEthiopianDate(ethObj) : "";
-}
-
-function normalizeCategory(cat?: unknown): ProcurementCategory | null {
-  if (!cat) return null;
-  if (
-    cat === "Goods" ||
-    cat === "Works" ||
-    cat === "Non-Consulting Services" ||
-    cat === "Consultancy Services"
-  ) {
-    return cat as ProcurementCategory;
-  }
-  const upper = String(cat).toUpperCase();
-  if (upper === "GOODS") return "Goods";
-  if (upper === "WORKS") return "Works";
-  if (upper === "CONSULTANCY") return "Consultancy Services";
-  if (upper === "NON_CONSULTING" || upper === "NON-CONSULTING SERVICES") {
-    return "Non-Consulting Services";
-  }
-  return null;
 }
 
 function extractPlanFormData(
@@ -199,11 +174,13 @@ function extractPlanFormData(
     rawContractAwardDateEth,
   );
 
+  const budgetYear =
+    initialPlan?.budgetYear?.replace(/ EFY/i, "").trim() ||
+    planAny?.fiscalYear?.replace(/ EFY/i, "").trim() ||
+    "2017";
+
   return {
-    budgetYear:
-      initialPlan?.budgetYear?.replace(/ EFY/i, "").trim() ||
-      planAny?.fiscalYear?.replace(/ EFY/i, "").trim() ||
-      "2017",
+    budgetYear,
     contractAwardDate,
     contractAwardDateEthiopian,
     generalProcurementNoticeDate,
@@ -218,38 +195,17 @@ function extractPlanFormData(
     periodFromEthiopian,
     periodTo,
     periodToEthiopian,
-    planName: initialPlan?.name || planAny?.title || planAny?.planName || "",
+    planName:
+      initialPlan?.name ||
+      planAny?.title ||
+      planAny?.planName ||
+      (project ? suggestedPlanName(project, budgetYear) : ""),
     remarks: initialPlan?.description || planAny?.remarks || "",
   };
 }
 
 const compactFieldClasses =
   "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#00843D] focus:ring-2 focus:ring-[#00843D]/15";
-
-export const procurementCategories = [
-  {
-    description: "Physical items, equipment, and commodities.",
-    icon: ShoppingCart,
-    value: "Goods" as const,
-  },
-  {
-    description:
-      "Construction, infrastructure, and civil engineering projects.",
-    icon: Hammer,
-    value: "Works" as const,
-  },
-  {
-    description:
-      "Operational services like maintenance, security, and transport.",
-    icon: Settings,
-    value: "Non-Consulting Services" as const,
-  },
-  {
-    description: "Professional consulting firms, advisory, and study experts.",
-    icon: Lightbulb,
-    value: "Consultancy Services" as const,
-  },
-] as const;
 
 export function generateEfyBudgetYearOptions(
   baseYear = 2018,
@@ -271,12 +227,8 @@ export function generateEfyBudgetYearOptions(
 export const EFY_BUDGET_YEAR_OPTIONS: Array<{ value: string; label: string }> =
   generateEfyBudgetYearOptions(2018, 100);
 
-export function suggestedPlanName(
-  project: OfficerProject,
-  category: ProcurementCategory,
-  budgetYear: string,
-) {
-  return `${project.shortName} - ${category} Procurement Plan - ${budgetYear} EFY`;
+export function suggestedPlanName(project: OfficerProject, budgetYear: string) {
+  return `${project.shortName} - Procurement Plan - ${budgetYear} EFY`;
 }
 
 export function CreateProcurementPlanView({
@@ -293,13 +245,6 @@ export function CreateProcurementPlanView({
   project: OfficerProject;
 }) {
   const isEditing = Boolean(initialPlan);
-  const [selectedCategory, setSelectedCategory] =
-    useState<ProcurementCategory | null>(
-      () =>
-        initialPlan?.category ??
-        normalizeCategory((initialPlan as any)?.procurementCategory) ??
-        null,
-    );
   const [planNameEdited, setPlanNameEdited] = useState(() =>
     Boolean(initialPlan),
   );
@@ -334,11 +279,6 @@ export function CreateProcurementPlanView({
     if (lastLoadedPlanRef.current === planSignature) return;
     lastLoadedPlanRef.current = planSignature;
 
-    const cat =
-      initialPlan.category ??
-      normalizeCategory((initialPlan as any)?.procurementCategory) ??
-      null;
-    setSelectedCategory(cat);
     setPlanNameEdited(true);
     setForm(extracted);
   }, [initialPlan, project]);
@@ -349,23 +289,11 @@ export function CreateProcurementPlanView({
   const dateOrderError = Boolean(
     form.periodFrom && form.periodTo && form.periodTo < form.periodFrom,
   );
-  const categoryError = validationAttempted && !selectedCategory;
   const nameError = validationAttempted && !form.planName.trim();
   const budgetYearError = validationAttempted && !form.budgetYear.trim();
   const periodFromError = validationAttempted && !form.periodFrom;
   const periodToError =
     validationAttempted && (!form.periodTo || dateOrderError);
-
-  function handleCategoryChange(category: ProcurementCategory) {
-    setSaveAction(null);
-    setSelectedCategory(category);
-    if (!planNameEdited) {
-      setForm((current) => ({
-        ...current,
-        planName: suggestedPlanName(project, category, current.budgetYear),
-      }));
-    }
-  }
 
   function updateField(field: keyof PlanFormState, value: string) {
     setSaveAction(null);
@@ -374,8 +302,8 @@ export function CreateProcurementPlanView({
     setForm((current) => {
       const next = { ...current, [field]: value };
 
-      if (field === "budgetYear" && selectedCategory && !planNameEdited) {
-        next.planName = suggestedPlanName(project, selectedCategory, value);
+      if (field === "budgetYear" && !planNameEdited) {
+        next.planName = suggestedPlanName(project, value);
       }
 
       return next;
@@ -430,7 +358,6 @@ export function CreateProcurementPlanView({
     setSubmitError(null);
 
     if (
-      !selectedCategory ||
       !form.planName.trim() ||
       !form.budgetYear.trim() ||
       !form.periodFrom ||
@@ -445,7 +372,7 @@ export function CreateProcurementPlanView({
       setIsSubmitting(true);
       setSaveAction(action);
       await onSavePlan(
-        { ...form, category: selectedCategory },
+        { ...form, category: initialPlan?.category ?? "Per Activity" },
         action,
         revisionReason.trim() ||
           (isEditing ? "Updated plan parameters" : undefined),
@@ -636,53 +563,6 @@ export function CreateProcurementPlanView({
             </h2>
           </div>
           <div className="p-5 space-y-5">
-            {/* Category Dropdown */}
-            <fieldset className="max-w-2xl">
-              <legend
-                className={`mb-2 text-xs font-semibold ${
-                  categoryError ? "text-red-600" : "text-slate-700"
-                }`}
-              >
-                Procurement Category <span className="text-red-600">*</span>
-              </legend>
-              <div className="relative">
-                <select
-                  aria-invalid={categoryError}
-                  aria-required="true"
-                  className={`${compactFieldClasses} appearance-none pr-9`}
-                  id="procurementCategory"
-                  name="procurementCategory"
-                  onChange={(event) =>
-                    handleCategoryChange(
-                      event.target.value as ProcurementCategory,
-                    )
-                  }
-                  value={selectedCategory ?? ""}
-                >
-                  <option disabled value="">
-                    Select category...
-                  </option>
-                  {procurementCategories.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.value === "Consultancy Services"
-                        ? "Consulting Services"
-                        : cat.value}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-slate-500"
-                />
-              </div>
-              {categoryError ? (
-                <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
-                  <Info aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                  Please select a procurement category.
-                </p>
-              ) : null}
-            </fieldset>
-
             {/* Plan Name */}
             <CompactFormField
               errorMessage={
@@ -698,7 +578,7 @@ export function CreateProcurementPlanView({
                 onChange={(event) =>
                   updateField("planName", event.target.value)
                 }
-                placeholder="e.g. BREFONS - Goods Procurement Plan - 2018 EFY"
+                placeholder="e.g. BREFONS - Procurement Plan - 2018 EFY"
                 value={form.planName}
               />
             </CompactFormField>

@@ -1,5 +1,9 @@
 export type PlanCategory =
-  "Goods" | "Works" | "Non-Consulting Services" | "Consultancy Services";
+  | "Goods"
+  | "Works"
+  | "Non-Consulting Services"
+  | "Consultancy Services"
+  | "Per Activity";
 
 export type PlanStatus =
   | "Draft"
@@ -13,6 +17,7 @@ export type PlanStatus =
   | "Management Approved"
   | "Management Rejected"
   | "Returned for Revision"
+  | "Update Requested"
   | "Cancellation Requested"
   | "Cancelled";
 

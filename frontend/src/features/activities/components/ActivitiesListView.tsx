@@ -31,6 +31,7 @@ import {
   formatNumberWithCommas,
   parseNumberWithCommas,
 } from "@/lib/numberFormatting";
+import { formatDualCalendarDate } from "@/features/projects/utils/ethiopianCalendar";
 
 interface ActivitiesListViewProps {
   plan: ProcurementPlan;
@@ -783,7 +784,9 @@ export function ActivitiesListView({
                             {stage.notApplicable ||
                             stage.originalPlannedDate === "Not applicable"
                               ? "Not applicable"
-                              : stage.originalPlannedDate || "—"}
+                              : formatDualCalendarDate(
+                                  stage.originalPlannedDate,
+                                ) || "—"}
                           </td>
                           <td className="py-2 px-3 font-mono font-semibold text-slate-900">
                             {stage.notApplicable ||
@@ -809,13 +812,14 @@ export function ActivitiesListView({
                                 className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-xs font-mono font-semibold text-slate-900 focus:border-[#00843D] outline-none cursor-pointer"
                               />
                             ) : (
-                              stage.revisedTargetDate ||
-                              stage.originalPlannedDate ||
-                              "—"
+                              formatDualCalendarDate(
+                                stage.revisedTargetDate ||
+                                  stage.originalPlannedDate,
+                              ) || "—"
                             )}
                           </td>
                           <td className="py-2 px-3 font-mono font-semibold text-emerald-700">
-                            {stage.actualDate || "—"}
+                            {formatDualCalendarDate(stage.actualDate) || "—"}
                           </td>
                           <td className="py-2 px-3 text-center">
                             <span

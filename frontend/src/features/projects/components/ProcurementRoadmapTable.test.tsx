@@ -40,8 +40,7 @@ describe("ProcurementRoadmapTable", () => {
 
     expect(markup).toContain("Procurement Planning Roadmap");
     expect(markup).toContain("Procurement Monitoring");
-    expect(markup).toContain("25-Jul-2026");
-    expect(markup).toContain("18-Hamle-2018");
+    expect(markup).toContain("25/07/2026 (18-Hamle-2018)");
     expect(markup).toContain("13 days");
   });
 

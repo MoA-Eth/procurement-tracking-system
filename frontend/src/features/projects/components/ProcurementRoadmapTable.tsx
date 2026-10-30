@@ -3,6 +3,7 @@
 import { CalendarDays, CircleAlert, Info } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { DualCalendarField } from "./CreateProcurementPlanView";
+import { formatDualCalendarDate } from "../utils/ethiopianCalendar";
 
 export interface ProcurementRoadmapStage {
   allowNotApplicable: boolean;
@@ -329,10 +330,7 @@ function RoadmapDateCell({
         ) : null}
         {gregorianValue ? (
           <span className="min-w-0 text-[9px] font-medium">
-            {formatRoadmapGregorianDate(gregorianValue)}
-            <span className="ml-2 text-[8px] font-normal text-slate-400">
-              ({ethiopianValue})
-            </span>
+            {formatRoadmapGregorianDate(gregorianValue, ethiopianValue)}
           </span>
         ) : (
           <span
@@ -388,26 +386,8 @@ function CompactField({
   );
 }
 
-function formatRoadmapGregorianDate(value: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return value;
-
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  return match[3] + "-" + months[Number(match[2]) - 1] + "-" + match[1];
+function formatRoadmapGregorianDate(value: string, ethiopianValue: string) {
+  return formatDualCalendarDate(value, ethiopianValue) || value;
 }
 
 function plannedDurationDays(stages: ProcurementRoadmapStage[], index: number) {

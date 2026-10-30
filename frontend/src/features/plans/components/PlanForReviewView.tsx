@@ -233,6 +233,7 @@ export function PlanForReviewView({
       committeeDeadlineDate={review.committeeDeadlineDate}
       setCommitteeDeadlineDate={review.setCommitteeDeadlineDate}
       onApprovePlan={review.handleApprovePlan}
+      onApprovePlanUpdate={review.handleApprovePlanUpdate}
       onReturnPlan={review.handleReturnPlan}
       onBatchReviewPlans={review.handleBatchReviewPlans}
       getProjectForPlan={review.getProjectForPlan}

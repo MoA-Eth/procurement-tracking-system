@@ -37,6 +37,8 @@ export interface BackendPlanActivity {
   estimatedBudget: number;
   currency?: string;
   category?: string;
+  procurementCategory?:
+    "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" | null;
   procurementMethodId?: string;
   procurementMethod?: {
     id: string;
@@ -129,6 +131,7 @@ export interface BackendPlan {
     | "APPROVED"
     | "REJECTED"
     | "CANCELLATION_REQUESTED"
+    | "UPDATE_REQUESTED"
     | "CANCELLED"
     | string;
   committeeRound?: number;
@@ -314,6 +317,22 @@ export async function submitPlanForReview(id: string): Promise<BackendPlan> {
   return res.data || res;
 }
 
+export async function requestPlanUpdate(id: string): Promise<BackendPlan> {
+  invalidatePlansCache();
+  const res = await apiClient.post<any>(
+    `/plans/${encodeURIComponent(id)}/request-update`,
+  );
+  return res.data || res;
+}
+
+export async function approvePlanUpdate(id: string): Promise<BackendPlan> {
+  invalidatePlansCache();
+  const res = await apiClient.post<any>(
+    `/plans/${encodeURIComponent(id)}/approve-update`,
+  );
+  return res.data || res;
+}
+
 /** Director approves plan and forwards to Endorsing Committee */
 export async function sendPlanToCommittee(
   id: string,
@@ -429,7 +448,7 @@ export function mapBackendPlanToFrontend(
   currentMemberEmail?: string,
 ): ProcurementPlan {
   // Map category
-  let category: PlanCategory = "Goods";
+  let category: PlanCategory = "Per Activity";
   const rawCat = backendPlan.procurementCategory || "";
   if (rawCat === "WORKS") category = "Works";
   else if (rawCat === "CONSULTANCY") category = "Consultancy Services";
@@ -459,6 +478,8 @@ export function mapBackendPlanToFrontend(
   else if (backendPlan.status === "CANCELLED") status = "Cancelled";
   else if (backendPlan.status === "REJECTED") status = "Returned";
   else if (backendPlan.status === "SUBMITTED") status = "Submitted to Director";
+  else if (backendPlan.status === "UPDATE_REQUESTED")
+    status = "Update Requested";
   else if (backendPlan.status === "DRAFT") status = "Draft";
 
   // Calculate estimated total from activities if included
@@ -614,7 +635,13 @@ export function mapBackendPlanToFrontend(
     comments: backendPlan.comments || [],
     rejectionScope: effectiveRejectionScope,
     rejectedActivityRefs: allRejectedActivityRefs,
-    activities: backendPlan.activities || [],
+    activities: (backendPlan.activities || []).map((activity) => ({
+      ...activity,
+      category: mapBackendActivityCategory(
+        activity.procurementCategory,
+        category,
+      ),
+    })),
     parentPlanId: backendPlan.parentPlanId || undefined,
     parentPlanReference:
       backendPlan.parentPlan?.reference ||
@@ -638,7 +665,7 @@ export function mapBackendPlanToOfficerPlanSummary(
   backendPlan: BackendPlan,
 ): import("@/features/projects/data/officerProjects").ProcurementPlanSummary {
   let category: import("@/features/projects/data/officerProjects").ProcurementCategory =
-    "Goods";
+    "Per Activity";
   const rawCat = backendPlan.procurementCategory || "";
   if (rawCat === "WORKS") category = "Works";
   else if (rawCat === "CONSULTANCY") category = "Consultancy Services";
@@ -669,6 +696,8 @@ export function mapBackendPlanToOfficerPlanSummary(
   )
     status = "Returned";
   else if (backendPlan.status === "SUBMITTED") status = "Submitted to Director";
+  else if (backendPlan.status === "UPDATE_REQUESTED")
+    status = "Update Requested";
   else if (backendPlan.status === "DRAFT") status = "Draft";
 
   const activities = backendPlan.activities || [];
@@ -684,6 +713,10 @@ export function mapBackendPlanToOfficerPlanSummary(
         a.procurementMethod?.label ||
         ""
       ).toLowerCase();
+      const activityCategory = mapBackendActivityCategory(
+        a.procurementCategory || a.category,
+        category,
+      );
       const methodKey = methodCodeStr.includes("rfb_int")
         ? "rfb-international"
         : methodCodeStr.includes("rfb")
@@ -875,7 +908,7 @@ export function mapBackendPlanToOfficerPlanSummary(
         projectId: backendPlan.projectId || backendPlan.project?.id,
         reference: a.reference || a.id,
         description: a.description || "Procurement activity package",
-        category,
+        category: activityCategory,
         method:
           a.procurementMethod?.label ||
           a.procurementMethod?.code ||
@@ -883,13 +916,16 @@ export function mapBackendPlanToOfficerPlanSummary(
         estimatedAmount: Number(a.estimatedBudget || 0),
         currentStage: currentStageObj?.name || "Not Started",
         status:
-          a.status === "COMPLETED"
-            ? "Completed"
-            : a.status === "IN_PROGRESS" || a.status === "IN_EXECUTION"
-              ? "In Progress"
-              : a.status === "DELAYED"
-                ? "Delayed"
-                : "Not Started",
+          a.status === "DRAFT" ||
+          (a.status === "PLANNED" && backendPlan.status === "DRAFT")
+            ? "Draft"
+            : a.status === "COMPLETED"
+              ? "Completed"
+              : a.status === "IN_PROGRESS" || a.status === "IN_EXECUTION"
+                ? "In Progress"
+                : a.status === "DELAYED"
+                  ? "Delayed"
+                  : "Not Started",
         createdById: a.createdById || a.creator?.id,
         createdByName,
         updatedById: a.updatedById || a.updatedByUser?.id,
@@ -909,7 +945,7 @@ export function mapBackendPlanToOfficerPlanSummary(
             percentage: f.allocationPct || 100,
           })),
           form: {
-            category,
+            category: activityCategory,
             method:
               a.procurementMethod?.label ||
               a.procurementMethod?.code ||
@@ -1027,6 +1063,18 @@ export function mapBackendPlanToOfficerPlanSummary(
     cancellationRequestedAt: backendPlan.cancellationRequestedAt || undefined,
     cancellationApprovedAt: backendPlan.cancellationApprovedAt || undefined,
   };
+}
+
+function mapBackendActivityCategory(
+  rawCategory: unknown,
+  fallback: PlanCategory,
+): PlanCategory {
+  const raw = String(rawCategory || "").toUpperCase();
+  if (raw.includes("WORK")) return "Works";
+  if (raw.includes("NON_CONSULT")) return "Non-Consulting Services";
+  if (raw.includes("CONSULT")) return "Consultancy Services";
+  if (raw.includes("GOOD")) return "Goods";
+  return fallback === "Per Activity" ? "Goods" : fallback;
 }
 
 export async function requestPlanCancellation(

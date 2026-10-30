@@ -38,7 +38,7 @@ const mockProject2: OfficerProject = {
 };
 
 describe("CreateProcurementPlanView", () => {
-  it("starts with the specification-defined procurement category dropdown", () => {
+  it("does not ask for a procurement category when creating a plan", () => {
     const markup = renderToStaticMarkup(
       <CreateProcurementPlanView
         onSavePlan={() => undefined}
@@ -46,17 +46,13 @@ describe("CreateProcurementPlanView", () => {
       />,
     );
 
-    expect(markup).toContain("Procurement Category");
-    expect(markup).toContain("Select category...");
-    expect(markup).toContain("Goods");
-    expect(markup).toContain("Works");
-    expect(markup).toContain("Non-Consulting Services");
-    expect(markup).toContain("Consulting Services");
+    expect(markup).not.toContain("Procurement Category");
+    expect(markup).not.toContain("Select category...");
   });
 
-  it("builds the editable suggested name from project, category, and fiscal year", () => {
-    expect(suggestedPlanName(mockProject1, "Goods", "2018")).toBe(
-      "DRIVE - Goods Procurement Plan - 2018 EFY",
+  it("builds the editable suggested name from project and fiscal year", () => {
+    expect(suggestedPlanName(mockProject1, "2018")).toBe(
+      "DRIVE - Procurement Plan - 2018 EFY",
     );
   });
 
@@ -142,7 +138,7 @@ describe("CreateProcurementPlanView", () => {
     expect(markup).toContain("Enter custom year");
   });
 
-  it("allows editing the procurement category when the plan already has activities", () => {
+  it("does not show a procurement category when editing a plan with activities", () => {
     const planWithActivities = {
       activities: 3,
       budgetYear: "2017 EFY",
@@ -172,14 +168,8 @@ describe("CreateProcurementPlanView", () => {
       />,
     );
 
-    const categorySelect = markup.match(
-      /<select[^>]*id="procurementCategory"[^>]*>/,
-    )?.[0];
-    expect(categorySelect).toBeDefined();
-    expect(categorySelect).not.toContain("disabled");
-    expect(markup).not.toContain(
-      "Procurement category cannot be edited because this plan already contains",
-    );
+    expect(markup).not.toContain("Procurement Category");
+    expect(markup).not.toContain('id="procurementCategory"');
   });
 
   it("retains and pre-fills all plan period dates and description when editing", () => {

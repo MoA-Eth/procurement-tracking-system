@@ -5,7 +5,27 @@ import type {
 } from "./officerProjects";
 import { getInitialLookups } from "@/lib/lookupsApi";
 
-export type ProcurementActivityCategory = ProcurementCategory;
+export type ProcurementActivityCategory = Exclude<
+  ProcurementCategory,
+  "Per Activity"
+>;
+export type BackendProcurementCategory =
+  "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING";
+
+export function toBackendProcurementCategory(
+  category: ProcurementActivityCategory | string,
+): BackendProcurementCategory {
+  switch (normalizeActivityCategory(category)) {
+    case "Works":
+      return "WORKS";
+    case "Consultancy Services":
+      return "CONSULTANCY";
+    case "Non-Consulting Services":
+      return "NON_CONSULTING";
+    default:
+      return "GOODS";
+  }
+}
 
 export type ProcurementMethodKey =
   | "rfb"

@@ -13,7 +13,7 @@ import {
   Calendar,
 } from "lucide-react";
 import Link from "next/link";
-import { formatGregorianDate } from "../utils/ethiopianCalendar";
+import { formatDualCalendarDate } from "../utils/ethiopianCalendar";
 import {
   resolveProcurementMethodOption,
   resolveMethodKey,
@@ -68,7 +68,7 @@ function extractDateStr(val: any): string | null {
 
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return "—";
-  const formatted = formatGregorianDate(dateStr);
+  const formatted = formatDualCalendarDate(dateStr);
   return formatted || String(dateStr);
 }
 

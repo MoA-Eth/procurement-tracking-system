@@ -144,6 +144,7 @@ export function CreateProcurementActivityView({
   });
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [additionalPlanReason, setAdditionalPlanReason] = useState<string>("");
 
   const initialMethodKey = resolveMethodKey(
@@ -281,7 +282,7 @@ export function CreateProcurementActivityView({
     : activityReferenceFor(
         project,
         plan,
-        category,
+        activityCategory,
         form.method,
         existingActivityCount,
       );
@@ -291,9 +292,9 @@ export function CreateProcurementActivityView({
     form.method === "rfb" ||
     form.method === "rfb-international" ||
     form.method === "rfb-national";
-  const consultancy = category === "Consultancy Services";
+  const consultancy = activityCategory === "Consultancy Services";
   const preferenceApplies =
-    usesRfb && (category === "Goods" || category === "Works");
+    usesRfb && (activityCategory === "Goods" || activityCategory === "Works");
 
   const justificationInvalid = Boolean(
     isAdditionalPlan && additionalPlanReason.trim().length < 10,
@@ -324,7 +325,7 @@ export function CreateProcurementActivityView({
     !(parseNumberWithCommas(form.estimatedAmount) > 0) ||
     !form.currency ||
     !form.fundingSource ||
-    (category === "Works" && !form.pricingBasis) ||
+    (activityCategory === "Works" && !form.pricingBasis) ||
     multiFundingInvalid ||
     (form.lotRequired && lots.some(lotEntryInvalid));
   const stepThreeInvalid =
@@ -349,7 +350,7 @@ export function CreateProcurementActivityView({
       !(parseNumberWithCommas(form.estimatedAmount) > 0),
       !form.currency,
       !form.fundingSource,
-      category === "Works" && !form.pricingBasis,
+      activityCategory === "Works" && !form.pricingBasis,
       multiFundingInvalid,
       form.lotRequired && lots.some(lotEntryInvalid),
     ].filter(Boolean).length,
@@ -374,7 +375,7 @@ export function CreateProcurementActivityView({
       requiresUnAgency: isUnAgency,
     }));
     setRoadmap(
-      roadmapForMethod(method, category).map((stage) => ({
+      roadmapForMethod(method, activityCategory).map((stage) => ({
         allowNotApplicable: Boolean(stage.allowNotApplicable),
         days: "",
         ethiopianDate: "",
@@ -466,6 +467,7 @@ export function CreateProcurementActivityView({
     }
 
     setIsSaving(true);
+    setSaveError(null);
     try {
       if (onSaveActivity) {
         const cleanAdditionalRefs = additionalReferences
@@ -541,7 +543,7 @@ export function CreateProcurementActivityView({
           status: form.inProcess
             ? "In Progress"
             : initialActivity?.status ||
-              (isAdditionalPlan ? "Submitted to Director" : "Not Started"),
+              (isAdditionalPlan ? "Submitted to Director" : "Draft"),
         };
 
         if (isAdditionalPlan && onSubmitAdditionalPlan) {
@@ -557,6 +559,11 @@ export function CreateProcurementActivityView({
       window.scrollTo({ behavior: "smooth", top: 0 });
     } catch (err) {
       console.error("Save activity error:", err);
+      setSaveError(
+        err instanceof Error
+          ? err.message
+          : "Could not sync this activity to the server. Please try saving again.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -601,13 +608,13 @@ export function CreateProcurementActivityView({
 
   const context = {
     activityReference,
-    category,
+    category: activityCategory,
     plan,
     project,
   };
 
   const stepDescriptions: Record<WizardStep, string> = {
-    1: "Confirm the inherited plan category and select the applicable procurement method and controls.",
+    1: "Choose the activity category, then select the applicable procurement method and controls.",
     2: "Enter identification, financial, funding, lot, and scope information.",
     3: "Complete allocation, procurement classification, and location details.",
     4: "Review and finalize the procurement schedule baseline.",
@@ -647,10 +654,8 @@ export function CreateProcurementActivityView({
             </span>
             <span>•</span>
             <span>
-              Category:{" "}
-              <strong className="text-slate-800">
-                {(parentPlan || plan).category}
-              </strong>
+              Activity Category:{" "}
+              <strong className="text-slate-800">{activityCategory}</strong>
             </span>
             <span>•</span>
             <span>
@@ -740,6 +745,15 @@ export function CreateProcurementActivityView({
         />
       </header>
 
+      {saveError ? (
+        <p
+          className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-800"
+          role="alert"
+        >
+          Activity details were not fully saved to the server: {saveError}
+        </p>
+      ) : null}
+
       {saved ? (
         <SavedPanel
           activityReference={activityReference}
@@ -764,6 +778,26 @@ export function CreateProcurementActivityView({
                     const available = methodsForCategory(newCat);
                     if (!available.some((m) => m.key === form.method)) {
                       selectMethod("");
+                    } else {
+                      setRoadmap((existing) =>
+                        roadmapForMethod(form.method, newCat).map(
+                          (stage, index) => {
+                            const previous = existing.find(
+                              (item) =>
+                                item.name.trim().toLowerCase() ===
+                                stage.name.trim().toLowerCase(),
+                            );
+                            const savedStage = previous || existing[index];
+                            return {
+                              ...savedStage,
+                              allowNotApplicable: Boolean(
+                                stage.allowNotApplicable,
+                              ),
+                              name: stage.name,
+                            };
+                          },
+                        ),
+                      );
                     }
                   }}
                   onChange={updateField}
@@ -1185,7 +1219,11 @@ function extractInitialRoadmap(
       name: normalizeRoadmapStageName(st.name || st.stageName, isConsultancy),
       days: String(st.days || "14"),
       ethiopianDate: st.ethiopianDate || "",
-      gregorianDate: st.gregorianDate || st.plannedStartDate || "",
+      gregorianDate:
+        st.gregorianDate ||
+        st.plannedStartDate ||
+        st.currentTargetStartDate ||
+        "",
       notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
       allowNotApplicable: Boolean(
         st.allowNotApplicable !== undefined ? st.allowNotApplicable : true,
@@ -1200,7 +1238,11 @@ function extractInitialRoadmap(
       name: normalizeRoadmapStageName(st.name || st.stageName, isConsultancy),
       days: String(st.days || "14"),
       ethiopianDate: st.ethiopianDate || "",
-      gregorianDate: st.gregorianDate || st.plannedStartDate || "",
+      gregorianDate:
+        st.gregorianDate ||
+        st.plannedStartDate ||
+        st.currentTargetStartDate ||
+        "",
       notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
       allowNotApplicable: Boolean(
         st.allowNotApplicable !== undefined ? st.allowNotApplicable : true,
@@ -1211,8 +1253,9 @@ function extractInitialRoadmap(
   }
   if (anyAct?.stages?.length) {
     return anyAct.stages.map((st: any) => {
-      const greg = st.plannedStartDate
-        ? new Date(st.plannedStartDate).toISOString().slice(0, 10)
+      const savedDate = st.plannedStartDate || st.currentTargetStartDate;
+      const greg = savedDate
+        ? new Date(savedDate).toISOString().slice(0, 10)
         : "";
       return {
         name: normalizeRoadmapStageName(
@@ -1667,7 +1710,7 @@ function ActivityContext({
             "Not provided"
           }
         />
-        <ContextItem label="Plan Category" value={category} />
+        <ContextItem label="Activity Category" value={category} />
       </div>
       <span className="sr-only">Activity reference: {activityReference}</span>
     </section>
@@ -2117,7 +2160,7 @@ function KeyDetailsStep({
       )}
 
       <FormSection
-        description="The category stays within the procurement plan. Method-dependent controls appear after a method is selected."
+        description="Choose the category for this activity. Method-dependent controls appear after a method is selected."
         icon={<ClipboardList aria-hidden="true" className="h-4 w-4" />}
         title="Procurement Method & Controls"
       >
@@ -2145,24 +2188,26 @@ function KeyDetailsStep({
 
         <div className="grid gap-4 md:grid-cols-2">
           <Field
-            hint="Inherited from the procurement plan and cannot be changed here."
+            hint="This category applies to the activity only, not the procurement plan."
             label="Procurement Category"
+            required
           >
-            <div
-              className={
-                inputClasses + " flex items-center justify-between bg-slate-50"
+            <select
+              className={inputClasses}
+              onChange={(event) =>
+                onCategoryChange?.(
+                  event.target.value as ProcurementActivityCategory,
+                )
               }
+              value={category}
             >
-              <span className="font-semibold">
-                {category === "Consultancy Services"
-                  ? "Consulting Services"
-                  : category}
-              </span>
-              <LockKeyhole
-                aria-hidden="true"
-                className="h-3.5 w-3.5 text-slate-400"
-              />
-            </div>
+              <option value="Goods">Goods</option>
+              <option value="Works">Works</option>
+              <option value="Non-Consulting Services">
+                Non-Consulting Services
+              </option>
+              <option value="Consultancy Services">Consulting Services</option>
+            </select>
           </Field>
 
           <Field

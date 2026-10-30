@@ -30,6 +30,7 @@ import type {
 } from "../../../activities/activitiesData";
 import { ActivityQuickEditModal } from "./ActivityQuickEditModal";
 import { CommitteeRejectionModal } from "../CommitteeRejectionModal";
+import { formatDualCalendarDate } from "@/features/projects/utils/ethiopianCalendar";
 
 export interface PlanFullScreenReviewViewProps {
   plan: ProcurementPlan;
@@ -675,7 +676,8 @@ export function PlanFullScreenReviewView({
                         {/* Target Date */}
                         <td className="py-3.5 px-3.5 align-top whitespace-nowrap">
                           <span className="font-mono font-semibold text-slate-800 text-xs bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg inline-block">
-                            {currentTargetDate}
+                            {formatDualCalendarDate(currentTargetDate) ||
+                              currentTargetDate}
                           </span>
                         </td>
 

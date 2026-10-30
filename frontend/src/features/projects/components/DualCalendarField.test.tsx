@@ -19,7 +19,7 @@ describe("DualCalendarField", () => {
     expect(markup).toContain("GREGORIAN");
     expect(markup).toContain("ETHIOPIAN");
     expect(markup).toContain('value="2026-06-01"');
-    expect(markup).toContain("01-June-2026");
+    expect(markup).toContain("01/06/2026");
     expect(markup).toContain("24-Ginbot-2018");
   });
 
@@ -34,7 +34,7 @@ describe("DualCalendarField", () => {
     );
 
     expect(markup).toContain("Target Planned Date");
-    expect(markup).toContain("08-July-2024");
+    expect(markup).toContain("08/07/2024");
     expect(markup).toContain("01-Hamle-2016");
   });
 
@@ -50,7 +50,7 @@ describe("DualCalendarField", () => {
     );
 
     expect(markup).toContain("Target Date");
-    expect(markup).toContain("11-September-2024");
+    expect(markup).toContain("11/09/2024");
     expect(markup).toContain("01-Meskerem-2017");
   });
 
@@ -67,7 +67,7 @@ describe("DualCalendarField", () => {
     );
 
     expect(markup).toContain("Compact Date Filter");
-    expect(markup).toContain("11-September-2024");
+    expect(markup).toContain("11/09/2024");
     expect(markup).toContain("01-Meskerem-2017");
     expect(markup).toContain("GREGORIAN");
     expect(markup).toContain("ETHIOPIAN");

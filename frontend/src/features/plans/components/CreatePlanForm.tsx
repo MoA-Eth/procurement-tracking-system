@@ -21,7 +21,6 @@ import {
   formatEthiopianDate,
 } from "@/features/projects/utils/ethiopianCalendar";
 import {
-  PLAN_CATEGORY_CHOICES,
   type PlanCategory,
   type PlanStatus,
   type ProcurementPlan,
@@ -75,12 +74,8 @@ export function CreatePlanForm({
   const [budgetYear, setBudgetYear] = useState(
     initialData?.budgetYear || project.budgetYear || "2018 EFY (2025/2026)",
   );
-  const [category, setCategory] = useState<PlanCategory>(
-    initialData?.category || "Goods",
-  );
   const [planName, setPlanName] = useState(
-    initialData?.planName ||
-      `${project.code} - Goods Procurement Plan - 2018 EFY`,
+    initialData?.planName || `${project.code} - Procurement Plan - 2018 EFY`,
   );
   const [planPeriodFrom, setPlanPeriodFrom] = useState(
     initialData?.planPeriodFrom || "2025-07-08",
@@ -108,23 +103,11 @@ export function CreatePlanForm({
   const [dateError, setDateError] = useState<string | null>(null);
   const [revisionComment, setRevisionComment] = useState("");
 
-  const handleCategoryChange = (newCategory: PlanCategory) => {
-    setCategory(newCategory);
-    if (!initialData && !isReviewer) {
-      const yearShort = budgetYear.split(" ")[0] || "2018 EFY";
-      setPlanName(
-        `${project.code} - ${newCategory} Procurement Plan - ${yearShort}`,
-      );
-    }
-  };
-
   const handleBudgetYearChange = (newYear: string) => {
     setBudgetYear(newYear);
     if (!initialData && !isReviewer) {
       const yearShort = newYear.split(" ")[0] || "2018 EFY";
-      setPlanName(
-        `${project.code} - ${category} Procurement Plan - ${yearShort}`,
-      );
+      setPlanName(`${project.code} - Procurement Plan - ${yearShort}`);
     }
   };
 
@@ -172,7 +155,7 @@ export function CreatePlanForm({
       projectName: project.name,
       planName: planName.trim(),
       budgetYear,
-      category,
+      category: initialData?.category || ("Per Activity" as PlanCategory),
       planPeriodFrom,
       planPeriodTo,
       organizationRegion,
@@ -306,44 +289,6 @@ export function CreatePlanForm({
                     : "Read Only View"}
               </span>
             )}
-          </div>
-
-          {/* Category Dropdown & Enforcement Notice */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs sm:text-sm font-semibold text-slate-800">
-                Procurement Category <span className="text-rose-500">*</span>
-              </label>
-              {isReviewer && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-                  <Lock className="h-3 w-3" />{" "}
-                  {isManagement
-                    ? "Locked for Executive View"
-                    : isDirector
-                      ? "Locked for Director"
-                      : "Locked"}
-                </span>
-              )}
-            </div>
-            <select
-              value={category}
-              onChange={(e) =>
-                handleCategoryChange(e.target.value as PlanCategory)
-              }
-              disabled={readOnly || isReviewer || isDraftPlanForDirector}
-              className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors ${
-                readOnly || isReviewer
-                  ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed font-medium"
-                  : "bg-white text-slate-900 border-slate-300 focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D]"
-              }`}
-              required
-            >
-              {PLAN_CATEGORY_CHOICES.map((c) => (
-                <option key={c.category} value={c.category}>
-                  {c.category} ({c.description})
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Plan Name */}

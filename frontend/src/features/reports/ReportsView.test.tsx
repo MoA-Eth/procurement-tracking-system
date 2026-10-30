@@ -234,9 +234,9 @@ describe("ReportFiltersPanel - Dynamic Filter Sets per Report Type", () => {
         activeReport="annual-plan"
       />,
     );
-    expect(html).toContain("11-September-2024");
+    expect(html).toContain("11/09/2024");
     expect(html).toContain("01-Meskerem-2017");
-    expect(html).toContain("08-January-2025");
+    expect(html).toContain("08/01/2025");
     expect(html).toContain("30-Tahsas-2017");
     expect(html).toContain("Interval Active");
     expect(html).toContain("Clear Date Interval");

@@ -29,6 +29,7 @@ import {
 } from "./PhaseDelayBreakdownModal";
 import { getPlanVersionHistory } from "@/features/plans/data/planRevisions";
 import { parseNumberWithCommas } from "@/lib/numberFormatting";
+import { formatDualCalendarDate } from "@/features/projects/utils/ethiopianCalendar";
 
 interface DetailValue {
   label: string;
@@ -912,27 +913,30 @@ function safeParseDate(dateStr?: string | null): Date | null {
 }
 
 function formatRoadmapDate(stage: ProcurementActivityRoadmapStage) {
-  const d = safeParseDate(stage.gregorianDate);
-  const gregorian = d
-    ? new Intl.DateTimeFormat("en-GB", {
-        day: "2-digit",
-        month: "short",
-        timeZone: "UTC",
-        year: "numeric",
-      })
-        .format(d)
-        .replaceAll(" ", "-")
-    : stage.gregorianDate && stage.gregorianDate !== "N/A"
-      ? stage.gregorianDate
-      : "Date not recorded";
-
-  const hasEthiopian = Boolean(
+  const savedGregorianDate =
+    stage.gregorianDate ||
+    stage.plannedStartDate ||
+    stage.currentTargetStartDate;
+  const validGregorianDate =
+    savedGregorianDate &&
+    savedGregorianDate !== "N/A" &&
+    savedGregorianDate !== "Date not recorded"
+      ? savedGregorianDate
+      : undefined;
+  const validEthiopianDate =
     stage.ethiopianDate &&
     stage.ethiopianDate !== "N/A" &&
-    stage.ethiopianDate !== "Date not recorded",
-  );
+    stage.ethiopianDate !== "Date not recorded"
+      ? stage.ethiopianDate
+      : undefined;
 
-  return hasEthiopian ? `${gregorian} (${stage.ethiopianDate})` : gregorian;
+  if (!validGregorianDate && !validEthiopianDate) return "Date not recorded";
+  return (
+    formatDualCalendarDate(validGregorianDate, validEthiopianDate) ||
+    validGregorianDate ||
+    validEthiopianDate ||
+    "Date not recorded"
+  );
 }
 
 function formatDuration(

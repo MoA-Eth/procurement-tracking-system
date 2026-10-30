@@ -9,6 +9,8 @@ import { OfficerProjectDetailView } from "@/features/projects/components/Officer
 import {
   addSavedActivityRecord,
   isTestOrJunkActivity,
+  mergeActivityRoadmaps,
+  mapRoadmapStagesForBackend,
   mapBackendActivityToProcurementActivitySummary,
   OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
   parseSavedActivityRecords,
@@ -31,6 +33,7 @@ import {
   type ProcurementPlanSummary,
   type ProjectStatus,
 } from "@/features/projects/data/officerProjects";
+import { toBackendProcurementCategory } from "@/features/projects/data/procurementActivityConfig";
 import {
   createPlan,
   updatePlan,
@@ -44,6 +47,7 @@ import {
 import {
   createActivity,
   updateActivity,
+  deleteActivity,
   fetchActivities,
   resolveProcurementMethodId,
   type BackendActivity,
@@ -118,6 +122,17 @@ function upsertSummaryActivity(
     list.push(act);
   } else {
     const existing = list[existingIdx];
+    const mergedDetails =
+      act.details && existing.details
+        ? {
+            ...existing.details,
+            ...act.details,
+            roadmap: mergeActivityRoadmaps(
+              existing.details.roadmap || [],
+              act.details.roadmap || [],
+            ),
+          }
+        : act.details || existing.details;
     list[existingIdx] = {
       ...existing,
       ...act,
@@ -126,7 +141,7 @@ function upsertSummaryActivity(
         (act as any).activityId ||
         (existing as any).activityId ||
         (existing as any).id,
-      details: act.details || existing.details,
+      details: mergedDetails,
       status: act.status || existing.status,
     };
   }
@@ -719,12 +734,6 @@ export function OfficerProjectsView({
   ) {
     if (!selectedProject) return;
 
-    let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" = "GOODS";
-    if (input.category === "Works") catEnum = "WORKS";
-    else if (input.category === "Consultancy Services") catEnum = "CONSULTANCY";
-    else if (input.category === "Non-Consulting Services")
-      catEnum = "NON_CONSULTING";
-
     const periodStart = safeIsoDate(input.periodFrom, "2025-07-08");
     const periodEnd = safeIsoDate(input.periodTo, "2026-07-07");
     const gpnDate = input.generalProcurementNoticeDate
@@ -856,7 +865,6 @@ export function OfficerProjectsView({
           const updated = await updatePlan(selectedPlan.id, {
             title: input.planName.trim(),
             budgetYear: `${input.budgetYear} EFY`,
-            procurementCategory: catEnum,
             organization:
               input.organizationRegion || selectedProject.organizationRegion,
             description: input.remarks || undefined,
@@ -879,7 +887,6 @@ export function OfficerProjectsView({
           projectId: targetProjectId,
           title: input.planName.trim(),
           budgetYear: `${input.budgetYear} EFY`,
-          procurementCategory: catEnum,
           organization:
             input.organizationRegion ||
             selectedProject.organizationRegion ||
@@ -935,7 +942,6 @@ export function OfficerProjectsView({
       projectId: targetProjectId,
       title: input.planName.trim(),
       budgetYear: `${input.budgetYear} EFY`,
-      procurementCategory: catEnum,
       organization:
         input.organizationRegion ||
         selectedProject.organizationRegion ||
@@ -1142,14 +1148,6 @@ export function OfficerProjectsView({
       }
 
       if (targetProjectId) {
-        let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" =
-          "GOODS";
-        if (selectedPlan.category === "Works") catEnum = "WORKS";
-        else if (selectedPlan.category === "Consultancy Services")
-          catEnum = "CONSULTANCY";
-        else if (selectedPlan.category === "Non-Consulting Services")
-          catEnum = "NON_CONSULTING";
-
         const now = new Date();
         const oneYearLater = new Date(
           now.getTime() + 365 * 24 * 60 * 60 * 1000,
@@ -1163,7 +1161,6 @@ export function OfficerProjectsView({
           projectId: targetProjectId,
           title: defaultPlanName,
           budgetYear: selectedPlan.budgetYear,
-          procurementCategory: catEnum,
           organization: selectedProject.organizationRegion || "Federal / FPCU",
           description: `Supplementary plan: ${additionalPlanReason}`,
           periodStart: now.toISOString(),
@@ -1330,19 +1327,10 @@ export function OfficerProjectsView({
 
       if (targetProjectId) {
         try {
-          let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" =
-            "GOODS";
-          if (selectedPlan.category === "Works") catEnum = "WORKS";
-          else if (selectedPlan.category === "Consultancy Services")
-            catEnum = "CONSULTANCY";
-          else if (selectedPlan.category === "Non-Consulting Services")
-            catEnum = "NON_CONSULTING";
-
           const created = await createPlan({
             projectId: targetProjectId,
             title: selectedPlan.name.trim(),
             budgetYear: selectedPlan.budgetYear,
-            procurementCategory: catEnum,
             organization: selectedPlan.organizationRegion || "Federal / FPCU",
             description: selectedPlan.description || undefined,
             periodStart: safeIsoDate(
@@ -1379,21 +1367,9 @@ export function OfficerProjectsView({
         const methodLabel = activity.method || "RFB - National";
         const resolvedMethodId = await resolveProcurementMethodId(methodLabel);
 
-        const customStages = (
-          activity.details?.roadmap ||
-          (activity as any).roadmap ||
-          []
-        ).map((st: any, sIdx: number) => ({
-          name: st.name || st.stageName,
-          sequence: sIdx + 1,
-          plannedStartDate:
-            st.gregorianDate || st.plannedStartDate || undefined,
-          gregorianDate: st.gregorianDate || undefined,
-          ethiopianDate: st.ethiopianDate || undefined,
-          isNotApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-          notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-          remarks: st.remarks || undefined,
-        }));
+        const customStages = mapRoadmapStagesForBackend(
+          activity.details?.roadmap || (activity as any).roadmap || [],
+        );
 
         // Check if this activity already exists in the backend
         const existingBackendAct = backendActivities.find(
@@ -1485,6 +1461,8 @@ export function OfficerProjectsView({
           : undefined;
 
         const baseActivityPayload: any = {
+          procurementCategory: toBackendProcurementCategory(activity.category),
+          ...(activity.status === "Draft" ? { status: "DRAFT" } : {}),
           description: activity.description || "Activity description",
           estimatedBudget: Number(activity.estimatedAmount) || 500000,
           currency:
@@ -1538,6 +1516,7 @@ export function OfficerProjectsView({
             await updateActivity(existingBackendId, baseActivityPayload);
           } catch (updateErr) {
             console.warn("Backend updateActivity note:", updateErr);
+            throw updateErr;
           }
         } else {
           let createdBackendAct: any = null;
@@ -1556,6 +1535,10 @@ export function OfficerProjectsView({
               createdBackendAct = await createActivity({
                 planId: targetBackendPlanId,
                 reference: activity.reference,
+                procurementCategory: toBackendProcurementCategory(
+                  activity.category,
+                ),
+                ...(activity.status === "Draft" ? { status: "DRAFT" } : {}),
                 procurementMethodId: resolvedMethodId,
                 description: activity.description || "Activity description",
                 estimatedBudget: Number(activity.estimatedAmount) || 500000,
@@ -1565,6 +1548,8 @@ export function OfficerProjectsView({
                   selectedPlan.currency ||
                   "ETB",
                 contractAwardDate: formDetails.contractAwardDate || null,
+                stages: customStages.length > 0 ? customStages : undefined,
+                roadmap: customStages.length > 0 ? customStages : undefined,
                 fundings: [
                   {
                     fundingSource:
@@ -1580,6 +1565,7 @@ export function OfficerProjectsView({
               });
             } catch (secondErr) {
               console.warn("Second createActivity attempt failed:", secondErr);
+              throw secondErr;
             }
           }
 
@@ -1659,6 +1645,7 @@ export function OfficerProjectsView({
         }
       } catch (err) {
         console.warn("Backend saveActivity note:", err);
+        throw err;
       }
     }
 
@@ -1743,19 +1730,10 @@ export function OfficerProjectsView({
         );
       }
 
-      let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" =
-        "GOODS";
-      if (targetPlan.category === "Works") catEnum = "WORKS";
-      else if (targetPlan.category === "Consultancy Services")
-        catEnum = "CONSULTANCY";
-      else if (targetPlan.category === "Non-Consulting Services")
-        catEnum = "NON_CONSULTING";
-
       const created = await createPlan({
         projectId: targetProjectId,
         title: targetPlan.name.trim(),
         budgetYear: targetPlan.budgetYear,
-        procurementCategory: catEnum,
         organization: targetPlan.organizationRegion || "Federal / FPCU",
         description: targetPlan.description || undefined,
         periodStart: targetPlan.planPeriod?.from?.gregorian || "2025-07-08",
@@ -1775,65 +1753,51 @@ export function OfficerProjectsView({
     }
 
     // 2. Sync all local activities to the backend before submitting
-    try {
-      const existingBackendActs = await fetchActivities(planIdToSubmit).catch(
-        () => [],
-      );
-      const existingRefs = new Set(
-        existingBackendActs.map((a) => (a.reference || "").toLowerCase()),
-      );
-      const existingDescs = new Set(
-        existingBackendActs.map((a) => (a.description || "").toLowerCase()),
+    const existingBackendActs = await fetchActivities(planIdToSubmit);
+
+    for (const act of planActs) {
+      const customStages = mapRoadmapStagesForBackend(
+        act.details?.roadmap || (act as any).roadmap || [],
       );
 
-      for (const act of planActs) {
-        if (
-          existingRefs.has((act.reference || "").toLowerCase()) ||
-          existingDescs.has((act.description || "").toLowerCase())
-        ) {
-          continue;
+      const existingBackendAct = existingBackendActs.find(
+        (existing) =>
+          existing.reference?.toLowerCase() === act.reference?.toLowerCase() ||
+          existing.description?.trim().toLowerCase() ===
+            act.description?.trim().toLowerCase(),
+      );
+
+      if (existingBackendAct) {
+        if (customStages.length > 0) {
+          await updateActivity(existingBackendAct.id, {
+            stages: customStages,
+            roadmap: customStages,
+          });
         }
-
-        const methodLabel = act.method || "RFB - National";
-        const resolvedMethodId = await resolveProcurementMethodId(methodLabel);
-
-        const customStages = (
-          act.details?.roadmap ||
-          (act as any).roadmap ||
-          []
-        ).map((st: any, sIdx: number) => ({
-          name: st.name || st.stageName,
-          sequence: sIdx + 1,
-          plannedStartDate:
-            st.gregorianDate || st.plannedStartDate || undefined,
-          gregorianDate: st.gregorianDate || undefined,
-          ethiopianDate: st.ethiopianDate || undefined,
-          isNotApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-          notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-          remarks: st.remarks || undefined,
-        }));
-
-        await createActivity({
-          planId: planIdToSubmit,
-          procurementMethodId: resolvedMethodId,
-          description: act.description || "Activity description",
-          estimatedBudget: Number(act.estimatedAmount) || 500000,
-          currency: targetPlan.currency || "ETB",
-          stages: customStages.length > 0 ? customStages : undefined,
-          fundings: [
-            {
-              fundingSource:
-                selectedProject.fundingSource ||
-                "African Development Bank (AfDB)",
-              loanGrantNumber:
-                selectedProject.financingNumbers?.[0] || undefined,
-              allocationPct: 100,
-            },
-          ],
-        });
+        continue;
       }
-    } catch (syncErr) {
-      console.warn("Activity sync before submit note:", syncErr);
+
+      const methodLabel = act.method || "RFB - National";
+      const resolvedMethodId = await resolveProcurementMethodId(methodLabel);
+      await createActivity({
+        planId: planIdToSubmit,
+        procurementMethodId: resolvedMethodId,
+        procurementCategory: toBackendProcurementCategory(act.category),
+        ...(act.status === "Draft" ? { status: "DRAFT" } : {}),
+        description: act.description || "Activity description",
+        estimatedBudget: Number(act.estimatedAmount) || 500000,
+        currency: targetPlan.currency || "ETB",
+        stages: customStages.length > 0 ? customStages : undefined,
+        fundings: [
+          {
+            fundingSource:
+              selectedProject.fundingSource ||
+              "African Development Bank (AfDB)",
+            loanGrantNumber: selectedProject.financingNumbers?.[0] || undefined,
+            allocationPct: 100,
+          },
+        ],
+      });
     }
 
     // 3. Submit on backend — use PATCH status:SUBMITTED as primary
@@ -2029,6 +1993,64 @@ export function OfficerProjectsView({
     saveActivity(updatedActivity);
   }
 
+  async function handleDeleteDraftActivity(
+    activity: ProcurementActivitySummary,
+  ) {
+    if (!selectedProject || !selectedPlan) {
+      throw new Error("The project or procurement plan is no longer selected.");
+    }
+
+    const backendRecord = backendActivities.find(
+      (record) =>
+        record.activity.reference.toLowerCase() ===
+          activity.reference.toLowerCase() ||
+        record.activity.id === activity.id ||
+        record.activity.id === activity.activityId,
+    );
+    const backendId =
+      backendRecord?.activity.id ||
+      ([activity.id, activity.activityId].find(
+        (id) => id && id.includes("-") && id.length > 20,
+      ) as string | undefined);
+
+    if (backendId && !(await deleteActivity(backendId))) {
+      throw new Error(
+        "The draft activity could not be deleted from the server. Please try again.",
+      );
+    }
+
+    const matchesActivity = (candidate: ProcurementActivitySummary) =>
+      candidate.reference.toLowerCase() === activity.reference.toLowerCase() ||
+      (Boolean(activity.id) && candidate.id === activity.id) ||
+      (Boolean(activity.activityId) &&
+        candidate.activityId === activity.activityId);
+    const nextActivityRecords = savedActivityRecords.filter(
+      (record) =>
+        !(
+          record.projectCode.toLowerCase() ===
+            selectedProject.code.toLowerCase() &&
+          (record.planReference.toLowerCase() ===
+            selectedPlan.reference.toLowerCase() ||
+            record.planReference === selectedPlan.id) &&
+          matchesActivity(record.activity)
+        ),
+    );
+    setSavedActivityRecords(nextActivityRecords);
+    window.localStorage.setItem(
+      OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+      JSON.stringify(nextActivityRecords),
+    );
+
+    const remainingActivities = selectedPlanActivities.filter(
+      (candidate) => !matchesActivity(candidate),
+    );
+    handlePlanUpdated({
+      ...selectedPlan,
+      activities: remainingActivities.length,
+      planActivities: remainingActivities,
+    });
+  }
+
   async function handleBulkImportPlans(
     importedPlans: ProcurementPlanSummary[],
   ) {
@@ -2049,14 +2071,6 @@ export function OfficerProjectsView({
     let updatedSavedRecords = savedPlanRecords;
 
     for (const plan of importedPlans) {
-      let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" =
-        "GOODS";
-      if (plan.category === "Works") catEnum = "WORKS";
-      else if (plan.category === "Consultancy Services")
-        catEnum = "CONSULTANCY";
-      else if (plan.category === "Non-Consulting Services")
-        catEnum = "NON_CONSULTING";
-
       const periodStart = plan.planPeriod?.from?.gregorian || "2025-07-08";
       const periodEnd = plan.planPeriod?.to?.gregorian || "2026-07-07";
 
@@ -2065,7 +2079,6 @@ export function OfficerProjectsView({
           projectId: targetProjectId,
           title: plan.name.trim(),
           budgetYear: plan.budgetYear,
-          procurementCategory: catEnum,
           organization:
             plan.organizationRegion ||
             selectedProject.organizationRegion ||
@@ -2149,19 +2162,10 @@ export function OfficerProjectsView({
             selectedProject.code;
 
       try {
-        let catEnum: "GOODS" | "WORKS" | "CONSULTANCY" | "NON_CONSULTING" =
-          "GOODS";
-        if (selectedPlan.category === "Works") catEnum = "WORKS";
-        else if (selectedPlan.category === "Consultancy Services")
-          catEnum = "CONSULTANCY";
-        else if (selectedPlan.category === "Non-Consulting Services")
-          catEnum = "NON_CONSULTING";
-
         const created = await createPlan({
           projectId: targetProjectId,
           title: selectedPlan.name.trim(),
           budgetYear: selectedPlan.budgetYear,
-          procurementCategory: catEnum,
           organization: selectedPlan.organizationRegion || "Federal / FPCU",
           description: selectedPlan.description || undefined,
           periodStart: selectedPlan.planPeriod?.from?.gregorian || "2025-07-08",
@@ -2225,6 +2229,10 @@ export function OfficerProjectsView({
             planId: targetBackendPlanId,
             reference: activity.reference,
             procurementMethodId: resolvedMethodId,
+            procurementCategory: toBackendProcurementCategory(
+              activity.category,
+            ),
+            ...(activity.status === "Draft" ? { status: "DRAFT" } : {}),
             description: activity.description || "Activity description",
             estimatedBudget: Number(activity.estimatedAmount) || 500000,
             currency:
@@ -2431,6 +2439,7 @@ export function OfficerProjectsView({
   if (selectedProject && selectedPlan) {
     return (
       <OfficerProcurementPlanDetailView
+        onDeleteDraftActivity={handleDeleteDraftActivity}
         onBulkImportActivities={handleBulkImportActivities}
         onSubmitToDirector={submitPlanToDirector}
         onUpdateActivity={handleActivityUpdated}

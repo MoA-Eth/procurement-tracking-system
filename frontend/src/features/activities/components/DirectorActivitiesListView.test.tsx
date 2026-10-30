@@ -3,6 +3,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   DirectorActivitiesListView,
+  mapBackendActivityToProcurementActivity,
   upsertActivityIntoList,
 } from "./DirectorActivitiesListView";
 import type { ProcurementActivity } from "../activitiesData";
@@ -10,6 +11,107 @@ import type { ProcurementActivity } from "../activitiesData";
 describe("DirectorActivitiesListView - Plan Activity Isolation and Deduplication", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("shows a saved date for an optional roadmap stage", () => {
+    const activity = mapBackendActivityToProcurementActivity(
+      {
+        reference: "MOA-RFB-000001",
+        description: "Supply of Agricultural Harvesters",
+        procurementMethod: { label: "RFB - National" },
+        details: {
+          roadmap: [
+            {
+              name: "Draft Pre-qualification Documents",
+              gregorianDate: "",
+              notApplicable: false,
+            },
+          ],
+        },
+        stages: [
+          {
+            id: "stage-1",
+            sequence: 1,
+            stageType: { label: "Draft Pre-qualification Documents" },
+            plannedStartDate: "2026-03-08T00:00:00.000Z",
+            currentTargetStartDate: "2026-03-08T00:00:00.000Z",
+            status: "NOT_STARTED",
+          },
+        ],
+      } as any,
+      {
+        category: "Goods",
+        planName: "Annual Procurement Plan",
+        planId: "plan-1",
+        projectCode: "PRJ-1",
+      } as any,
+    );
+
+    expect(activity.roadmap[0].originalPlannedDate).toBe(
+      "2026-03-08T00:00:00.000Z",
+    );
+    expect(activity.roadmap[0].notApplicable).toBe(false);
+    expect(activity.roadmap[0].stageStatus).toBe("Not Started");
+  });
+
+  it("keeps an undated optional roadmap stage marked not applicable", () => {
+    const activity = mapBackendActivityToProcurementActivity(
+      {
+        reference: "MOA-RFB-000001",
+        description: "Supply of Agricultural Harvesters",
+        procurementMethod: { label: "RFB - National" },
+        stages: [
+          {
+            id: "stage-1",
+            sequence: 1,
+            stageType: { label: "Draft Pre-qualification Documents" },
+            status: "NOT_STARTED",
+          },
+        ],
+      } as any,
+      {
+        category: "Goods",
+        planName: "Annual Procurement Plan",
+        planId: "plan-1",
+        projectCode: "PRJ-1",
+      } as any,
+    );
+
+    expect(activity.roadmap[0].originalPlannedDate).toBe("Not applicable");
+    expect(activity.roadmap[0].notApplicable).toBe(true);
+  });
+
+  it("shows a saved target date when the baseline date is null", () => {
+    const activity = mapBackendActivityToProcurementActivity(
+      {
+        reference: "MOA-RFB-000002",
+        description: "Supply of Agricultural Harvesters",
+        procurementMethod: { label: "RFB - National" },
+        stages: [
+          {
+            id: "stage-2",
+            sequence: 1,
+            stageType: { label: "Preparation of Specification" },
+            plannedStartDate: null,
+            currentTargetStartDate: "2026-08-03T00:00:00.000Z",
+            status: "NOT_STARTED",
+          },
+        ],
+      } as any,
+      {
+        category: "Goods",
+        planName: "Annual Procurement Plan",
+        planId: "plan-1",
+        projectCode: "PRJ-1",
+      } as any,
+    );
+
+    expect(activity.roadmap[0].originalPlannedDate).toBe(
+      "2026-08-03T00:00:00.000Z",
+    );
+    expect(activity.roadmap[0].revisedTargetDate).toBe(
+      "2026-08-03T00:00:00.000Z",
+    );
   });
 
   it("upsertActivityIntoList correctly deduplicates by content and prefers backend activity", () => {

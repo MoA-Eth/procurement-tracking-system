@@ -315,7 +315,8 @@ function normalizeProcurementPlanSummary(
       : undefined;
   const category =
     normalizeStoredCategory(plan.category) ??
-    normalizeStoredCategory(legacyCategory);
+    normalizeStoredCategory(legacyCategory) ??
+    "Per Activity";
 
   const isValidStatus =
     plan.status === "Draft" ||
@@ -323,7 +324,9 @@ function normalizeProcurementPlanSummary(
     plan.status === "Committee Review" ||
     plan.status === "Finally Approved" ||
     plan.status === "Approved" ||
-    plan.status === "Returned";
+    plan.status === "Returned" ||
+    plan.status === "Returned for Revision" ||
+    plan.status === "Update Requested";
 
   if (
     !category ||
@@ -352,7 +355,8 @@ function normalizeProcurementPlanSummary(
 function normalizeStoredCategory(
   value: unknown,
 ): ProcurementCategory | undefined {
-  if (value === "Goods" || value === "Works") return value;
+  if (value === "Per Activity" || value === "Goods" || value === "Works")
+    return value;
   if (value === "Non-Consulting" || value === "Non-Consulting Services") {
     return "Non-Consulting Services";
   }

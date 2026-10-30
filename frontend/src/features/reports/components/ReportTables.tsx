@@ -18,6 +18,11 @@ import {
   type SupplierPerformanceRow,
 } from "../reportsData";
 import { Inbox } from "lucide-react";
+import { formatDualCalendarDate } from "@/features/projects/utils/ethiopianCalendar";
+
+function formatReportActivityDate(value?: string | null) {
+  return formatDualCalendarDate(value) || value || "—";
+}
 
 export interface ReportTablesProps {
   activeReport: ReportType;
@@ -339,9 +344,11 @@ export function ReportTables({
                     {row.currency}
                   </td>
                   <td className="py-2.5 px-3">{row.officer}</td>
-                  <td className="py-2.5 px-3">{row.plannedStartDate || "—"}</td>
                   <td className="py-2.5 px-3">
-                    {row.plannedCompletionDate || "—"}
+                    {formatReportActivityDate(row.plannedStartDate)}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {formatReportActivityDate(row.plannedCompletionDate)}
                   </td>
                   <td className="py-2.5 px-3">
                     {(() => {
@@ -399,28 +406,28 @@ export function ReportTables({
                       </td>
                       <td className="py-2.5 px-3">{row.method}</td>
                       <td className="py-2.5 px-3">
-                        {row.plannedAdvertisingDate || "—"}
+                        {formatReportActivityDate(row.plannedAdvertisingDate)}
                       </td>
                       <td className="py-2.5 px-3">
-                        {row.actualAdvertisingDate || "—"}
+                        {formatReportActivityDate(row.actualAdvertisingDate)}
                       </td>
                       <td className="py-2.5 px-3">
-                        {row.plannedOpeningDate || "—"}
+                        {formatReportActivityDate(row.plannedOpeningDate)}
                       </td>
                       <td className="py-2.5 px-3">
-                        {row.actualOpeningDate || "—"}
+                        {formatReportActivityDate(row.actualOpeningDate)}
                       </td>
                       <td className="py-2.5 px-3">
-                        {row.plannedAwardDate || "—"}
+                        {formatReportActivityDate(row.plannedAwardDate)}
                       </td>
                       <td className="py-2.5 px-3">
-                        {row.actualAwardDate || "—"}
+                        {formatReportActivityDate(row.actualAwardDate)}
                       </td>
                       <td className="py-2.5 px-3">
-                        {row.plannedSignatureDate || "—"}
+                        {formatReportActivityDate(row.plannedSignatureDate)}
                       </td>
                       <td className="py-2.5 px-3 font-medium text-emerald-800 tabular-nums">
-                        {row.actualSignatureDate || "—"}
+                        {formatReportActivityDate(row.actualSignatureDate)}
                       </td>
                       <td className="py-2.5 px-3">
                         {(() => {
@@ -485,10 +492,14 @@ export function ReportTables({
                       <td className="py-2.5 px-3">{row.category}</td>
                       <td className="py-2.5 px-3">{row.method}</td>
                       <td className="py-2.5 px-3 font-semibold">{row.stage}</td>
-                      <td className="py-2.5 px-3">{row.baselineDate || "—"}</td>
-                      <td className="py-2.5 px-3">{row.revisedDate || "—"}</td>
+                      <td className="py-2.5 px-3">
+                        {formatReportActivityDate(row.baselineDate)}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        {formatReportActivityDate(row.revisedDate)}
+                      </td>
                       <td className="py-2.5 px-3 font-medium text-emerald-800 tabular-nums">
-                        {row.actualDate || "—"}
+                        {formatReportActivityDate(row.actualDate)}
                       </td>
                       <td className="py-2.5 px-3 font-sans font-medium text-right tabular-nums text-slate-800">
                         {row.varianceDays || "0"}
@@ -579,9 +590,15 @@ export function ReportTables({
                     })}
                   </td>
                   <td className="py-2.5 px-3 font-semibold">{row.stage}</td>
-                  <td className="py-2.5 px-3">{row.plannedDate || "—"}</td>
-                  <td className="py-2.5 px-3">{row.revisedDate || "—"}</td>
-                  <td className="py-2.5 px-3">{row.actualDate || "—"}</td>
+                  <td className="py-2.5 px-3">
+                    {formatReportActivityDate(row.plannedDate)}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {formatReportActivityDate(row.revisedDate)}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {formatReportActivityDate(row.actualDate)}
+                  </td>
                   <td className="py-2.5 px-3">
                     {(() => {
                       const st = formatPlanStatus(row.stageStatus);
@@ -650,7 +667,7 @@ export function ReportTables({
                       "Overdue Stage"}
                   </td>
                   <td className="py-2.5 px-3 font-sans tabular-nums text-slate-700">
-                    {row.effectiveTargetDate || "—"}
+                    {formatReportActivityDate(row.effectiveTargetDate)}
                   </td>
                   <td className="py-2.5 px-3 text-right">
                     <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-medium border border-rose-200/70 bg-rose-50 text-rose-700 tabular-nums">
@@ -938,7 +955,9 @@ export function ReportTables({
                       );
                     })()}
                   </td>
-                  <td className="py-2.5 px-3">{row.completionDate || "—"}</td>
+                  <td className="py-2.5 px-3">
+                    {formatReportActivityDate(row.completionDate)}
+                  </td>
                   <td className="py-2.5 px-3 whitespace-nowrap">
                     <span className="inline-block rounded-md bg-slate-100/90 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-800 border border-slate-200/80 whitespace-nowrap">
                       {row.project}
@@ -1032,11 +1051,13 @@ export function ReportTables({
                       minimumFractionDigits: 2,
                     })}
                   </td>
-                  <td className="py-2.5 px-3">{row.signatureDate || "—"}</td>
                   <td className="py-2.5 px-3">
-                    {row.revisedCompletionDate ||
-                      row.plannedCompletionDate ||
-                      "—"}
+                    {formatReportActivityDate(row.signatureDate)}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    {formatReportActivityDate(
+                      row.revisedCompletionDate || row.plannedCompletionDate,
+                    )}
                   </td>
                   <td className="py-2.5 px-3">
                     {(() => {
@@ -1504,7 +1525,7 @@ export function ReportTables({
                       {row.officer}
                     </td>
                     <td className="py-2.5 px-3.5 whitespace-nowrap font-sans tabular-nums text-slate-700">
-                      {row.submittedDate}
+                      {formatReportActivityDate(row.submittedDate)}
                     </td>
                     <td className="py-2.5 px-3.5 whitespace-nowrap">
                       <span
