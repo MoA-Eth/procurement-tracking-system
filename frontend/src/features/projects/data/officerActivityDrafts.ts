@@ -700,7 +700,7 @@ export function mapBackendActivityToProcurementActivitySummary(
         stepReference: ba.bidReferenceNo || "",
         classificationCode: ba.procurementClassificationCode || "",
         comments: ba.remarks || "",
-        contractType: ba.contractType || "Lump Sum",
+        contractType: ba.contractType || "",
         currency: ba.currency || "ETB",
         domesticPreference:
           ba.domesticPreference === "Yes" ||
@@ -721,7 +721,7 @@ export function mapBackendActivityToProcurementActivitySummary(
         location: ba.location || "",
         longitude: ba.longitude ? String(ba.longitude) : "",
         lotRequired: Boolean(ba.lotRequired),
-        marketApproach: ba.marketApproach || "Open - National",
+        marketApproach: ba.marketApproach || "",
         method: ba.procurementMethod?.code || "",
         oversightClassification: ba.oversightClassification || "",
         pricingBasis: ba.pricingBasis || "",
@@ -729,7 +729,7 @@ export function mapBackendActivityToProcurementActivitySummary(
         procurementProcess: ba.procurementProcess || "",
         qualificationApproach: ba.qualificationApproach || "",
         requiresUnAgency: Boolean(ba.requiresUnAgencyContracting),
-        reviewType: ba.reviewType || "Post Review",
+        reviewType: ba.reviewType || "",
         scopeNotes: ba.scopeNotes || "",
         specificMethod: ba.specificMethod || "",
         subcomponent: ba.components?.[0]?.subcomponent || "",

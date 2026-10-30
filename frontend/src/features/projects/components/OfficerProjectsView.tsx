@@ -65,6 +65,7 @@ import {
   formatEthiopianDate,
   formatGregorianDate,
 } from "@/features/projects/utils/ethiopianCalendar";
+import { parseExcelDateToIso } from "@/features/projects/utils/projectExcelUtils";
 import { parseNumberWithCommas } from "@/lib/numberFormatting";
 import { apiClient } from "@/lib/apiClient";
 import {
@@ -132,9 +133,11 @@ function upsertSummaryActivity(
   }
 }
 
-function safeIsoDate(val?: string, fallback: string = "2025-07-08"): string {
+function safeIsoDate(val?: unknown, fallback: string = "2025-07-08"): string {
   if (!val) return new Date(fallback).toISOString();
-  const d = new Date(val);
+  const clean = parseExcelDateToIso(val);
+  if (clean) return new Date(clean).toISOString();
+  const d = new Date(String(val));
   if (isNaN(d.getTime())) return new Date(fallback).toISOString();
   return d.toISOString();
 }
@@ -1383,17 +1386,25 @@ export function OfficerProjectsView({
           activity.details?.roadmap ||
           (activity as any).roadmap ||
           []
-        ).map((st: any, sIdx: number) => ({
-          name: st.name || st.stageName,
-          sequence: sIdx + 1,
-          plannedStartDate:
-            st.gregorianDate || st.plannedStartDate || undefined,
-          gregorianDate: st.gregorianDate || undefined,
-          ethiopianDate: st.ethiopianDate || undefined,
-          isNotApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-          notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-          remarks: st.remarks || undefined,
-        }));
+        ).map((st: any, sIdx: number) => {
+          const rawD = st.gregorianDate || st.plannedStartDate;
+          const greg = rawD ? parseExcelDateToIso(rawD) : undefined;
+          const eth =
+            st.ethiopianDate ||
+            (greg && gregorianToEthiopian(greg)
+              ? formatEthiopianDate(gregorianToEthiopian(greg)!)
+              : undefined);
+          return {
+            name: st.name || st.stageName,
+            sequence: sIdx + 1,
+            plannedStartDate: greg || undefined,
+            gregorianDate: greg || undefined,
+            ethiopianDate: eth || undefined,
+            isNotApplicable: Boolean(st.notApplicable || st.isNotApplicable),
+            notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
+            remarks: st.remarks || undefined,
+          };
+        });
 
         // Check if this activity already exists in the backend
         const existingBackendAct = backendActivities.find(
@@ -1426,11 +1437,22 @@ export function OfficerProjectsView({
         // Map funding allocations
         const rawFundings = activity.details?.financingAllocations || [];
         const mappedFundings = rawFundings
-          .filter((fa: any) => Boolean(fa.source?.trim()))
+          .filter(
+            (fa: any) =>
+              fa.selected !== false &&
+              Boolean((fa.source || fa.fundingSource || fa.id || "")?.trim()),
+          )
           .map((fa: any) => ({
-            fundingSource: fa.source.trim(),
-            loanGrantNumber: fa.loanNumber?.trim() || undefined,
-            allocationPct: Number(fa.share) || 100,
+            fundingSource: (
+              fa.source ||
+              fa.fundingSource ||
+              fa.id ||
+              "World Bank"
+            ).trim(),
+            loanGrantNumber:
+              fa.loanNumber?.trim() || fa.loanGrantNumber?.trim() || undefined,
+            allocationPct:
+              Number(fa.percent ?? fa.share ?? fa.allocationPct) || 100,
           }));
         const fundingsPayload =
           mappedFundings.length > 0
@@ -1451,11 +1473,21 @@ export function OfficerProjectsView({
         // Map component allocations
         const rawComponents = activity.details?.componentAllocations || [];
         const mappedComponents = rawComponents
-          .filter((ca: any) => Boolean(ca.name?.trim()))
+          .filter(
+            (ca: any) =>
+              ca.selected !== false &&
+              Boolean((ca.name || ca.component || ca.id || "")?.trim()),
+          )
           .map((ca: any) => ({
-            component: ca.name.trim(),
+            component: (
+              ca.name ||
+              ca.component ||
+              ca.id ||
+              "Component 1"
+            ).trim(),
             subcomponent: ca.code?.trim() || undefined,
-            allocationPct: Number(ca.share) || 100,
+            allocationPct:
+              Number(ca.percent ?? ca.share ?? ca.allocationPct) || 100,
           }));
         const componentsPayload =
           mappedComponents.length > 0 ? mappedComponents : undefined;
@@ -1465,9 +1497,16 @@ export function OfficerProjectsView({
         const mappedLots =
           formDetails.lotRequired && rawLots.length > 0
             ? rawLots
-                .filter((l: any) => Boolean(l.number?.trim()))
-                .map((l: any) => ({
-                  lotNumber: String(l.number).trim(),
+                .filter(
+                  (l: any) =>
+                    Boolean(l.number?.trim()) ||
+                    Boolean(l.description?.trim()) ||
+                    (l.amount !== undefined &&
+                      l.amount !== "" &&
+                      Number(l.amount) >= 0),
+                )
+                .map((l: any, lIdx: number) => ({
+                  lotNumber: String(l.number || "").trim() || `Lot ${lIdx + 1}`,
                   description: l.description?.trim() || undefined,
                   estimatedAmount:
                     parseNumberWithCommas(l.amount) > 0
@@ -1577,6 +1616,8 @@ export function OfficerProjectsView({
                     allocationPct: 100,
                   },
                 ],
+                stages: customStages.length > 0 ? customStages : undefined,
+                roadmap: customStages.length > 0 ? customStages : undefined,
               });
             } catch (secondErr) {
               console.warn("Second createActivity attempt failed:", secondErr);
@@ -2057,8 +2098,23 @@ export function OfficerProjectsView({
       else if (plan.category === "Non-Consulting Services")
         catEnum = "NON_CONSULTING";
 
-      const periodStart = plan.planPeriod?.from?.gregorian || "2025-07-08";
-      const periodEnd = plan.planPeriod?.to?.gregorian || "2026-07-07";
+      const rawStart = plan.planPeriod?.from?.gregorian;
+      const rawEnd = plan.planPeriod?.to?.gregorian;
+      const periodStart = parseExcelDateToIso(rawStart) || "2025-07-08";
+      const periodEnd = parseExcelDateToIso(rawEnd) || "2026-07-07";
+      const ethStart = gregorianToEthiopian(periodStart);
+      const ethEnd = gregorianToEthiopian(periodEnd);
+
+      plan.planPeriod = {
+        from: {
+          gregorian: periodStart,
+          ethiopian: ethStart ? formatEthiopianDate(ethStart) : "",
+        },
+        to: {
+          gregorian: periodEnd,
+          ethiopian: ethEnd ? formatEthiopianDate(ethEnd) : "",
+        },
+      };
 
       try {
         const created = await createPlan({
@@ -2071,8 +2127,8 @@ export function OfficerProjectsView({
             selectedProject.organizationRegion ||
             "Federal / FPCU",
           description: plan.description || undefined,
-          periodStart: new Date(periodStart).toISOString(),
-          periodEnd: new Date(periodEnd).toISOString(),
+          periodStart: safeIsoDate(periodStart, "2025-07-08"),
+          periodEnd: safeIsoDate(periodEnd, "2026-07-07"),
           contractAwardDate: plan.contractAwardDate?.gregorian
             ? safeIsoDate(plan.contractAwardDate.gregorian, "2025-07-08")
             : undefined,
@@ -2221,6 +2277,30 @@ export function OfficerProjectsView({
             ? "TIME_BASED"
             : "LUMP_SUM";
 
+          const importCustomStages = (
+            activity.details?.roadmap ||
+            (activity as any).roadmap ||
+            []
+          ).map((st: any, sIdx: number) => {
+            const rawD = st.gregorianDate || st.plannedStartDate;
+            const greg = rawD ? parseExcelDateToIso(rawD) : undefined;
+            const eth =
+              st.ethiopianDate ||
+              (greg && gregorianToEthiopian(greg)
+                ? formatEthiopianDate(gregorianToEthiopian(greg)!)
+                : undefined);
+            return {
+              name: st.name || st.stageName,
+              sequence: sIdx + 1,
+              plannedStartDate: greg || undefined,
+              gregorianDate: greg || undefined,
+              ethiopianDate: eth || undefined,
+              isNotApplicable: Boolean(st.notApplicable || st.isNotApplicable),
+              notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
+              remarks: st.remarks || undefined,
+            };
+          });
+
           await createActivity({
             planId: targetBackendPlanId,
             reference: activity.reference,
@@ -2244,6 +2324,10 @@ export function OfficerProjectsView({
                 allocationPct: 100,
               },
             ],
+            stages:
+              importCustomStages.length > 0 ? importCustomStages : undefined,
+            roadmap:
+              importCustomStages.length > 0 ? importCustomStages : undefined,
           });
         } catch (err) {
           console.warn(

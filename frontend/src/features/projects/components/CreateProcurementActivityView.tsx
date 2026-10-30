@@ -2,6 +2,7 @@
 
 import {
   countRoadmapOrderErrors,
+  isRoadmapStageMandatory,
   ProcurementRoadmapTable,
 } from "./ProcurementRoadmapTable";
 import type {
@@ -42,6 +43,7 @@ import {
   formatEthiopianDate,
   gregorianToEthiopian,
 } from "../utils/ethiopianCalendar";
+import { parseExcelDateToIso } from "../utils/projectExcelUtils";
 import { DualCalendarField } from "./CreateProcurementPlanView";
 import {
   AlertCircle,
@@ -331,7 +333,10 @@ export function CreateProcurementActivityView({
     !allocationTotalIsValid(financingAllocations) ||
     !allocationTotalIsValid(componentAllocations);
   const incompleteRoadmapStages = roadmap.filter(
-    (stage) => !stage.notApplicable && !stage.gregorianDate,
+    (stage) =>
+      isRoadmapStageMandatory(stage) &&
+      !stage.notApplicable &&
+      !stage.gregorianDate,
   );
   const roadmapOrderErrors = countRoadmapOrderErrors(roadmap);
   const issueCounts: Record<WizardStep, number> = {
@@ -1180,57 +1185,22 @@ function extractInitialRoadmap(
     category === "Consultancy Services" ||
     category === "Consultancy" ||
     category === "Consulting Services";
+  const templateStages = methodKey ? roadmapForMethod(methodKey, category) : [];
+
+  let rawStages: any[] = [];
   if (initialActivity?.details?.roadmap?.length) {
-    return initialActivity.details.roadmap.map((st: any) => ({
-      name: normalizeRoadmapStageName(st.name || st.stageName, isConsultancy),
-      days: String(st.days || "14"),
-      ethiopianDate: st.ethiopianDate || "",
-      gregorianDate: st.gregorianDate || st.plannedStartDate || "",
-      notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-      allowNotApplicable: Boolean(
-        st.allowNotApplicable !== undefined ? st.allowNotApplicable : true,
-      ),
-      remarks: st.remarks || "",
-      status: st.status || "Not Started",
-    }));
+    rawStages = initialActivity.details.roadmap;
+  } else {
+    const anyAct = initialActivity as any;
+    if (anyAct?.roadmap?.length) {
+      rawStages = anyAct.roadmap;
+    } else if (anyAct?.stages?.length) {
+      rawStages = anyAct.stages;
+    }
   }
-  const anyAct = initialActivity as any;
-  if (anyAct?.roadmap?.length) {
-    return anyAct.roadmap.map((st: any) => ({
-      name: normalizeRoadmapStageName(st.name || st.stageName, isConsultancy),
-      days: String(st.days || "14"),
-      ethiopianDate: st.ethiopianDate || "",
-      gregorianDate: st.gregorianDate || st.plannedStartDate || "",
-      notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
-      allowNotApplicable: Boolean(
-        st.allowNotApplicable !== undefined ? st.allowNotApplicable : true,
-      ),
-      remarks: st.remarks || "",
-      status: st.status || "Not Started",
-    }));
-  }
-  if (anyAct?.stages?.length) {
-    return anyAct.stages.map((st: any) => {
-      const greg = st.plannedStartDate
-        ? new Date(st.plannedStartDate).toISOString().slice(0, 10)
-        : "";
-      return {
-        name: normalizeRoadmapStageName(
-          st.stageType?.label || st.name,
-          isConsultancy,
-        ),
-        days: String(st.plannedDays || "14"),
-        ethiopianDate: st.ethiopianDate || "",
-        gregorianDate: greg,
-        notApplicable: Boolean(st.isNotApplicable || st.notApplicable),
-        allowNotApplicable: true,
-        remarks: st.remarks || "",
-        status: st.status || "Not Started",
-      };
-    });
-  }
-  if (methodKey) {
-    return roadmapForMethod(methodKey, category).map((stage) => ({
+
+  if (rawStages.length === 0) {
+    return templateStages.map((stage) => ({
       allowNotApplicable: Boolean(stage.allowNotApplicable),
       days: "",
       ethiopianDate: "",
@@ -1241,7 +1211,71 @@ function extractInitialRoadmap(
       status: "Not Started",
     }));
   }
-  return [];
+
+  const normalizedRaw: RoadmapStage[] = rawStages.map((st: any) => {
+    const rawGreg =
+      st.gregorianDate ||
+      st.plannedStartDate ||
+      (st.currentTargetStartDate
+        ? typeof st.currentTargetStartDate === "string"
+          ? st.currentTargetStartDate
+          : new Date(st.currentTargetStartDate).toISOString().slice(0, 10)
+        : "");
+    const greg = parseExcelDateToIso(rawGreg);
+    const eth =
+      st.ethiopianDate ||
+      (greg && gregorianToEthiopian(greg)
+        ? formatEthiopianDate(gregorianToEthiopian(greg)!)
+        : "");
+
+    const name = normalizeRoadmapStageName(
+      st.name || st.stageName || st.stageType?.label,
+      isConsultancy,
+    );
+
+    return {
+      name,
+      days: String(st.days || st.plannedDays || "14"),
+      ethiopianDate: eth,
+      gregorianDate: greg,
+      notApplicable: Boolean(st.notApplicable || st.isNotApplicable),
+      allowNotApplicable: Boolean(
+        st.allowNotApplicable !== undefined ? st.allowNotApplicable : true,
+      ),
+      remarks: st.remarks || "",
+      status: st.status || "Not Started",
+    };
+  });
+
+  if (
+    templateStages.length === 0 ||
+    normalizedRaw.length >= templateStages.length
+  ) {
+    return normalizedRaw;
+  }
+
+  // Merge incomplete imported stages into template stages
+  return templateStages.map((tStage) => {
+    const matching = normalizedRaw.find(
+      (r) =>
+        r.name.toLowerCase() === tStage.name.toLowerCase() ||
+        r.name.toLowerCase().includes(tStage.name.toLowerCase()) ||
+        tStage.name.toLowerCase().includes(r.name.toLowerCase()),
+    );
+    if (matching) {
+      return matching;
+    }
+    return {
+      allowNotApplicable: Boolean(tStage.allowNotApplicable),
+      days: "14",
+      ethiopianDate: "",
+      gregorianDate: "",
+      name: tStage.name,
+      notApplicable: false,
+      remarks: "",
+      status: "Not Started",
+    };
+  });
 }
 
 // The number of lots is often unknown at the planning stage, so lots may be
@@ -3833,23 +3867,9 @@ export function RelatedInformationStep({
                 className="grid gap-3 rounded-md border border-slate-200 bg-[#fbfcfd] p-3 sm:grid-cols-[0.35fr_1.4fr_0.65fr_auto]"
                 key={lot.id}
               >
-                <Field
-                  error={
-                    attempted && !lot.number.trim() ? "Required" : undefined
-                  }
-                  label="Lot Number"
-                  required
-                >
+                <Field label="Lot Number">
                   <input
-                    aria-invalid={
-                      attempted && !lot.number.trim() ? "true" : undefined
-                    }
-                    className={
-                      inputClasses +
-                      (attempted && !lot.number.trim()
-                        ? " !border-red-500 !bg-red-50/20 text-red-950 focus:!border-red-500 focus:!ring-2 focus:!ring-red-500/20"
-                        : "")
-                    }
+                    className={inputClasses}
                     onChange={(event) =>
                       updateLot(lot.id, "number", event.target.value)
                     }

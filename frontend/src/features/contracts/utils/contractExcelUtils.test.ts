@@ -184,4 +184,42 @@ describe("contractExcelUtils", () => {
       "test_export.xlsx",
     );
   });
+
+  it("correctly parses contract dates in numeric serial and DD/MM/YYYY formats", async () => {
+    const data = [
+      {
+        Project: "AGP-II",
+        Activity: "ET-MoA-002-WORKS",
+        Supplier: "Ethio Agri Construction",
+        Region: "Amhara",
+        "Contract Number": "CON-SERIAL-002",
+        // 45846 serial number = 2025-07-08
+        "Contract Award Date": 45846,
+        "Contract Signature Date": "15/07/2025",
+        "Start Date": "45846",
+        "End Date": "2026-07-07",
+        "Original Contract Amount": 3000000,
+        Amendment: 0,
+        "Final Contract Amount": 3000000,
+        "Total Paid": 0,
+        "Remaining Balance": 3000000,
+        "Contract Status": "Active",
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const u8 = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+    const file = new File([u8], "serial_contracts.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const result = await parseContractsFromExcel(file);
+    expect(result.validCount).toBe(1);
+    expect(result.rows[0].awardDate).toBe("2025-07-08");
+    expect(result.rows[0].signingDate).toBe("2025-07-15");
+    expect(result.rows[0].startDate).toBe("2025-07-08");
+    expect(result.rows[0].endDate).toBe("2026-07-07");
+  });
 });

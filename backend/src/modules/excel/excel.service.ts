@@ -264,53 +264,6 @@ export class ExcelService {
     });
     const methodCodes = methods.map((m) => m.code);
 
-    const samplePlan = await prisma.plan.findFirst({
-      select: { id: true, title: true },
-    });
-    const samplePlanId = samplePlan ? samplePlan.title : 'PLAN-2025-01';
-
-    const sampleRows = [
-      [
-        samplePlanId,
-        'ET-MoA-001-GO-RFQ',
-        'Procurement of Soil Laboratory Equipment and Field Testing Kits',
-        'GOODS',
-        methodCodes[0] || 'RFQ',
-        1500000,
-        'ETB',
-        'NATIONAL',
-        'POST',
-      ],
-      [
-        samplePlanId,
-        'ET-MoA-002-CW-RFB',
-        'Construction and Rehabilitation of Regional Seed Inspection Center',
-        'WORKS',
-        methodCodes.find((c) => c.includes('RFB')) || methodCodes[0] || 'RFB',
-        12500000,
-        'ETB',
-        'NATIONAL',
-        'PRIOR',
-      ],
-      [
-        samplePlanId,
-        'ET-MoA-003-CS-QCBS',
-        'Consultancy Services for Environmental & Social Impact Assessment (ESIA)',
-        'CONSULTANCY',
-        methodCodes.find((c) => c.includes('QCBS')) || methodCodes[0] || 'QCBS',
-        3200000,
-        'ETB',
-        'INTERNATIONAL',
-        'PRIOR',
-      ],
-    ];
-
-    sampleRows.forEach((vals, idx) => {
-      const row = sheet.getRow(2 + idx);
-      row.values = vals;
-      row.height = 20;
-    });
-
     // Apply validations to 100 rows
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);
@@ -463,38 +416,6 @@ export class ExcelService {
 
     this.styleHeaderRow(sheet, headers);
 
-    const sampleContractRows = [
-      [
-        'PRJ-24-001',
-        'ET-MoA-001-GO-RFQ',
-        'Ethio Agritech Supplies PLC',
-        'Addis Ababa',
-        'MOA/AGP/CON/2025/01',
-        '2025-08-10',
-        '2025-08-15',
-        '2025-09-01',
-        '2026-03-31',
-        1500000,
-        0,
-        1500000,
-        0,
-        1500000,
-        'SIGNED',
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-      ],
-    ];
-
-    sampleContractRows.forEach((vals, idx) => {
-      const row = sheet.getRow(2 + idx);
-      row.values = vals;
-      row.height = 20;
-    });
-
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);
 
@@ -602,29 +523,6 @@ export class ExcelService {
     ];
 
     this.styleHeaderRow(sheet, headers);
-
-    const sampleSupplierRows = [
-      [
-        'Ethio Seed & Grain Agro-Industry PLC',
-        '0023456789',
-        'info@ethioseed.et',
-        '+251 11 551 2345',
-        'ACTIVE',
-      ],
-      [
-        'Abyssinia Civil Works & Construction Enterprise',
-        '0034567890',
-        'contact@abyssiniaconst.et',
-        '+251 11 662 3456',
-        'ACTIVE',
-      ],
-    ];
-
-    sampleSupplierRows.forEach((vals, idx) => {
-      const row = sheet.getRow(2 + idx);
-      row.values = vals;
-      row.height = 20;
-    });
 
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);
@@ -872,7 +770,7 @@ export class ExcelService {
 
   parseCellDate(val: unknown): Date | null {
     if (!val) return null;
-    if (val instanceof Date) return val;
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
     if (
       typeof val === 'object' &&
       val !== null &&
@@ -880,15 +778,47 @@ export class ExcelService {
       (val as { result: unknown }).result
     ) {
       const res = (val as { result: unknown }).result;
-      if (res instanceof Date) return res;
+      if (res instanceof Date) return isNaN(res.getTime()) ? null : res;
       val = res;
     }
     if (typeof val === 'number') {
+      if (isNaN(val) || val <= 0) return null;
       const date = new Date(Math.round((val - 25569) * 86400 * 1000));
       return isNaN(date.getTime()) ? null : date;
     }
     const str = String(val).trim();
     if (!str) return null;
+
+    if (/^\d{4,6}(?:\.\d+)?$/.test(str)) {
+      const num = parseFloat(str);
+      const date = new Date(Math.round((num - 25569) * 86400 * 1000));
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    const dmyMatch = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/.exec(str);
+    if (dmyMatch) {
+      const d = new Date(
+        Date.UTC(
+          Number(dmyMatch[3]),
+          Number(dmyMatch[2]) - 1,
+          Number(dmyMatch[1]),
+        ),
+      );
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    const isoMatch = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/.exec(str);
+    if (isoMatch) {
+      const d = new Date(
+        Date.UTC(
+          Number(isoMatch[1]),
+          Number(isoMatch[2]) - 1,
+          Number(isoMatch[3]),
+        ),
+      );
+      return isNaN(d.getTime()) ? null : d;
+    }
+
     const d = new Date(str);
     return isNaN(d.getTime()) ? null : d;
   }
@@ -1682,56 +1612,6 @@ export class ExcelService {
     });
     const sectorDropdowns = sectors.map((s) => s.label);
 
-    const defaultFs = fsDropdowns[0] || 'World Bank (WB)';
-    const defaultSec = sectorDropdowns[0] || 'Agriculture & Crop Production';
-
-    const sampleProjectRows = [
-      [
-        'MOA-AGP2',
-        'Second Agricultural Growth Program (AGP-II)',
-        'SAP-100245',
-        'Ethiopia',
-        'Ministry of Agriculture (MoA)',
-        'Federal / FPCU',
-        defaultFs,
-        'Loan / Grant',
-        defaultSec,
-        'ACTIVE',
-      ],
-      [
-        'MOA-LLRP',
-        'Lowlands Livelihood Resilience Project (LLRP)',
-        'SAP-100246',
-        'Ethiopia',
-        'Ministry of Agriculture (MoA)',
-        'Somali Regional Bureau',
-        defaultFs,
-        'Credit',
-        sectorDropdowns.find((s) => s.toLowerCase().includes('live')) ||
-          defaultSec,
-        'ACTIVE',
-      ],
-      [
-        'MOA-CALM',
-        'Climate Action through Landscape Management (CALM)',
-        'SAP-100247',
-        'Ethiopia',
-        'Ministry of Agriculture (MoA)',
-        'Oromia Regional Bureau',
-        fsDropdowns.find((f) => f.toLowerCase().includes('afdb')) || defaultFs,
-        'Grant',
-        sectorDropdowns.find((s) => s.toLowerCase().includes('nat')) ||
-          defaultSec,
-        'ACTIVE',
-      ],
-    ];
-
-    sampleProjectRows.forEach((vals, idx) => {
-      const row = sheet.getRow(2 + idx);
-      row.values = vals;
-      row.height = 20;
-    });
-
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);
 
@@ -1858,53 +1738,6 @@ export class ExcelService {
     ];
 
     this.styleHeaderRow(sheet, headers);
-
-    const samplePlan = await prisma.project.findFirst({
-      select: { code: true },
-    });
-    const sampleProjCode = samplePlan ? samplePlan.code : 'PRJ-24-001';
-
-    const samplePlanRows = [
-      [
-        sampleProjCode,
-        'Annual Agricultural Inputs & Machinery Procurement Plan',
-        '2018 EFY',
-        'GOODS',
-        'Federal / Ministry of Agriculture',
-        'Procurement plan for agricultural supplies, certified seeds, and machinery',
-        '2025-07-08',
-        '2026-07-07',
-        'DRAFT',
-      ],
-      [
-        sampleProjCode,
-        'Regional Irrigation Civil Works & Infrastructure Plan',
-        '2018 EFY',
-        'WORKS',
-        'Oromia Regional Bureau of Agriculture',
-        'Civil works, intake weir construction, and canal rehabilitation for smallholders',
-        '2025-08-01',
-        '2026-06-30',
-        'DRAFT',
-      ],
-      [
-        sampleProjCode,
-        'Advisory, Environmental Audit & Capacity Building Plan',
-        '2018 EFY',
-        'CONSULTANCY',
-        'Federal / FPCU',
-        'Technical advisory, agronomy training, and environmental baseline studies',
-        '2025-08-15',
-        '2026-04-30',
-        'DRAFT',
-      ],
-    ];
-
-    samplePlanRows.forEach((vals, idx) => {
-      const row = sheet.getRow(2 + idx);
-      row.values = vals;
-      row.height = 20;
-    });
 
     for (let r = 2; r <= 100; r++) {
       const row = sheet.getRow(r);

@@ -68,12 +68,11 @@ export function ethiopianToGregorian(year: number, month: number, day: number) {
 }
 
 export function gregorianToEthiopian(isoDate: string): EthiopianDate | null {
-  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
-  if (!parts) return null;
+  if (!isoDate || typeof isoDate !== "string") return null;
+  const parsed = parseGregorianDate(isoDate);
+  if (!parsed) return null;
 
-  const year = Number(parts[1]);
-  const month = Number(parts[2]);
-  const day = Number(parts[3]);
+  const { year, month, day } = parsed;
   const check = new Date(Date.UTC(year, month - 1, day));
 
   if (
@@ -145,11 +144,36 @@ export function gregorianToIso({ year, month, day }: GregorianDate): string {
 }
 
 export function parseGregorianDate(
-  value?: string | null,
+  value?: string | number | null,
 ): GregorianDate | null {
-  if (!value || typeof value !== "string") return null;
-  const trimmed = value.trim();
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number") {
+    if (isNaN(value) || value <= 0) return null;
+    const d = new Date(Math.round((value - 25569) * 86400 * 1000));
+    if (!isNaN(d.getTime())) {
+      return {
+        year: d.getUTCFullYear(),
+        month: d.getUTCMonth() + 1,
+        day: d.getUTCDate(),
+      };
+    }
+    return null;
+  }
+  const trimmed = String(value).trim();
   if (!trimmed) return null;
+
+  // 0. Numeric string (Excel serial date, e.g. "45846" or "45846.125")
+  if (/^\d{4,6}(?:\.\d+)?$/.test(trimmed)) {
+    const num = parseFloat(trimmed);
+    const d = new Date(Math.round((num - 25569) * 86400 * 1000));
+    if (!isNaN(d.getTime())) {
+      return {
+        year: d.getUTCFullYear(),
+        month: d.getUTCMonth() + 1,
+        day: d.getUTCDate(),
+      };
+    }
+  }
 
   // 1. YYYY-MM-DD
   const isoMatch = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$/.exec(trimmed);

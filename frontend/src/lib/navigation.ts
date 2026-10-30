@@ -191,13 +191,17 @@ export function getNavigationForRole(role: UserRole): NavigationItem[] {
   const normRole = normalizeUserRole(role);
   const sections = roleSectionOrder[role] || roleSectionOrder[normRole] || [];
   return [
-    ...sections.filter((section) => section === "executive-dashboard").map((section) => workspaceSections[section]),
+    ...sections
+      .filter((section) => section === "executive-dashboard")
+      .map((section) => workspaceSections[section]),
     {
       label: "Dashboard",
       href: dashboardPath(role),
       icon: "dashboard",
     },
-    ...sections.filter((section) => section !== "executive-dashboard").map((section) => workspaceSections[section]),
+    ...sections
+      .filter((section) => section !== "executive-dashboard")
+      .map((section) => workspaceSections[section]),
   ];
 }
 

@@ -32,14 +32,7 @@ describe("role navigation permission matrix", () => {
       ],
     ],
     ["ENDORSING_COMMITTEE", ["Dashboard", "Plan for Review", "My Decisions"]],
-    [
-      "ADMIN",
-      [
-        "Dashboard",
-        "User Management",
-        "System Logs (Timestamp)",
-      ],
-    ],
+    ["ADMIN", ["Dashboard", "User Management", "System Logs (Timestamp)"]],
   ] as const)("shows only %s menu items", (role, labels) => {
     expect(getNavigationForRole(role).map((item) => item.label)).toEqual(
       labels,
