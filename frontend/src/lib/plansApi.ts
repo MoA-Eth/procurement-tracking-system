@@ -969,7 +969,7 @@ export function mapBackendPlanToOfficerPlanSummary(
     reference: backendPlan.id,
     id: backendPlan.id,
     name: backendPlan.title || "Untitled Plan",
-    budgetYear: backendPlan.budgetYear || "2018 EFY",
+    budgetYear: backendPlan.budgetYear || "",
     category,
     status,
     rejectionReason: backendPlan.rejectionReason || undefined,
@@ -983,14 +983,12 @@ export function mapBackendPlanToOfficerPlanSummary(
     delayedActivities: activities.filter((a) => a.status === "DELAYED").length,
     currency: "ETB",
     estimatedValue,
-    organizationRegion: backendPlan.organization || "Federal",
+    organizationRegion: backendPlan.organization || "",
     description: backendPlan.description || undefined,
     planActivities,
     createdById: backendPlan.createdBy,
     createdByName:
-      backendPlan.creator?.displayName ||
-      backendPlan.creator?.name ||
-      "Assigned Officer",
+      backendPlan.creator?.displayName || backendPlan.creator?.name || "",
     updatedById: backendPlan.updatedById || undefined,
     updatedByName:
       backendPlan.updatedByUser?.displayName ||

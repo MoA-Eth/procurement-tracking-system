@@ -141,6 +141,26 @@ export async function streamAnnualProcurementPlan(
   const currencyTotals = new Map<string, number>();
 
   for (const plan of plans) {
+    if (plan.activities.length === 0) {
+      const actCurrency = 'ETB';
+      detailSheet.addRow([
+        `${plan.project.code} - ${plan.project.name}`,
+        plan.title,
+        '',
+        '(No activities registered in plan)',
+        plan.procurementCategory ?? '',
+        '',
+        plan.project.fundingSource?.label ?? '',
+        fmtDecimal(0),
+        actCurrency,
+        plan.creator?.displayName ?? '',
+        plan.periodStart ? fmtDate(plan.periodStart) : '',
+        plan.periodEnd ? fmtDate(plan.periodEnd) : '',
+        plan.status,
+      ]);
+      continue;
+    }
+
     for (const a of plan.activities) {
       const firstStage = a.stages[0];
       const lastStage = a.stages[a.stages.length - 1];

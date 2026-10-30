@@ -221,7 +221,12 @@ export const createActivityService = async (
 
     if (lots && lots.length > 0) {
       createData.lots = {
-        create: lots as Prisma.ActivityLotCreateWithoutActivityInput[],
+        create: lots.map((l, idx) => ({
+          lotNumber: l.lotNumber?.trim() || String(idx + 1),
+          description: l.description?.trim() || null,
+          estimatedAmount:
+            l.estimatedAmount !== undefined ? l.estimatedAmount : null,
+        })),
       };
     }
 
@@ -400,7 +405,12 @@ export const updateActivityService = async (
 
       if (lots !== undefined && lots.length > 0) {
         updateData.lots = {
-          create: lots as Prisma.ActivityLotCreateWithoutActivityInput[],
+          create: lots.map((l, idx) => ({
+            lotNumber: l.lotNumber?.trim() || String(idx + 1),
+            description: l.description?.trim() || null,
+            estimatedAmount:
+              l.estimatedAmount !== undefined ? l.estimatedAmount : null,
+          })),
         };
       }
 

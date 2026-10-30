@@ -22,11 +22,38 @@ export async function generateStagesForActivity(
   customStages?: CustomStageInput[],
 ) {
   // 1. Fetch the templates for the given procurement method
-  const templates = await tx.stageTemplate.findMany({
+  let templates = await tx.stageTemplate.findMany({
     where: { procurementMethodId },
     include: { stageType: true },
     orderBy: { sequence: 'asc' },
   });
+
+  if (templates.length === 0) {
+    const currentMethod = await tx.lookupValue.findUnique({
+      where: { id: procurementMethodId },
+    });
+    if (currentMethod) {
+      const codeSuffix = currentMethod.code.replace(/^PM_|^STEP_/, '');
+      const fallbackMethod = await tx.lookupValue.findFirst({
+        where: {
+          type: 'PROCUREMENT_METHOD',
+          id: { not: procurementMethodId },
+          OR: [
+            { code: codeSuffix },
+            { code: `STEP_${codeSuffix}` },
+            { label: { contains: codeSuffix, mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (fallbackMethod) {
+        templates = await tx.stageTemplate.findMany({
+          where: { procurementMethodId: fallbackMethod.id },
+          include: { stageType: true },
+          orderBy: { sequence: 'asc' },
+        });
+      }
+    }
+  }
 
   if (templates.length === 0) {
     // No templates defined for this method yet.
@@ -58,7 +85,17 @@ export async function generateStagesForActivity(
     if (!isNA) {
       if (custom?.plannedStartDate || custom?.gregorianDate) {
         const rawDate = custom.plannedStartDate || custom.gregorianDate;
-        plannedStart = new Date(rawDate!);
+        if (typeof rawDate === 'number') {
+          plannedStart = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
+        } else if (
+          typeof rawDate === 'string' &&
+          /^\d{4,6}(?:\.\d+)?$/.test(rawDate.trim())
+        ) {
+          const num = parseFloat(rawDate.trim());
+          plannedStart = new Date(Math.round((num - 25569) * 86400 * 1000));
+        } else {
+          plannedStart = new Date(rawDate!);
+        }
         if (isNaN(plannedStart.getTime())) plannedStart = null;
       }
     }

@@ -67,12 +67,17 @@
     overflow-wrap: anywhere;
   }
 
-  .dashboard [aria-label="All 13 procurement register columns; scroll horizontally"] th,
-  .dashboard [aria-label="All 13 procurement register columns; scroll horizontally"] td {
+  .dashboard
+    [aria-label="All 13 procurement register columns; scroll horizontally"]
+    th,
+  .dashboard
+    [aria-label="All 13 procurement register columns; scroll horizontally"]
+    td {
     position: static;
   }
 
-  .dashboard [aria-label="All 13 procurement register columns; scroll horizontally"] {
+  .dashboard
+    [aria-label="All 13 procurement register columns; scroll horizontally"] {
     max-width: 100%;
     overscroll-behavior-x: contain;
   }

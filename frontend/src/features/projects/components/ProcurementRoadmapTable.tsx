@@ -2,7 +2,8 @@
 
 import { CalendarDays, CircleAlert, Info } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { DualCalendarField } from "./CreateProcurementPlanView";
+import { DualCalendarField, toInputDate } from "./CreateProcurementPlanView";
+import { parseGregorianDate } from "../utils/ethiopianCalendar";
 
 export interface ProcurementRoadmapStage {
   allowNotApplicable: boolean;
@@ -12,6 +13,18 @@ export interface ProcurementRoadmapStage {
   name: string;
   notApplicable: boolean;
   remarks: string;
+}
+
+export function isRoadmapStageMandatory(stage: {
+  name: string;
+  allowNotApplicable?: boolean;
+}): boolean {
+  if (stage.allowNotApplicable) return false;
+  const lower = (stage.name || "").toLowerCase().trim();
+  if (lower.includes("amendment") || lower.includes("contract termination")) {
+    return false;
+  }
+  return true;
 }
 
 export function ProcurementRoadmapTable({
@@ -26,7 +39,10 @@ export function ProcurementRoadmapTable({
   stages: ProcurementRoadmapStage[];
 }) {
   const incompleteCount = stages.filter(
-    (stage) => !stage.notApplicable && !stage.gregorianDate,
+    (stage) =>
+      isRoadmapStageMandatory(stage) &&
+      !stage.notApplicable &&
+      !stage.gregorianDate,
   ).length;
   const orderErrorCount = countRoadmapOrderErrors(stages);
   const signedContractIndex = stages.findIndex((stage) =>
@@ -86,7 +102,8 @@ export function ProcurementRoadmapTable({
             className="mt-0.5 h-3.5 w-3.5 shrink-0"
           />
           Complete every required baseline date and keep milestone dates in
-          chronological order. Optional stages may be marked Not Applicable.
+          chronological order. Optional stages (such as amendments) may be left
+          blank if dates are not yet known, or marked Not Applicable.
         </div>
       ) : null}
 
@@ -191,8 +208,12 @@ function RoadmapSection({
           <tbody className="divide-y divide-slate-200">
             {stages.map((stage, localIndex) => {
               const index = offset + localIndex;
+              const isMandatory = isRoadmapStageMandatory(stage);
               const missing =
-                attempted && !stage.notApplicable && !stage.gregorianDate;
+                attempted &&
+                isMandatory &&
+                !stage.notApplicable &&
+                !stage.gregorianDate;
               const outOfOrder =
                 attempted && roadmapStageIsOutOfOrder(allStages, index);
               const duration = plannedDurationDays(allStages, index);
@@ -243,6 +264,7 @@ function RoadmapSection({
                         ethiopianValue={stage.ethiopianDate}
                         gregorianValue={stage.gregorianDate}
                         id={"roadmap-stage-" + String(index + 1)}
+                        isOptional={!isMandatory}
                         onChange={(gregorianDate, ethiopianDate) =>
                           onUpdate(index, {
                             ethiopianDate,
@@ -256,7 +278,7 @@ function RoadmapSection({
                     {duration === null ? "-" : duration + " days"}
                   </td>
                   <td className="px-2 py-2 text-center text-[8px] font-medium text-slate-500">
-                    {stage.allowNotApplicable ? "Optional" : "Required"}
+                    {isMandatory ? "Required" : "Optional"}
                   </td>
                   <td className="px-2 py-2 text-center">
                     <input
@@ -292,6 +314,7 @@ function RoadmapDateCell({
   ethiopianValue,
   gregorianValue,
   id,
+  isOptional,
   onChange,
 }: {
   error: boolean;
@@ -299,6 +322,7 @@ function RoadmapDateCell({
   ethiopianValue: string;
   gregorianValue: string;
   id: string;
+  isOptional?: boolean;
   onChange: (gregorianValue: string, ethiopianValue: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -340,7 +364,8 @@ function RoadmapDateCell({
               "text-[9px] " + (error ? "font-semibold text-red-700" : "")
             }
           >
-            {errorMessage || "Select date..."}
+            {errorMessage ||
+              (isOptional ? "Optional date..." : "Select date...")}
           </span>
         )}
       </button>
@@ -389,8 +414,9 @@ function CompactField({
 }
 
 function formatRoadmapGregorianDate(value: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return value;
+  if (!value) return "";
+  const parsed = parseGregorianDate(value);
+  if (!parsed) return value;
 
   const months = [
     "Jan",
@@ -407,7 +433,7 @@ function formatRoadmapGregorianDate(value: string) {
     "Dec",
   ];
 
-  return match[3] + "-" + months[Number(match[2]) - 1] + "-" + match[1];
+  return `${String(parsed.day).padStart(2, "0")}-${months[parsed.month - 1]}-${parsed.year}`;
 }
 
 function plannedDurationDays(stages: ProcurementRoadmapStage[], index: number) {
@@ -417,8 +443,12 @@ function plannedDurationDays(stages: ProcurementRoadmapStage[], index: number) {
   const previous = previousDatedStage(stages, index);
   if (!previous) return 0;
 
-  const currentTime = Date.parse(stage.gregorianDate + "T00:00:00Z");
-  const previousTime = Date.parse(previous.gregorianDate + "T00:00:00Z");
+  const pCurr = parseGregorianDate(stage.gregorianDate);
+  const pPrev = parseGregorianDate(previous.gregorianDate);
+  if (!pCurr || !pPrev) return null;
+
+  const currentTime = Date.UTC(pCurr.year, pCurr.month - 1, pCurr.day);
+  const previousTime = Date.UTC(pPrev.year, pPrev.month - 1, pPrev.day);
   return Math.round((currentTime - previousTime) / 86_400_000);
 }
 
@@ -430,7 +460,15 @@ function roadmapStageIsOutOfOrder(
   if (!stage || stage.notApplicable || !stage.gregorianDate) return false;
 
   const previous = previousDatedStage(stages, index);
-  return Boolean(previous && stage.gregorianDate < previous.gregorianDate);
+  if (!previous) return false;
+
+  const pCurr = parseGregorianDate(stage.gregorianDate);
+  const pPrev = parseGregorianDate(previous.gregorianDate);
+  if (!pCurr || !pPrev) return false;
+
+  const currentTime = Date.UTC(pCurr.year, pCurr.month - 1, pCurr.day);
+  const previousTime = Date.UTC(pPrev.year, pPrev.month - 1, pPrev.day);
+  return currentTime < previousTime;
 }
 
 function previousDatedStage(stages: ProcurementRoadmapStage[], index: number) {

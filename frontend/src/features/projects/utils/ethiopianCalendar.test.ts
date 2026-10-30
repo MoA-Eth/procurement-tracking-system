@@ -49,4 +49,29 @@ describe("Ethiopian calendar conversion", () => {
       year: 2026,
     });
   });
+
+  it("handles ISO timestamps and Excel serial dates robustly", () => {
+    // Backend ISO timestamp with time component
+    expect(gregorianToEthiopian("2024-07-08T00:00:00.000Z")).toEqual({
+      day: 1,
+      month: 11,
+      year: 2016,
+    });
+    // Excel serial number for 2024-07-08 is 45481
+    expect(parseGregorianDate(45481)).toEqual({
+      day: 8,
+      month: 7,
+      year: 2024,
+    });
+    expect(parseGregorianDate("45481")).toEqual({
+      day: 8,
+      month: 7,
+      year: 2024,
+    });
+    expect(gregorianToEthiopian("45481")).toEqual({
+      day: 1,
+      month: 11,
+      year: 2016,
+    });
+  });
 });

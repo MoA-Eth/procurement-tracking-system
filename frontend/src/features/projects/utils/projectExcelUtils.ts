@@ -1,14 +1,15 @@
 import * as XLSX from "xlsx";
 import type {
-  OfficerProject,
-  ProcurementPlanSummary,
-  ProcurementCategory,
-} from "../data/officerProjects";
-import { gregorianToEthiopian, formatEthiopianDate } from "./ethiopianCalendar";
-import type {
   ProcurementActivityStatus,
   ProcurementActivitySummary,
 } from "../data/officerActivityDrafts";
+import type {
+  OfficerProject,
+  ProcurementCategory,
+  ProcurementPlanSummary,
+} from "../data/officerProjects";
+import { formatEthiopianDate, gregorianToEthiopian } from "./ethiopianCalendar";
+import { roadmapForMethod } from "../data/procurementActivityConfig";
 
 export interface ParsedActivityRow {
   reference: string;
@@ -58,11 +59,86 @@ export interface ParsedPlansResult {
 }
 
 /**
- * Normalizes string keys by trimming, removing special characters, and converting to lowercase.
+ * Safely parses any date value from Excel, strings, or numbers into an ISO YYYY-MM-DD string.
+ */
+export function parseExcelDateToIso(val: unknown): string {
+  if (val === null || val === undefined) return "";
+  if (val instanceof Date) {
+    return isNaN(val.getTime()) ? "" : val.toISOString().slice(0, 10);
+  }
+  if (typeof val === "number") {
+    if (isNaN(val) || val <= 0) return "";
+    // Excel date serial number to Gregorian date (days since 1899-12-30)
+    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+    return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+  }
+  const str = String(val).trim();
+  if (!str) return "";
+
+  // 1. Numeric string (Excel serial date stored as string, e.g. "45846" or "45846.125")
+  if (/^\d{4,6}(?:\.\d+)?$/.test(str)) {
+    const num = parseFloat(str);
+    const d = new Date(Math.round((num - 25569) * 86400 * 1000));
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+
+  // 2. ISO date format YYYY-MM-DD (with optional timestamp or space)
+  const isoMatch = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/.exec(str);
+  if (isoMatch) {
+    const y = isoMatch[1];
+    const m = isoMatch[2].padStart(2, "0");
+    const d = isoMatch[3].padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  // 3. DD/MM/YYYY or DD-MM-YYYY format
+  const dmyMatch = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/.exec(str);
+  if (dmyMatch) {
+    const d = dmyMatch[1].padStart(2, "0");
+    const m = dmyMatch[2].padStart(2, "0");
+    const y = dmyMatch[3];
+    return `${y}-${m}-${d}`;
+  }
+
+  // 4. Named month format (e.g. 04-Oct-2025, 4 October 2025)
+  const namedMatch = /^(\d{1,2})[-/ ]([A-Za-z]+)[-/ ](\d{4})/.exec(str);
+  if (namedMatch) {
+    const d = namedMatch[1].padStart(2, "0");
+    const mStr = namedMatch[2].toLowerCase();
+    const y = namedMatch[3];
+    const months = [
+      "jan",
+      "feb",
+      "mar",
+      "apr",
+      "may",
+      "jun",
+      "jul",
+      "aug",
+      "sep",
+      "oct",
+      "nov",
+      "dec",
+    ];
+    const mIndex = months.findIndex((m) => mStr.startsWith(m));
+    if (mIndex !== -1) {
+      const m = String(mIndex + 1).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+  }
+
+  // 5. Fallback native Date parse
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}
+
+/**
+ * Normalizes string keys by trimming, removing parenthetical qualifiers, special characters, and converting to lowercase.
  */
 function normalizeHeader(header: string): string {
   return String(header || "")
     .toLowerCase()
+    .replace(/\(.*?\)/g, "")
     .replace(/[^a-z0-9]/g, "");
 }
 
@@ -72,12 +148,44 @@ function normalizeHeader(header: string): string {
 function getColumnValue(row: Record<string, any>, aliases: string[]): any {
   const keys = Object.keys(row);
   for (const alias of aliases) {
-    const normalizedAlias = normalizeHeader(alias);
-    const foundKey = keys.find((k) => normalizeHeader(k) === normalizedAlias);
+    const rawNormalizedAlias = String(alias || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    const cleanNormalizedAlias = normalizeHeader(alias);
+    const foundKey = keys.find((k) => {
+      const rawK = String(k || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+      const cleanK = normalizeHeader(k);
+      return (
+        rawK === rawNormalizedAlias ||
+        cleanK === cleanNormalizedAlias ||
+        cleanK === rawNormalizedAlias ||
+        rawK === cleanNormalizedAlias
+      );
+    });
     if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) {
       return row[foundKey];
     }
   }
+
+  // Substring fallback match for robust tolerance
+  for (const alias of aliases) {
+    const cleanNormalizedAlias = normalizeHeader(alias);
+    if (cleanNormalizedAlias.length >= 4) {
+      const foundKey = keys.find((k) => {
+        const cleanK = normalizeHeader(k);
+        return (
+          cleanK.includes(cleanNormalizedAlias) ||
+          cleanNormalizedAlias.includes(cleanK)
+        );
+      });
+      if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) {
+        return row[foundKey];
+      }
+    }
+  }
+
   return undefined;
 }
 
@@ -85,66 +193,27 @@ function getColumnValue(row: Record<string, any>, aliases: string[]): any {
  * Downloads a pre-formatted Excel template for importing Procurement Activities.
  */
 export function downloadActivityExcelTemplate(
-  planRef: string = "PLAN-2018-01",
+  _planRef: string = "PLAN-2018-01",
 ) {
-  const templateData = [
-    {
-      "Plan ID or Title (Required)": planRef,
-      "Activity Reference (Required)": "ET-MoA-001-GO-RFQ",
-      "Activity Description (Required)":
-        "Procurement of Soil Laboratory Equipment and Field Testing Kits",
-      "Category (Required - Dropdown)": "Goods",
-      "Method ID (Required - Dropdown)": "RFQ",
-      "Estimated Budget (ETB) (Required)": 1500000,
-      "Currency (Optional - Dropdown)": "ETB",
-      "Market Approach (Optional - Dropdown)": "Open National",
-      "Review Type (Optional - Dropdown)": "Post Review",
-      "Contract Type (Optional - Dropdown)": "Lump Sum",
-      "Domestic Preference (Optional - Dropdown)": "No",
-      "Location (Optional)": "Addis Ababa / Federal",
-      "Lot Required (Optional - Dropdown)": "No",
-      "Planned Start Date (Optional - YYYY-MM-DD)": "2025-08-01",
-      "Planned End Date (Optional - YYYY-MM-DD)": "2025-11-30",
-    },
-    {
-      "Plan ID or Title (Required)": planRef,
-      "Activity Reference (Required)": "ET-MoA-002-CW-RFB",
-      "Activity Description (Required)":
-        "Construction and Rehabilitation of Regional Seed Inspection Center",
-      "Category (Required - Dropdown)": "Works",
-      "Method ID (Required - Dropdown)": "RFB National",
-      "Estimated Budget (ETB) (Required)": 12500000,
-      "Currency (Optional - Dropdown)": "ETB",
-      "Market Approach (Optional - Dropdown)": "Open National",
-      "Review Type (Optional - Dropdown)": "Prior Review",
-      "Contract Type (Optional - Dropdown)": "Lump Sum",
-      "Domestic Preference (Optional - Dropdown)": "Yes",
-      "Location (Optional)": "Oromia Regional State",
-      "Lot Required (Optional - Dropdown)": "No",
-      "Planned Start Date (Optional - YYYY-MM-DD)": "2025-09-01",
-      "Planned End Date (Optional - YYYY-MM-DD)": "2026-06-30",
-    },
-    {
-      "Plan ID or Title (Required)": planRef,
-      "Activity Reference (Required)": "ET-MoA-003-CS-QCBS",
-      "Activity Description (Required)":
-        "Consultancy Services for Environmental & Social Impact Assessment (ESIA)",
-      "Category (Required - Dropdown)": "Consultancy Services",
-      "Method ID (Required - Dropdown)": "QCBS",
-      "Estimated Budget (ETB) (Required)": 3200000,
-      "Currency (Optional - Dropdown)": "ETB",
-      "Market Approach (Optional - Dropdown)": "Open International",
-      "Review Type (Optional - Dropdown)": "Prior Review",
-      "Contract Type (Optional - Dropdown)": "Time Based",
-      "Domestic Preference (Optional - Dropdown)": "No",
-      "Location (Optional)": "Federal / FPCU",
-      "Lot Required (Optional - Dropdown)": "No",
-      "Planned Start Date (Optional - YYYY-MM-DD)": "2025-08-15",
-      "Planned End Date (Optional - YYYY-MM-DD)": "2026-02-15",
-    },
+  const headers = [
+    "Plan ID or Title (Required)",
+    "Activity Reference (Required)",
+    "Activity Description (Required)",
+    "Category (Required - Dropdown)",
+    "Method ID (Required - Dropdown)",
+    "Estimated Budget (ETB) (Required)",
+    "Currency (Optional - Dropdown)",
+    "Market Approach (Optional - Dropdown)",
+    "Review Type (Optional - Dropdown)",
+    "Contract Type (Optional - Dropdown)",
+    "Domestic Preference (Optional - Dropdown)",
+    "Location (Optional)",
+    "Lot Required (Optional - Dropdown)",
+    "Planned Start Date (Optional - YYYY-MM-DD)",
+    "Planned End Date (Optional - YYYY-MM-DD)",
   ];
 
-  const worksheet = XLSX.utils.json_to_sheet(templateData);
+  const worksheet = XLSX.utils.aoa_to_sheet([headers]);
   worksheet["!cols"] = [
     { wch: 28 }, // Plan ID or Title
     { wch: 28 }, // Activity Reference
@@ -317,7 +386,7 @@ export async function parseActivitiesFromExcel(
   defaultPlanId?: string,
 ): Promise<ParsedActivitiesResult> {
   const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
 
   if (!firstSheetName) {
@@ -480,6 +549,8 @@ export async function parseActivitiesFromExcel(
       "Planned End",
       "End Date",
     ]);
+    const plannedStart = parseExcelDateToIso(rawPlannedStart);
+    const plannedEnd = parseExcelDateToIso(rawPlannedEnd);
 
     const description = String(rawDesc || "").trim();
     const rawRefStr = String(rawRef || "").trim();
@@ -574,25 +645,40 @@ export async function parseActivitiesFromExcel(
     parsedRows.push(parsedRow);
 
     if (isValid) {
-      const roadmapStages: any[] = [];
-      if (rawPlannedStart || rawPlannedEnd) {
-        roadmapStages.push({
-          name: currentStage,
-          days: "30",
-          gregorianDate: rawPlannedStart ? String(rawPlannedStart).trim() : "",
-          plannedStartDate: rawPlannedStart
-            ? String(rawPlannedStart).trim()
-            : undefined,
-          plannedEndDate: rawPlannedEnd
-            ? String(rawPlannedEnd).trim()
-            : undefined,
+      const methodStages = roadmapForMethod(method, category);
+      const roadmapStages: any[] = methodStages.map((stage, sIdx) => {
+        let greg = "";
+        let eth = "";
+        if (sIdx === 0 && plannedStart) {
+          greg = plannedStart;
+          const e = gregorianToEthiopian(plannedStart);
+          if (e) eth = formatEthiopianDate(e);
+        } else if (
+          (sIdx === methodStages.length - 1 ||
+            stage.name.toLowerCase().includes("award") ||
+            stage.name.toLowerCase().includes("completion") ||
+            stage.name.toLowerCase().includes("signature")) &&
+          plannedEnd &&
+          sIdx > 0
+        ) {
+          greg = plannedEnd;
+          const e = gregorianToEthiopian(plannedEnd);
+          if (e) eth = formatEthiopianDate(e);
+        }
+
+        return {
+          name: stage.name,
+          days: "14",
+          gregorianDate: greg,
+          plannedStartDate: greg || undefined,
+          plannedEndDate: undefined,
           status: status === "Completed" ? "Completed" : "Not Started",
           notApplicable: false,
-          allowNotApplicable: false,
+          allowNotApplicable: stage.allowNotApplicable ?? true,
           remarks: "",
-          ethiopianDate: "",
-        });
-      }
+          ethiopianDate: eth,
+        };
+      });
 
       validActivities.push({
         reference,
@@ -734,23 +820,28 @@ export function exportPlanActivitiesToExcel(
       "Project Code": projectCode,
       Reference: a.reference,
       Description: a.description,
-      Category: a.category || plan.category || "Goods",
-      "Method ID": a.method,
+      Category: a.category || plan.category || "",
+      "Method ID": a.method || "",
       "Specific Method": a.details?.form?.specificMethod || "",
-      "Estimated Budget": a.estimatedAmount,
-      Currency: a.details?.form?.currency || plan.currency || "ETB",
-      "Market Approach": a.details?.form?.marketApproach || "Open National",
-      "Review Type": a.details?.form?.reviewType || "Post Review",
-      "Contract Type": a.details?.form?.contractType || "Lump Sum",
+      "Estimated Budget": Number(a.estimatedAmount || 0),
+      Currency: a.details?.form?.currency || a.currency || plan.currency || "",
+      "Market Approach":
+        a.details?.form?.marketApproach || (a as any).marketApproach || "",
+      "Review Type": a.details?.form?.reviewType || (a as any).reviewType || "",
+      "Contract Type":
+        a.details?.form?.contractType || (a as any).contractType || "",
       "Procurement Process": a.details?.form?.procurementProcess || "",
-      "Domestic Preference": a.details?.form?.domesticPreference || "No",
-      "Current Stage": a.currentStage,
-      Status: a.status,
+      "Domestic Preference":
+        a.details?.form?.domesticPreference ||
+        (a as any).domesticPreference ||
+        "",
+      "Current Stage": a.currentStage || "",
+      Status: a.status || "",
       "Funding Source": formatActivityFundingSources(
         a,
         plan.organizationRegion || "",
       ),
-      Location: a.details?.form?.location || "",
+      Location: a.details?.form?.location || (a as any).location || "",
       "Lot Required": a.details?.form?.lotRequired ? "Yes" : "No",
       "Planned Start Date":
         firstStage?.plannedStartDate || firstStage?.gregorianDate || "",
@@ -763,7 +854,39 @@ export function exportPlanActivitiesToExcel(
     };
   });
 
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const activityExportHeaders = [
+    "Plan ID",
+    "Plan Reference",
+    "Plan Title",
+    "Project Code",
+    "Reference",
+    "Description",
+    "Category",
+    "Method ID",
+    "Specific Method",
+    "Estimated Budget",
+    "Currency",
+    "Market Approach",
+    "Review Type",
+    "Contract Type",
+    "Procurement Process",
+    "Domestic Preference",
+    "Current Stage",
+    "Status",
+    "Funding Source",
+    "Location",
+    "Lot Required",
+    "Planned Start Date",
+    "Planned End Date",
+    "Actual Completion Date",
+    "Remarks / Notes",
+  ];
+
+  const worksheet =
+    rows.length > 0
+      ? XLSX.utils.json_to_sheet(rows)
+      : XLSX.utils.aoa_to_sheet([activityExportHeaders]);
+
   worksheet["!cols"] = [
     { wch: 36 }, // Plan ID
     { wch: 22 }, // Plan Reference
@@ -793,12 +916,12 @@ export function exportPlanActivitiesToExcel(
   ];
 
   const planInfoData = [
-    { Field: "Plan Title", Value: plan.name },
-    { Field: "Plan Reference", Value: plan.reference },
-    { Field: "Plan ID", Value: plan.id || plan.reference },
-    { Field: "Project Code", Value: projectCode },
-    { Field: "Budget Year / Fiscal Period", Value: plan.budgetYear },
-    { Field: "Procurement Category", Value: plan.category },
+    { Field: "Plan Title", Value: plan.name || "" },
+    { Field: "Plan Reference", Value: plan.reference || "" },
+    { Field: "Plan ID", Value: plan.id || plan.reference || "" },
+    { Field: "Project Code", Value: projectCode || "" },
+    { Field: "Budget Year / Fiscal Period", Value: plan.budgetYear || "" },
+    { Field: "Procurement Category", Value: plan.category || "" },
     {
       Field: "Funding Sources Involved",
       Value:
@@ -810,9 +933,9 @@ export function exportPlanActivitiesToExcel(
           ),
         ).join("; ") ||
         plan.organizationRegion ||
-        "Federal / MoA",
+        "",
     },
-    { Field: "Plan Status", Value: plan.status },
+    { Field: "Plan Status", Value: plan.status || "" },
     { Field: "Total Activities in Export", Value: activities.length },
     {
       Field: "Total Estimated Budget",
@@ -821,10 +944,10 @@ export function exportPlanActivitiesToExcel(
         0,
       ),
     },
-    { Field: "Base Currency", Value: plan.currency || "ETB" },
+    { Field: "Base Currency", Value: plan.currency || "" },
     {
       Field: "Organization / Region",
-      Value: plan.organizationRegion || "Federal / MoA",
+      Value: plan.organizationRegion || "",
     },
     {
       Field: "Period Start Date",
@@ -929,24 +1052,28 @@ export function exportProjectDetailsToExcel(project: OfficerProject) {
       p.planActivities.forEach((a) => {
         allActivities.push({
           "Project Code": project.code,
-          "Plan Reference": p.reference,
-          "Plan Title": p.name,
-          Reference: a.reference,
-          Description: a.description,
-          Category: a.category || p.category || "Goods",
-          "Method ID": a.method,
-          "Estimated Budget": a.estimatedAmount,
+          "Plan Reference": p.reference || p.id || "",
+          "Plan Title": p.name || "",
+          Reference: a.reference || a.id || "",
+          Description: a.description || "",
+          Category: a.category || p.category || "",
+          "Method ID": a.method || "",
+          "Estimated Budget": Number(a.estimatedAmount || 0),
           Currency:
             a.details?.form?.currency ||
+            a.currency ||
             p.currency ||
             project.baseCurrency ||
-            "ETB",
-          "Market Approach": a.details?.form?.marketApproach || "Open National",
-          "Review Type": a.details?.form?.reviewType || "Post Review",
-          "Contract Type": a.details?.form?.contractType || "Lump Sum",
-          "Current Stage": a.currentStage,
-          Status: a.status,
-          Location: a.details?.form?.location || "",
+            "",
+          "Market Approach":
+            a.details?.form?.marketApproach || (a as any).marketApproach || "",
+          "Review Type":
+            a.details?.form?.reviewType || (a as any).reviewType || "",
+          "Contract Type":
+            a.details?.form?.contractType || (a as any).contractType || "",
+          "Current Stage": a.currentStage || "",
+          Status: a.status || "",
+          Location: a.details?.form?.location || (a as any).location || "",
           "Funding Source": formatActivityFundingSources(
             a,
             project.fundingSource || p.organizationRegion || "",
@@ -1067,50 +1194,20 @@ export function exportOfficerProjectsToExcel(projects: OfficerProject[]) {
 /**
  * Downloads a pre-formatted Excel template for importing Procurement Plans.
  */
-export function downloadPlanExcelTemplate(projectCode: string = "PRJ-24-001") {
-  const templateData = [
-    {
-      "Project Code (Required)": projectCode,
-      "Plan Title (Required)":
-        "Annual Agricultural Inputs & Machinery Procurement Plan",
-      "Budget Year (Required)": "2018 EFY",
-      "Category (Required - Dropdown)": "Goods",
-      "Organization (Optional)": "Federal / Ministry of Agriculture",
-      "Description (Optional)":
-        "Procurement plan for agricultural supplies, certified seeds, fertilizer, and laboratory machinery",
-      "Period Start (Required - YYYY-MM-DD)": "2025-07-08",
-      "Period End (Required - YYYY-MM-DD)": "2026-07-07",
-      "Status (Optional - Dropdown)": "Draft",
-    },
-    {
-      "Project Code (Required)": projectCode,
-      "Plan Title (Required)":
-        "Regional Irrigation Civil Works & Infrastructure Plan",
-      "Budget Year (Required)": "2018 EFY",
-      "Category (Required - Dropdown)": "Works",
-      "Organization (Optional)": "Oromia Regional Bureau of Agriculture",
-      "Description (Optional)":
-        "Civil works, intake weir construction, and canal rehabilitation for smallholder farmers",
-      "Period Start (Required - YYYY-MM-DD)": "2025-08-01",
-      "Period End (Required - YYYY-MM-DD)": "2026-06-30",
-      "Status (Optional - Dropdown)": "Draft",
-    },
-    {
-      "Project Code (Required)": projectCode,
-      "Plan Title (Required)":
-        "Advisory, Environmental Audit & Capacity Building Plan",
-      "Budget Year (Required)": "2018 EFY",
-      "Category (Required - Dropdown)": "Consultancy Services",
-      "Organization (Optional)": "Federal / FPCU",
-      "Description (Optional)":
-        "Technical advisory, agronomy training, and environmental baseline evaluation studies",
-      "Period Start (Required - YYYY-MM-DD)": "2025-08-15",
-      "Period End (Required - YYYY-MM-DD)": "2026-04-30",
-      "Status (Optional - Dropdown)": "Draft",
-    },
+export function downloadPlanExcelTemplate(_projectCode: string = "PRJ-24-001") {
+  const headers = [
+    "Project Code (Required)",
+    "Plan Title (Required)",
+    "Budget Year (Required)",
+    "Category (Required - Dropdown)",
+    "Organization (Optional)",
+    "Description (Optional)",
+    "Period Start (Required - YYYY-MM-DD)",
+    "Period End (Required - YYYY-MM-DD)",
+    "Status (Optional - Dropdown)",
   ];
 
-  const worksheet = XLSX.utils.json_to_sheet(templateData);
+  const worksheet = XLSX.utils.aoa_to_sheet([headers]);
   worksheet["!cols"] = [
     { wch: 24 }, // Project Code
     { wch: 50 }, // Plan Title
@@ -1228,7 +1325,7 @@ export async function parsePlansFromExcel(
   defaultProjectCode?: string,
 ): Promise<ParsedPlansResult> {
   const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
 
   if (!firstSheetName) {
@@ -1320,6 +1417,16 @@ export async function parsePlansFromExcel(
       "End Date",
       "To",
     ]);
+    const rawAwardDate = getColumnValue(row, [
+      "Contract Award Date (Optional)",
+      "Contract Award Date",
+      "Award Date",
+    ]);
+    const rawGpnDate = getColumnValue(row, [
+      "General Procurement Notice Date (Optional)",
+      "General Procurement Notice Date",
+      "GPN Date",
+    ]);
     const rawStatus = getColumnValue(row, [
       "Status (Dropdown)",
       "Status",
@@ -1372,10 +1479,12 @@ export async function parsePlansFromExcel(
     const description = rawDesc ? String(rawDesc).trim() : undefined;
     const reference = `PLAN-${Date.now().toString(36).toUpperCase()}-${idx + 1}`;
 
-    const periodStart = rawPeriodStart
-      ? String(rawPeriodStart).trim()
-      : "2025-07-08";
-    const periodEnd = rawPeriodEnd ? String(rawPeriodEnd).trim() : "2026-07-07";
+    const parsedStart = parseExcelDateToIso(rawPeriodStart);
+    const parsedEnd = parseExcelDateToIso(rawPeriodEnd);
+    const periodStart = parsedStart || "2025-07-08";
+    const periodEnd = parsedEnd || "2026-07-07";
+    const contractAwardDateGreg = parseExcelDateToIso(rawAwardDate);
+    const gpnDateGreg = parseExcelDateToIso(rawGpnDate);
 
     if (periodStart && periodEnd && periodEnd < periodStart) {
       isValid = false;
@@ -1402,6 +1511,10 @@ export async function parsePlansFromExcel(
     const ethEnd = gregorianToEthiopian(periodEnd);
     const fromEth = ethStart ? formatEthiopianDate(ethStart) : "";
     const toEth = ethEnd ? formatEthiopianDate(ethEnd) : "";
+    const ethAward = contractAwardDateGreg
+      ? gregorianToEthiopian(contractAwardDateGreg)
+      : null;
+    const ethGpn = gpnDateGreg ? gregorianToEthiopian(gpnDateGreg) : null;
 
     if (isValid) {
       validPlans.push({
@@ -1422,6 +1535,18 @@ export async function parsePlansFromExcel(
           from: { gregorian: periodStart, ethiopian: fromEth },
           to: { gregorian: periodEnd, ethiopian: toEth },
         },
+        contractAwardDate: contractAwardDateGreg
+          ? {
+              gregorian: contractAwardDateGreg,
+              ethiopian: ethAward ? formatEthiopianDate(ethAward) : "",
+            }
+          : undefined,
+        generalProcurementNoticeDate: gpnDateGreg
+          ? {
+              gregorian: gpnDateGreg,
+              ethiopian: ethGpn ? formatEthiopianDate(ethGpn) : "",
+            }
+          : undefined,
         planActivities: [],
       });
     }
@@ -1450,48 +1575,129 @@ export function exportProjectPlansToExcel(project: OfficerProject) {
           )
         : p.estimatedValue || 0;
 
+    const fromGreg =
+      p.planPeriod?.from?.gregorian ||
+      (p as any).planPeriodFrom ||
+      (p as any).periodStart ||
+      "";
+    const fromEthObj = fromGreg ? gregorianToEthiopian(fromGreg) : null;
+    const fromEth =
+      p.planPeriod?.from?.ethiopian ||
+      (fromEthObj ? formatEthiopianDate(fromEthObj) : "") ||
+      "";
+    const toGreg =
+      p.planPeriod?.to?.gregorian ||
+      (p as any).planPeriodTo ||
+      (p as any).periodEnd ||
+      "";
+    const toEthObj = toGreg ? gregorianToEthiopian(toGreg) : null;
+    const toEth =
+      p.planPeriod?.to?.ethiopian ||
+      (toEthObj ? formatEthiopianDate(toEthObj) : "") ||
+      "";
+
     return {
       "Project Code": project.code,
-      "Plan Reference": p.reference,
-      "Plan Title": p.name,
-      "Budget Year": p.budgetYear,
-      Category: p.category,
+      "Project Name": project.name,
+      "Plan Reference": p.reference || p.id || "",
+      "Plan Title": p.name || (p as any).title || "",
+      "Budget Year": p.budgetYear || "",
+      Category: p.category || (p as any).procurementCategory || "",
+      "Plan Type":
+        p.planType ||
+        (p.parentPlanId || p.parentPlanReference
+          ? "Additional Plan"
+          : "Annual Plan"),
+      "Parent Plan Reference": p.parentPlanReference || p.parentPlanName || "",
+      "Additional Plan Reason": p.additionalPlanReason || "",
       "Funding Source": project.fundingSource || "",
-      Organization:
-        p.organizationRegion || project.organizationRegion || "Federal / FPCU",
+      "Funding Type": project.fundingType || "",
+      Organization: p.organizationRegion || project.organizationRegion || "",
       Description: p.description || "",
-      "Period Start (Gregorian)": p.planPeriod?.from?.gregorian || "2025-07-08",
-      "Period Start (Ethiopian)": p.planPeriod?.from?.ethiopian || "",
-      "Period End (Gregorian)": p.planPeriod?.to?.gregorian || "2026-07-07",
-      "Period End (Ethiopian)": p.planPeriod?.to?.ethiopian || "",
-      Status: p.status,
+      "Period Start (Gregorian)": fromGreg,
+      "Period Start (Ethiopian)": fromEth,
+      "Period End (Gregorian)": toGreg,
+      "Period End (Ethiopian)": toEth,
+      Status: p.status || "",
       "Total Activities":
         p.planActivities && p.planActivities.length > 0
           ? p.planActivities.length
-          : p.activities,
+          : (p.activities ?? 0),
+      "Completed Activities": p.completedActivities ?? 0,
+      "In Progress Activities": p.inProgressActivities ?? 0,
+      "Delayed Activities": p.delayedActivities ?? 0,
       "Estimated Value": calculatedBudget,
-      Currency: p.currency || project.baseCurrency || "ETB",
+      Currency: p.currency || project.baseCurrency || "",
+      "Responsible Officer": p.createdByName || "",
+      "Decision / Revision Notes":
+        p.rejectionReason ||
+        p.directorRevisionComment ||
+        p.managementComment ||
+        "",
     };
   });
 
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const planHeaders = [
+    "Project Code",
+    "Project Name",
+    "Plan Reference",
+    "Plan Title",
+    "Budget Year",
+    "Category",
+    "Plan Type",
+    "Parent Plan Reference",
+    "Additional Plan Reason",
+    "Funding Source",
+    "Funding Type",
+    "Organization",
+    "Description",
+    "Period Start (Gregorian)",
+    "Period Start (Ethiopian)",
+    "Period End (Gregorian)",
+    "Period End (Ethiopian)",
+    "Status",
+    "Total Activities",
+    "Completed Activities",
+    "In Progress Activities",
+    "Delayed Activities",
+    "Estimated Value",
+    "Currency",
+    "Responsible Officer",
+    "Decision / Revision Notes",
+  ];
+
+  const worksheet =
+    rows.length > 0
+      ? XLSX.utils.json_to_sheet(rows)
+      : XLSX.utils.aoa_to_sheet([planHeaders]);
+
   worksheet["!cols"] = [
     { wch: 18 }, // Project Code
+    { wch: 35 }, // Project Name
     { wch: 22 }, // Plan Reference
     { wch: 40 }, // Plan Title
     { wch: 16 }, // Budget Year
     { wch: 22 }, // Category
+    { wch: 18 }, // Plan Type
+    { wch: 22 }, // Parent Plan Reference
+    { wch: 30 }, // Additional Plan Reason
     { wch: 25 }, // Funding Source
+    { wch: 20 }, // Funding Type
     { wch: 25 }, // Organization
     { wch: 45 }, // Description
     { wch: 24 }, // Period Start (Gregorian)
     { wch: 24 }, // Period Start (Ethiopian)
     { wch: 24 }, // Period End (Gregorian)
     { wch: 24 }, // Period End (Ethiopian)
-    { wch: 16 }, // Status
+    { wch: 18 }, // Status
     { wch: 16 }, // Total Activities
+    { wch: 20 }, // Completed Activities
+    { wch: 20 }, // In Progress Activities
+    { wch: 18 }, // Delayed Activities
     { wch: 18 }, // Estimated Value
-    { wch: 10 }, // Currency
+    { wch: 12 }, // Currency
+    { wch: 24 }, // Responsible Officer
+    { wch: 40 }, // Decision / Revision Notes
   ];
 
   const workbook = XLSX.utils.book_new();
@@ -1500,47 +1706,74 @@ export function exportProjectPlansToExcel(project: OfficerProject) {
   // Collect all activities across all plans in the project
   const allActivities: any[] = [];
   project.plans.forEach((p) => {
-    if (p.planActivities && p.planActivities.length > 0) {
-      p.planActivities.forEach((a) => {
-        allActivities.push({
-          "Project Code": project.code,
-          "Plan Reference": p.reference,
-          "Plan Title": p.name,
-          Reference: a.reference,
-          Description: a.description,
-          Category: a.category || p.category || "Goods",
-          "Method ID": a.method,
-          "Estimated Budget": a.estimatedAmount,
-          Currency:
-            a.details?.form?.currency ||
-            p.currency ||
-            project.baseCurrency ||
-            "ETB",
-          "Market Approach": a.details?.form?.marketApproach || "Open National",
-          "Review Type": a.details?.form?.reviewType || "Post Review",
-          "Contract Type": a.details?.form?.contractType || "Lump Sum",
-          "Current Stage": a.currentStage,
-          Status: a.status,
-          Location: a.details?.form?.location || "",
-          "Funding Source": formatActivityFundingSources(
-            a,
-            project.fundingSource || p.organizationRegion || "",
-          ),
-        });
+    const actList =
+      p.planActivities && p.planActivities.length > 0
+        ? p.planActivities
+        : (p as any).activitiesList || [];
+
+    actList.forEach((a: any) => {
+      const roadmap = a.details?.roadmap || [];
+      const firstStage = roadmap.find(
+        (s: any) => s.plannedStartDate || s.gregorianDate,
+      );
+      const lastStage = [...roadmap]
+        .reverse()
+        .find((s: any) => s.plannedEndDate || s.gregorianDate);
+      const completedStage = [...roadmap]
+        .reverse()
+        .find((s: any) => s.actualEndDate || s.actualDate);
+
+      allActivities.push({
+        "Project Code": project.code,
+        "Project Name": project.name,
+        "Plan Reference": p.reference || p.id || "",
+        "Plan Title": p.name || (p as any).title || "",
+        Reference: a.reference || a.id || "",
+        Description: a.description || "",
+        Category: a.category || p.category || "",
+        "Method ID": a.method || "",
+        "Specific Method": a.details?.form?.specificMethod || "",
+        "Estimated Budget": Number(a.estimatedAmount || a.estimatedBudget || 0),
+        Currency:
+          a.details?.form?.currency ||
+          a.currency ||
+          p.currency ||
+          project.baseCurrency ||
+          "",
+        "Market Approach":
+          a.details?.form?.marketApproach || a.marketApproach || "",
+        "Review Type": a.details?.form?.reviewType || a.reviewType || "",
+        "Contract Type": a.details?.form?.contractType || a.contractType || "",
+        "Current Stage": a.currentStage || "",
+        Status: a.status || "",
+        Location: a.details?.form?.location || a.location || "",
+        "Lot Required": a.details?.form?.lotRequired ? "Yes" : "No",
+        "Planned Start Date":
+          firstStage?.plannedStartDate || firstStage?.gregorianDate || "",
+        "Planned End Date":
+          lastStage?.plannedEndDate || lastStage?.gregorianDate || "",
+        "Actual Completion Date":
+          completedStage?.actualEndDate || completedStage?.actualDate || "",
+        "Funding Source": formatActivityFundingSources(
+          a,
+          p.organizationRegion || project.fundingSource || "",
+        ),
       });
-    }
+    });
   });
 
   if (allActivities.length > 0) {
     const actWorksheet = XLSX.utils.json_to_sheet(allActivities);
     actWorksheet["!cols"] = [
       { wch: 16 }, // Project Code
+      { wch: 30 }, // Project Name
       { wch: 20 }, // Plan Reference
       { wch: 35 }, // Plan Title
       { wch: 22 }, // Reference
       { wch: 40 }, // Description
       { wch: 20 }, // Category
       { wch: 20 }, // Method ID
+      { wch: 20 }, // Specific Method
       { wch: 18 }, // Estimated Budget
       { wch: 10 }, // Currency
       { wch: 18 }, // Market Approach
@@ -1549,7 +1782,11 @@ export function exportProjectPlansToExcel(project: OfficerProject) {
       { wch: 28 }, // Current Stage
       { wch: 16 }, // Status
       { wch: 20 }, // Location
-      { wch: 22 }, // Funding Source
+      { wch: 14 }, // Lot Required
+      { wch: 20 }, // Planned Start Date
+      { wch: 20 }, // Planned End Date
+      { wch: 22 }, // Actual Completion Date
+      { wch: 25 }, // Funding Source
     ];
     XLSX.utils.book_append_sheet(
       workbook,
@@ -1609,36 +1846,20 @@ export async function downloadProjectExcelTemplate(): Promise<void> {
     await downloadProjectsTemplate();
   } catch {
     // Client-side fallback generation
-    const sampleData = [
-      {
-        "Project Code (Required)": "MOA-AGP2",
-        "Project Name (Required)":
-          "Second Agricultural Growth Program (AGP-II)",
-        "SAP Identification No": "SAP-100245",
-        Country: "Ethiopia",
-        "Executing Agency": "Ministry of Agriculture (MoA)",
-        Organization: "Federal / FPCU",
-        "Funding Source ID (Dropdown)": "World Bank (WB)",
-        "Funding Type": "Loan / Grant",
-        "Sector ID (Dropdown)": "Agriculture & Crop Production",
-        "Status (Dropdown)": "Draft",
-      },
-      {
-        "Project Code (Required)": "MOA-LLRP",
-        "Project Name (Required)":
-          "Lowlands Livelihood Resilience Project (LLRP)",
-        "SAP Identification No": "SAP-100246",
-        Country: "Ethiopia",
-        "Executing Agency": "Ministry of Agriculture (MoA)",
-        Organization: "Somali",
-        "Funding Source ID (Dropdown)": "World Bank (WB)",
-        "Funding Type": "Credit",
-        "Sector ID (Dropdown)": "Livestock & Fishery",
-        "Status (Dropdown)": "Draft",
-      },
+    const headers = [
+      "Project Code (Required)",
+      "Project Name (Required)",
+      "SAP Identification No",
+      "Country",
+      "Executing Agency",
+      "Organization",
+      "Funding Source ID (Dropdown)",
+      "Funding Type",
+      "Sector ID (Dropdown)",
+      "Status (Dropdown)",
     ];
 
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const worksheet = XLSX.utils.aoa_to_sheet([headers]);
     worksheet["!cols"] = [
       { wch: 24 }, // Project Code
       { wch: 45 }, // Project Name
@@ -1722,7 +1943,7 @@ export async function parseProjectsFromExcel(
   file: File,
 ): Promise<ParsedProjectsResult> {
   const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const workbook = XLSX.read(arrayBuffer, { type: "array", cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
 
   if (!firstSheetName) {

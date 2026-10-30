@@ -5,10 +5,7 @@ import { getExecutiveSnapshot } from './executive-dashboard.service.js';
 const router = Router();
 router.use(loadSession, requireAuthenticated);
 router.get('/', async (req, res, next) => {
-  if (
-    !req.auth ||
-    !['DIRECTOR', 'MANAGEMENT'].includes(req.auth.user.role)
-  ) {
+  if (!req.auth || !['DIRECTOR', 'MANAGEMENT'].includes(req.auth.user.role)) {
     res.status(403).json({
       message:
         'Executive dashboard access is limited to Management and Directors.',
