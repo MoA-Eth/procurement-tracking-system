@@ -22,7 +22,6 @@ import {
   methodsForCategory,
   normalizeActivityCategory,
   procurementMethodOptions,
-  getAllProcurementMethodOptions,
   roadmapForMethod,
   resolveMethodKey,
   resolveProcurementMethodOption,
@@ -246,7 +245,7 @@ export function CreateProcurementActivityView({
     );
   }, [initialActivity, project, plan, category]);
 
-  const [lookupVersion, setLookupVersion] = useState(0);
+  const [, setLookupVersion] = useState(0);
 
   useEffect(() => {
     Promise.allSettled([
@@ -261,20 +260,14 @@ export function CreateProcurementActivityView({
     return () => unsub();
   }, []);
 
-  const methodOptions = useMemo(
-    () => methodsForCategory(activityCategory),
-    [activityCategory, lookupVersion],
-  );
-  const currencyOptions = useMemo(() => {
-    const items = getInitialLookups("CURRENCY");
-    return items.map((item) => ({ code: item.code, label: item.label }));
-  }, [lookupVersion]);
-  const selectedMethod = useMemo(
-    () =>
-      methodOptions.find((m) => m.key === form.method) ||
-      resolveProcurementMethodOption(form.method, activityCategory),
-    [form.method, methodOptions, activityCategory, lookupVersion],
-  );
+  const methodOptions = methodsForCategory(activityCategory);
+  const currencyOptions = getInitialLookups("CURRENCY").map((item) => ({
+    code: item.code,
+    label: item.label,
+  }));
+  const selectedMethod =
+    methodOptions.find((m) => m.key === form.method) ||
+    resolveProcurementMethodOption(form.method, activityCategory);
   const planRefParam = plan.id || plan.reference || plan.name;
   const planHref =
     "/workspace/projects?project=" +
@@ -812,7 +805,6 @@ export function CreateProcurementActivityView({
                   }}
                   onChange={updateField}
                   onMethodChange={selectMethod}
-                  parentPlan={parentPlan || plan}
                   project={project}
                   usesCompetition={usesCompetition}
                 />
@@ -2049,7 +2041,6 @@ function KeyDetailsStep({
   onCategoryChange,
   onChange,
   onMethodChange,
-  parentPlan,
   project,
   usesCompetition,
 }: {
@@ -2063,7 +2054,6 @@ function KeyDetailsStep({
   onCategoryChange?: (category: ProcurementActivityCategory) => void;
   onChange: UpdateActivityField;
   onMethodChange: (value: string) => void;
-  parentPlan?: ProcurementPlanSummary;
   project: OfficerProject;
   usesCompetition: boolean;
 }) {

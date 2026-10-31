@@ -56,14 +56,21 @@ export const updateReference = async (id: string, newRef: string) => {
       include: { plan: { include: { project: true } } },
     });
     return updated;
-  } catch (e: any) {
-    if (e?.code === 'P2002') {
+  } catch (e) {
+    if (
+      typeof e === 'object' &&
+      e !== null &&
+      'code' in e &&
+      e.code === 'P2002'
+    ) {
       // unique constraint violation
       throw ApiError.conflict('Reference already in use');
     }
     throw e;
   }
 };
+
+export const getActivitiesService = async (planId?: string) => {
   let where: Prisma.ActivityWhereInput = { isActive: true };
   if (planId) {
     const trimmed = planId.trim();

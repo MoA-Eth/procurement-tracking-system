@@ -103,6 +103,7 @@ export const patchReference = async (
   }
 };
 
+export const deleteDraftActivity = async (
   req: Request,
   res: Response,
   next: NextFunction,
