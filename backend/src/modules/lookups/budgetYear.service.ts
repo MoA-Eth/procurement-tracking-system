@@ -19,6 +19,6 @@ export const getBudgetYears = async () => {
       orderBy: { code: 'asc' },
     });
   } catch (err) {
-    throw new ApiError(500, 'Failed to fetch budget years');
+    throw new ApiError(500, 'INTERNAL_SERVER_ERROR', 'Failed to fetch budget years');
   }
 };
