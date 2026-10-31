@@ -74,7 +74,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         if (selectedRoleFilter === "Director") return normalized === "DIRECTOR";
         if (selectedRoleFilter === "Committee")
           return normalized === "ENDORSING_COMMITTEE";
-        if (selectedRoleFilter === "Management")
+        if (selectedRoleFilter === "Executive")
           return normalized === "MANAGEMENT";
         if (selectedRoleFilter === "Administrator")
           return normalized === "ADMIN";
@@ -297,8 +297,8 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                 dotBg: "bg-amber-500",
               },
               {
-                name: "Management Team",
-                filter: "Management",
+                name: "Executives",
+                filter: "Executive",
                 count: metrics.managementTeamCount,
                 color: "#9333ea",
                 dotBg: "bg-purple-600",
@@ -507,8 +507,8 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                 <span className="font-semibold text-slate-800 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-2xs">
                   {selectedRoleFilter
                     ? `Active ${
-                        selectedRoleFilter === "Management"
-                          ? "Management Team"
+                        selectedRoleFilter === "Executive"
+                          ? "Executives"
                           : selectedRoleFilter === "Committee"
                             ? "Endorsement Committee"
                             : selectedRoleFilter === "Officer"

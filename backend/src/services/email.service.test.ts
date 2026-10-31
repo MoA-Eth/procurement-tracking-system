@@ -8,7 +8,7 @@ vi.mock('../config/env.js', () => ({
   },
 }));
 
-import { sendEmail } from './email.service.js';
+import { isSmtpAuthenticationError, sendEmail } from './email.service.js';
 
 describe('MailerSend email service', () => {
   afterEach(() => {
@@ -45,6 +45,19 @@ describe('MailerSend email service', () => {
       to: [{ email: 'officer@example.com' }],
       subject: 'Account invitation',
       text: 'Open the secure invitation link.',
+    });
+  });
+
+  describe('SMTP authentication error detection', () => {
+    it.each([
+      [{ code: 'EAUTH' }, true],
+      [{ responseCode: 535 }, true],
+      [{ response: '535-5.7.8 Username and Password not accepted.' }, true],
+      [{ code: 'ETIMEDOUT' }, false],
+      [new Error('Connection refused'), false],
+      [null, false],
+    ])('recognizes authentication failures: %j', (error, expected) => {
+      expect(isSmtpAuthenticationError(error)).toBe(expected);
     });
   });
 

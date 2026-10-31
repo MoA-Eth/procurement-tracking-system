@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addSavedActivityRecord,
+  findBackendActivityForPlan,
   mergeActivityRoadmaps,
   mapBackendActivityToProcurementActivitySummary,
   mapRoadmapStagesForBackend,
@@ -80,6 +81,47 @@ const detailedRecord: SavedOfficerActivityRecord = {
 };
 
 describe("officer activity draft storage", () => {
+  it("does not match another plan's activity by a reused reference", () => {
+    const existingActivity: SavedOfficerActivityRecord = {
+      ...record,
+      activity: {
+        ...record.activity,
+        id: "activity-in-committee-plan",
+        activityId: "activity-in-committee-plan",
+      },
+      planReference: "committee-plan-id",
+    };
+    const newActivity = {
+      ...record.activity,
+      reference: existingActivity.activity.reference,
+    };
+
+    expect(
+      findBackendActivityForPlan(
+        [existingActivity],
+        newActivity,
+        ["draft-plan-id"],
+        record.projectCode,
+      ),
+    ).toBeUndefined();
+  });
+
+  it("matches an activity with the same reference within the selected plan", () => {
+    const existingActivity: SavedOfficerActivityRecord = {
+      ...record,
+      planReference: "draft-plan-id",
+    };
+
+    expect(
+      findBackendActivityForPlan(
+        [existingActivity],
+        record.activity,
+        ["draft-plan-id"],
+        record.projectCode,
+      ),
+    ).toBe(existingActivity);
+  });
+
   it("maps backend draft status and per-activity procurement category", () => {
     const activity = mapBackendActivityToProcurementActivitySummary({
       id: "activity-id",
@@ -95,6 +137,24 @@ describe("officer activity draft storage", () => {
 
     expect(activity.status).toBe("Draft");
     expect(activity.category).toBe("Works");
+  });
+
+  it("maps activities under a submitted plan to Submitted to Director", () => {
+    for (const status of ["DRAFT", "PLANNED", "IN_PROGRESS"]) {
+      const activity = mapBackendActivityToProcurementActivitySummary({
+        id: "activity-id",
+        reference: "ACT-001",
+        status,
+        description: "Supply of equipment",
+        estimatedBudget: 500,
+        procurementCategory: "GOODS",
+        procurementMethod: { label: "Request for Bids" },
+        plan: { status: "SUBMITTED" },
+        stages: [],
+      });
+
+      expect(activity.status).toBe("Submitted to Director");
+    }
   });
 
   it("maps entered roadmap dates into backend stage payloads", () => {

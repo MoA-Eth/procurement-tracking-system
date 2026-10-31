@@ -345,28 +345,10 @@ export const deleteDraftActivityService = async (
 ) => {
   return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const activity = await tx.activity.findFirst({
-      where: { id, isActive: true },
+      where: { OR: [{ id }, { reference: id }] },
       include: { plan: true },
     });
     if (!activity) throw ApiError.notFound('Activity not found');
-    const isLegacyDraft =
-      activity.status === ActivityStatus.PLANNED &&
-      activity.plan.status === PlanStatus.DRAFT;
-    if (activity.status !== ActivityStatus.DRAFT && !isLegacyDraft) {
-      throw ApiError.conflict('Only draft activities can be deleted.');
-    }
-
-    const editableStatuses: PlanStatus[] = [
-      PlanStatus.DRAFT,
-      PlanStatus.REJECTED,
-      PlanStatus.RETURNED_FOR_REVISION,
-    ];
-    if (!editableStatuses.includes(activity.plan.status)) {
-      throw ApiError.conflict(
-        'Activities can only be deleted while their plan is editable.',
-      );
-    }
-
     const user = await tx.user.findUnique({ where: { id: userId } });
     if (!user) throw ApiError.unauthorized();
     const isOfficer =
@@ -383,15 +365,37 @@ export const deleteDraftActivityService = async (
       }
     }
 
+    if (!activity.isActive) return activity;
+
+    const editableStatuses: PlanStatus[] = [
+      PlanStatus.DRAFT,
+      PlanStatus.REJECTED,
+      PlanStatus.COMMITTEE_REJECTED,
+      PlanStatus.MANAGEMENT_REJECTED,
+      PlanStatus.RETURNED_FOR_REVISION,
+    ];
+    if (!editableStatuses.includes(activity.plan.status)) {
+      throw ApiError.conflict(
+        `Activity "${activity.reference}" is linked to plan "${activity.plan.title}" (ID: ${activity.planId}), whose current status is ${activity.plan.status}. Activities can only be deleted while the linked plan is editable.`,
+      );
+    }
+
+    const isDraftActivity =
+      activity.status === ActivityStatus.DRAFT ||
+      activity.status === ActivityStatus.PLANNED;
+    if (!isDraftActivity) {
+      throw ApiError.conflict('Only draft activities can be deleted.');
+    }
+
     const deletedActivity = await tx.activity.update({
-      where: { id },
+      where: { id: activity.id },
       data: { isActive: false },
     });
     await logRevision(
       tx,
       RevisionEntityType.ACTIVITY,
       RevisionChangeType.SOFT_DELETE,
-      id,
+      activity.id,
       userId,
       activity,
       deletedActivity,

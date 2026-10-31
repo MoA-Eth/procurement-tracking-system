@@ -90,6 +90,7 @@ describe("OfficerProcurementPlanDetailView", () => {
     };
     const markup = renderToStaticMarkup(
       <OfficerProcurementPlanDetailView
+        onDeleteDraftActivity={async () => {}}
         plan={draftPlan}
         project={mockProject}
       />,
@@ -181,6 +182,46 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).toContain(
       "/workspace/contracts?mode=register&amp;project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;activity=ET-MoA-000001-GO-RFQ&amp;from=projects",
     );
+  });
+
+  it("offers a delete action for draft activities", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const draftActivity = {
+      ...sampleActivity,
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[draftActivity]}
+      />,
+    );
+
+    expect(markup).toContain(
+      `aria-label="Delete draft activity ${draftActivity.reference}"`,
+    );
+    expect(markup).not.toContain('role="dialog"');
+  });
+
+  it("does not render Register Contract while the plan is under review", () => {
+    const submittedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Submitted to Director",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={submittedPlan}
+        project={mockProject}
+        savedActivities={[sampleActivity]}
+      />,
+    );
+
+    expect(markup).not.toContain("Register Contract");
   });
 
   it("renders Add Activity link pointing to create-additional-activity mode when plan is approved", () => {

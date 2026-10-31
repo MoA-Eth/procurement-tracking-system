@@ -62,22 +62,12 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
         creator: true,
         parentPlan: {
           include: {
-            activities: {
-              include: {
-                procurementMethod: true,
-                stages: {
-                  include: {
-                    stageType: true,
-                    revisions: { orderBy: { revisionNo: 'asc' } },
-                  },
-                  orderBy: { sequence: 'asc' },
-                },
-              },
-            },
+            activities: { where: { isActive: true } },
           },
         },
         childPlans: true,
         activities: {
+          where: { isActive: true },
           include: {
             procurementMethod: true,
             stages: {
@@ -175,22 +165,12 @@ export const getPlanByIdService = async (id: string) => {
         creator: true,
         parentPlan: {
           include: {
-            activities: {
-              include: {
-                procurementMethod: true,
-                stages: {
-                  include: {
-                    stageType: true,
-                    revisions: { orderBy: { revisionNo: 'asc' } },
-                  },
-                  orderBy: { sequence: 'asc' },
-                },
-              },
-            },
+            activities: { where: { isActive: true } },
           },
         },
         childPlans: true,
         activities: {
+          where: { isActive: true },
           include: {
             procurementMethod: true,
             stages: {
@@ -459,14 +439,41 @@ export const updatePlanService = async (
         }
       }
 
-      if (
-        (data.status === PlanStatus.SUBMITTED ||
-          (data.status as unknown as string) === 'SUBMITTED') &&
-        (!oldPlan.activities || oldPlan.activities.length === 0)
-      ) {
+      const isSubmitting =
+        data.status === PlanStatus.SUBMITTED ||
+        (data.status as unknown as string) === 'SUBMITTED';
+      const activeActivities = oldPlan.activities.filter(
+        (activity) => activity.isActive,
+      );
+
+      if (isSubmitting && oldPlan.status !== PlanStatus.SUBMITTED) {
+        const submittableStatuses: PlanStatus[] = [
+          PlanStatus.DRAFT,
+          PlanStatus.RETURNED_FOR_REVISION,
+          PlanStatus.REJECTED,
+        ];
+        if (!submittableStatuses.includes(oldPlan.status)) {
+          throw ApiError.badRequest(
+            `Plan cannot be submitted because its current status is ${oldPlan.status}.`,
+          );
+        }
+      }
+
+      if (isSubmitting && activeActivities.length === 0) {
         throw ApiError.badRequest(
           'Cannot submit an empty plan. The plan must contain at least one procurement activity before submission.',
         );
+      }
+
+      if (isSubmitting && oldPlan.status !== PlanStatus.SUBMITTED) {
+        await tx.activity.updateMany({
+          where: {
+            planId: oldPlan.id,
+            isActive: true,
+            status: ActivityStatus.DRAFT,
+          },
+          data: { status: ActivityStatus.PLANNED },
+        });
       }
 
       const plan = await tx.plan.update({
@@ -560,7 +567,10 @@ export const submitPlanService = async (id: string, userId: string) => {
         );
       }
 
-      if (!oldPlan.activities || oldPlan.activities.length === 0) {
+      const activeActivities = oldPlan.activities.filter(
+        (activity) => activity.isActive,
+      );
+      if (activeActivities.length === 0) {
         throw ApiError.badRequest(
           'Cannot submit an empty plan. The plan must contain at least one procurement activity before submission.',
         );
@@ -573,7 +583,11 @@ export const submitPlanService = async (id: string, userId: string) => {
       const validUserId = user.id;
 
       await tx.activity.updateMany({
-        where: { planId: oldPlan.id, status: ActivityStatus.DRAFT },
+        where: {
+          planId: oldPlan.id,
+          isActive: true,
+          status: ActivityStatus.DRAFT,
+        },
         data: { status: ActivityStatus.PLANNED },
       });
 
@@ -650,6 +664,11 @@ export const sendToCommitteeService = async (
         }));
       if (!oldPlan) {
         throw new Error(`Plan not found with id: ${id}`);
+      }
+      if (oldPlan.status !== PlanStatus.SUBMITTED) {
+        throw ApiError.conflict(
+          `Only plans submitted for director review can be sent to the committee (current status: ${oldPlan.status}).`,
+        );
       }
 
       const user = await tx.user.findUnique({ where: { id: userId } });

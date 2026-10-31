@@ -90,6 +90,25 @@ export async function fetchUsers(
   }
 }
 
+export async function createUser(data: {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+}): Promise<{ message: string; data: ApiUser }> {
+  try {
+    const res = await apiClient.post<any>("/users", data);
+    return res?.data
+      ? res
+      : { message: "User created successfully", data: res };
+  } catch (err) {
+    if (err instanceof ApiClientError) {
+      throw new AuthApiError(err.message);
+    }
+    throw new AuthApiError("Failed to create user account.");
+  }
+}
+
 export async function updateUser(
   id: string,
   data: { isActive?: boolean; name?: string; role?: string; email?: string },

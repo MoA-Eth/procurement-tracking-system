@@ -21,7 +21,7 @@ describe("UserProfileModal - Role Display & Management", () => {
     lastLoginAt: "2026-10-03T16:37:04Z",
   };
 
-  it("renders user account details with Management current role", () => {
+  it("renders user account details with Executive current role", () => {
     const markup = renderToStaticMarkup(
       <UserProfileModal
         user={managementUser}
@@ -34,7 +34,7 @@ describe("UserProfileModal - Role Display & Management", () => {
     expect(markup).toContain("User Account Details");
     expect(markup).toContain("Abel");
     expect(markup).toContain("tantuyeabsira@gmail.com");
-    expect(markup).toContain("Management");
+    expect(markup).toContain("Executive");
     expect(markup).toContain("Active &amp; Verified");
   });
 

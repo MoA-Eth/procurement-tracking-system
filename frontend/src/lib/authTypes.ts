@@ -31,7 +31,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   OFFICER: "Officer",
   DIRECTOR: "Director",
   ENDORSING_COMMITTEE: "Endorsement Committee Member",
-  MANAGEMENT: "Management",
+  MANAGEMENT: "Executive",
   ADMIN: "Administrator",
 };
 

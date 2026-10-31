@@ -256,16 +256,10 @@ export async function updateActivity(
   return res.data || res;
 }
 
-export async function deleteActivity(id: string): Promise<boolean> {
+export async function deleteActivity(id: string): Promise<void> {
   invalidatePlansCache();
-  try {
-    await apiClient.delete(`/activities/${encodeURIComponent(id)}`);
-    invalidatePlansCache();
-    return true;
-  } catch (err) {
-    console.warn(`deleteActivity notice for ${id}:`, err);
-    return false;
-  }
+  await apiClient.delete(`/activities/${encodeURIComponent(id)}`);
+  invalidatePlansCache();
 }
 
 export async function updateStageDates(

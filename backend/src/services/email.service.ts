@@ -27,6 +27,27 @@ export function isSmtpConfigured(): boolean {
   return Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS);
 }
 
+export function isSmtpAuthenticationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  const smtpError = error as {
+    code?: unknown;
+    responseCode?: unknown;
+    response?: unknown;
+  };
+  return (
+    smtpError.code === 'EAUTH' ||
+    smtpError.responseCode === 535 ||
+    (typeof smtpError.response === 'string' &&
+      /\b535\b|authentication credentials invalid|username and password not accepted/i.test(
+        smtpError.response,
+      ))
+  );
+}
+
+const SMTP_AUTHENTICATION_ERROR_MESSAGE =
+  'SMTP authentication failed. Verify SMTP_USER and SMTP_PASS in the backend environment. For Gmail, use a Google App Password (with 2-Step Verification enabled), not your regular account password.';
+
 export async function sendEmail(message: TransactionalEmail): Promise<void> {
   const cleanTo = message.to.trim().toLowerCase();
 
@@ -181,6 +202,14 @@ export async function sendEmail(message: TransactionalEmail): Promise<void> {
       );
       return;
     } catch (primaryError) {
+      if (isSmtpAuthenticationError(primaryError)) {
+        logger.error(
+          { host: env.SMTP_HOST, port },
+          'SMTP provider rejected the configured credentials',
+        );
+        throw new Error(SMTP_AUTHENTICATION_ERROR_MESSAGE);
+      }
+
       // If primary port (e.g. 465) failed or timed out, attempt alternate standard port (587)
       const fallbackPort = port === 465 ? 587 : 465;
       const fallbackSecure = fallbackPort === 465;
@@ -206,6 +235,13 @@ export async function sendEmail(message: TransactionalEmail): Promise<void> {
         );
         return;
       } catch (fallbackError) {
+        if (isSmtpAuthenticationError(fallbackError)) {
+          logger.error(
+            { host: env.SMTP_HOST, port: fallbackPort },
+            'SMTP provider rejected the configured credentials on both ports',
+          );
+          throw new Error(SMTP_AUTHENTICATION_ERROR_MESSAGE);
+        }
         logger.error(
           { error: fallbackError, to: cleanTo, subject: message.subject },
           'Failed to send email via SMTP on both primary and fallback ports',

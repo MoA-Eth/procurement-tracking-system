@@ -259,6 +259,46 @@ export interface SavedOfficerActivityRecord {
   projectCode: string;
 }
 
+export function findBackendActivityForPlan(
+  records: readonly SavedOfficerActivityRecord[],
+  activity: ProcurementActivitySummary,
+  planIds: readonly string[],
+  projectCode: string,
+): SavedOfficerActivityRecord | undefined {
+  const normalize = (value?: string) => (value || "").trim().toLowerCase();
+  const selectedPlanIds = new Set(planIds.map(normalize).filter(Boolean));
+  const selectedProjectCode = normalize(projectCode);
+  const belongsToSelectedPlan = (record: SavedOfficerActivityRecord) => {
+    const matchesPlan = selectedPlanIds.has(normalize(record.planReference));
+    const recordProjectCode = normalize(record.projectCode);
+    return (
+      matchesPlan &&
+      (!recordProjectCode ||
+        !selectedProjectCode ||
+        recordProjectCode === selectedProjectCode)
+    );
+  };
+
+  const activityIds = new Set(
+    [activity.id, activity.activityId].map(normalize).filter(Boolean),
+  );
+  const byId = records.find(
+    (record) =>
+      belongsToSelectedPlan(record) &&
+      [record.activity.id, record.activity.activityId]
+        .map(normalize)
+        .some((id) => activityIds.has(id)),
+  );
+  if (byId) return byId;
+
+  const activityReference = normalize(activity.reference);
+  return records.find(
+    (record) =>
+      belongsToSelectedPlan(record) &&
+      normalize(record.activity.reference) === activityReference,
+  );
+}
+
 export function isTestOrJunkActivity(
   reference?: string,
   description?: string,
@@ -676,7 +716,9 @@ export function mapBackendActivityToProcurementActivitySummary(
     "Draft";
 
   let status: ProcurementActivityStatus = "Not Started";
-  if (
+  if (ba.plan?.status === "SUBMITTED") {
+    status = "Submitted to Director";
+  } else if (
     ba.status === "DRAFT" ||
     (ba.status === "PLANNED" && ba.plan?.status === "DRAFT")
   ) {

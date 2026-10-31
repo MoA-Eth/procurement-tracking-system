@@ -1236,13 +1236,15 @@ export function OfficerProcurementPlanDetailView({
                       encodeURIComponent(activity.reference)
                     }
                     registerContractHref={
-                      "/workspace/contracts?mode=register&project=" +
-                      encodeURIComponent(project.code) +
-                      "&plan=" +
-                      encodeURIComponent(currentPlan.reference) +
-                      "&activity=" +
-                      encodeURIComponent(activity.reference) +
-                      "&from=projects"
+                      isFinallyApproved
+                        ? "/workspace/contracts?mode=register&project=" +
+                          encodeURIComponent(project.code) +
+                          "&plan=" +
+                          encodeURIComponent(currentPlan.reference) +
+                          "&activity=" +
+                          encodeURIComponent(activity.reference) +
+                          "&from=projects"
+                        : undefined
                     }
                   />
                 ))
@@ -1612,6 +1614,26 @@ function ActivityRow({
 }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  async function confirmDeleteDraft() {
+    if (!onDeleteDraft) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDeleteDraft(activity);
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Could not delete the draft activity.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   const rowStages =
     (activity as any).stages ||
     activity.details?.roadmap ||
@@ -1716,27 +1738,9 @@ function ActivityRow({
               aria-label={`Delete draft activity ${activity.reference}`}
               className="inline-flex shrink-0 items-center gap-1 rounded bg-rose-50 border border-rose-200 px-1.5 py-0.5 text-[9px] font-semibold text-rose-700 hover:bg-rose-600 hover:text-white transition cursor-pointer disabled:opacity-50"
               disabled={isDeleting}
-              onClick={async () => {
-                if (
-                  !window.confirm(
-                    `Delete draft activity ${activity.reference}? This cannot be undone.`,
-                  )
-                ) {
-                  return;
-                }
-                setIsDeleting(true);
+              onClick={() => {
                 setDeleteError(null);
-                try {
-                  await onDeleteDraft(activity);
-                } catch (error) {
-                  setDeleteError(
-                    error instanceof Error
-                      ? error.message
-                      : "Could not delete the draft activity.",
-                  );
-                } finally {
-                  setIsDeleting(false);
-                }
+                setIsDeleteDialogOpen(true);
               }}
               title={`Delete draft activity ${activity.reference}`}
               type="button"
@@ -1753,13 +1757,66 @@ function ActivityRow({
             Open
           </Link>
         </div>
-        {deleteError && (
-          <p
-            className="mt-1 whitespace-normal text-left text-[10px] text-rose-700"
-            role="alert"
+        {isDeleteDialogOpen && (
+          <div
+            aria-labelledby={`delete-activity-title-${activity.id || activity.reference}`}
+            aria-modal="true"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-xs"
+            role="dialog"
           >
-            {deleteError}
-          </p>
+            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
+              <div className="flex items-start gap-3 border-b border-slate-100 px-5 py-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700">
+                  <AlertTriangle aria-hidden="true" className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <h2
+                    className="text-lg font-semibold text-slate-900"
+                    id={`delete-activity-title-${activity.id || activity.reference}`}
+                  >
+                    Delete draft activity?
+                  </h2>
+                  <p className="mt-1 break-words text-base leading-7 text-slate-600">
+                    Are you sure you want to delete activity{" "}
+                    <span className="font-mono font-semibold text-slate-800">
+                      {activity.reference}
+                    </span>
+                    ? This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+              {deleteError && (
+                <p
+                  className="mx-5 mt-4 whitespace-normal break-words rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-base leading-7 text-rose-800"
+                  role="alert"
+                >
+                  {deleteError}
+                </p>
+              )}
+              <div className="flex justify-end gap-2 px-5 py-4">
+                <button
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  disabled={isDeleting}
+                  onClick={() => {
+                    setIsDeleteDialogOpen(false);
+                    setDeleteError(null);
+                  }}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={isDeleting}
+                  onClick={() => void confirmDeleteDraft()}
+                  type="button"
+                >
+                  <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                  {isDeleting ? "Deleting..." : "Delete Activity"}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </td>
     </tr>

@@ -33,6 +33,7 @@ import {
 import { UserProfileModal } from "./components/UserProfileModal";
 import {
   fetchUsers,
+  createUser,
   updateUser,
   deleteUser,
   type ApiUser,
@@ -77,7 +78,7 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
   ProcurementDirector: "Director",
   Administrator: "Administrator",
   EndorsingCommittee: "Endorsement Committee",
-  ManagementTeam: "Management",
+  ManagementTeam: "Executive",
   ProjectManager: "Project Manager",
 };
 
@@ -296,14 +297,19 @@ export function UserManagementView({
   }, []);
 
   // Invite Form State
+  const [creationMethod, setCreationMethod] = useState<
+    "invitation" | "default-password"
+  >("invitation");
   const [inviteFullName, setInviteFullName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<ProvisionableRole>("OFFICER");
+  const [defaultPassword, setDefaultPassword] = useState("");
   const [isInviting, setIsInviting] = useState(false);
   const [invitedInfo, setInvitedInfo] = useState<{
     email: string;
     role: string;
     isResend?: boolean;
+    creationMethod?: "invitation" | "default-password";
     invitationLink?: string;
   } | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -760,9 +766,21 @@ export function UserManagementView({
   };
 
   // ─── Submit Invitation Form ──────────────────────────────────────────────
-  const handleSendInvitation = async (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteFullName.trim() || !inviteEmail.trim()) return;
+    if (
+      creationMethod === "default-password" &&
+      (!defaultPassword ||
+        defaultPassword.length < 8 ||
+        !/[A-Z]/.test(defaultPassword) ||
+        !/\d/.test(defaultPassword))
+    ) {
+      setErrorMessage(
+        "The default password must be at least 8 characters and contain an uppercase letter and a number.",
+      );
+      return;
+    }
 
     setIsInviting(true);
     setErrorMessage(null);
@@ -772,11 +790,22 @@ export function UserManagementView({
     const targetRole = inviteRole;
 
     try {
-      const res = await createInvitedUser(
-        inviteFullName.trim(),
-        targetEmail,
-        targetRole,
-      );
+      let invitationLink: string | undefined;
+      if (creationMethod === "invitation") {
+        const res = await createInvitedUser(
+          inviteFullName.trim(),
+          targetEmail,
+          targetRole,
+        );
+        invitationLink = res.invitationLink;
+      } else {
+        await createUser({
+          name: inviteFullName.trim(),
+          email: targetEmail,
+          password: defaultPassword,
+          role: targetRole,
+        });
+      }
 
       // Remove matching user from cancelled and deleted sets if previously there
       users.forEach((u) => {
@@ -789,14 +818,15 @@ export function UserManagementView({
       setInvitedInfo({
         email: targetEmail,
         role: targetRole,
-        isResend: false,
-        invitationLink: res.invitationLink,
+        creationMethod,
+        invitationLink,
       });
 
       // Reset form fields
       setInviteFullName("");
       setInviteEmail("");
       setInviteRole("OFFICER");
+      setDefaultPassword("");
 
       await loadUsers();
     } catch (err) {
@@ -874,22 +904,41 @@ export function UserManagementView({
                   <h3 className="text-base font-semibold text-[#00843D] tracking-tight">
                     {invitedInfo.isResend
                       ? "Invitation Email Resent Successfully"
-                      : "Invitation Email Sent Successfully"}
+                      : invitedInfo.creationMethod === "default-password"
+                        ? "User Account Created Successfully"
+                        : "Invitation Email Sent Successfully"}
                   </h3>
-                  <p className="text-emerald-900 font-medium leading-relaxed">
-                    An official registration email has been delivered to{" "}
-                    <strong className="font-semibold text-[#00843D] underline decoration-emerald-300">
-                      {invitedInfo.email}
-                    </strong>{" "}
-                    for the role of{" "}
-                    <strong className="font-semibold text-[#00843D]">
-                      {ROLE_LABELS[
-                        invitedInfo.role as keyof typeof ROLE_LABELS
-                      ] || invitedInfo.role}
-                    </strong>
-                    . The recipient can click the link in their inbox to setup
-                    their password.
-                  </p>
+                  {invitedInfo.creationMethod === "default-password" ? (
+                    <p className="text-emerald-900 font-medium leading-relaxed">
+                      An account for{" "}
+                      <strong className="font-semibold text-[#00843D]">
+                        {invitedInfo.email}
+                      </strong>{" "}
+                      was created with the role of{" "}
+                      <strong className="font-semibold text-[#00843D]">
+                        {ROLE_LABELS[
+                          invitedInfo.role as keyof typeof ROLE_LABELS
+                        ] || invitedInfo.role}
+                      </strong>
+                      . The user must change the temporary password at first
+                      sign-in. Share it with them through a secure channel.
+                    </p>
+                  ) : (
+                    <p className="text-emerald-900 font-medium leading-relaxed">
+                      An official registration email has been delivered to{" "}
+                      <strong className="font-semibold text-[#00843D] underline decoration-emerald-300">
+                        {invitedInfo.email}
+                      </strong>{" "}
+                      for the role of{" "}
+                      <strong className="font-semibold text-[#00843D]">
+                        {ROLE_LABELS[
+                          invitedInfo.role as keyof typeof ROLE_LABELS
+                        ] || invitedInfo.role}
+                      </strong>
+                      . The recipient can click the link in their inbox to setup
+                      their password.
+                    </p>
+                  )}
                   {invitedInfo.invitationLink && (
                     <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-2.5">
                       <button
@@ -1010,7 +1059,7 @@ export function UserManagementView({
             </button>
             <ChevronRight size={13} className="text-slate-400" />
             <span className="text-[#0f172a] font-semibold flex items-center gap-1.5">
-              Invite New User
+              Create User Account
             </span>
           </div>
 
@@ -1019,19 +1068,60 @@ export function UserManagementView({
               <div>
                 <h1 className="text-xl font-semibold text-[#0f172a] tracking-tight flex items-center gap-2">
                   <Mail className="w-5 h-5 text-[#00843D] stroke-[2.5]" />
-                  Invite New User
+                  Create User Account
                 </h1>
                 <p className="mt-1 text-xs text-[#64748b] font-medium">
-                  Specify user credentials and assigned PTS role to generate an
-                  official registration invitation.
+                  Create an account by email invitation or provide a temporary
+                  password directly.
                 </p>
               </div>
             </div>
 
-            <form
-              onSubmit={handleSendInvitation}
-              className="space-y-5 max-w-3xl"
-            >
+            <form onSubmit={handleCreateUser} className="space-y-5 max-w-3xl">
+              <fieldset className="space-y-3">
+                <legend className="text-xs font-semibold text-[#0f172a] mb-2">
+                  Account creation method
+                </legend>
+                <label className="flex items-start gap-3 rounded-xl border border-[#e2e8f0] p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    checked={creationMethod === "invitation"}
+                    className="mt-0.5 accent-[#00843D]"
+                    name="creationMethod"
+                    onChange={() => setCreationMethod("invitation")}
+                    type="radio"
+                    value="invitation"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold text-[#0f172a]">
+                      Send email invitation
+                    </span>
+                    <span className="mt-1 block text-xs text-[#64748b]">
+                      The user receives a registration link and creates their
+                      own password.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 rounded-xl border border-[#e2e8f0] p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    checked={creationMethod === "default-password"}
+                    className="mt-0.5 accent-[#00843D]"
+                    name="creationMethod"
+                    onChange={() => setCreationMethod("default-password")}
+                    type="radio"
+                    value="default-password"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold text-[#0f172a]">
+                      Create account with a default password
+                    </span>
+                    <span className="mt-1 block text-xs text-[#64748b]">
+                      Set a temporary password for the user to change at first
+                      sign-in.
+                    </span>
+                  </span>
+                </label>
+              </fieldset>
+
               <div>
                 <label className="text-xs font-semibold text-[#0f172a] mb-1.5 block">
                   Full Name
@@ -1081,7 +1171,7 @@ export function UserManagementView({
                     Endorsement Committee (Committee Review)
                   </option>
                   <option value="MANAGEMENT">
-                    Management (Executive Review &amp; Approval)
+                    Executive (Executive Dashboard, Reports &amp; Approval)
                   </option>
                   <option value="ADMIN">
                     Administrator (System Administration / Governance)
@@ -1094,6 +1184,30 @@ export function UserManagementView({
                   for this account.
                 </p>
               </div>
+
+              {creationMethod === "default-password" && (
+                <div>
+                  <label className="text-xs font-semibold text-[#0f172a] mb-1.5 block">
+                    Default Password
+                  </label>
+                  <input
+                    autoComplete="new-password"
+                    minLength={8}
+                    onChange={(e) => setDefaultPassword(e.target.value)}
+                    pattern="(?=.*[A-Z])(?=.*\d).{8,}"
+                    placeholder="At least 8 characters, including an uppercase letter and a number"
+                    required
+                    title="Use at least 8 characters, including an uppercase letter and a number."
+                    type="password"
+                    value={defaultPassword}
+                    className="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-4 py-3 text-sm text-[#0f172a] w-full focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium transition-all"
+                  />
+                  <p className="mt-2 text-xs text-[#64748b]">
+                    The user will be required to change this password at first
+                    sign-in. Share it securely; it will not be emailed.
+                  </p>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-3 pt-4">
                 <button
@@ -1109,7 +1223,13 @@ export function UserManagementView({
                   className="px-6 py-2.5 rounded-full bg-[#00843D] hover:bg-[#0B6B3A] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
-                  {isInviting ? "Sending Invitation…" : "Send Invitation"}
+                  {isInviting
+                    ? creationMethod === "invitation"
+                      ? "Sending Invitation…"
+                      : "Creating Account…"
+                    : creationMethod === "invitation"
+                      ? "Send Invitation"
+                      : "Create User Account"}
                 </button>
               </div>
             </form>

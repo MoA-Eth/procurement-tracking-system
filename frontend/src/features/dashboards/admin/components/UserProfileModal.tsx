@@ -45,7 +45,7 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
   ProcurementDirector: "Director",
   Administrator: "Administrator",
   EndorsingCommittee: "Endorsement Committee",
-  ManagementTeam: "Management",
+  ManagementTeam: "Executive",
   ProjectManager: "Project Manager",
 };
 
@@ -82,7 +82,7 @@ const AVAILABLE_ROLES: {
   },
   {
     role: "MANAGEMENT",
-    label: "Management",
+    label: "Executive",
     desc: "High-level strategic review, oversight comments, and executive approvals.",
   },
   {

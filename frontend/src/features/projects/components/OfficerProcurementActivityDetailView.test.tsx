@@ -300,6 +300,18 @@ describe("OfficerProcurementActivityDetailView", () => {
     );
   });
 
+  it("does not render Register Contract while the plan is under review", () => {
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={detailedActivity}
+        plan={{ ...plan, status: "Submitted to Director" }}
+        project={project}
+      />,
+    );
+
+    expect(markup).not.toContain("Register Contract");
+  });
+
   it("renders Edit button in the activity detail header for draft/returned plans", () => {
     const draftPlan = { ...plan, status: "Draft" as const };
     const markup = renderToStaticMarkup(

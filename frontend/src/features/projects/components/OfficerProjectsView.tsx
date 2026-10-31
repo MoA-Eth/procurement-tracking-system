@@ -8,6 +8,7 @@ import { OfficerProcurementPlanDetailView } from "@/features/projects/components
 import { OfficerProjectDetailView } from "@/features/projects/components/OfficerProjectDetailView";
 import {
   addSavedActivityRecord,
+  findBackendActivityForPlan,
   isTestOrJunkActivity,
   mergeActivityRoadmaps,
   mapRoadmapStagesForBackend,
@@ -220,8 +221,10 @@ export function OfficerProjectsView({
   const [isLoadingData, setIsLoadingData] = useState(
     () => !getCachedProjects(),
   );
+  const loadDataRequestRef = useRef(0);
 
   const loadData = useCallback(async () => {
+    const requestId = ++loadDataRequestRef.current;
     try {
       if (backendProjects.length === 0) {
         setIsLoadingData(true);
@@ -231,6 +234,8 @@ export function OfficerProjectsView({
         fetchPlans(),
         fetchActivities(),
       ]);
+
+      if (requestId !== loadDataRequestRef.current) return;
 
       let fetchedPlans: BackendPlan[] = [];
       let assignedProjList: OfficerProject[] = [];
@@ -294,7 +299,7 @@ export function OfficerProjectsView({
         setBackendPlans([]);
       }
 
-      if (actData.status === "fulfilled" && actData.value.length > 0) {
+      if (actData.status === "fulfilled") {
         const mappedDbRecords: SavedOfficerActivityRecord[] = actData.value
           .filter((ba: BackendActivity) => {
             if (isTestOrJunkActivity(ba.reference, ba.description))
@@ -338,7 +343,9 @@ export function OfficerProjectsView({
     } catch (err) {
       console.warn("loadData officer view note:", err);
     } finally {
-      setIsLoadingData(false);
+      if (requestId === loadDataRequestRef.current) {
+        setIsLoadingData(false);
+      }
     }
   }, [effectiveUser]);
 
@@ -1252,7 +1259,12 @@ export function OfficerProjectsView({
 
     // Check if this was an edit to an existing activity
     const existing = selectedPlanActivities.find(
-      (a) => a.reference.toLowerCase() === activity.reference.toLowerCase(),
+      (a) =>
+        (Boolean(activity.id) && a.id === activity.id) ||
+        (Boolean(activity.activityId) &&
+          (a.id === activity.activityId ||
+            a.activityId === activity.activityId)) ||
+        a.reference.toLowerCase() === activity.reference.toLowerCase(),
     );
     if (existing) {
       const existingAny = existing as any;
@@ -1426,18 +1438,14 @@ export function OfficerProjectsView({
         );
 
         // Check if this activity already exists in the backend
-        const existingBackendAct = backendActivities.find(
-          (ba) =>
-            ba.activity.reference?.toLowerCase() ===
-              activity.reference?.toLowerCase() ||
-            (Boolean(activity.id) &&
-              Boolean(ba.activity.id) &&
-              ba.activity.id === activity.id) ||
-            (Boolean(activity.activityId) &&
-              Boolean(ba.activity.id) &&
-              ba.activity.id === activity.activityId),
+        const existingBackendAct = findBackendActivityForPlan(
+          backendActivities,
+          activity,
+          [targetBackendPlanId, selectedPlan.id || "", selectedPlan.reference],
+          selectedProject.code,
         );
         const existingBackendId =
+          existingBackendAct?.activity.id ||
           (activity.id && activity.id.includes("-") && activity.id.length > 20
             ? activity.id
             : undefined) ||
@@ -1445,10 +1453,6 @@ export function OfficerProjectsView({
           activity.activityId.includes("-") &&
           activity.activityId.length > 20
             ? activity.activityId
-            : undefined) ||
-          (existingBackendAct?.activity?.id &&
-          existingBackendAct.activity.id.includes("-")
-            ? existingBackendAct.activity.id
             : undefined);
 
         const formDetails = activity.details?.form || ({} as any);
@@ -1515,6 +1519,7 @@ export function OfficerProjectsView({
           : undefined;
 
         const baseActivityPayload: any = {
+          reference: activity.reference.trim(),
           procurementCategory: toBackendProcurementCategory(activity.category),
           ...(activity.status === "Draft" ? { status: "DRAFT" } : {}),
           description: activity.description || "Activity description",
@@ -1854,32 +1859,75 @@ export function OfficerProjectsView({
       });
     }
 
-    // 3. Submit on backend — use PATCH status:SUBMITTED as primary
-    let submitResult: any = null;
-    try {
-      submitResult = await updatePlan(planIdToSubmit, { status: "SUBMITTED" });
-    } catch (patchErr: any) {
-      console.warn(
-        "updatePlan SUBMITTED notice, falling back to /submit:",
-        patchErr,
-      );
-    }
-    if (!submitResult || !submitResult.id) {
-      submitResult = await submitPlanForReview(planIdToSubmit);
-    }
-    if (!submitResult) {
+    // 3. Submit through the workflow endpoint so plan and activity statuses transition together.
+    const submitResult = await submitPlanForReview(planIdToSubmit);
+    if (!submitResult?.id) {
       throw new Error("Server failed to confirm plan submission to Director.");
     }
 
     // 4. Update local state and persistence
+    const submittedPlanActivities = planActs.map((activity) => ({
+      ...activity,
+      status: "Submitted to Director" as const,
+    }));
     const updatedPlan: ProcurementPlanSummary = {
       ...targetPlan,
       id: planIdToSubmit,
       reference: targetPlan.reference || planIdToSubmit,
       status: "Submitted to Director",
       activities: planActs.length || targetPlan.activities,
-      planActivities: planActs,
+      planActivities: submittedPlanActivities,
     };
+
+    const submittedActivityIds = new Set(
+      planActs
+        .flatMap((activity: any) => [activity.id, activity.activityId])
+        .filter(Boolean)
+        .map((id: string) => id.toLowerCase()),
+    );
+    const submittedActivityReferences = new Set(
+      planActs
+        .map((activity: any) => activity.reference)
+        .filter(Boolean)
+        .map((reference: string) => reference.toLowerCase()),
+    );
+    const submittedPlanIds = new Set(
+      [planIdToSubmit, targetPlan.id, targetPlan.reference]
+        .filter(Boolean)
+        .map((planId) => planId!.toLowerCase()),
+    );
+    setSavedActivityRecords((prev) => {
+      const nextRecords = prev.map((record) => {
+        const recordPlanId = record.planReference.toLowerCase();
+        const recordProjectCode = record.projectCode.toLowerCase();
+        const matchesPlan = submittedPlanIds.has(recordPlanId);
+        const matchesProject =
+          !recordProjectCode ||
+          recordProjectCode === selectedProject.code.toLowerCase();
+        const activity = record.activity;
+        const matchesActivity =
+          submittedActivityIds.has(
+            (activity.id || activity.activityId || "").toLowerCase(),
+          ) ||
+          submittedActivityReferences.has(
+            (activity.reference || "").toLowerCase(),
+          );
+        return matchesPlan && matchesProject && matchesActivity
+          ? {
+              ...record,
+              activity: {
+                ...activity,
+                status: "Submitted to Director" as const,
+              },
+            }
+          : record;
+      });
+      window.localStorage.setItem(
+        OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+        JSON.stringify(nextRecords),
+      );
+      return nextRecords;
+    });
 
     setSavedPlanRecords((prev) => {
       const nextRecords = upsertSavedPlanRecord(prev, {
@@ -1912,7 +1960,7 @@ export function OfficerProjectsView({
       reviewType: act.reviewType || "Prior",
       estimatedAmount: Number(act.estimatedAmount || act.estimatedBudget) || 0,
       currency: act.currency || targetPlan.currency || "ETB",
-      status: act.status || "Submitted to Director",
+      status: "Submitted to Director",
     }));
 
     const planSnapshot = {
@@ -2054,30 +2102,85 @@ export function OfficerProjectsView({
       throw new Error("The project or procurement plan is no longer selected.");
     }
 
-    const backendRecord = backendActivities.find(
-      (record) =>
-        record.activity.reference.toLowerCase() ===
-          activity.reference.toLowerCase() ||
-        record.activity.id === activity.id ||
-        record.activity.id === activity.activityId,
+    const activityIds = new Set(
+      [activity.id, activity.activityId]
+        .filter((id): id is string => Boolean(id))
+        .map((id) => id.toLowerCase()),
     );
+    const backendRecord =
+      backendActivities.find((record) =>
+        [record.activity.id, record.activity.activityId].some(
+          (id) => id && activityIds.has(id.toLowerCase()),
+        ),
+      ) ||
+      backendActivities.find(
+        (record) =>
+          record.activity.reference.toLowerCase() ===
+          activity.reference.toLowerCase(),
+      );
     const backendId =
       backendRecord?.activity.id ||
       ([activity.id, activity.activityId].find(
         (id) => id && id.includes("-") && id.length > 20,
-      ) as string | undefined);
+      ) as string | undefined) ||
+      activity.reference;
 
-    if (backendId && !(await deleteActivity(backendId))) {
-      throw new Error(
-        "The draft activity could not be deleted from the server. Please try again.",
+    if (backendId) await deleteActivity(backendId);
+
+    if (backendId) activityIds.add(backendId.toLowerCase());
+    const matchesActivity = (candidate: ProcurementActivitySummary) => {
+      const candidateIds = [candidate.id, candidate.activityId]
+        .filter((id): id is string => Boolean(id))
+        .map((id) => id.toLowerCase());
+      return (
+        candidateIds.some((id) => activityIds.has(id)) ||
+        candidate.reference.toLowerCase() === activity.reference.toLowerCase()
       );
-    }
+    };
 
-    const matchesActivity = (candidate: ProcurementActivitySummary) =>
-      candidate.reference.toLowerCase() === activity.reference.toLowerCase() ||
-      (Boolean(activity.id) && candidate.id === activity.id) ||
-      (Boolean(activity.activityId) &&
-        candidate.activityId === activity.activityId);
+    const selectedProjectCode = selectedProject.code.toLowerCase();
+    const belongsToSelectedPlan = (planId?: string, projectCode?: string) => {
+      if (!planId) return false;
+      const normalizedPlanId = planId.toLowerCase();
+      const matchesProject =
+        !projectCode || projectCode.toLowerCase() === selectedProjectCode;
+      return (
+        (Boolean(selectedPlan.id) &&
+          normalizedPlanId === selectedPlan.id?.toLowerCase() &&
+          matchesProject) ||
+        (normalizedPlanId === selectedPlan.reference.toLowerCase() &&
+          projectCode?.toLowerCase() === selectedProjectCode)
+      );
+    };
+
+    setBackendActivities((records) =>
+      records.filter(
+        (record) =>
+          !(
+            belongsToSelectedPlan(
+              record.planReference,
+              record.projectCode,
+            ) && matchesActivity(record.activity)
+          ),
+      ),
+    );
+    setBackendPlans((plans) =>
+      plans.map((plan) => ({
+        ...plan,
+        activities: belongsToSelectedPlan(
+          plan.id,
+          plan.project?.code,
+        )
+          ? (plan.activities || []).filter(
+              (candidate) =>
+                !matchesActivity(
+                  mapBackendActivityToProcurementActivitySummary(candidate),
+                ),
+            )
+          : plan.activities,
+      })),
+    );
+
     const nextActivityRecords = savedActivityRecords.filter(
       (record) =>
         !(

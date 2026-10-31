@@ -277,70 +277,74 @@ const DEMO_ONLY_USERS: BaselineUser[] = [
  * Ensures required baseline lookups and system users exist in the database.
  * Completely idempotent — will not overwrite existing customized records.
  */
-export async function bootstrapSystem(): Promise<void> {
-  try {
-    // 1. Seed baseline lookups
-    for (const item of BASELINE_LOOKUPS) {
-      await prisma.lookupValue.upsert({
-        where: {
-          type_code: {
-            type: item.type,
-            code: item.code,
-          },
-        },
-        update: {
-          isActive: true,
-        },
-        create: {
+export async function seedSystemData(): Promise<void> {
+  // 1. Seed baseline lookups
+  for (const item of BASELINE_LOOKUPS) {
+    await prisma.lookupValue.upsert({
+      where: {
+        type_code: {
           type: item.type,
           code: item.code,
-          label: item.label,
+        },
+      },
+      update: {
+        isActive: true,
+      },
+      create: {
+        type: item.type,
+        code: item.code,
+        label: item.label,
+        isActive: true,
+      },
+    });
+  }
+  logger.info('System lookups successfully synchronized.');
+
+  // 2. Seed baseline users (always: Admin; demo accounts outside production)
+  const isProduction =
+    (process.env.NODE_ENV || '').toLowerCase() === 'production';
+  const usersToSeed = isProduction
+    ? BASELINE_USERS
+    : [...BASELINE_USERS, ...DEMO_ONLY_USERS];
+
+  if (isProduction) {
+    logger.info(
+      'Production environment detected — skipping demo account seeding.',
+    );
+  }
+
+  for (const u of usersToSeed) {
+    const existing = await prisma.user.findUnique({
+      where: { email: u.email.toLowerCase() },
+    });
+
+    if (!existing) {
+      const passwordHash = await hashPassword(
+        u.password || DEFAULT_SEED_PASSWORD,
+      );
+      await prisma.user.create({
+        data: {
+          email: u.email.toLowerCase(),
+          name: u.name,
+          displayName: u.displayName,
+          authRole: u.authRole,
+          status: UserStatus.ACTIVE,
           isActive: true,
+          mustChangePassword: isProduction,
+          passwordHash,
         },
       });
-    }
-    logger.info('System lookups successfully synchronized.');
-
-    // 2. Seed baseline users (always: Admin + Director)
-    const isProduction =
-      (process.env.NODE_ENV || '').toLowerCase() === 'production';
-    const usersToSeed = isProduction
-      ? BASELINE_USERS
-      : [...BASELINE_USERS, ...DEMO_ONLY_USERS];
-
-    if (isProduction) {
       logger.info(
-        'Production environment detected — skipping demo account seeding.',
+        { email: u.email, role: u.authRole },
+        'Bootstrapped default user account',
       );
     }
+  }
+}
 
-    for (const u of usersToSeed) {
-      const existing = await prisma.user.findUnique({
-        where: { email: u.email.toLowerCase() },
-      });
-
-      if (!existing) {
-        const passwordHash = await hashPassword(
-          u.password || DEFAULT_SEED_PASSWORD,
-        );
-        await prisma.user.create({
-          data: {
-            email: u.email.toLowerCase(),
-            name: u.name,
-            displayName: u.displayName,
-            authRole: u.authRole,
-            status: UserStatus.ACTIVE,
-            isActive: true,
-            mustChangePassword: isProduction,
-            passwordHash,
-          },
-        });
-        logger.info(
-          { email: u.email, role: u.authRole },
-          'Bootstrapped default user account',
-        );
-      }
-    }
+export async function bootstrapSystem(): Promise<void> {
+  try {
+    await seedSystemData();
   } catch (err) {
     logger.warn({ err }, 'Warning during bootstrapSystem synchronization');
   }

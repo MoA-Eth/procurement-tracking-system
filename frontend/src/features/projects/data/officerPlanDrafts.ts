@@ -132,11 +132,13 @@ export function mergeSavedPlans(
       const resolvedActivities = rawActivities.map((act: any) => ({
         ...act,
         status:
-          resolvedStatus === "Returned" &&
-          (act.status === "Submitted to Director" ||
-            act.status === "Under Review")
-            ? "Returned"
-            : act.status,
+          resolvedStatus === "Submitted to Director"
+            ? "Submitted to Director"
+            : resolvedStatus === "Returned" &&
+                (act.status === "Submitted to Director" ||
+                  act.status === "Under Review")
+              ? "Returned"
+              : act.status,
       }));
 
       return {

@@ -63,6 +63,11 @@ export function OfficerProcurementActivityDetailView({
     (project.assignedOfficerIds?.length ?? 0) > 1;
 
   const activity = currentActivity;
+  const isPlanApproved =
+    plan.status === "Approved" ||
+    plan.status === "Finally Approved" ||
+    (plan.status as string) === "APPROVED" ||
+    (plan.status as string) === "MANAGEMENT_APPROVED";
 
   const planHistory = getPlanVersionHistory(plan.id || plan.reference);
   const isActivityRevised =
@@ -358,22 +363,24 @@ export function OfficerProcurementActivityDetailView({
               </Link>
             )}
 
-            <Link
-              className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[#0B6B3A] bg-[#00843D] px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-[#0B6B3A] transition"
-              href={
-                "/workspace/contracts?mode=register&project=" +
-                encodeURIComponent(project.code) +
-                "&plan=" +
-                encodeURIComponent(plan.reference) +
-                "&activity=" +
-                encodeURIComponent(activity.reference) +
-                "&from=projects"
-              }
-              title={`Register contract for ${activity.reference}`}
-            >
-              <FileSignature className="h-3.5 w-3.5" />
-              Register Contract
-            </Link>
+            {isPlanApproved && (
+              <Link
+                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[#0B6B3A] bg-[#00843D] px-3.5 text-xs font-semibold text-white shadow-2xs hover:bg-[#0B6B3A] transition"
+                href={
+                  "/workspace/contracts?mode=register&project=" +
+                  encodeURIComponent(project.code) +
+                  "&plan=" +
+                  encodeURIComponent(plan.reference) +
+                  "&activity=" +
+                  encodeURIComponent(activity.reference) +
+                  "&from=projects"
+                }
+                title={`Register contract for ${activity.reference}`}
+              >
+                <FileSignature className="h-3.5 w-3.5" />
+                Register Contract
+              </Link>
+            )}
 
             <Link
               className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#00843D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00843D]"

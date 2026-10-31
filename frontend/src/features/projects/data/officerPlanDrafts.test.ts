@@ -155,6 +155,34 @@ describe("officer plan draft persistence", () => {
     expect(updated?.status).toBe("Submitted to Director");
   });
 
+  it("marks every merged activity as submitted when its plan is submitted", () => {
+    const backendPlan = {
+      ...mockProject.plans[0],
+      status: "Submitted to Director" as const,
+      planActivities: [
+        {
+          category: "Goods" as const,
+          currentStage: "Not Started",
+          description: "Supply of equipment",
+          estimatedAmount: 500,
+          method: "Request for Bids",
+          reference: "ACT-001",
+          status: "Not Started" as const,
+        },
+      ],
+    };
+
+    const projects = mergeSavedPlans(
+      [mockProject],
+      [{ plan: backendPlan, projectCode: mockProject.code }],
+    );
+
+    const updated = projects[0].plans.find(
+      (plan) => plan.reference === backendPlan.reference,
+    );
+    expect(updated?.planActivities?.[0].status).toBe("Submitted to Director");
+  });
+
   it("preserves advanced backend status when a stale draft record exists in storage", () => {
     const project = {
       ...mockProject,

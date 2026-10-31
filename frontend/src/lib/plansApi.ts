@@ -970,16 +970,18 @@ export function mapBackendPlanToOfficerPlanSummary(
         estimatedAmount: Number(a.estimatedBudget || 0),
         currentStage: currentStageObj?.name || "Not Started",
         status:
-          a.status === "DRAFT" ||
-          (a.status === "PLANNED" && backendPlan.status === "DRAFT")
-            ? "Draft"
-            : a.status === "COMPLETED"
-              ? "Completed"
-              : a.status === "IN_PROGRESS" || a.status === "IN_EXECUTION"
-                ? "In Progress"
-                : a.status === "DELAYED"
-                  ? "Delayed"
-                  : "Not Started",
+          backendPlan.status === "SUBMITTED"
+            ? "Submitted to Director"
+            : a.status === "DRAFT" ||
+                (a.status === "PLANNED" && backendPlan.status === "DRAFT")
+              ? "Draft"
+              : a.status === "COMPLETED"
+                ? "Completed"
+                : a.status === "IN_PROGRESS" || a.status === "IN_EXECUTION"
+                  ? "In Progress"
+                  : a.status === "DELAYED"
+                    ? "Delayed"
+                    : "Not Started",
         createdById: a.createdById || a.creator?.id,
         createdByName,
         updatedById: a.updatedById || a.updatedByUser?.id,
