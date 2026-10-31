@@ -37,7 +37,9 @@ interface CreatePlanFormProps {
   onSavePlan: (plan: ProcurementPlan) => void;
 }
 
-const BUDGET_YEAR_OPTIONS = [
+// Budget years are now loaded from the backend via BudgetYearSelect component
+// The static list has been removed in favor of dynamic API data.
+
   "2018 EFY (2025/2026)",
   "2017 EFY (2024/2025)",
   "2019 EFY (2026/2027)",
