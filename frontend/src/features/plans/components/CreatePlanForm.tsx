@@ -26,6 +26,7 @@ import {
   type ProcurementPlan,
 } from "../plansData";
 import { DualCalendarField } from "@/features/projects/components/DualCalendarField";
+import { BudgetYearSelect } from "@/components/common/BudgetYearSelect";
 import type { UserRole } from "@/types";
 
 interface CreatePlanFormProps {
@@ -37,13 +38,6 @@ interface CreatePlanFormProps {
   onSavePlan: (plan: ProcurementPlan) => void;
 }
 
-// Budget years are now loaded from the backend via BudgetYearSelect component
-// The static list has been removed in favor of dynamic API data.
-
-  "2018 EFY (2025/2026)",
-  "2017 EFY (2024/2025)",
-  "2019 EFY (2026/2027)",
-];
 
 const ORGANIZATION_REGION_OPTIONS = [
   "FPCU / Federal",
@@ -327,23 +321,11 @@ export function CreatePlanForm({
                   </span>
                 )}
               </div>
-              <select
+              <BudgetYearSelect
                 value={budgetYear}
-                onChange={(e) => handleBudgetYearChange(e.target.value)}
+                onChange={handleBudgetYearChange}
                 disabled={readOnly || isReviewer || isDraftPlanForDirector}
-                className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors ${
-                  readOnly || isReviewer
-                    ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed font-medium"
-                    : "bg-white text-slate-900 border-slate-300 focus:border-[#00843D] focus:ring-1 focus:ring-[#00843D]"
-                }`}
-                required
-              >
-                {BUDGET_YEAR_OPTIONS.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             {/* Organization / Region */}
