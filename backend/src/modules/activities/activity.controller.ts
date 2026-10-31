@@ -86,7 +86,23 @@ export const updateActivity = async (
   }
 };
 
-export const deleteDraftActivity = async (
+export const patchReference = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { reference } = req.body as { reference: string };
+    const activity = await activityService.updateReference(
+      req.params.id as string,
+      reference,
+    );
+    res.status(200).json(activity);
+  } catch (e) {
+    next(e);
+  }
+};
+
   req: Request,
   res: Response,
   next: NextFunction,

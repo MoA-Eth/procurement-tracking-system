@@ -8,6 +8,7 @@ import {
   updateStage,
   updateStageActual,
   replanStage,
+  patchReference,
 } from './activity.controller.js';
 import { authenticate, authorize } from '../../middleware/auth.js';
 import './activity.schema.js';
@@ -28,6 +29,7 @@ router.delete(
 );
 router.patch('/:id/stages/:stageId', updateStage);
 router.patch('/:id/stages/:stageId/actual', updateStageActual);
-router.post('/:id/stages/:stageId/replan', replanStage);
+router.patch('/:id/reference', patchReference);
+
 
 export default router;

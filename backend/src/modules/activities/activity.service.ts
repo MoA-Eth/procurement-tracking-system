@@ -44,7 +44,26 @@ async function generateActivityReference(
 
 // ─── Get Activities ───────────────────────────────────────────────────────────
 
-export const getActivitiesService = async (planId?: string) => {
+export const updateReference = async (id: string, newRef: string) => {
+  if (!newRef?.trim()) {
+    throw ApiError.badRequest('Reference cannot be empty');
+  }
+  const trimmed = newRef.trim();
+  try {
+    const updated = await prisma.activity.update({
+      where: { id },
+      data: { reference: trimmed },
+      include: { plan: { include: { project: true } } },
+    });
+    return updated;
+  } catch (e: any) {
+    if (e?.code === 'P2002') {
+      // unique constraint violation
+      throw ApiError.conflict('Reference already in use');
+    }
+    throw e;
+  }
+};
   let where: Prisma.ActivityWhereInput = { isActive: true };
   if (planId) {
     const trimmed = planId.trim();
