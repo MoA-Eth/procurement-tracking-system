@@ -17,8 +17,16 @@ import {
   X,
   Banknote,
   CircleDollarSign,
+  KeyRound,
+  Copy,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/authTypes";
+import {
+  fetchIntegrationApiKeyStatus,
+  revokeIntegrationApiKey,
+  rotateIntegrationApiKey,
+  type IntegrationApiKeyMetadata,
+} from "@/lib/integrationApiKeys";
 import {
   fetchLookups,
   createLookup,
@@ -137,13 +145,24 @@ function getInitialTabCounts(): Record<TabType, number> {
 }
 
 export function SettingsManagementView({
-  currentUser: _currentUser,
+  currentUser,
 }: SettingsManagementViewProps) {
   const [activeTab, setActiveTab] = useState<TabType>("PROJECT_CODE");
   const [lookups, setLookups] = useState<LookupItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [integrationKey, setIntegrationKey] =
+    useState<IntegrationApiKeyMetadata | null>(null);
+  const [newIntegrationKey, setNewIntegrationKey] = useState<string | null>(
+    null,
+  );
+  const [integrationKeyError, setIntegrationKeyError] = useState<string | null>(
+    null,
+  );
+  const [isLoadingIntegrationKey, setIsLoadingIntegrationKey] = useState(false);
+  const [isChangingIntegrationKey, setIsChangingIntegrationKey] =
+    useState(false);
 
   // Tab live counts
   const [tabCounts, setTabCounts] =
@@ -213,6 +232,23 @@ export function SettingsManagementView({
     }
   };
 
+  const loadIntegrationKey = async () => {
+    setIsLoadingIntegrationKey(true);
+    setIntegrationKeyError(null);
+    try {
+      const { activeKey } = await fetchIntegrationApiKeyStatus();
+      setIntegrationKey(activeKey);
+    } catch (error) {
+      setIntegrationKeyError(
+        error instanceof Error
+          ? error.message
+          : "Could not load integration API key status.",
+      );
+    } finally {
+      setIsLoadingIntegrationKey(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
     setShowAddForm(false);
@@ -220,6 +256,12 @@ export function SettingsManagementView({
     setNewCode("");
     setNewLabel("");
   }, [activeTab]);
+
+  useEffect(() => {
+    if (currentUser.role === "ADMIN") {
+      void loadIntegrationKey();
+    }
+  }, [currentUser.role]);
 
   useEffect(() => {
     loadAllCounts();
@@ -358,6 +400,70 @@ export function SettingsManagementView({
     showToast(`Removed "${item.code}".`);
   };
 
+  const handleRotateIntegrationKey = async () => {
+    if (
+      integrationKey &&
+      !window.confirm(
+        "Rotate this API key? The current key will stop working immediately.",
+      )
+    ) {
+      return;
+    }
+    setIsChangingIntegrationKey(true);
+    setIntegrationKeyError(null);
+    try {
+      const result = await rotateIntegrationApiKey();
+      setIntegrationKey(result.metadata);
+      setNewIntegrationKey(result.key);
+    } catch (error) {
+      setIntegrationKeyError(
+        error instanceof Error
+          ? error.message
+          : "Could not create an integration API key.",
+      );
+    } finally {
+      setIsChangingIntegrationKey(false);
+    }
+  };
+
+  const handleRevokeIntegrationKey = async () => {
+    if (
+      !integrationKey ||
+      !window.confirm(
+        "Revoke this API key? The external application will lose access immediately.",
+      )
+    ) {
+      return;
+    }
+    setIsChangingIntegrationKey(true);
+    setIntegrationKeyError(null);
+    try {
+      await revokeIntegrationApiKey();
+      setIntegrationKey(null);
+      setNewIntegrationKey(null);
+    } catch (error) {
+      setIntegrationKeyError(
+        error instanceof Error
+          ? error.message
+          : "Could not revoke the integration API key.",
+      );
+    } finally {
+      setIsChangingIntegrationKey(false);
+    }
+  };
+
+  const handleCopyIntegrationKey = async () => {
+    if (!newIntegrationKey) return;
+    try {
+      await navigator.clipboard.writeText(newIntegrationKey);
+      setIntegrationKeyError(null);
+    } catch {
+      setIntegrationKeyError(
+        "Could not copy the API key. Select and copy the key shown above.",
+      );
+    }
+  };
+
   const currentTabConfig = TAB_CONFIGS.find((t) => t.type === activeTab)!;
 
   return (
@@ -402,6 +508,122 @@ export function SettingsManagementView({
           </span>
         </button>
       </div>
+
+      {currentUser.role === "ADMIN" && (
+        <section
+          aria-labelledby="external-dashboard-api-title"
+          className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs sm:p-6"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
+              <KeyRound className="h-5 w-5" />
+            </div>
+            <div>
+              <h2
+                className="text-sm font-semibold text-slate-900"
+                id="external-dashboard-api-title"
+              >
+                Executive Dashboard API
+              </h2>
+              <p className="mt-1 text-xs text-slate-600">
+                Create a read-only API key for another application to access the
+                top-management dashboard data.
+              </p>
+              <p className="mt-1 text-xs font-medium text-amber-800">
+                Keep the key on a trusted server. Do not embed it in browser or
+                mobile-app code.
+              </p>
+            </div>
+          </div>
+
+          {integrationKeyError && (
+            <p
+              className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+              role="alert"
+            >
+              {integrationKeyError}
+            </p>
+          )}
+
+          {newIntegrationKey && (
+            <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-4">
+              <p className="text-xs font-semibold text-amber-950">
+                Copy this key now. It will not be shown again.
+              </p>
+              <code className="block overflow-x-auto rounded bg-white p-3 text-xs text-slate-900">
+                {newIntegrationKey}
+              </code>
+              <button
+                className="inline-flex items-center gap-2 rounded-lg border border-amber-400 bg-white px-3 py-2 text-xs font-semibold text-amber-950 hover:bg-amber-100"
+                onClick={() => void handleCopyIntegrationKey()}
+                type="button"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copy API key
+              </button>
+            </div>
+          )}
+
+          {isLoadingIntegrationKey ? (
+            <p className="text-xs text-slate-500">Checking API key status…</p>
+          ) : integrationKey ? (
+            <dl className="grid gap-2 text-xs text-slate-700 sm:grid-cols-3">
+              <div>
+                <dt className="font-semibold text-slate-500">Status</dt>
+                <dd>Active</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">Created</dt>
+                <dd>{new Date(integrationKey.createdAt).toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">Last used</dt>
+                <dd>
+                  {integrationKey.lastUsedAt
+                    ? new Date(integrationKey.lastUsedAt).toLocaleString()
+                    : "Never"}
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <p className="text-xs text-slate-600">
+              No active integration key is configured.
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="rounded-lg bg-indigo-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-800 disabled:opacity-50"
+              disabled={isChangingIntegrationKey || isLoadingIntegrationKey}
+              onClick={() => void handleRotateIntegrationKey()}
+              type="button"
+            >
+              {integrationKey ? "Rotate API key" : "Generate API key"}
+            </button>
+            {integrationKey && (
+              <button
+                className="rounded-lg border border-rose-300 px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                disabled={isChangingIntegrationKey}
+                onClick={() => void handleRevokeIntegrationKey()}
+                type="button"
+              >
+                Revoke API key
+              </button>
+            )}
+          </div>
+
+          <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-700">
+            <p className="font-semibold">Endpoint</p>
+            <code className="mt-1 block break-all">
+              GET /api/integrations/executive-dashboard
+            </code>
+            <p className="mt-2">
+              Send the key in the <code>X-API-Key</code> header. The key grants
+              read-only dashboard access and is shown only once.
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Category Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">

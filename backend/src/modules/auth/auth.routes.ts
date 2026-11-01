@@ -31,6 +31,11 @@ import {
   sendEmail,
 } from '../../services/email.service.js';
 import './auth.validation.js';
+import {
+  getIntegrationApiKeyStatus,
+  revokeIntegrationApiKey,
+  rotateIntegrationApiKey,
+} from '../integrations/integration-api-key.service.js';
 
 const INVALID_LOGIN_MESSAGE = 'Unable to sign in with those credentials.';
 const GENERIC_RESET_MESSAGE =
@@ -977,6 +982,35 @@ authRouter.post('/reset-password', async (req, res) => {
 
 export const adminRouter = Router();
 adminRouter.use(loadSession, requireAuthenticated, requireRole(UserRole.ADMIN));
+
+adminRouter.get('/integration-api-key', async (_req, res, next) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    res.json({ activeKey: await getIntegrationApiKeyStatus() });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post('/integration-api-key/rotate', async (req, res, next) => {
+  try {
+    const userId = req.auth?.user.id;
+    if (!userId) throw ApiError.unauthorized();
+    const result = await rotateIntegrationApiKey(userId);
+    res.status(201).set('Cache-Control', 'no-store').json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.delete('/integration-api-key', async (_req, res, next) => {
+  try {
+    await revokeIntegrationApiKey();
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
 
 adminRouter.post('/users', async (req, res) => {
   const parsed = createUserSchema.safeParse(req.body);

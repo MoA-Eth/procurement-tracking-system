@@ -41,6 +41,7 @@ model User {
   planStatusChanges   PlanStatusHistory[]   @relation("PlanStatusChangedBy")
   notifications       UserNotification[]    @relation("UserNotifications")
   amendmentRequests   AmendmentRequest[]
+  createdIntegrationApiKeys IntegrationApiKey[]
 
   @@index([authRole, status])
   @@index([isActive])

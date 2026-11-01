@@ -30,6 +30,7 @@ import reportsRouter from './modules/reports/reports.routes.js';
 import contractsRouter from './modules/contracts/contracts.routes.js';
 import excelRouter from './modules/excel/excel.routes.js';
 import executiveDashboardRouter from './modules/executive-dashboard/executive-dashboard.routes.js';
+import integrationRouter from './modules/integrations/integrations.routes.js';
 
 import { rateLimit } from 'express-rate-limit';
 
@@ -71,7 +72,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
   }),
 );
 app.use(
@@ -126,6 +127,7 @@ app.use('/api/contracts', contractsRouter);
 app.use('/api/suppliers', supplierRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/executive-dashboard', executiveDashboardRouter);
+app.use('/api/integrations', integrationRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/excel', excelRouter);

@@ -20,6 +20,14 @@ const mockDirectorUser: AuthUser = {
   role: "DIRECTOR",
 };
 
+const mockAdminUser: AuthUser = {
+  id: "admin-1",
+  email: "admin@moa.gov.et",
+  username: "admin",
+  displayName: "System Admin",
+  role: "ADMIN",
+};
+
 describe("SettingsManagementView", () => {
   it("renders the settings header and lookup classification description", () => {
     const html = renderToStaticMarkup(
@@ -53,5 +61,24 @@ describe("SettingsManagementView", () => {
     expect(html).toContain("Add Project Short Code");
     expect(html).toContain("Status");
     expect(html).toContain("Actions");
+  });
+
+  it("shows external dashboard API key controls to administrators", () => {
+    const html = renderToStaticMarkup(
+      <SettingsManagementView currentUser={mockAdminUser} />,
+    );
+
+    expect(html).toContain("Executive Dashboard API");
+    expect(html).toContain("Generate API key");
+    expect(html).toContain("GET /api/integrations/executive-dashboard");
+    expect(html).toContain("X-API-Key");
+  });
+
+  it("does not show integration API key controls to directors", () => {
+    const html = renderToStaticMarkup(
+      <SettingsManagementView currentUser={mockDirectorUser} />,
+    );
+
+    expect(html).not.toContain("Executive Dashboard API");
   });
 });

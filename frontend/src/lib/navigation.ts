@@ -76,12 +76,7 @@ const workspaceSections = {
     icon: "decision",
     description:
       "Review plan and activity amendment requests awaiting your decision.",
-    allowedRoles: [
-      "OFFICER",
-      "DIRECTOR",
-      "ENDORSING_COMMITTEE",
-      "MANAGEMENT",
-    ],
+    allowedRoles: ["OFFICER", "DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT"],
   },
   "vote-progress": {
     section: "vote-progress",

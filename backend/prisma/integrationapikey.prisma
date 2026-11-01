@@ -1,0 +1,12 @@
+model IntegrationApiKey {
+  id          String    @id @default(uuid())
+  name        String
+  secretHash  String
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  @@index([revokedAt, createdAt])
+}
