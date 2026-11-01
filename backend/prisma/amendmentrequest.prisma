@@ -1,0 +1,43 @@
+model AmendmentRequest {
+  id                String                   @id @default(uuid())
+  entityType        AmendmentEntityType
+  status            AmendmentRequestStatus   @default(PENDING_DIRECTOR)
+  planId            String?
+  plan              Plan?                    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  activityId        String?
+  activity          Activity?                @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  committeeVotes    AmendmentCommitteeVote[]
+  requestedById     String
+  requestedBy       User                     @relation(fields: [requestedById], references: [id])
+  reason            String
+  directorId        String?
+  directorComment   String?
+  directorAt        DateTime?
+  committeeId       String?
+  committeeComment  String?
+  committeeAt       DateTime?
+  managementId      String?
+  managementComment String?
+  managementAt      DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@index([status, createdAt])
+  @@index([planId])
+  @@index([activityId])
+  @@index([requestedById])
+}
+
+model AmendmentCommitteeVote {
+  id        String           @id @default(cuid())
+  requestId String
+  request   AmendmentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  memberId  String
+  decision  VoteDecision
+  comment   String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([requestId, memberId])
+  @@index([memberId])
+}

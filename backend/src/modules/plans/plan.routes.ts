@@ -16,8 +16,6 @@ import {
   getPlanById,
   createPlan,
   updatePlan,
-  requestPlanUpdate,
-  approvePlanUpdate,
   submitPlan,
   sendToCommittee,
   rejectPlan,
@@ -65,18 +63,6 @@ router.patch(
   ),
   validate(updatePlanSchema),
   updatePlan,
-);
-
-router.post(
-  '/:id/request-update',
-  authorize('ProcurementOfficer', 'OFFICER', 'Administrator', 'ADMIN'),
-  requestPlanUpdate,
-);
-
-router.post(
-  '/:id/approve-update',
-  authorize('ProcurementDirector', 'DIRECTOR', 'Administrator', 'ADMIN'),
-  approvePlanUpdate,
 );
 
 router.post(

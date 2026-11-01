@@ -103,9 +103,13 @@ export function mergeSavedPlans(
         plan.status === "Finally Approved" ||
         (saved.status === "Draft" && plan.status !== "Draft");
 
-      const resolvedStatus = isBackendAuthoritative
-        ? plan.status
-        : saved.status || plan.status;
+      const isUnpersistedAmendmentStatus =
+        saved.status === "Update Requested" &&
+        plan.status !== "Update Requested";
+      const resolvedStatus =
+        isUnpersistedAmendmentStatus || isBackendAuthoritative
+          ? plan.status
+          : saved.status || plan.status;
       const resolvedReason = plan.rejectionReason || saved.rejectionReason;
 
       const baseActs = plan.planActivities || [];

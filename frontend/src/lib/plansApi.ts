@@ -318,22 +318,6 @@ export async function submitPlanForReview(id: string): Promise<BackendPlan> {
   return res.data || res;
 }
 
-export async function requestPlanUpdate(id: string): Promise<BackendPlan> {
-  invalidatePlansCache();
-  const res = await apiClient.post<any>(
-    `/plans/${encodeURIComponent(id)}/request-update`,
-  );
-  return res.data || res;
-}
-
-export async function approvePlanUpdate(id: string): Promise<BackendPlan> {
-  invalidatePlansCache();
-  const res = await apiClient.post<any>(
-    `/plans/${encodeURIComponent(id)}/approve-update`,
-  );
-  return res.data || res;
-}
-
 /** Director approves plan and forwards to Endorsing Committee */
 export async function sendPlanToCommittee(
   id: string,
@@ -348,6 +332,7 @@ export async function sendPlanToCommittee(
       deadlineDays,
     },
   );
+  invalidatePlansCache();
   return res.data || res;
 }
 
@@ -515,7 +500,11 @@ export function mapBackendPlanToFrontend(
       : "0.0M ETB";
 
   // Calculate progress details from committeeVotes relation
-  const votes = backendPlan.committeeVotes || [];
+  const votes = (backendPlan.committeeVotes || []).filter(
+    (vote) =>
+      backendPlan.committeeRound === undefined ||
+      vote.round === backendPlan.committeeRound,
+  );
   const approvalsCount = votes.filter((v) => v.decision === "APPROVE").length;
   const progress = Math.min(100, Math.round((approvalsCount / 5) * 100)); // 5 members total
   const progressText = `${approvalsCount} of 5 approved`;

@@ -34,7 +34,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState, useEffect } from "react";
-import { requestPlanCancellation, requestPlanUpdate } from "@/lib/plansApi";
+import { requestPlanCancellation } from "@/lib/plansApi";
+import { createAmendmentRequest } from "@/lib/amendmentRequestsApi";
 import {
   getCurrentPlanVersionNumber,
   getPlanVersionHistory,
@@ -152,31 +153,30 @@ export function OfficerProcurementPlanDetailView({
   );
   const [isRequestingPlanUpdate, setIsRequestingPlanUpdate] = useState(false);
   const [planUpdateError, setPlanUpdateError] = useState<string | null>(null);
+  const [planUpdateSuccess, setPlanUpdateSuccess] = useState(false);
+  const [isPlanAmendmentModalOpen, setIsPlanAmendmentModalOpen] =
+    useState(false);
+  const [planAmendmentReason, setPlanAmendmentReason] = useState("");
 
   const handleRequestPlanUpdate = async () => {
-    if (
-      !window.confirm(
-        "Request Director authorization to reopen this approved plan for amendment?",
-      )
-    ) {
-      return;
-    }
-
+    if (planAmendmentReason.trim().length < 10) return;
     setIsRequestingPlanUpdate(true);
     setPlanUpdateError(null);
+    setPlanUpdateSuccess(false);
     try {
-      await requestPlanUpdate(currentPlan.id || currentPlan.reference);
-      const updatedPlan: ProcurementPlanSummary = {
-        ...currentPlan,
-        status: "Update Requested",
-      };
-      setCurrentPlan(updatedPlan);
-      onUpdatePlan?.(updatedPlan);
+      await createAmendmentRequest({
+        entityType: "PLAN",
+        entityId: currentPlan.id || currentPlan.reference,
+        reason: planAmendmentReason.trim(),
+      });
+      setPlanUpdateSuccess(true);
+      setIsPlanAmendmentModalOpen(false);
+      setPlanAmendmentReason("");
     } catch (error) {
       setPlanUpdateError(
         error instanceof Error
           ? error.message
-          : "Could not request authorization to amend this plan.",
+          : "Could not submit the plan amendment request.",
       );
     } finally {
       setIsRequestingPlanUpdate(false);
@@ -310,7 +310,9 @@ export function OfficerProcurementPlanDetailView({
   const activities = useMemo(() => {
     const list = [...savedActivities];
     const existingRefs = new Set(
-      list.map((a) => (a.reference || a.id || "").toLowerCase()).filter(Boolean),
+      list
+        .map((a) => (a.reference || a.id || "").toLowerCase())
+        .filter(Boolean),
     );
     if (currentPlan.planActivities && currentPlan.planActivities.length > 0) {
       currentPlan.planActivities.forEach((pa) => {
@@ -321,7 +323,10 @@ export function OfficerProcurementPlanDetailView({
         }
       });
     }
-    if (currentPlan.parentActivities && currentPlan.parentActivities.length > 0) {
+    if (
+      currentPlan.parentActivities &&
+      currentPlan.parentActivities.length > 0
+    ) {
       currentPlan.parentActivities.forEach((pa: any) => {
         const ref = (pa.reference || pa.id || "").toLowerCase();
         if (ref && !existingRefs.has(ref)) {
@@ -331,7 +336,11 @@ export function OfficerProcurementPlanDetailView({
       });
     }
     return list;
-  }, [savedActivities, currentPlan.planActivities, currentPlan.parentActivities]);
+  }, [
+    savedActivities,
+    currentPlan.planActivities,
+    currentPlan.parentActivities,
+  ]);
 
   const totalActivitiesCount =
     activities.length > 0 ? activities.length : (currentPlan.activities ?? 0);
@@ -665,13 +674,17 @@ export function OfficerProcurementPlanDetailView({
             {isFinallyApproved && (
               <button
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-900 shadow-2xs hover:bg-amber-100 transition cursor-pointer disabled:opacity-60"
-                disabled={isRequestingPlanUpdate}
-                onClick={handleRequestPlanUpdate}
+                disabled={isRequestingPlanUpdate || planUpdateSuccess}
+                onClick={() => {
+                  setPlanUpdateError(null);
+                  setPlanAmendmentReason("");
+                  setIsPlanAmendmentModalOpen(true);
+                }}
                 type="button"
-                title="Ask a Director to reopen this approved plan before making amendments"
+                title="Request an amendment through Director, committee, and management review"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                {isRequestingPlanUpdate ? "Requesting..." : "Request Amendment"}
+                {planUpdateSuccess ? "Request Submitted" : "Request Amendment"}
               </button>
             )}
 
@@ -753,14 +766,32 @@ export function OfficerProcurementPlanDetailView({
         </div>
       )}
 
+      {planUpdateSuccess && (
+        <div
+          className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-xs text-emerald-900"
+          role="status"
+        >
+          Amendment request submitted. It will be reviewed by the Director,
+          Endorsement Committee, and Executive Management in sequence.
+        </div>
+      )}
+
       {activePlanStatus === "Update Requested" && (
         <section
           aria-label="Plan amendment request status"
           className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-950"
         >
-          Amendment request sent. A Director must authorize reopening before
-          activities can be edited. After approval, edit the activity and
-          resubmit the plan through the normal review workflow.
+          <span>
+            This plan has an amendment request awaiting review. Track its
+            progress in{" "}
+          </span>
+          <Link
+            className="font-semibold underline underline-offset-2"
+            href="/workspace/amendment-requests"
+          >
+            Amendment Requests
+          </Link>
+          .
         </section>
       )}
 
@@ -1444,6 +1475,73 @@ export function OfficerProcurementPlanDetailView({
                     </span>
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPlanAmendmentModalOpen && (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs"
+          role="dialog"
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-amber-100 bg-amber-50/60 px-6 py-4">
+              <h3 className="text-sm font-semibold text-amber-950">
+                Request Plan Amendment
+              </h3>
+              <p className="mt-1 text-[11px] text-amber-800">
+                The request will be reviewed by the Director, Endorsement
+                Committee, and Executive Management in sequence.
+              </p>
+            </div>
+            <div className="space-y-2 px-6 py-5">
+              <label
+                className="text-xs font-semibold text-slate-700"
+                htmlFor="plan-amendment-reason"
+              >
+                Reason for amendment
+              </label>
+              <textarea
+                autoFocus
+                className="min-h-28 w-full rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                disabled={isRequestingPlanUpdate}
+                id="plan-amendment-reason"
+                maxLength={2000}
+                onChange={(event) => setPlanAmendmentReason(event.target.value)}
+                placeholder="Explain what needs to change and why"
+                value={planAmendmentReason}
+              />
+              <p className="text-[11px] text-slate-500">
+                Provide at least 10 characters.
+              </p>
+              {planUpdateError && (
+                <p className="text-xs text-rose-700" role="alert">
+                  {planUpdateError}
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-3.5">
+              <button
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                disabled={isRequestingPlanUpdate}
+                onClick={() => setIsPlanAmendmentModalOpen(false)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                disabled={
+                  isRequestingPlanUpdate ||
+                  planAmendmentReason.trim().length < 10
+                }
+                onClick={() => void handleRequestPlanUpdate()}
+                type="button"
+              >
+                {isRequestingPlanUpdate ? "Submitting…" : "Submit Request"}
               </button>
             </div>
           </div>

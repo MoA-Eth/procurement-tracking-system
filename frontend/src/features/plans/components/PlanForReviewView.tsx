@@ -85,7 +85,7 @@ export function PlanForReviewView({
             : undefined
         }
         onCommitteeVote={
-          user.role === "ENDORSING_COMMITTEE" && from !== "vote-progress"
+          user.role === "ENDORSING_COMMITTEE"
             ? (p, decision, remarks, rejectionDetails) => {
                 if (remarks) review.setReturnRemarks(remarks);
                 review.handleCommitteeVote(
@@ -180,7 +180,7 @@ export function PlanForReviewView({
             : undefined
         }
         onCommitteeVote={
-          user.role === "ENDORSING_COMMITTEE" && from !== "vote-progress"
+          user.role === "ENDORSING_COMMITTEE"
             ? review.handleCommitteeVote
             : undefined
         }
@@ -198,11 +198,6 @@ export function PlanForReviewView({
         setIsCommitteeRejectionModalOpen={
           review.setIsCommitteeRejectionModalOpen
         }
-        isCommitteeChair={review.isCommitteeChair}
-        isChairAuthorized={review.isPlanChairAuthorized(
-          review.selectedPlanForReview.id,
-        )}
-        onChairAuthorize={review.handleChairAuthorizePlan}
       />
     );
   }
@@ -233,7 +228,6 @@ export function PlanForReviewView({
       committeeDeadlineDate={review.committeeDeadlineDate}
       setCommitteeDeadlineDate={review.setCommitteeDeadlineDate}
       onApprovePlan={review.handleApprovePlan}
-      onApprovePlanUpdate={review.handleApprovePlanUpdate}
       onReturnPlan={review.handleReturnPlan}
       onBatchReviewPlans={review.handleBatchReviewPlans}
       onBatchCommitteeVote={review.handleBatchCommitteeVote}

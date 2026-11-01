@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { PlanStatus, VoteDecision } from '../../generated/prisma/index.js';
+import {
+  AmendmentEntityType,
+  PlanStatus,
+  VoteDecision,
+} from '../../generated/prisma/index.js';
 import { registry } from '../../config/openapi.js';
 
 export const createPlanSchema = registry.register(
@@ -74,6 +78,35 @@ export const updatePlanSchema = registry.register(
       },
     ),
 );
+
+export const createAmendmentRequestSchema = registry.register(
+  'CreateAmendmentRequest',
+  z.object({
+    entityType: z.nativeEnum(AmendmentEntityType),
+    entityId: z.string().trim().min(1),
+    reason: z.string().trim().min(10).max(2000),
+  }),
+);
+
+export const decideAmendmentRequestSchema = registry.register(
+  'DecideAmendmentRequest',
+  z
+    .object({
+      decision: z.enum(['APPROVE', 'REJECT', 'RETURN']),
+      comment: z.string().trim().max(2000).optional().default(''),
+    })
+    .refine(
+      (value) => value.decision === 'APPROVE' || value.comment.length >= 3,
+      'A comment of at least 3 characters is required to reject or return a request.',
+    ),
+);
+
+export type CreateAmendmentRequestInput = z.infer<
+  typeof createAmendmentRequestSchema
+>;
+export type DecideAmendmentRequestInput = z.infer<
+  typeof decideAmendmentRequestSchema
+>;
 
 export const rejectPlanSchema = registry.register(
   'RejectPlan',
@@ -233,29 +266,53 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/plans/{id}/request-update',
-  summary: 'Request permission to update an approved plan',
+  path: '/api/amendment-requests',
+  summary: 'Request a plan or activity amendment',
   tags: ['Plans'],
   security: [{ bearerAuth: [] }, { cookieAuth: [] }],
   request: {
-    params: z.object({ id: z.string().openapi({ description: 'Plan UUID' }) }),
+    body: {
+      content: {
+        'application/json': { schema: createAmendmentRequestSchema },
+      },
+    },
   },
   responses: {
-    200: { description: 'Update requested' },
+    201: { description: 'Amendment request submitted for review' },
+    400: { description: 'Validation error' },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/amendment-requests',
+  summary: 'List amendment requests awaiting the current review stage',
+  tags: ['Plans'],
+  security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+  responses: {
+    200: { description: 'Amendment requests' },
   },
 });
 
 registry.registerPath({
   method: 'post',
-  path: '/api/plans/{id}/approve-update',
-  summary: 'Approve a request to update a plan',
+  path: '/api/amendment-requests/{id}/decision',
+  summary: 'Approve, reject, or return an amendment request',
   tags: ['Plans'],
   security: [{ bearerAuth: [] }, { cookieAuth: [] }],
   request: {
-    params: z.object({ id: z.string().openapi({ description: 'Plan UUID' }) }),
+    params: z.object({
+      id: z.string().openapi({ description: 'Request UUID' }),
+    }),
+    body: {
+      content: {
+        'application/json': { schema: decideAmendmentRequestSchema },
+      },
+    },
   },
   responses: {
-    200: { description: 'Update approved' },
+    200: { description: 'Amendment decision recorded' },
+    409: { description: 'Request is not awaiting this role' },
   },
 });
 

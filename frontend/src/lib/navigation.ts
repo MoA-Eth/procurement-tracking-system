@@ -69,6 +69,20 @@ const workspaceSections = {
     description: "Review procurement plans awaiting action from your role.",
     allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT"],
   },
+  "amendment-requests": {
+    section: "amendment-requests",
+    label: "Amendment Requests",
+    href: "/workspace/amendment-requests",
+    icon: "decision",
+    description:
+      "Review plan and activity amendment requests awaiting your decision.",
+    allowedRoles: [
+      "OFFICER",
+      "DIRECTOR",
+      "ENDORSING_COMMITTEE",
+      "MANAGEMENT",
+    ],
+  },
   "vote-progress": {
     section: "vote-progress",
     label: "Vote Progress",
@@ -166,11 +180,18 @@ const workspaceSections = {
 type WorkspaceSectionKey = keyof typeof workspaceSections;
 
 const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
-  OFFICER: ["projects", "contracts", "activity-tracker", "reports"],
+  OFFICER: [
+    "projects",
+    "contracts",
+    "amendment-requests",
+    "activity-tracker",
+    "reports",
+  ],
   DIRECTOR: [
     "executive-dashboard",
     "projects",
     "plan-for-review",
+    "amendment-requests",
     "vote-progress",
     "activity-tracker",
     "reports",
@@ -179,11 +200,16 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "executive-dashboard",
     "projects",
     "plan-for-review",
+    "amendment-requests",
     "vote-progress",
     "activity-tracker",
     "reports",
   ],
-  ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],
+  ENDORSING_COMMITTEE: [
+    "plan-for-review",
+    "amendment-requests",
+    "my-decisions",
+  ],
   ADMIN: ["user-management", "system-logs"],
 };
 

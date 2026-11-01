@@ -1,19 +1,19 @@
 model Plan {
-  id                    String     @id @default(uuid())
-  projectId             String
-  project               Project    @relation(fields: [projectId], references: [id])
-  
-  title                 String
-  budgetYear            String?
-  procurementCategory   String?
-  organization          String?
-  description           String?
-  
-  periodStart           DateTime
-  periodEnd             DateTime
-  gpnDate               DateTime?
-  contractAwardDate     DateTime?
-  
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  title               String
+  budgetYear          String?
+  procurementCategory String?
+  organization        String?
+  description         String?
+
+  periodStart       DateTime
+  periodEnd         DateTime
+  gpnDate           DateTime?
+  contractAwardDate DateTime?
+
   status                PlanStatus @default(DRAFT)
   committeeRound        Int        @default(0)
   committeeVoteDeadline DateTime?
@@ -22,7 +22,7 @@ model Plan {
   creator   User   @relation("PlanCreator", fields: [createdBy], references: [id])
 
   updatedById   String?
-  updatedByUser User?     @relation("PlanUpdater", fields: [updatedById], references: [id])
+  updatedByUser User?   @relation("PlanUpdater", fields: [updatedById], references: [id])
 
   approvedById   String?
   approvedByUser User?     @relation("PlanApprover", fields: [approvedById], references: [id])
@@ -33,33 +33,34 @@ model Plan {
   rejectedAt      DateTime?
   rejectionReason String?
 
-  managementDecision      String?
-  managementComment       String?
-  managementById          String?
-  managementByUser        User?     @relation("PlanManagementDecider", fields: [managementById], references: [id])
-  managementAt            DateTime?
-  directorRevisionComment String?
-  cancellationReason      String?
+  managementDecision        String?
+  managementComment         String?
+  managementById            String?
+  managementByUser          User?     @relation("PlanManagementDecider", fields: [managementById], references: [id])
+  managementAt              DateTime?
+  directorRevisionComment   String?
+  cancellationReason        String?
   cancellationRequestedById String?
   cancellationRequestedAt   DateTime?
   cancellationApprovedById  String?
   cancellationApprovedAt    DateTime?
 
-  parentPlanId            String?
-  parentPlan              Plan?               @relation("PlanHierarchy", fields: [parentPlanId], references: [id])
-  childPlans              Plan[]              @relation("PlanHierarchy")
-  planType                String?             @default("ANNUAL")
-  additionalPlanReason    String?
+  parentPlanId         String?
+  parentPlan           Plan?   @relation("PlanHierarchy", fields: [parentPlanId], references: [id])
+  childPlans           Plan[]  @relation("PlanHierarchy")
+  planType             String? @default("ANNUAL")
+  additionalPlanReason String?
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  activities     Activity[]
-  reviews        PlanReview[]
-  committeeVotes CommitteeVote[]
-  revisions      Revision[]          @relation("RevisionPlan")
-  statusHistory  PlanStatusHistory[]
+  activities        Activity[]
+  reviews           PlanReview[]
+  committeeVotes    CommitteeVote[]
+  revisions         Revision[]          @relation("RevisionPlan")
+  statusHistory     PlanStatusHistory[]
+  amendmentRequests AmendmentRequest[]
 
   @@index([projectId])
   @@index([status])

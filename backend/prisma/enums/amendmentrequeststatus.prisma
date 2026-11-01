@@ -1,0 +1,14 @@
+enum AmendmentRequestStatus {
+  PENDING_DIRECTOR
+  PENDING_COMMITTEE
+  PENDING_MANAGEMENT
+  RETURNED
+  REJECTED
+  APPROVED
+  COMPLETED
+}
+
+enum AmendmentEntityType {
+  PLAN
+  ACTIVITY
+}

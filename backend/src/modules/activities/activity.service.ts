@@ -90,7 +90,10 @@ export const getActivitiesService = async (planId?: string) => {
       if (targetPlan.id && !planIds.includes(targetPlan.id)) {
         planIds.push(targetPlan.id);
       }
-      if (targetPlan.parentPlanId && !planIds.includes(targetPlan.parentPlanId)) {
+      if (
+        targetPlan.parentPlanId &&
+        !planIds.includes(targetPlan.parentPlanId)
+      ) {
         planIds.push(targetPlan.parentPlanId);
       }
     }
@@ -443,7 +446,19 @@ export const updateActivityService = async (
           PlanStatus.REJECTED,
           PlanStatus.RETURNED_FOR_REVISION,
         ];
-        if (!editableStatuses.includes(oldActivity.plan.status)) {
+        const approvedAmendment =
+          oldActivity.status === ActivityStatus.DRAFT &&
+          (await tx.amendmentRequest.findFirst({
+            where: {
+              activityId: oldActivity.id,
+              status: 'APPROVED',
+            },
+            select: { id: true },
+          }));
+        if (
+          !editableStatuses.includes(oldActivity.plan.status) &&
+          !approvedAmendment
+        ) {
           throw new Error(
             `Cannot edit activities in a plan with status ${oldActivity.plan.status}. Plan must be in DRAFT, RETURNED_FOR_REVISION, REJECTED, or UPDATE_REQUESTED status.`,
           );
@@ -534,6 +549,18 @@ export const updateActivityService = async (
           updatedByUser: true,
         },
       });
+      if (
+        oldActivity.plan.status === PlanStatus.APPROVED ||
+        oldActivity.plan.status === PlanStatus.MANAGEMENT_APPROVED
+      ) {
+        await tx.amendmentRequest.updateMany({
+          where: {
+            activityId: oldActivity.id,
+            status: 'APPROVED',
+          },
+          data: { status: 'COMPLETED' },
+        });
+      }
 
       // Update stages if provided
       const stageInputs = (inputWithExtra.stages ||

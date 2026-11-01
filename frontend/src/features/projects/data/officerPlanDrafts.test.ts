@@ -210,6 +210,22 @@ describe("officer plan draft persistence", () => {
     expect(updated?.status).toBe("Committee Review");
   });
 
+  it("does not treat a locally saved legacy amendment status as a persisted request", () => {
+    const savedLegacyRequest = {
+      ...mockProject.plans[0],
+      status: "Update Requested" as const,
+    };
+
+    const projects = mergeSavedPlans(mockProjects, [
+      { plan: savedLegacyRequest, projectCode: mockProject.code },
+    ]);
+
+    const updated = projects[0].plans.find(
+      (plan) => plan.reference === mockProject.plans[0].reference,
+    );
+    expect(updated?.status).toBe("Approved");
+  });
+
   it("correctly preserves Returned status and rejection remarks", () => {
     const project = {
       ...mockProject,

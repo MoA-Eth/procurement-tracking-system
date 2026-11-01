@@ -31,6 +31,7 @@ import {
 import { getPlanVersionHistory } from "@/features/plans/data/planRevisions";
 import { parseNumberWithCommas } from "@/lib/numberFormatting";
 import { formatDualCalendarDate } from "@/features/projects/utils/ethiopianCalendar";
+import { createAmendmentRequest } from "@/lib/amendmentRequestsApi";
 
 interface DetailValue {
   label: string;
@@ -57,6 +58,11 @@ export function OfficerProcurementActivityDetailView({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isDelayModalOpen, setIsDelayModalOpen] = useState(false);
+  const [isAmendmentModalOpen, setIsAmendmentModalOpen] = useState(false);
+  const [amendmentReason, setAmendmentReason] = useState("");
+  const [amendmentError, setAmendmentError] = useState<string | null>(null);
+  const [amendmentSubmitted, setAmendmentSubmitted] = useState(false);
+  const [isSubmittingAmendment, setIsSubmittingAmendment] = useState(false);
 
   const isMultiOfficerProject =
     (project.assignedOfficers?.length ?? 0) > 1 ||
@@ -68,6 +74,30 @@ export function OfficerProcurementActivityDetailView({
     plan.status === "Finally Approved" ||
     (plan.status as string) === "APPROVED" ||
     (plan.status as string) === "MANAGEMENT_APPROVED";
+
+  const submitActivityAmendment = async () => {
+    if (amendmentReason.trim().length < 10) return;
+    setIsSubmittingAmendment(true);
+    setAmendmentError(null);
+    try {
+      await createAmendmentRequest({
+        entityType: "ACTIVITY",
+        entityId: activity.id || activity.reference,
+        reason: amendmentReason.trim(),
+      });
+      setAmendmentSubmitted(true);
+      setAmendmentReason("");
+      setIsAmendmentModalOpen(false);
+    } catch (error) {
+      setAmendmentError(
+        error instanceof Error
+          ? error.message
+          : "Could not submit the activity amendment request.",
+      );
+    } finally {
+      setIsSubmittingAmendment(false);
+    }
+  };
 
   const planHistory = getPlanVersionHistory(plan.id || plan.reference);
   const isActivityRevised =
@@ -343,7 +373,9 @@ export function OfficerProcurementActivityDetailView({
 
             {(plan.status === "Draft" ||
               plan.status === "Returned" ||
-              plan.status === "Returned for Revision") && (
+              plan.status === "Returned for Revision" ||
+              activity.status === "Draft" ||
+              (activity.status as string) === "DRAFT") && (
               <Link
                 aria-label={`Edit activity ${activity.reference}`}
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 shadow-2xs hover:border-[#00843D] hover:bg-emerald-50 hover:text-[#00843D] transition"
@@ -361,6 +393,21 @@ export function OfficerProcurementActivityDetailView({
                 <Edit3 className="h-3.5 w-3.5 text-slate-500" />
                 Edit
               </Link>
+            )}
+
+            {isPlanApproved && (
+              <button
+                className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                disabled={amendmentSubmitted}
+                onClick={() => {
+                  setAmendmentError(null);
+                  setAmendmentReason("");
+                  setIsAmendmentModalOpen(true);
+                }}
+                type="button"
+              >
+                {amendmentSubmitted ? "Request Submitted" : "Request Amendment"}
+              </button>
             )}
 
             {isPlanApproved && (
@@ -582,6 +629,79 @@ export function OfficerProcurementActivityDetailView({
         activity={activity}
         activities={details?.roadmap ? [activity] : []}
       />
+
+      {amendmentSubmitted && (
+        <p
+          className="fixed bottom-5 right-5 z-40 max-w-md rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900 shadow-lg"
+          role="status"
+        >
+          Activity amendment request submitted for sequential Director,
+          Endorsement Committee, and Executive Management review.
+        </p>
+      )}
+
+      {isAmendmentModalOpen && (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+          role="dialog"
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="border-b border-amber-100 bg-amber-50 px-6 py-4">
+              <h2 className="text-sm font-semibold text-amber-950">
+                Request Activity Amendment
+              </h2>
+              <p className="mt-1 text-[11px] text-amber-800">
+                The request will be reviewed by the Director, Endorsement
+                Committee, and Executive Management in sequence.
+              </p>
+            </div>
+            <div className="space-y-2 px-6 py-5">
+              <label
+                className="text-xs font-semibold text-slate-700"
+                htmlFor="activity-amendment-reason"
+              >
+                Reason for amendment
+              </label>
+              <textarea
+                autoFocus
+                className="min-h-28 w-full rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                disabled={isSubmittingAmendment}
+                id="activity-amendment-reason"
+                maxLength={2000}
+                onChange={(event) => setAmendmentReason(event.target.value)}
+                placeholder="Explain what needs to change and why"
+                value={amendmentReason}
+              />
+              {amendmentError && (
+                <p className="text-xs text-rose-700" role="alert">
+                  {amendmentError}
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-3.5">
+              <button
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                disabled={isSubmittingAmendment}
+                onClick={() => setIsAmendmentModalOpen(false)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                disabled={
+                  isSubmittingAmendment || amendmentReason.trim().length < 10
+                }
+                onClick={() => void submitActivityAmendment()}
+                type="button"
+              >
+                {isSubmittingAmendment ? "Submitting…" : "Submit Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isEditModalOpen && (
         <EditActivityModal

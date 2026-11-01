@@ -6,64 +6,65 @@ model Activity {
   plan   Plan   @relation(fields: [planId], references: [id])
 
   // Step 1 — Key Details
-  procurementCategory     String?
-  procurementMethodId       String
-  procurementMethod         LookupValue @relation("ActivityMethod", fields: [procurementMethodId], references: [id])
-  specificMethod            String?
-  marketApproach            String?
-  qualificationApproach     String?
-  domesticPreference        String?
-  reviewType                String?
-  oversightClassification   String?
-  procurementProcess        String?
-  evaluationOptions         String[]
-  highSeaShRisk             Boolean?
-  procurementDocumentType   String?
-  contractType              String?
+  procurementCategory         String?
+  procurementMethodId         String
+  procurementMethod           LookupValue @relation("ActivityMethod", fields: [procurementMethodId], references: [id])
+  specificMethod              String?
+  marketApproach              String?
+  qualificationApproach       String?
+  domesticPreference          String?
+  reviewType                  String?
+  oversightClassification     String?
+  procurementProcess          String?
+  evaluationOptions           String[]
+  highSeaShRisk               Boolean?
+  procurementDocumentType     String?
+  contractType                String?
   requiresUnAgencyContracting Boolean?
-  isImport                  Boolean     @default(false)
+  isImport                    Boolean     @default(false)
 
   // Step 2 — Related Information
-  description               String?
-  estimatedBudget           Float
-  currency                  String?
-  contractAwardDate         DateTime?
-  bidReferenceNo            String?
-  pricingBasis              String?
-  scopeNotes                String?
-  remarks                   String?
-  lotRequired               Boolean     @default(false)
+  description       String?
+  estimatedBudget   Float
+  currency          String?
+  contractAwardDate DateTime?
+  bidReferenceNo    String?
+  pricingBasis      String?
+  scopeNotes        String?
+  remarks           String?
+  lotRequired       Boolean   @default(false)
 
   // Step 3 — Additional Details
   procurementClassificationCode String?
   procurementClassificationDesc String?
-  location                  String?
-  latitude                  Float?
-  longitude                 Float?
+  location                      String?
+  latitude                      Float?
+  longitude                     Float?
 
   // Status & tracking
-  contractId                String?
-  processStatus             String?
-  status                    ActivityStatus @default(PLANNED)
-  performancePct            Float?
+  contractId     String?
+  processStatus  String?
+  status         ActivityStatus @default(PLANNED)
+  performancePct Float?
 
-  createdById               String?
-  creator                   User?          @relation("ActivityCreator", fields: [createdById], references: [id])
+  createdById String?
+  creator     User?   @relation("ActivityCreator", fields: [createdById], references: [id])
 
-  updatedById               String?
-  updatedByUser             User?          @relation("ActivityUpdater", fields: [updatedById], references: [id])
+  updatedById   String?
+  updatedByUser User?   @relation("ActivityUpdater", fields: [updatedById], references: [id])
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  stages    Stage[]
-  contracts Contract[]
-  documents Document[]
-  lots      ActivityLot[]
-  fundings  ActivityFunding[]
-  components ActivityComponent[]
-  revisions Revision[] @relation("RevisionActivity")
+  stages            Stage[]
+  contracts         Contract[]
+  documents         Document[]
+  lots              ActivityLot[]
+  fundings          ActivityFunding[]
+  components        ActivityComponent[]
+  revisions         Revision[]          @relation("RevisionActivity")
+  amendmentRequests AmendmentRequest[]
 
   @@index([planId])
   @@index([status])

@@ -13,7 +13,6 @@ import {
   type BackendPlan,
   approvePlanCancellation,
   rejectPlanCancellation,
-  approvePlanUpdate,
 } from "../../../../lib/plansApi";
 import type { AuthUser } from "../../../../lib/authTypes";
 import {
@@ -255,11 +254,9 @@ export function usePlanForReview({
   const filteredPlans = plans.filter((p) => {
     let isAwaitingReview = false;
     if (user?.role === "ENDORSING_COMMITTEE") {
-      const alreadyVoted = p.committeeDecision !== undefined;
       isAwaitingReview =
-        (p.status === "Committee Review" ||
-          (p as any).status === "WITH_COMMITTEE") &&
-        !alreadyVoted;
+        p.status === "Committee Review" ||
+        (p as any).status === "WITH_COMMITTEE";
     } else if (user?.role === "MANAGEMENT") {
       const alreadyDecided = p.managementDecision !== undefined;
       isAwaitingReview =
@@ -274,12 +271,10 @@ export function usePlanForReview({
         p.status === "Cancellation Requested" ||
         p.status === "Returned" ||
         p.status === "Returned for Revision" ||
-        p.status === "Update Requested" ||
         p.status === "Committee Rejected" ||
         (p as any).status === "SUBMITTED" ||
         (p as any).status === "CANCELLATION_REQUESTED" ||
         (p as any).status === "RETURNED_FOR_REVISION" ||
-        (p as any).status === "UPDATE_REQUESTED" ||
         (p as any).status === "REJECTED" ||
         (p as any).status === "COMMITTEE_REJECTED";
     }
@@ -579,62 +574,6 @@ export function usePlanForReview({
     showToast(
       `Plan "${plan.planName}" approved and forwarded to Endorsement Committee (Deadline: ${committeeDeadlineDate})!`,
     );
-  };
-
-  const handleApprovePlanUpdate = async (plan: ProcurementPlan) => {
-    try {
-      await approvePlanUpdate(plan.id);
-      await loadPlans();
-      showToast(`Plan reopened for officer amendments: ${plan.planName}.`);
-    } catch (error) {
-      console.error("Could not approve plan reopening:", error);
-      showToast(
-        error instanceof Error
-          ? error.message
-          : "Could not authorize reopening this plan.",
-      );
-    }
-  };
-
-  // Committee Chair Gatekeeping (Req 1)
-  const isCommitteeChair =
-    user.role === "ENDORSING_COMMITTEE" &&
-    (Boolean((user as any).isChair) ||
-      user.email?.toLowerCase().includes("chair") ||
-      user.displayName?.toLowerCase().includes("chair") ||
-      true); // default true for committee review testing so chair controls are active
-
-  const isPlanChairAuthorized = (planId: string) => {
-    if (typeof window === "undefined") return false;
-    try {
-      const authSet = new Set(
-        JSON.parse(
-          window.localStorage.getItem("pts_chair_authorized_plans") || "[]",
-        ),
-      );
-      return authSet.has(planId);
-    } catch {
-      return false;
-    }
-  };
-
-  const handleChairAuthorizePlan = async (plan: ProcurementPlan) => {
-    if (typeof window !== "undefined") {
-      const authSet = new Set(
-        JSON.parse(
-          window.localStorage.getItem("pts_chair_authorized_plans") || "[]",
-        ),
-      );
-      authSet.add(plan.id);
-      window.localStorage.setItem(
-        "pts_chair_authorized_plans",
-        JSON.stringify(Array.from(authSet)),
-      );
-    }
-    showToast(
-      `Committee Chairperson authorized deliberation for "${plan.planName}". Member voting is now open!`,
-    );
-    await loadPlans();
   };
 
   // Director Decision 2: Return to Officer for Revision
@@ -1046,16 +985,25 @@ export function usePlanForReview({
     ) {
       isFullyApproved = true;
     } else if (updatedBackendPlan?.committeeVotes) {
-      const rejectVotesCount = updatedBackendPlan.committeeVotes.filter(
-        (v: any) => v.decision === "REJECT",
+      const currentRoundVotes = updatedBackendPlan.committeeVotes.filter(
+        (vote) =>
+          updatedBackendPlan.committeeRound === undefined ||
+          vote.round === updatedBackendPlan.committeeRound,
+      );
+      const rejectVotesCount = currentRoundVotes.filter(
+        (v) => v.decision === "REJECT",
       ).length;
-      const approveVotesCount = updatedBackendPlan.committeeVotes.filter(
-        (v: any) => v.decision === "APPROVE",
+      const approveVotesCount = currentRoundVotes.filter(
+        (v) => v.decision === "APPROVE",
       ).length;
       isFullyRejected = rejectVotesCount >= 3;
       isFullyApproved = approveVotesCount >= 3;
     } else {
-      const existingVotes = (plan as any).committeeVotes || [];
+      const existingVotes = ((plan as any).committeeVotes || []).filter(
+        (vote: any) =>
+          (plan as any).committeeRound === undefined ||
+          vote.round === (plan as any).committeeRound,
+      );
       const currentRejectCount =
         existingVotes.filter((v: any) => v.decision === "REJECT").length +
         (decision === "REJECT" ? 1 : 0);
@@ -1354,7 +1302,6 @@ export function usePlanForReview({
     showSavedFeedback,
     handleActivityUpdate,
     handleApprovePlan,
-    handleApprovePlanUpdate,
     handleReturnPlan,
     handleApprovePlanCancellation,
     handleRejectPlanCancellation,
@@ -1365,9 +1312,6 @@ export function usePlanForReview({
     handleBatchManagementDecision,
     handleAddActivityComment,
     handleSavePlanEdits,
-    isCommitteeChair,
-    isPlanChairAuthorized,
-    handleChairAuthorizePlan,
     loadPlans,
     filteredPlans,
     getProjectForPlan,

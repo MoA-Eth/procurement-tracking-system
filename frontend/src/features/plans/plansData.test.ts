@@ -45,6 +45,73 @@ describe("parseRejectionDetails", () => {
 });
 
 describe("mapBackendPlanToFrontend for Director Role with flagged activities", () => {
+  it("uses only the current committee round when showing a member's vote", async () => {
+    const { mapBackendPlanToFrontend } = await import("../../lib/plansApi");
+    const backendPlan: any = {
+      id: "plan-round-test",
+      title: "Current Committee Round",
+      status: "WITH_COMMITTEE",
+      committeeRound: 2,
+      committeeVotes: [
+        {
+          id: "old-vote",
+          round: 1,
+          memberId: "committee-member-1",
+          decision: "REJECT",
+          comment: "Previous round objection",
+          createdAt: "2026-09-08T10:00:00Z",
+        },
+        {
+          id: "current-vote",
+          round: 2,
+          memberId: "committee-member-1",
+          decision: "APPROVE",
+          comment: "Approved in current round",
+          createdAt: "2026-10-08T10:00:00Z",
+        },
+      ],
+      activities: [],
+    };
+
+    const plan = mapBackendPlanToFrontend(
+      backendPlan,
+      "committee-member-1",
+    );
+
+    expect(plan.committeeDecision).toBe("Approved");
+    expect(plan.progress).toBe(20);
+    expect(plan.rejectionReason).toBe("Approved in current round");
+  });
+
+  it("does not treat a vote from a previous round as the member's current vote", async () => {
+    const { mapBackendPlanToFrontend } = await import("../../lib/plansApi");
+    const backendPlan: any = {
+      id: "plan-new-round-test",
+      title: "New Committee Round",
+      status: "WITH_COMMITTEE",
+      committeeRound: 2,
+      committeeVotes: [
+        {
+          id: "old-vote",
+          round: 1,
+          memberId: "committee-member-1",
+          decision: "APPROVE",
+          comment: "Previous round approval",
+          createdAt: "2026-09-08T10:00:00Z",
+        },
+      ],
+      activities: [],
+    };
+
+    const plan = mapBackendPlanToFrontend(
+      backendPlan,
+      "committee-member-1",
+    );
+
+    expect(plan.committeeDecision).toBeUndefined();
+    expect(plan.progress).toBe(0);
+  });
+
   it("harvests rejectedActivityRefs and SPECIFIC scope from committee votes even when viewed by Director", async () => {
     const { mapBackendPlanToFrontend } = await import("../../lib/plansApi");
 

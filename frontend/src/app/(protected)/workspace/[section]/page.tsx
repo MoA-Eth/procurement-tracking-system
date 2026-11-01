@@ -1,6 +1,7 @@
 import { ReportsView } from "@/features/reports/components/ReportsView";
 import { ExecutiveDashboard } from "@/features/executive-dashboard/ExecutiveDashboard";
 import { CommitteeProgressView } from "@/features/plans/components/CommitteeProgressView";
+import { AmendmentRequestsView } from "@/features/plans/components/AmendmentRequestsView";
 import { SystemLogsView } from "@/features/dashboards/admin/SystemLogsView";
 import { UserManagementView } from "@/features/dashboards/admin/UserManagementView";
 import { OfficerContractsView } from "@/features/contracts/components/OfficerContractsView";
@@ -106,6 +107,10 @@ export default async function WorkspaceSectionPage({
 
   if (section === "my-decisions") {
     return <MyDecisionsView user={session.user} />;
+  }
+
+  if (section === "amendment-requests") {
+    return <AmendmentRequestsView user={session.user} />;
   }
 
   if (section === "vote-progress" || section === "committee-progress") {

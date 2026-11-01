@@ -17,6 +17,7 @@ import {
 import userRoutes from './modules/users/users.routes.js';
 import projectRoutes from './modules/projects/project.routes.js';
 import planRoutes from './modules/plans/plan.routes.js';
+import amendmentRequestRoutes from './modules/plans/amendment-request.routes.js';
 import activityRoutes from './modules/activities/activity.routes.js';
 import lookupRoutes from './modules/lookups/lookup.routes.js';
 import budgetYearRoutes from './modules/lookups/budgetYear.routes.js';
@@ -115,6 +116,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/plans', planRoutes);
+app.use('/api/amendment-requests', amendmentRequestRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/lookups', lookupRoutes);
 app.use('/api/budget-years', budgetYearRoutes);

@@ -58,7 +58,6 @@ export interface PlanReviewDirectoryTableProps {
   committeeDeadlineDate: string;
   setCommitteeDeadlineDate: (date: string) => void;
   onApprovePlan: (plan: ProcurementPlan, deadline?: string) => void;
-  onApprovePlanUpdate?: (plan: ProcurementPlan) => Promise<void>;
   onReturnPlan?: (plan: ProcurementPlan, remarks?: string) => void;
   onBatchReviewPlans?: (data: {
     approvedPlanIds: string[];
@@ -92,11 +91,7 @@ export interface PlanReviewDirectoryTableProps {
 function getPlanActivitiesCount(plan: ProcurementPlan): number {
   const direct = plan.activities?.length || 0;
   const parent = plan.parentActivities?.length || 0;
-  return Math.max(
-    plan.activitiesCount || 0,
-    direct + parent,
-    direct,
-  );
+  return Math.max(plan.activitiesCount || 0, direct + parent, direct);
 }
 
 export function PlanReviewDirectoryTable({
@@ -123,7 +118,6 @@ export function PlanReviewDirectoryTable({
   committeeDeadlineDate,
   setCommitteeDeadlineDate,
   onApprovePlan,
-  onApprovePlanUpdate,
   onReturnPlan,
   onBatchReviewPlans,
   onBatchCommitteeVote,
@@ -281,12 +275,12 @@ export function PlanReviewDirectoryTable({
   }, [projectGroups, selectedProjectCode]);
 
   // Current project's plans
-  const currentPendingPlans = currentProjectGroup?.pendingPlans || [];
-  const reviewablePlans = currentPendingPlans.filter(
+  const currentPendingPlans = (currentProjectGroup?.pendingPlans || []).filter(
     (plan) =>
       plan.status !== "Update Requested" &&
       (plan as any).status !== "UPDATE_REQUESTED",
   );
+  const reviewablePlans = currentPendingPlans;
   const currentApprovedPlans = currentProjectGroup?.approvedPlans || [];
   const currentReturnedPlans = currentProjectGroup?.returnedPlans || [];
 
@@ -1026,9 +1020,6 @@ export function PlanReviewDirectoryTable({
                       ) : (
                         currentPendingPlans.map((plan) => {
                           const isSelected = selectedPlanIds.includes(plan.id);
-                          const isReopeningRequest =
-                            plan.status === "Update Requested" ||
-                            (plan as any).status === "UPDATE_REQUESTED";
                           const isReturned =
                             (plan.status || "")
                               .toLowerCase()
@@ -1050,7 +1041,6 @@ export function PlanReviewDirectoryTable({
                                     type="checkbox"
                                     aria-label={`Select plan ${plan.planName}`}
                                     checked={isSelected}
-                                    disabled={isReopeningRequest}
                                     onChange={() => handleTogglePlan(plan.id)}
                                     className="h-4 w-4 rounded border-slate-300 text-[#00843D] focus:ring-[#00843D] cursor-pointer"
                                   />
@@ -1069,11 +1059,7 @@ export function PlanReviewDirectoryTable({
                                   <span className="font-mono text-[11px] text-slate-500">
                                     {plan.reference || plan.id}
                                   </span>
-                                  {isReopeningRequest ? (
-                                    <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-medium px-2 py-0.5 rounded-md">
-                                      Amendment Request
-                                    </span>
-                                  ) : isReturned ? (
+                                  {isReturned ? (
                                     <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-medium px-2 py-0.5 rounded-md">
                                       Resubmitted (Revised)
                                     </span>
@@ -1121,48 +1107,28 @@ export function PlanReviewDirectoryTable({
                                     Review Activities
                                   </button>
 
-                                  {userRole === "DIRECTOR" &&
-                                    isReopeningRequest && (
+                                  {userRole === "DIRECTOR" && (
+                                    <>
                                       <button
                                         type="button"
-                                        onClick={() => {
-                                          if (
-                                            window.confirm(
-                                              `Authorize reopening "${plan.planName}" so the officer can amend and resubmit it?`,
-                                            )
-                                          ) {
-                                            void onApprovePlanUpdate?.(plan);
-                                          }
-                                        }}
-                                        className="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-700 transition cursor-pointer"
+                                        onClick={() =>
+                                          setPendingApprovePlan(plan)
+                                        }
+                                        className="rounded-md bg-[#00843D] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#0B6B3A] transition cursor-pointer"
                                       >
-                                        Authorize Reopening
+                                        Approve
                                       </button>
-                                    )}
-
-                                  {userRole === "DIRECTOR" &&
-                                    !isReopeningRequest && (
-                                      <>
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            setPendingApprovePlan(plan)
-                                          }
-                                          className="rounded-md bg-[#00843D] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#0B6B3A] transition cursor-pointer"
-                                        >
-                                          Approve
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            setSingleReturnModalPlan(plan)
-                                          }
-                                          className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer"
-                                        >
-                                          Return
-                                        </button>
-                                      </>
-                                    )}
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setSingleReturnModalPlan(plan)
+                                        }
+                                        className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer"
+                                      >
+                                        Return
+                                      </button>
+                                    </>
+                                  )}
 
                                   {userRole === "MANAGEMENT" && (
                                     <>
