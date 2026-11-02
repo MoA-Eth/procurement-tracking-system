@@ -2,6 +2,8 @@ import { prisma } from '../../config/database.js';
 import { Prisma } from '../../generated/prisma/index.js';
 import {
   classifyItemType,
+  executiveRegisterColumns,
+  executiveRegisterRow,
   milestoneDate,
   reportedProgress,
   type ExecutiveRecord,
@@ -162,6 +164,10 @@ export async function getExecutiveSnapshot() {
     });
   return {
     records,
+    register: {
+      columns: executiveRegisterColumns,
+      rows: records.map(executiveRegisterRow),
+    },
     systemSummary: operationalSummary(
       projects.length,
       plans,

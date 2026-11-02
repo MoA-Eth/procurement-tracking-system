@@ -57,6 +57,72 @@ export interface ExecutiveRecord {
   status: string;
 }
 
+export const executiveRegisterColumns = [
+  { key: 'no', label: 'No.' },
+  { key: 'contractRef', label: 'Contract Ref' },
+  { key: 'contractDescription', label: 'Contract Description' },
+  { key: 'project', label: 'project' },
+  { key: 'costEstimate', label: 'Cost Estimate in USD/ETB' },
+  { key: 'invitationDate', label: 'Date of Invitation [mm/dd/yr]' },
+  { key: 'bidOpeningDate', label: 'Date of bid opening [mm/dd/yr]' },
+  { key: 'contractSignedDate', label: 'Date Contract Signed [mm/dd/yr]' },
+  {
+    key: 'supplierContractorCountry',
+    label: 'Name supplier/Contractor, Country',
+  },
+  { key: 'initialContractAmount', label: 'Initial Contract Amount, USD/ETB' },
+  {
+    key: 'initialContractCompletionDate',
+    label: 'Initial Contract Completion Date',
+  },
+  { key: 'complete', label: 'Complete, Yes/No' },
+  { key: 'completionPct', label: '% of completion' },
+] as const;
+
+export function executiveRegisterDate(value: string | null): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${month}/${day}/${date.getUTCFullYear()}`;
+}
+
+function registerAmount(value: number | null, currency: string | null) {
+  if (value === null) return '';
+  const amount = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+  return currency ? `${amount} ${currency}` : amount;
+}
+
+export function executiveRegisterRow(record: ExecutiveRecord, index: number) {
+  return {
+    no: index + 1,
+    contractRef: record.reference,
+    contractDescription: record.description,
+    project: record.project,
+    costEstimate: registerAmount(record.estimate, record.estimateCurrency),
+    invitationDate: executiveRegisterDate(record.invitationDate),
+    bidOpeningDate: executiveRegisterDate(record.bidOpeningDate),
+    contractSignedDate: executiveRegisterDate(record.signedDate),
+    supplierContractorCountry: [record.supplier, record.country]
+      .filter((value): value is string => Boolean(value?.trim()))
+      .join(', '),
+    initialContractAmount: registerAmount(
+      record.initialAmount,
+      record.currency,
+    ),
+    initialContractCompletionDate: executiveRegisterDate(
+      record.initialCompletionDate,
+    ),
+    complete: record.complete === null ? '' : record.complete ? 'Yes' : 'No',
+    completionPct:
+      record.completionPct === null ? '' : `${record.completionPct}%`,
+  };
+}
+
 export function reportedProgress(value: number | null): number | null {
   return value !== null && Number.isFinite(value) && value >= 0 && value <= 100
     ? value

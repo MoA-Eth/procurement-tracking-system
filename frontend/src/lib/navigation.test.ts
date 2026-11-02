@@ -5,7 +5,14 @@ describe("role navigation permission matrix", () => {
   it.each([
     [
       "OFFICER",
-      ["Dashboard", "Projects", "Contracts", "Activity Tracker", "Reports"],
+      [
+        "Dashboard",
+        "Projects",
+        "Contracts",
+        "Amendment Requests",
+        "Activity Tracker",
+        "Reports",
+      ],
     ],
     [
       "DIRECTOR",
@@ -14,6 +21,7 @@ describe("role navigation permission matrix", () => {
         "Dashboard",
         "Projects",
         "Plan for Review",
+        "Amendment Requests",
         "Vote Progress",
         "Activity Tracker",
         "Reports",
@@ -26,12 +34,16 @@ describe("role navigation permission matrix", () => {
         "Dashboard",
         "Projects",
         "Plan for Review",
+        "Amendment Requests",
         "Vote Progress",
         "Activity Tracker",
         "Reports",
       ],
     ],
-    ["ENDORSING_COMMITTEE", ["Dashboard", "Plan for Review", "My Decisions"]],
+    [
+      "ENDORSING_COMMITTEE",
+      ["Dashboard", "Plan for Review", "Amendment Requests", "My Decisions"],
+    ],
     ["ADMIN", ["Dashboard", "User Management", "System Logs (Timestamp)"]],
   ] as const)("shows only %s menu items", (role, labels) => {
     expect(getNavigationForRole(role).map((item) => item.label)).toEqual(

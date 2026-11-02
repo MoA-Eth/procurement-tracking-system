@@ -13,6 +13,7 @@ vi.mock('./integration-api-key.service.js', () => ({
 vi.mock('../executive-dashboard/executive-dashboard.service.js', () => ({
   getExecutiveSnapshot: vi.fn(async () => ({
     records: [],
+    register: { columns: [{ key: 'no', label: 'No.' }], rows: [] },
     fetchedAt: '2026-11-01T00:00:00Z',
   })),
 }));
@@ -71,6 +72,7 @@ describe('external executive dashboard API', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(await response.json()).toEqual({
       records: [],
+      register: { columns: [{ key: 'no', label: 'No.' }], rows: [] },
       fetchedAt: '2026-11-01T00:00:00Z',
     });
     expect(authenticateIntegrationApiKey).toHaveBeenCalledWith(
