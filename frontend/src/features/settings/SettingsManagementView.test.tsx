@@ -63,22 +63,21 @@ describe("SettingsManagementView", () => {
     expect(html).toContain("Actions");
   });
 
-  it("shows external dashboard API key controls to administrators", () => {
+  it("shows the API settings submenu to administrators", () => {
     const html = renderToStaticMarkup(
       <SettingsManagementView currentUser={mockAdminUser} />,
     );
 
-    expect(html).toContain("Executive Dashboard API");
-    expect(html).toContain("Generate API key");
-    expect(html).toContain("GET /api/integrations/executive-dashboard");
-    expect(html).toContain("X-API-Key");
+    expect(html).toContain(">API</button>");
+    expect(html).not.toContain("Executive Dashboard API");
   });
 
-  it("does not show integration API key controls to directors", () => {
+  it("does not show the API settings submenu to directors", () => {
     const html = renderToStaticMarkup(
       <SettingsManagementView currentUser={mockDirectorUser} />,
     );
 
-    expect(html).not.toContain("Executive Dashboard API");
+    expect(html).not.toContain(">API</button>");
+    expect(html).toContain(">System</button>");
   });
 });

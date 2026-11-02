@@ -49,6 +49,8 @@ type TabType =
   | "PROCUREMENT_METHOD"
   | "CURRENCY";
 
+type SettingsSection = "system" | "api";
+
 const TAB_CONFIGS: {
   type: TabType;
   label: string;
@@ -147,6 +149,8 @@ function getInitialTabCounts(): Record<TabType, number> {
 export function SettingsManagementView({
   currentUser,
 }: SettingsManagementViewProps) {
+  const [activeSettingsSection, setActiveSettingsSection] =
+    useState<SettingsSection>("system");
   const [activeTab, setActiveTab] = useState<TabType>("PROJECT_CODE");
   const [lookups, setLookups] = useState<LookupItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -484,32 +488,56 @@ export function SettingsManagementView({
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
-              Settings & Lookup Configurations
+              {activeSettingsSection === "system"
+                ? "Settings & Lookup Configurations"
+                : "API Settings"}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Manage project short codes, acronyms, and global procurement
-              classifications.
+              {activeSettingsSection === "system"
+                ? "Manage project short codes, acronyms, and global procurement classifications."
+                : "Manage external integration access and API keys."}
             </p>
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            setShowAddForm((prev) => !prev);
-            setFormError(null);
-          }}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          <span>
-            {showAddForm
-              ? "Cancel"
-              : `Add ${currentTabConfig.label.slice(0, -1)}`}
-          </span>
-        </button>
       </div>
 
-      {currentUser.role === "ADMIN" && (
+      <div
+        aria-label="Settings sections"
+        className="flex items-center gap-2 border-b border-slate-200"
+        role="tablist"
+      >
+        <button
+          aria-selected={activeSettingsSection === "system"}
+          className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+            activeSettingsSection === "system"
+              ? "border-[#00843D] text-[#00843D]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+          onClick={() => setActiveSettingsSection("system")}
+          role="tab"
+          type="button"
+        >
+          System
+        </button>
+        {currentUser.role === "ADMIN" && (
+          <button
+            aria-selected={activeSettingsSection === "api"}
+            className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+              activeSettingsSection === "api"
+                ? "border-[#00843D] text-[#00843D]"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+            onClick={() => setActiveSettingsSection("api")}
+            role="tab"
+            type="button"
+          >
+            API
+          </button>
+        )}
+      </div>
+
+      {activeSettingsSection === "api" && currentUser.role === "ADMIN" && (
         <section
           aria-labelledby="external-dashboard-api-title"
           className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs sm:p-6"
@@ -625,6 +653,24 @@ export function SettingsManagementView({
         </section>
       )}
 
+      {activeSettingsSection === "system" && (
+        <>
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            setShowAddForm((prev) => !prev);
+            setFormError(null);
+          }}
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+        >
+          <Plus className="h-4 w-4" />
+          <span>
+            {showAddForm
+              ? "Cancel"
+              : `Add ${currentTabConfig.label.slice(0, -1)}`}
+          </span>
+        </button>
+      </div>
       {/* Category Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
         {TAB_CONFIGS.map((tab) => {
@@ -1043,6 +1089,8 @@ export function SettingsManagementView({
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
