@@ -8,10 +8,12 @@ import {
   getUserHandler,
   createUserHandler,
   updateUserHandler,
+  updateOwnProfileHandler,
   deleteUserHandler,
 } from './user.controller.js';
 import {
   createUserSchema,
+  updateOwnProfileSchema,
   updateUserSchema,
   listUsersQuerySchema,
   userIdParamSchema,
@@ -71,6 +73,12 @@ router.post(
   authorize('Administrator'),
   validate(createUserSchema, 'body'),
   createUserHandler,
+);
+
+router.patch(
+  '/profile',
+  validate(updateOwnProfileSchema, 'body'),
+  updateOwnProfileHandler,
 );
 
 router.patch(

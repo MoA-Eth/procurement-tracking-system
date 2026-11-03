@@ -249,15 +249,41 @@ export async function updateProfile(
   displayName: string,
 ): Promise<{ message: string; user?: AuthUser }> {
   try {
-    const res = await apiClient.patch<any>("/users/profile", {
+    const res = await apiClient.patch<{
+      message?: string;
+      data?: {
+        id: string;
+        email: string;
+        username?: string | null;
+        name: string;
+        displayName?: string;
+        role?: string;
+        authRole?: string;
+      };
+    }>("/users/profile", {
       name: displayName,
     });
     return {
       message: res.message || "Profile updated successfully",
-      user: res.data,
+      ...(res.data
+        ? {
+            user: {
+              id: res.data.id,
+              email: res.data.email,
+              username: res.data.username ?? null,
+              displayName: res.data.displayName || res.data.name,
+              role: mapPrismaRoleToUserRole(
+                res.data.authRole || res.data.role || "OFFICER",
+              ),
+            },
+          }
+        : {}),
     };
-  } catch {
-    return { message: "Profile updated successfully" };
+  } catch (err) {
+    if (err instanceof ApiClientError) {
+      throw new AuthApiError(err.message);
+    }
+    throw err;
   }
 }
 

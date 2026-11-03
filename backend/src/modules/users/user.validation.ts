@@ -62,6 +62,18 @@ export const updateUserSchema = registry.register(
     }),
 );
 
+export const updateOwnProfileSchema = registry.register(
+  'UpdateOwnProfile',
+  z.object({
+    name: z
+      .string()
+      .trim()
+      .min(2, 'Name must be at least 2 characters')
+      .max(120, 'Name must be at most 120 characters')
+      .openapi({ example: 'Abebe Kebede' }),
+  }),
+);
+
 export const listUsersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
@@ -123,6 +135,28 @@ registry.registerPath({
   responses: {
     201: { description: 'User created' },
     409: { description: 'Email already in use' },
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/users/profile',
+  summary: "Update the authenticated user's name",
+  tags: ['Users'],
+  security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: updateOwnProfileSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: { description: 'Profile updated' },
+    401: { description: 'Authentication required' },
+    422: { description: 'Invalid profile name' },
   },
 });
 

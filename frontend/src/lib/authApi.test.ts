@@ -9,6 +9,7 @@ import {
   FRONTEND_SESSION_COOKIE,
   requestPasswordReset,
   signOut,
+  updateProfile,
 } from "./authApi";
 import { authTokenManager } from "./authTokenManager";
 import { tabSessionManager } from "./tabSessionManager";
@@ -77,6 +78,49 @@ afterEach(() => {
 });
 
 describe("auth API", () => {
+  it("updates the authenticated user's profile through the profile endpoint", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          message: "Profile updated successfully.",
+          data: {
+            id: "user-1",
+            email: "officer@moa.gov.et",
+            name: "Updated Officer",
+            displayName: "Updated Officer",
+            authRole: "ProcurementOfficer",
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await updateProfile("Updated Officer");
+
+    expect(result.message).toBe("Profile updated successfully.");
+    expect(result.user?.displayName).toBe("Updated Officer");
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/users/profile"),
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({ name: "Updated Officer" }),
+      }),
+    );
+  });
+
+  it("surfaces profile update failures instead of reporting success", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({ message: "You do not have access to this resource." }),
+        { status: 403, statusText: "Forbidden" },
+      ),
+    );
+
+    await expect(updateProfile("Updated Officer")).rejects.toThrow(
+      "You do not have access to this resource.",
+    );
+  });
+
   it("normalizes the identifier and sends login directly to the backend", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(

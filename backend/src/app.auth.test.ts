@@ -25,6 +25,7 @@ const PROTECTED_ROUTES: Array<[method: string, path: string]> = [
   ['GET', '/api/contracts'],
   ['GET', '/api/suppliers'],
   ['GET', '/api/users'],
+  ['PATCH', '/api/users/profile'],
   ['GET', '/api/audit-logs'],
   ['GET', '/api/reports/officer-summary'],
   ['GET', '/api/documents'],
