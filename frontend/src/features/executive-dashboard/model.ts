@@ -5,6 +5,14 @@ export const ITEM_TYPES = [
   "UNCLASSIFIED",
 ] as const;
 export type ItemType = (typeof ITEM_TYPES)[number];
+export type ProcurementPortfolioStatus =
+  | "NOT_STARTED"
+  | "BIDDING_DOCUMENT_PREPARATION"
+  | "BID_ADVERTISED"
+  | "BID_EVALUATION"
+  | "CONTRACT_AWARDED"
+  | "CONTRACT_DELIVERY"
+  | "COMPLETED";
 export const TYPE_LABELS: Record<ItemType, string> = {
   WORKS: "Works",
   GOODS: "Goods",
@@ -16,6 +24,8 @@ export interface ExecutiveRecord {
   activityId: string | null;
   activityReference?: string;
   activityContractCount?: number;
+  activityStatus?: string;
+  portfolioStatus?: ProcurementPortfolioStatus;
   contractId: string | null;
   reference: string;
   description: string;
@@ -172,6 +182,89 @@ export function summarize(records: ExecutiveRecord[], asOf: string) {
     estimates: [...estimates.entries()].sort(),
   };
 }
+
+export function summarizeProcurementProgress(records: ExecutiveRecord[]) {
+  const activities = new Map<
+    string,
+    {
+      projectId: string | null;
+      status: string;
+      portfolioStatus?: ProcurementPortfolioStatus;
+      invitationDate: string | null;
+      bidOpeningDate: string | null;
+      contracts: ExecutiveRecord[];
+    }
+  >();
+
+  for (const row of records) {
+    if (!row.activityId) continue;
+    const activity = activities.get(row.activityId) ?? {
+      projectId: row.projectId,
+      status: row.activityStatus || "",
+      portfolioStatus: row.portfolioStatus,
+      invitationDate: row.invitationDate,
+      bidOpeningDate: row.bidOpeningDate,
+      contracts: [],
+    };
+    if (row.contractId) activity.contracts.push(row);
+    activities.set(row.activityId, activity);
+  }
+
+  const counts = {
+    notStarted: 0,
+    biddingDocumentPreparation: 0,
+    bidAdvertised: 0,
+    bidEvaluation: 0,
+    contractAwarded: 0,
+    contractDelivery: 0,
+    completed: 0,
+  };
+  for (const activity of activities.values()) {
+    const status =
+      activity.portfolioStatus ||
+      (activity.status === "COMPLETED" ||
+      (activity.contracts.length > 0 &&
+        activity.contracts.every((contract) => contract.complete === true))
+        ? "COMPLETED"
+        : activity.contracts.some((contract) => contract.status === "ACTIVE")
+          ? "CONTRACT_DELIVERY"
+          : activity.contracts.some(
+                (contract) =>
+                  contract.status === "SIGNED" || contract.signedDate !== null,
+              )
+            ? "CONTRACT_AWARDED"
+            : activity.invitationDate || activity.bidOpeningDate
+              ? "BID_ADVERTISED"
+              : ["CONTRACTED"].includes(activity.status)
+                ? "CONTRACT_AWARDED"
+                : "BIDDING_DOCUMENT_PREPARATION");
+    const countKey = {
+      NOT_STARTED: "notStarted",
+      BIDDING_DOCUMENT_PREPARATION: "biddingDocumentPreparation",
+      BID_ADVERTISED: "bidAdvertised",
+      BID_EVALUATION: "bidEvaluation",
+      CONTRACT_AWARDED: "contractAwarded",
+      CONTRACT_DELIVERY: "contractDelivery",
+      COMPLETED: "completed",
+    } as const;
+    counts[countKey[status]] += 1;
+  }
+
+  return {
+    activities: activities.size,
+    projects: new Set(
+      [...activities.values()]
+        .map((activity) => activity.projectId)
+        .filter((id): id is string => Boolean(id)),
+    ).size,
+    notYetToMarket: counts.notStarted + counts.biddingDocumentPreparation,
+    inTendering: counts.bidAdvertised + counts.bidEvaluation,
+    awardedDelivery: counts.contractAwarded + counts.contractDelivery,
+    completed: counts.completed,
+    statuses: counts,
+  };
+}
+
 export const money = (value: number, compact = false) =>
   new Intl.NumberFormat("en", {
     maximumFractionDigits: compact ? 1 : 2,

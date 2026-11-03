@@ -122,7 +122,7 @@ export function DirectorSpendCompositionChart({
 
             {/* Centered Donut Value */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-              <span className="text-2xl sm:text-3xl font-sans font-semibold tabular-nums text-slate-900 tracking-tight leading-none">
+              <span className="text-xl font-sans font-semibold tabular-nums text-slate-900 tracking-tight leading-none">
                 {spendPercentages.disbursed}%
               </span>
               <span className="text-xs text-slate-500 font-medium mt-0.5">

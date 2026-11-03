@@ -9,6 +9,7 @@ import {
   REGISTER_COLUMNS,
   displayDate,
   summarize,
+  summarizeProcurementProgress,
   type ExecutiveRecord,
 } from "./model";
 
@@ -204,6 +205,69 @@ describe("executive measurements", () => {
       overdue: 0,
       preContract: 1,
       amounts: [],
+    });
+  });
+  it("counts unique activities by procurement stage and unique projects", () => {
+    const records: ExecutiveRecord[] = [
+      {
+        ...row,
+        activityStatus: "APPROVED",
+        contractId: null,
+        complete: null,
+        invitationDate: null,
+      },
+      {
+        ...row,
+        id: "tender",
+        activityId: "activity:2",
+        activityStatus: "PLANNED",
+        contractId: null,
+        complete: null,
+        invitationDate: "2026-10-01",
+      },
+      {
+        ...row,
+        id: "contract:3",
+        activityId: "activity:3",
+        activityStatus: "CONTRACTED",
+        contractId: "3",
+        complete: false,
+      },
+      {
+        ...row,
+        id: "contract:4",
+        activityId: "activity:4",
+        activityStatus: "COMPLETED",
+        contractId: "4",
+        complete: true,
+      },
+      {
+        ...row,
+        id: "contract:5",
+        activityId: "activity:3",
+        activityStatus: "CONTRACTED",
+        contractId: "5",
+        complete: false,
+      },
+      { ...row, id: "unlinked", activityId: null, projectId: "p2" },
+    ];
+
+    expect(summarizeProcurementProgress(records)).toEqual({
+      activities: 4,
+      projects: 1,
+      notYetToMarket: 1,
+      inTendering: 1,
+      awardedDelivery: 1,
+      completed: 1,
+      statuses: {
+        notStarted: 0,
+        biddingDocumentPreparation: 1,
+        bidAdvertised: 1,
+        bidEvaluation: 0,
+        contractAwarded: 0,
+        contractDelivery: 1,
+        completed: 1,
+      },
     });
   });
   it("exports only the selected population and neutralizes spreadsheet formula text", () => {

@@ -117,7 +117,7 @@ export async function authenticate(
       loginData.expiresAt ||
       new Date(
         Date.now() +
-          (rememberMe ? 30 * 24 * 60 * 60 * 1000 : 12 * 60 * 60 * 1000),
+          (rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000),
       ).toISOString();
 
     const session: AuthSession = {

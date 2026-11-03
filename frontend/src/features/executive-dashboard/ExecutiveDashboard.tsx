@@ -15,7 +15,9 @@ import { ProcurementRegister } from "./ProcurementRegister";
 import { ExecutiveVisualizations } from "./ExecutiveVisualizations";
 import { SystemDashboardSummary } from "./SystemDashboardSummary";
 import { ContractGraphs } from "./ContractGraphs";
-import { ContractSummary } from "./ContractSummary";
+import { ExecutiveSummary } from "./ExecutiveSummary";
+import { ConsolidatedPortfolio } from "./ConsolidatedPortfolio";
+import { ProjectPortfolioDashboard } from "./ProjectPortfolioDashboard";
 import { MinisterOverview } from "./MinisterOverview";
 import { apiClient } from "@/lib/apiClient";
 import {
@@ -149,7 +151,7 @@ export function ExecutiveDashboard() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Executive contract dashboard
+            Executive dashboard
           </h1>
           <p className="mt-1.5 text-sm text-slate-500">
             Works, goods and services · Portfolio value, delivery and leadership
@@ -171,7 +173,7 @@ export function ExecutiveDashboard() {
             className="inline-flex items-center gap-2 rounded-lg bg-[#0A3C2F] px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
           >
             <ArrowDownToLine size={15} />
-            Export register
+            Export Activities
           </button>
         </div>
       </header>
@@ -204,7 +206,14 @@ export function ExecutiveDashboard() {
               </button>
             </div>
           )}
-          <ContractSummary rows={rows} asOf={asOf} />
+          <ExecutiveSummary
+            rows={rows}
+            projects={snapshot?.systemSummary?.projects}
+          />
+          <div className="min-w-0 space-y-6">
+            <ConsolidatedPortfolio records={rows} />
+            <ProjectPortfolioDashboard records={rows} />
+          </div>
         </>
       )}
       {!loading && !error && (

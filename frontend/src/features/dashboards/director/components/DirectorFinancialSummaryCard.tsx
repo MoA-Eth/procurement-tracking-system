@@ -58,7 +58,7 @@ export function DirectorFinancialSummaryCard({
             Planned Value
           </p>
           <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
+            <span className="text-2xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
               {formatMValue(financialSummary.planEstimatedValueETB)}
             </span>
             <span className="text-xs sm:text-sm font-semibold text-slate-500">
@@ -76,7 +76,7 @@ export function DirectorFinancialSummaryCard({
             Signed Contracts
           </p>
           <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
+            <span className="text-2xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
               {formatMValue(financialSummary.signedContractsCommittedETB)}
             </span>
             <span className="text-xs sm:text-sm font-semibold text-slate-500">
@@ -94,7 +94,7 @@ export function DirectorFinancialSummaryCard({
             Actual Disbursed
           </p>
           <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
+            <span className="text-2xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
               {formatMValue(financialSummary.actualDisbursedETB)}
             </span>
             <span className="text-xs sm:text-sm font-semibold text-slate-500">
@@ -112,7 +112,7 @@ export function DirectorFinancialSummaryCard({
             Remaining Balance
           </p>
           <div className="my-1.5 flex items-baseline gap-1.5">
-            <span className="text-3xl sm:text-4xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
+            <span className="text-2xl font-sans font-semibold tabular-nums text-black tracking-tight leading-none">
               {formatMValue(financialSummary.remainingUncommittedETB)}
             </span>
             <span className="text-xs sm:text-sm font-semibold text-slate-500">

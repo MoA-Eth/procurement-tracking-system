@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getClientSession } from "@/lib/authApi";
+import { getClientSession, signOut } from "@/lib/authApi";
 import { authTokenManager } from "@/lib/authTokenManager";
 import { tabSessionManager } from "@/lib/tabSessionManager";
 
@@ -14,12 +14,6 @@ export function TabSessionGuard({ children }: TabSessionGuardProps) {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (tabSessionManager.hasTabSession()) {
-      setIsAuthorized(true);
-      return;
-    }
-
-    // Check if a valid remembered session exists from cookie
     const clientSession = getClientSession();
     if (
       clientSession &&
@@ -31,7 +25,50 @@ export function TabSessionGuard({ children }: TabSessionGuardProps) {
         authTokenManager.setToken(clientSession.accessToken);
       }
       setIsAuthorized(true);
-      return;
+      const expiresAt = new Date(clientSession.expiresAt).getTime();
+      let timeoutId: number | undefined;
+      const redirectToLogin = () => {
+        if (timeoutId !== undefined) {
+          window.clearTimeout(timeoutId);
+        }
+        tabSessionManager.clearTabSession();
+        authTokenManager.clearToken();
+        void signOut();
+        setIsAuthorized(false);
+        router.replace("/");
+      };
+
+      if (!Number.isFinite(expiresAt)) {
+        redirectToLogin();
+        return;
+      }
+
+      const checkExpiration = () => {
+        if (timeoutId !== undefined) {
+          window.clearTimeout(timeoutId);
+        }
+        const remaining = expiresAt - Date.now();
+        if (remaining <= 0) {
+          redirectToLogin();
+          return;
+        }
+        timeoutId = window.setTimeout(
+          checkExpiration,
+          Math.min(remaining, 2_147_000_000),
+        );
+      };
+      const checkWhenActive = () => {
+        if (document.visibilityState === "visible") checkExpiration();
+      };
+
+      checkExpiration();
+      window.addEventListener("focus", checkWhenActive);
+      document.addEventListener("visibilitychange", checkWhenActive);
+      return () => {
+        if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+        window.removeEventListener("focus", checkWhenActive);
+        document.removeEventListener("visibilitychange", checkWhenActive);
+      };
     }
 
     setIsAuthorized(false);

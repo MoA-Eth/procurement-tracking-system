@@ -48,7 +48,7 @@ function Values({ values }: { values: [string, number][] }) {
     <div className="space-y-1">
       {values.map(([currency, value]) => (
         <div key={currency} className="flex flex-wrap items-baseline gap-2">
-          <strong className="text-2xl font-semibold">
+          <strong className="text-xl font-semibold">
             {money(value, true)}
           </strong>
           <span className="text-xs font-medium text-slate-500">{currency}</span>
@@ -136,7 +136,7 @@ export function MinisterOverview({
           <h2 className="text-sm font-medium text-slate-500">
             Contracts completed
           </h2>
-          <p className="mt-4 text-3xl font-semibold">
+          <p className="mt-4 text-2xl font-semibold">
             {summary.completed}
             <span className="ml-2 text-base font-normal text-slate-400">
               of {summary.contracts}
@@ -155,7 +155,7 @@ export function MinisterOverview({
             Overdue contracts
           </h2>
           <p
-            className={`mt-4 text-3xl font-semibold ${summary.overdue ? "text-amber-800" : ""}`}
+            className={`mt-4 text-2xl font-semibold ${summary.overdue ? "text-amber-800" : ""}`}
           >
             {summary.overdue}
           </p>
@@ -190,7 +190,7 @@ export function MinisterOverview({
                   {item.description}
                 </p>
                 <div className="mt-4 flex items-baseline gap-2">
-                  <strong className="text-3xl font-semibold">
+                  <strong className="text-2xl font-semibold">
                     {stats.activities}
                   </strong>
                   <span className="text-xs text-slate-500">activities</span>

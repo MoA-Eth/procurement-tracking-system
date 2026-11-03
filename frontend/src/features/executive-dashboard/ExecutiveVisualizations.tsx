@@ -335,7 +335,7 @@ export function ExecutiveVisualizations({
               <h2 className="text-sm text-slate-500">
                 Invitation to signature
               </h2>
-              <p className="mt-2 text-2xl font-semibold">
+              <p className="mt-2 text-xl font-semibold">
                 {cycles.invitation.value === null
                   ? "Not available"
                   : `${money(cycles.invitation.value)} days`}
@@ -349,7 +349,7 @@ export function ExecutiveVisualizations({
               <h2 className="text-sm text-slate-500">
                 Bid opening to signature
               </h2>
-              <p className="mt-2 text-2xl font-semibold">
+              <p className="mt-2 text-xl font-semibold">
                 {cycles.opening.value === null
                   ? "Not available"
                   : `${money(cycles.opening.value)} days`}

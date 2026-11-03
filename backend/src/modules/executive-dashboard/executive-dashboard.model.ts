@@ -1,4 +1,93 @@
 export type ItemType = 'WORKS' | 'GOODS' | 'SERVICES' | 'UNCLASSIFIED';
+export type ProcurementPortfolioStatus =
+  | 'NOT_STARTED'
+  | 'BIDDING_DOCUMENT_PREPARATION'
+  | 'BID_ADVERTISED'
+  | 'BID_EVALUATION'
+  | 'CONTRACT_AWARDED'
+  | 'CONTRACT_DELIVERY'
+  | 'COMPLETED';
+
+type PortfolioStage = {
+  label: string;
+  status: string;
+  isNotApplicable: boolean;
+};
+
+type PortfolioContract = {
+  status: string;
+  signatureDate: Date | null;
+  actualCompletionDate: Date | null;
+};
+
+export function procurementPortfolioStatus(
+  activityStatus: string,
+  stages: PortfolioStage[],
+  contracts: PortfolioContract[],
+): ProcurementPortfolioStatus {
+  if (
+    activityStatus === 'COMPLETED' ||
+    (contracts.length > 0 &&
+      contracts.every(
+        (contract) =>
+          contract.status === 'COMPLETED' ||
+          contract.actualCompletionDate !== null,
+      ))
+  ) {
+    return 'COMPLETED';
+  }
+  if (
+    contracts.some((contract) =>
+      ['ACTIVE', 'PARTIALLY_TERMINATED'].includes(contract.status),
+    )
+  ) {
+    return 'CONTRACT_DELIVERY';
+  }
+  if (
+    contracts.some(
+      (contract) =>
+        contract.status === 'SIGNED' || contract.signatureDate !== null,
+    )
+  ) {
+    return 'CONTRACT_AWARDED';
+  }
+
+  const activeStage =
+    stages.find(
+      (stage) => !stage.isNotApplicable && stage.status === 'IN_PROGRESS',
+    ) ??
+    stages.find(
+      (stage) =>
+        !stage.isNotApplicable &&
+        !['COMPLETED', 'NOT_APPLICABLE'].includes(stage.status),
+    );
+  const label = activeStage?.label.toLowerCase() ?? '';
+
+  if (/\b(bank|approval|endorsement)\b/.test(label)) return 'NOT_STARTED';
+  if (/\b(evaluation|evaluating)\b/.test(label)) return 'BID_EVALUATION';
+  if (/\b(advertis|invitation|issuance)\b/.test(label))
+    return 'BID_ADVERTISED';
+  if (/\b(award|contract signing|signing of contract)\b/.test(label))
+    return 'CONTRACT_AWARDED';
+  if (
+    /\b(bid|bidding|tender)\b/.test(label) &&
+    /\b(document|prepar|draft)\b/.test(label)
+  ) {
+    return 'BIDDING_DOCUMENT_PREPARATION';
+  }
+
+  if (
+    stages.length > 0 &&
+    stages.every(
+      (stage) =>
+        stage.isNotApplicable ||
+        ['COMPLETED', 'NOT_APPLICABLE'].includes(stage.status),
+    )
+  ) {
+    return 'COMPLETED';
+  }
+  return 'BIDDING_DOCUMENT_PREPARATION';
+}
 
 export function classifyItemType(value: string | null): ItemType {
   const category = (value ?? '')
@@ -32,6 +121,8 @@ export interface ExecutiveRecord {
   activityId: string | null;
   activityReference?: string;
   activityContractCount?: number;
+  activityStatus?: string;
+  portfolioStatus?: ProcurementPortfolioStatus;
   contractId: string | null;
   reference: string;
   description: string;

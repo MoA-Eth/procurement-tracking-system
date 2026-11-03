@@ -59,7 +59,7 @@ export function SystemDashboardSummary({
             className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 p-4"
           >
             <h3 className="text-xs font-medium text-slate-600">{label}</h3>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
+            <p className="mt-2 text-xl font-semibold tabular-nums">{value}</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">{note}</p>
           </div>
         ))}

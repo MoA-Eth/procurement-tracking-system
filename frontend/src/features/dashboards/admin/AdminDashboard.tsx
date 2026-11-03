@@ -357,7 +357,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                       })}
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none select-none">
-                    <span className="text-2xl font-semibold tracking-tight text-slate-900 leading-none">
+                    <span className="text-xl font-semibold tracking-tight text-slate-900 leading-none">
                       {totalAllocated}
                     </span>
                     <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-1">

@@ -179,7 +179,7 @@ export function DashboardOverview({
                           }`}
                           title={`Click to view ${item.label.toLowerCase()} accounts`}
                         >
-                          <span className="text-2xl sm:text-[26px] font-bold tracking-tight text-slate-900 leading-none">
+                          <span className="text-xl font-bold tracking-tight text-slate-900 leading-none">
                             {item.value}
                           </span>
                           <span className="text-[11px] font-medium text-slate-500 mt-1.5 flex items-center justify-center gap-1 truncate max-w-full">
@@ -194,7 +194,7 @@ export function DashboardOverview({
                   </div>
                 ) : (
                   <div className="my-2.5">
-                    <p className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-none">
+                    <p className="text-2xl font-bold tracking-tight text-slate-900 leading-none">
                       {value}
                     </p>
                   </div>

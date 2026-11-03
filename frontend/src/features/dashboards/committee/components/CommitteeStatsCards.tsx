@@ -55,7 +55,7 @@ export function CommitteeStatsCards({
                 Delayed Votes
               </h3>
             </div>
-            <p className="text-3xl font-semibold text-rose-950 mt-2 font-mono leading-none">
+            <p className="text-2xl font-semibold text-rose-950 mt-2 font-mono leading-none">
               {delayedCount}
             </p>
           </div>
@@ -85,7 +85,7 @@ export function CommitteeStatsCards({
                 Awaiting My Vote
               </h3>
             </div>
-            <p className="text-3xl font-semibold text-slate-900 mt-2 font-mono leading-none">
+            <p className="text-2xl font-semibold text-slate-900 mt-2 font-mono leading-none">
               {awaitingCount}
             </p>
           </div>
@@ -161,7 +161,7 @@ export function CommitteeStatsCards({
             />
           </svg>
           <div className="absolute flex flex-col items-center justify-center bg-white rounded-full h-[58px] w-[58px] shadow-3xs border border-slate-100/50">
-            <span className="text-lg font-semibold text-slate-900 font-mono leading-none">
+            <span className="text-base font-semibold text-slate-900 font-mono leading-none">
               {totalReviewedCount}
             </span>
             <span className="text-[8px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">

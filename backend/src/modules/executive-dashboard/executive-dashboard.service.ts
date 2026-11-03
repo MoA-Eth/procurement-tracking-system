@@ -5,6 +5,7 @@ import {
   executiveRegisterColumns,
   executiveRegisterRow,
   milestoneDate,
+  procurementPortfolioStatus,
   reportedProgress,
   type ExecutiveRecord,
 } from './executive-dashboard.model.js';
@@ -72,6 +73,7 @@ export async function getExecutiveSnapshot() {
               },
             },
             stages: {
+              orderBy: { sequence: 'asc' },
               select: {
                 stageType: { select: { label: true } },
                 actualStartDate: true,
@@ -114,6 +116,16 @@ export async function getExecutiveSnapshot() {
       activityId: activity.id,
       activityReference: activity.reference,
       activityContractCount: activity.contracts.length,
+      activityStatus: activity.status,
+      portfolioStatus: procurementPortfolioStatus(
+        activity.status,
+        stages,
+        activity.contracts.map((contract) => ({
+          status: contract.status,
+          signatureDate: contract.signatureDate,
+          actualCompletionDate: contract.actualCompletionDate,
+        })),
+      ),
       contractId: null,
       reference: activity.reference,
       description: activity.description || activity.plan.title,

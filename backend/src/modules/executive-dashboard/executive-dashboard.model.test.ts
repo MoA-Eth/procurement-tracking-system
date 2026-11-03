@@ -5,11 +5,72 @@ import {
   executiveRegisterDate,
   executiveRegisterRow,
   milestoneDate,
+  procurementPortfolioStatus,
   reportedProgress,
   type ExecutiveRecord,
 } from './executive-dashboard.model.js';
 
 describe('executive dashboard source mapping', () => {
+  it.each([
+    ['Bank Approval', 'IN_PROGRESS', 'NOT_STARTED'],
+    [
+      'Draft Bidding Documents',
+      'IN_PROGRESS',
+      'BIDDING_DOCUMENT_PREPARATION',
+    ],
+    ['Issuance of Bidding Document', 'IN_PROGRESS', 'BID_ADVERTISED'],
+    ['Bid Evaluation Report', 'IN_PROGRESS', 'BID_EVALUATION'],
+    ['Contract Signing', 'IN_PROGRESS', 'CONTRACT_AWARDED'],
+  ])('classifies roadmap stage %s', (label, status, expected) => {
+    expect(
+      procurementPortfolioStatus(
+        'IN_PROGRESS',
+        [{ label, status, isNotApplicable: false }],
+        [],
+      ),
+    ).toBe(expected);
+  });
+  it('uses completion and contract execution status before roadmap stage', () => {
+    const stage = [
+      {
+        label: 'Bid Evaluation',
+        status: 'IN_PROGRESS',
+        isNotApplicable: false,
+      },
+    ];
+    expect(
+      procurementPortfolioStatus('IN_PROGRESS', stage, [
+        {
+          status: 'ACTIVE',
+          signatureDate: new Date(),
+          actualCompletionDate: null,
+        },
+      ]),
+    ).toBe('CONTRACT_DELIVERY');
+    expect(
+      procurementPortfolioStatus('IN_PROGRESS', stage, [
+        {
+          status: 'SIGNED',
+          signatureDate: new Date(),
+          actualCompletionDate: null,
+        },
+      ]),
+    ).toBe('CONTRACT_AWARDED');
+    expect(
+      procurementPortfolioStatus('IN_PROGRESS', stage, [
+        {
+          status: 'ACTIVE',
+          signatureDate: new Date(),
+          actualCompletionDate: new Date(),
+        },
+      ]),
+    ).toBe('COMPLETED');
+  });
+  it('defaults unrecorded roadmap status to bidding-document preparation', () => {
+    expect(procurementPortfolioStatus('PLANNED', [], [])).toBe(
+      'BIDDING_DOCUMENT_PREPARATION',
+    );
+  });
   it.each([
     ['Works', 'WORKS'],
     ['Goods', 'GOODS'],
