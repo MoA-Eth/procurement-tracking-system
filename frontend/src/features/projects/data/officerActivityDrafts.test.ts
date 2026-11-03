@@ -139,6 +139,22 @@ describe("officer activity draft storage", () => {
     expect(activity.category).toBe("Works");
   });
 
+  it("maps approved backend activity status to Approved", () => {
+    const activity = mapBackendActivityToProcurementActivitySummary({
+      id: "activity-id",
+      reference: "ACT-001",
+      status: "APPROVED",
+      description: "Supply of equipment",
+      estimatedBudget: 500,
+      procurementCategory: "GOODS",
+      procurementMethod: { label: "Request for Bids" },
+      plan: { status: "APPROVED" },
+      stages: [],
+    });
+
+    expect(activity.status).toBe("Approved");
+  });
+
   it("maps activities under a submitted plan to Submitted to Director", () => {
     for (const status of ["DRAFT", "PLANNED", "IN_PROGRESS"]) {
       const activity = mapBackendActivityToProcurementActivitySummary({

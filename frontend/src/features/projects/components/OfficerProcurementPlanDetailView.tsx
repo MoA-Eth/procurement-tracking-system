@@ -654,23 +654,6 @@ export function OfficerProcurementPlanDetailView({
               Export Excel
             </button>
 
-            {/* Request Cancellation Button (visible when Finally Approved) */}
-            {isFinallyApproved && (
-              <button
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-rose-300 bg-white px-3 text-xs font-semibold text-rose-700 shadow-2xs hover:bg-rose-50 hover:border-rose-400 transition cursor-pointer"
-                onClick={() => {
-                  setCancellationError(null);
-                  setCancellationReason("");
-                  setIsCancelModalOpen(true);
-                }}
-                type="button"
-                title="Request cancellation for this finally approved plan"
-              >
-                <XCircle className="h-3.5 w-3.5 text-rose-600" />
-                <span>Request Cancellation</span>
-              </button>
-            )}
-
             {isFinallyApproved && (
               <button
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-900 shadow-2xs hover:bg-amber-100 transition cursor-pointer disabled:opacity-60"
@@ -1189,6 +1172,7 @@ export function OfficerProcurementPlanDetailView({
                 value={statusFilter}
               >
                 <option value="All">All Statuses</option>
+                <option value="Approved">Approved</option>
                 <option value="Not Started">Not Started</option>
                 <option value="In Progress">In Progress</option>
                 <option value="Completed">Completed</option>

@@ -1573,6 +1573,13 @@ export const submitManagementDecisionService = async (
       }
 
       const isApproved = decision === 'APPROVE';
+      if (isApproved) {
+        await tx.activity.updateMany({
+          where: { planId: oldPlan.id, isActive: true },
+          data: { status: ActivityStatus.APPROVED },
+        });
+      }
+
       const updatedPlan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: {

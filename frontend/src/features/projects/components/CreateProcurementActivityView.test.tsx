@@ -15,6 +15,7 @@ import {
   RelatedInformationStep,
   STANDARD_PROCUREMENT_PROCESSES,
   normalizeProcurementProcess,
+  roadmapForMethodPreservingDates,
 } from "./CreateProcurementActivityView";
 
 const plan: ProcurementPlanSummary = {
@@ -201,6 +202,29 @@ describe("CreateProcurementActivityView", () => {
     expect(roadmapFromLabel.length).toBeGreaterThan(0);
     expect(roadmapFromLabel.length).toBe(roadmapFromKey.length);
     expect(roadmapFromLabel[0]?.name).toBe(roadmapFromKey[0]?.name);
+  });
+
+  it("preserves roadmap dates by stage name or position", () => {
+    const existing = roadmapForMethod("rfb-national").map((stage, index) => ({
+      allowNotApplicable: Boolean(stage.allowNotApplicable),
+      days: "14",
+      ethiopianDate: `01-Megabit-${index + 1}`,
+      gregorianDate: `2026-03-${String(index + 1).padStart(2, "0")}`,
+      name: `Legacy ${stage.name}`,
+      notApplicable: false,
+      remarks: "Existing note",
+      status: "Not Started",
+    }));
+
+    const updated = roadmapForMethodPreservingDates(
+      "rfb-national",
+      "Goods",
+      existing,
+    );
+
+    expect(updated[0]?.gregorianDate).toBe(existing[0]?.gregorianDate);
+    expect(updated[0]?.ethiopianDate).toBe(existing[0]?.ethiopianDate);
+    expect(updated[0]?.remarks).toBe("Existing note");
   });
 
   it("renders Review Type and Procurement Document Type as optional and excludes Not Applicable from Qualification Approach", () => {

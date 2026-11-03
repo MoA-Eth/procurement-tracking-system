@@ -284,7 +284,7 @@ describe("OfficerProcurementPlanDetailView", () => {
     );
   });
 
-  it("renders 'Request Cancellation' button when plan is Finally Approved", () => {
+  it("does not render a Request Cancellation button when plan is Finally Approved", () => {
     const approvedPlan: ProcurementPlanSummary = {
       ...mockPlan,
       status: "Finally Approved",
@@ -297,7 +297,8 @@ describe("OfficerProcurementPlanDetailView", () => {
       />,
     );
 
-    expect(markup).toContain("Request Cancellation");
+    expect(markup).not.toContain("Request Cancellation");
+    expect(markup).toContain("Request Amendment");
   });
 
   it("renders pending banner when plan is Cancellation Requested", () => {

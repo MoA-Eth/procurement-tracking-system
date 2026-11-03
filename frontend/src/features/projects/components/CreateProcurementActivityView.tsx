@@ -371,17 +371,8 @@ export function CreateProcurementActivityView({
       method,
       requiresUnAgency: isUnAgency,
     }));
-    setRoadmap(
-      roadmapForMethod(method, activityCategory).map((stage) => ({
-        allowNotApplicable: Boolean(stage.allowNotApplicable),
-        days: "",
-        ethiopianDate: "",
-        gregorianDate: "",
-        name: stage.name,
-        notApplicable: false,
-        remarks: "",
-        status: "Not Started",
-      })),
+    setRoadmap((existing) =>
+      roadmapForMethodPreservingDates(method, activityCategory, existing),
     );
   }
 
@@ -1206,6 +1197,41 @@ function normalizeRoadmapStageName(
     return "Opening of Financial Proposals / Dates";
   }
   return name;
+}
+
+export function roadmapForMethodPreservingDates(
+  method: string,
+  category: string,
+  existing: readonly RoadmapStage[],
+): RoadmapStage[] {
+  const usedExisting = new Set<number>();
+  return roadmapForMethod(method, category).map((stage, index) => {
+    const matchingIndex = existing.findIndex(
+      (item, itemIndex) =>
+        !usedExisting.has(itemIndex) &&
+        item.name.trim().toLowerCase() === stage.name.trim().toLowerCase(),
+    );
+    const existingIndex =
+      matchingIndex >= 0
+        ? matchingIndex
+        : !usedExisting.has(index) && existing[index]
+          ? index
+          : -1;
+    const previous = existingIndex >= 0 ? existing[existingIndex] : undefined;
+    if (existingIndex >= 0) usedExisting.add(existingIndex);
+
+    return {
+      ...previous,
+      allowNotApplicable: Boolean(stage.allowNotApplicable),
+      days: previous?.days ?? "",
+      ethiopianDate: previous?.ethiopianDate ?? "",
+      gregorianDate: previous?.gregorianDate ?? "",
+      name: stage.name,
+      notApplicable: previous?.notApplicable ?? false,
+      remarks: previous?.remarks ?? "",
+      status: previous?.status ?? "Not Started",
+    };
+  });
 }
 
 function extractInitialRoadmap(

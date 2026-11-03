@@ -8,6 +8,7 @@ export const OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY =
   "moa-pts:officer-activity-drafts:v2";
 
 export type ProcurementActivityStatus =
+  | "Approved"
   | "Completed"
   | "Delayed"
   | "In Progress"
@@ -723,11 +724,11 @@ export function mapBackendActivityToProcurementActivitySummary(
     (ba.status === "PLANNED" && ba.plan?.status === "DRAFT")
   ) {
     status = "Draft";
-  } else if (ba.status === "COMPLETED") status = "Completed";
+  } else if (ba.status === "APPROVED") status = "Approved";
+  else if (ba.status === "COMPLETED") status = "Completed";
   else if (ba.status === "IN_PROGRESS") status = "In Progress";
   else if (ba.stages?.some((s: any) => s.status === "DELAYED"))
     status = "Delayed";
-  else if (ba.status === "APPROVED") status = "Not Started";
 
   const rawCat = (
     ba.procurementCategory ||
