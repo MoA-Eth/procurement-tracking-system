@@ -25,6 +25,8 @@ export interface ExecutiveRecord {
   activityReference?: string;
   activityContractCount?: number;
   activityStatus?: string;
+  planStatus?: string;
+  activityStage?: string | null;
   portfolioStatus?: ProcurementPortfolioStatus;
   contractId: string | null;
   reference: string;
@@ -189,6 +191,8 @@ export function summarizeProcurementProgress(records: ExecutiveRecord[]) {
     {
       projectId: string | null;
       status: string;
+      planStatus?: string;
+      activityStage?: string | null;
       portfolioStatus?: ProcurementPortfolioStatus;
       invitationDate: string | null;
       bidOpeningDate: string | null;
@@ -201,6 +205,8 @@ export function summarizeProcurementProgress(records: ExecutiveRecord[]) {
     const activity = activities.get(row.activityId) ?? {
       projectId: row.projectId,
       status: row.activityStatus || "",
+      planStatus: row.planStatus,
+      activityStage: row.activityStage,
       portfolioStatus: row.portfolioStatus,
       invitationDate: row.invitationDate,
       bidOpeningDate: row.bidOpeningDate,
@@ -219,6 +225,10 @@ export function summarizeProcurementProgress(records: ExecutiveRecord[]) {
     contractDelivery: 0,
     completed: 0,
   };
+  let notYetToMarket = 0;
+  let inTendering = 0;
+  let awardedDelivery = 0;
+  let completed = 0;
   for (const activity of activities.values()) {
     const status =
       activity.portfolioStatus ||
@@ -248,6 +258,48 @@ export function summarizeProcurementProgress(records: ExecutiveRecord[]) {
       COMPLETED: "completed",
     } as const;
     counts[countKey[status]] += 1;
+
+    if (activity.planStatus !== undefined) {
+      const normalizedPlanStatus = activity.planStatus
+        .trim()
+        .toUpperCase()
+        .replace(/[\s-]+/g, "_");
+      const isFinallyApproved = [
+        "APPROVED",
+        "FINALLY_APPROVED",
+        "MANAGEMENT_APPROVED",
+      ].includes(normalizedPlanStatus);
+      if (!isFinallyApproved) {
+        notYetToMarket += 1;
+        continue;
+      }
+
+      const normalizedStage = (activity.activityStage || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+      if (normalizedStage === "contract completion") {
+        completed += 1;
+      } else if (
+        normalizedStage === "notification of intention of award"
+      ) {
+        awardedDelivery += 1;
+      } else {
+        inTendering += 1;
+      }
+      continue;
+    }
+
+    if (status === "NOT_STARTED" || status === "BIDDING_DOCUMENT_PREPARATION") {
+      notYetToMarket += 1;
+    } else if (status === "BID_ADVERTISED" || status === "BID_EVALUATION") {
+      inTendering += 1;
+    } else if (status === "CONTRACT_AWARDED" || status === "CONTRACT_DELIVERY") {
+      awardedDelivery += 1;
+    } else if (status === "COMPLETED") {
+      completed += 1;
+    }
   }
 
   return {
@@ -257,10 +309,10 @@ export function summarizeProcurementProgress(records: ExecutiveRecord[]) {
         .map((activity) => activity.projectId)
         .filter((id): id is string => Boolean(id)),
     ).size,
-    notYetToMarket: counts.notStarted + counts.biddingDocumentPreparation,
-    inTendering: counts.bidAdvertised + counts.bidEvaluation,
-    awardedDelivery: counts.contractAwarded + counts.contractDelivery,
-    completed: counts.completed,
+    notYetToMarket,
+    inTendering,
+    awardedDelivery,
+    completed,
     statuses: counts,
   };
 }

@@ -12,6 +12,7 @@ import {
   calculateDelayDays,
   defaultStageTracking,
   effectiveTargetDate,
+  latestReachedRoadmapStage,
   type ActivityStageStatus,
   type ActivityStageTracking,
   type OfficerActivityTrackingRecord,
@@ -233,7 +234,14 @@ export function ActivityTrackingDetailView({
               <span>{item.plan.name}</span>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-              <StatusText className="text-xs" label={overallStatus} />
+              <StatusText
+                className="text-xs"
+                label={
+                  isFinallyApprovedPlan(item.plan)
+                    ? activeStageName
+                    : overallStatus
+                }
+              />
               <span className="text-xs text-slate-500">
                 Current stage:{" "}
                 <strong className="font-semibold text-slate-700">
@@ -383,7 +391,14 @@ export function ActivityTrackingDetailView({
               <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
                 Overall Status
               </p>
-              <StatusText className="mt-2 text-xs" label={overallStatus} />
+              <StatusText
+                className="mt-2 text-xs"
+                label={
+                  isFinallyApprovedPlan(item.plan)
+                    ? activeStageName
+                    : overallStatus
+                }
+              />
             </div>
             <div className="border-l-2 border-slate-200 pl-3">
               <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
@@ -886,6 +901,17 @@ function detailCurrentStageName(
 ) {
   if (roadmap.length === 0) return item.activity.currentStage || "Not started";
 
+  if (isFinallyApprovedPlan(item.plan)) {
+    const reachedStage = latestReachedRoadmapStage(
+      roadmap,
+      (stage) => trackingForStage(record, stage, item),
+      (stage) =>
+        record.stages.find((tracking) => tracking.stageName === stage.name)
+          ?.actualDate?.gregorian,
+    );
+    if (reachedStage) return reachedStage.name;
+  }
+
   const inProgress = roadmap.find(
     (stage) => trackingForStage(record, stage, item).status === "In Progress",
   );
@@ -915,6 +941,16 @@ function detailCurrentStageName(
     [...roadmap].reverse().find((stage) => !stage.notApplicable)?.name ??
     roadmap[roadmap.length - 1]?.name ??
     "Completed"
+  );
+}
+
+function isFinallyApprovedPlan(itemPlan: OfficerTrackedActivityItem["plan"]) {
+  const status = String(itemPlan.status || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+  return ["APPROVED", "FINALLY_APPROVED", "MANAGEMENT_APPROVED"].includes(
+    status,
   );
 }
 

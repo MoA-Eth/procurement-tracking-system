@@ -291,6 +291,69 @@ export function defaultStageTracking(
   };
 }
 
+export function latestReachedRoadmapStage(
+  roadmap: readonly ProcurementActivityRoadmapStage[],
+  getTracking: (
+    stage: ProcurementActivityRoadmapStage,
+  ) => ActivityStageTracking,
+  getActualDate?: (
+    stage: ProcurementActivityRoadmapStage,
+  ) => string | undefined,
+): ProcurementActivityRoadmapStage | undefined {
+  const reachedStages = roadmap
+    .map((stage, index) => {
+      const tracking = getTracking(stage);
+      const actualDate =
+        getActualDate?.(stage) ||
+        stage.actualEndDate ||
+        stage.actualDate ||
+        stage.actualStartDate;
+      const timestamp = actualDate ? Date.parse(actualDate) : Number.NaN;
+      return { index, stage, timestamp, tracking };
+    })
+    .filter(
+      ({ stage, timestamp, tracking }) =>
+        !stage.notApplicable &&
+        (tracking.status === "Completed" ||
+          tracking.status === "In Progress" ||
+          Number.isFinite(timestamp)),
+    );
+
+  const inProgressStages = reachedStages.filter(
+    ({ tracking }) => tracking.status === "In Progress",
+  );
+  if (inProgressStages.length > 0) {
+    const datedInProgressStages = inProgressStages.filter(({ timestamp }) =>
+      Number.isFinite(timestamp),
+    );
+    if (datedInProgressStages.length > 0) {
+      return datedInProgressStages.reduce((latest, candidate) =>
+        candidate.timestamp > latest.timestamp ||
+        (candidate.timestamp === latest.timestamp &&
+          candidate.index > latest.index)
+          ? candidate
+          : latest,
+      ).stage;
+    }
+    return inProgressStages.at(-1)?.stage;
+  }
+
+  const stagesWithActualDates = reachedStages.filter(({ timestamp }) =>
+    Number.isFinite(timestamp),
+  );
+  if (stagesWithActualDates.length > 0) {
+    return stagesWithActualDates.reduce((latest, candidate) =>
+      candidate.timestamp > latest.timestamp ||
+      (candidate.timestamp === latest.timestamp &&
+        candidate.index > latest.index)
+        ? candidate
+        : latest,
+    ).stage;
+  }
+
+  return reachedStages.at(-1)?.stage;
+}
+
 export function effectiveTargetDate(
   originalDate: TrackingDateValue,
   tracking: ActivityStageTracking | undefined,

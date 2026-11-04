@@ -30,5 +30,21 @@ describe('executive dashboard activity source', () => {
     expect(prismaMock.activity.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { isActive: true } }),
     );
+    expect(prismaMock.activity.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          plan: expect.objectContaining({
+            select: expect.objectContaining({ status: true }),
+          }),
+          stages: expect.objectContaining({
+            select: expect.objectContaining({
+              actualStartDate: true,
+              actualEndDate: true,
+              sequence: true,
+            }),
+          }),
+        }),
+      }),
+    );
   });
 });

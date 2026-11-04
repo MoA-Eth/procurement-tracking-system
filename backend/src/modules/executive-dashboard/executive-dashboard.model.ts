@@ -12,6 +12,8 @@ type PortfolioStage = {
   label: string;
   status: string;
   isNotApplicable: boolean;
+  actualStartDate?: Date | null;
+  actualEndDate?: Date | null;
 };
 
 type PortfolioContract = {
@@ -89,6 +91,63 @@ export function procurementPortfolioStatus(
   return 'BIDDING_DOCUMENT_PREPARATION';
 }
 
+export function latestReachedStageLabel(
+  stages: PortfolioStage[],
+): string | null {
+  const applicableStages = stages.filter((stage) => !stage.isNotApplicable);
+  const inProgressStages = applicableStages.filter(
+    (stage) => stage.status === 'IN_PROGRESS',
+  );
+  const datedInProgressStages = inProgressStages
+    .map((stage, index) => ({
+      stage,
+      index,
+      date: stage.actualEndDate ?? stage.actualStartDate ?? null,
+    }))
+    .filter(
+      (entry): entry is typeof entry & { date: Date } => entry.date !== null,
+    );
+
+  if (datedInProgressStages.length > 0) {
+    return datedInProgressStages.reduce((latest, candidate) =>
+      candidate.date > latest.date ||
+      (candidate.date.getTime() === latest.date.getTime() &&
+        candidate.index > latest.index)
+        ? candidate
+        : latest,
+    ).stage.label;
+  }
+  if (inProgressStages.length > 0) {
+    return inProgressStages.at(-1)?.label ?? null;
+  }
+
+  const datedStages = applicableStages
+    .map((stage, index) => ({
+      stage,
+      index,
+      date: stage.actualEndDate ?? stage.actualStartDate ?? null,
+    }))
+    .filter(
+      (entry): entry is typeof entry & { date: Date } => entry.date !== null,
+    );
+  if (datedStages.length > 0) {
+    return datedStages.reduce((latest, candidate) =>
+      candidate.date > latest.date ||
+      (candidate.date.getTime() === latest.date.getTime() &&
+        candidate.index > latest.index)
+        ? candidate
+        : latest,
+    ).stage.label;
+  }
+
+  return (
+    [...applicableStages]
+      .reverse()
+      .find((stage) => stage.status === 'COMPLETED')
+      ?.label ?? null
+  );
+}
+
 export function classifyItemType(value: string | null): ItemType {
   const category = (value ?? '')
     .trim()
@@ -122,6 +181,8 @@ export interface ExecutiveRecord {
   activityReference?: string;
   activityContractCount?: number;
   activityStatus?: string;
+  planStatus?: string;
+  activityStage?: string | null;
   portfolioStatus?: ProcurementPortfolioStatus;
   contractId: string | null;
   reference: string;

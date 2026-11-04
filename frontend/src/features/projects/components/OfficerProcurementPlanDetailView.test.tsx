@@ -184,6 +184,28 @@ describe("OfficerProcurementPlanDetailView", () => {
     );
   });
 
+  it("shows the reached roadmap stage as activity status on finally approved plans", () => {
+    const approvedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Finally Approved",
+    };
+    const activityAtReachedStage = {
+      ...sampleActivity,
+      currentStage: "Receiving Quotation",
+      status: "Not Started" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={approvedPlan}
+        project={mockProject}
+        savedActivities={[activityAtReachedStage]}
+      />,
+    );
+
+    expect(markup).toContain("Receiving Quotation");
+    expect(markup).not.toContain(">Not Started</span>");
+  });
+
   it("offers a delete action for draft activities", () => {
     const draftPlan: ProcurementPlanSummary = {
       ...mockPlan,

@@ -7,6 +7,7 @@ import {
   createInitialActivityTrackingRecord,
   effectiveTargetDate,
   findActivityTrackingRecord,
+  latestReachedRoadmapStage,
   OFFICER_ACTIVITY_TRACKING_STORAGE_KEY,
   parseActivityTrackingRecords,
   upsertActivityTrackingRecord,
@@ -381,13 +382,13 @@ export function collectTrackableActivities(
 
       if (projMatch) {
         const planMatch = projMatch.plans?.find(
-            (pl) =>
-              pl.reference?.toLowerCase() ===
-                record.planReference?.toLowerCase() ||
-              pl.name?.toLowerCase() === record.planReference?.toLowerCase() ||
-              (Boolean(pl.id) &&
-                pl.id?.toLowerCase() === record.planReference?.toLowerCase()),
-          );
+          (pl) =>
+            pl.reference?.toLowerCase() ===
+              record.planReference?.toLowerCase() ||
+            pl.name?.toLowerCase() === record.planReference?.toLowerCase() ||
+            (Boolean(pl.id) &&
+              pl.id?.toLowerCase() === record.planReference?.toLowerCase()),
+        );
 
         if (planMatch && isFinallyApprovedPlan(planMatch)) {
           const tracking =
@@ -478,6 +479,16 @@ export function trackerCurrentStage(
       ),
   );
   const selectedStage =
+    (isFinallyApprovedPlan(item.plan)
+      ? latestReachedRoadmapStage(
+          roadmap,
+          (stage) => resolvedStageTracking(item, stage),
+          (stage) =>
+            item.tracking.stages.find(
+              (tracking) => tracking.stageName === stage.name,
+            )?.actualDate?.gregorian,
+        )
+      : undefined) ??
     inProgressStage ??
     usableDeclaredStage ??
     firstIncompleteStage ??
@@ -538,6 +549,15 @@ export function trackerDisplayStatus(
   }
 
   return "Not Started";
+}
+
+export function trackerActivityStatusLabel(
+  item: OfficerTrackedActivityItem,
+  todayIso = new Date().toISOString().slice(0, 10),
+): string {
+  return isFinallyApprovedPlan(item.plan)
+    ? trackerCurrentStage(item, todayIso).name
+    : trackerDisplayStatus(item, todayIso);
 }
 
 export function trackerIsDueSoon(
@@ -1465,7 +1485,10 @@ function TrackerRow({
         )}
       </td>
       <td className="py-3.5 px-4 whitespace-nowrap">
-        <StatusText className="text-xs" label={status} />
+        <StatusText
+          className="text-xs"
+          label={trackerActivityStatusLabel(item, todayIso)}
+        />
       </td>
       <td className="py-3.5 pr-6 pl-4 text-center whitespace-nowrap">
         <Link

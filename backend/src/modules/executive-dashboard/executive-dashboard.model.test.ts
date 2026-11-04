@@ -4,6 +4,7 @@ import {
   executiveRegisterColumns,
   executiveRegisterDate,
   executiveRegisterRow,
+  latestReachedStageLabel,
   milestoneDate,
   procurementPortfolioStatus,
   reportedProgress,
@@ -70,6 +71,62 @@ describe('executive dashboard source mapping', () => {
     expect(procurementPortfolioStatus('PLANNED', [], [])).toBe(
       'BIDDING_DOCUMENT_PREPARATION',
     );
+  });
+  it('selects the most recently reached stage using actual dates', () => {
+    expect(
+      latestReachedStageLabel([
+        {
+          label: 'Draft Bidding Documents',
+          status: 'COMPLETED',
+          isNotApplicable: false,
+          actualEndDate: new Date('2026-08-01T00:00:00Z'),
+        },
+        {
+          label: 'Notification of Intention of Award',
+          status: 'COMPLETED',
+          isNotApplicable: false,
+          actualStartDate: new Date('2026-08-15T00:00:00Z'),
+        },
+        {
+          label: 'Contract Completion',
+          status: 'NOT_STARTED',
+          isNotApplicable: false,
+        },
+      ]),
+    ).toBe('Notification of Intention of Award');
+  });
+  it('uses the in-progress stage when no actual dates have been recorded', () => {
+    expect(
+      latestReachedStageLabel([
+        {
+          label: 'Draft Bidding Documents',
+          status: 'COMPLETED',
+          isNotApplicable: false,
+        },
+        {
+          label: 'Receiving Quotations',
+          status: 'IN_PROGRESS',
+          isNotApplicable: false,
+        },
+      ]),
+    ).toBe('Receiving Quotations');
+  });
+  it('ignores not-applicable stages when choosing the latest reached stage', () => {
+    expect(
+      latestReachedStageLabel([
+        {
+          label: 'Receiving Quotations',
+          status: 'IN_PROGRESS',
+          isNotApplicable: false,
+        },
+        {
+          label: 'Contract Completion',
+          status: 'COMPLETED',
+          isNotApplicable: true,
+          actualEndDate: new Date('2026-12-01T00:00:00Z'),
+        },
+      ]),
+    ).toBe('Receiving Quotations');
   });
   it.each([
     ['Works', 'WORKS'],

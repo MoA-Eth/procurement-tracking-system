@@ -129,14 +129,14 @@ export function ExecutiveDashboard() {
          
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
+          {/* <button
             onClick={() => void load()}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium disabled:opacity-50"
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             Refresh
-          </button>
+          </button> */}
         </div>
       </header>
 

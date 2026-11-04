@@ -10,6 +10,14 @@ import type {
   ProcurementActivitySummary,
 } from "@/features/projects/data/officerActivityDrafts";
 import {
+  defaultStageTracking,
+  findActivityTrackingRecord,
+  latestReachedRoadmapStage,
+  OFFICER_ACTIVITY_TRACKING_STORAGE_KEY,
+  parseActivityTrackingRecords,
+  type OfficerActivityTrackingRecord,
+} from "@/features/activity-tracker/data/officerActivityTracking";
+import {
   ArrowRight,
   CalendarDays,
   CheckCircle2,
@@ -278,7 +286,21 @@ export function OfficerProcurementPlanDetailView({
   const [statusFilter, setStatusFilter] = useState<"All" | ActivityStatus>(
     "All",
   );
+  const [activityTrackingRecords, setActivityTrackingRecords] = useState<
+    OfficerActivityTrackingRecord[]
+  >([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setActivityTrackingRecords(
+        parseActivityTrackingRecords(
+          window.localStorage.getItem(OFFICER_ACTIVITY_TRACKING_STORAGE_KEY),
+        ),
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const isMultiOfficerProject =
     (project.assignedOfficers?.length ?? 0) > 1 ||
@@ -1199,48 +1221,80 @@ export function OfficerProcurementPlanDetailView({
             </thead>
             <tbody className="divide-y divide-slate-200">
               {visibleActivities.length ? (
-                visibleActivities.map((activity) => (
-                  <ActivityRow
-                    key={activity.reference}
-                    activity={activity}
-                    canEdit={activePlanStatus === "Draft" || isReturned}
-                    canDeleteDraft={
-                      (activePlanStatus === "Draft" || isReturned) &&
-                      activity.status === "Draft"
-                    }
-                    isMultiOfficer={isMultiOfficerProject}
-                    onSelectDelay={handleSelectActivityDelay}
-                    onDeleteDraft={onDeleteDraftActivity}
-                    editHref={
-                      "/workspace/projects?project=" +
-                      encodeURIComponent(project.code) +
-                      "&plan=" +
-                      encodeURIComponent(currentPlan.reference) +
-                      "&activity=" +
-                      encodeURIComponent(activity.reference) +
-                      "&mode=edit-activity"
-                    }
-                    href={
-                      "/workspace/projects?project=" +
-                      encodeURIComponent(project.code) +
-                      "&plan=" +
-                      encodeURIComponent(currentPlan.reference) +
-                      "&activity=" +
-                      encodeURIComponent(activity.reference)
-                    }
-                    registerContractHref={
-                      isFinallyApproved
-                        ? "/workspace/contracts?mode=register&project=" +
+                visibleActivities.map((activity) =>
+                  (() => {
+                    const tracking = findActivityTrackingRecord(
+                      activityTrackingRecords,
+                      project.code,
+                      currentPlan.reference,
+                      activity.reference,
+                    );
+                    const reachedStage = isFinallyApproved
+                      ? latestReachedRoadmapStage(
+                          activity.details?.roadmap || [],
+                          (stage) =>
+                            tracking?.stages.find(
+                              (item) => item.stageName === stage.name,
+                            ) ?? defaultStageTracking(activity, stage),
+                          (stage) =>
+                            tracking?.stages.find(
+                              (item) => item.stageName === stage.name,
+                            )?.actualDate?.gregorian,
+                        )?.name
+                      : undefined;
+                    const stageLabel =
+                      reachedStage ||
+                      (isFinallyApproved &&
+                      activity.currentStage !== "Draft" &&
+                      activity.currentStage !== "Not Started"
+                        ? activity.currentStage
+                        : undefined);
+
+                    return (
+                      <ActivityRow
+                        key={activity.reference}
+                        activity={activity}
+                        stageLabel={stageLabel}
+                        canEdit={activePlanStatus === "Draft" || isReturned}
+                        canDeleteDraft={
+                          (activePlanStatus === "Draft" || isReturned) &&
+                          activity.status === "Draft"
+                        }
+                        isMultiOfficer={isMultiOfficerProject}
+                        onSelectDelay={handleSelectActivityDelay}
+                        onDeleteDraft={onDeleteDraftActivity}
+                        editHref={
+                          "/workspace/projects?project=" +
                           encodeURIComponent(project.code) +
                           "&plan=" +
                           encodeURIComponent(currentPlan.reference) +
                           "&activity=" +
                           encodeURIComponent(activity.reference) +
-                          "&from=projects"
-                        : undefined
-                    }
-                  />
-                ))
+                          "&mode=edit-activity"
+                        }
+                        href={
+                          "/workspace/projects?project=" +
+                          encodeURIComponent(project.code) +
+                          "&plan=" +
+                          encodeURIComponent(currentPlan.reference) +
+                          "&activity=" +
+                          encodeURIComponent(activity.reference)
+                        }
+                        registerContractHref={
+                          isFinallyApproved
+                            ? "/workspace/contracts?mode=register&project=" +
+                              encodeURIComponent(project.code) +
+                              "&plan=" +
+                              encodeURIComponent(currentPlan.reference) +
+                              "&activity=" +
+                              encodeURIComponent(activity.reference) +
+                              "&from=projects"
+                            : undefined
+                        }
+                      />
+                    );
+                  })(),
+                )
               ) : (
                 <tr>
                   <td
@@ -1653,6 +1707,7 @@ export function OfficerProcurementPlanDetailView({
 
 function ActivityRow({
   activity,
+  stageLabel,
   canEdit = true,
   canDeleteDraft = false,
   editHref,
@@ -1663,6 +1718,7 @@ function ActivityRow({
   registerContractHref,
 }: {
   activity: PlanActivity;
+  stageLabel?: string;
   canEdit?: boolean;
   canDeleteDraft?: boolean;
   editHref: string;
@@ -1751,11 +1807,14 @@ function ActivityRow({
         {formatAmount(activity.estimatedAmount)}
       </td>
       <td className="px-2 py-2.5 align-top text-[10px] text-slate-500">
-        {activity.currentStage}
+        {stageLabel || activity.currentStage}
       </td>
       <td className="px-2 py-2.5 align-top">
         <div className="flex flex-col gap-1 items-start">
-          <StatusText className="text-[9px]" label={activity.status} />
+          <StatusText
+            className="text-[9px]"
+            label={stageLabel || activity.status}
+          />
           {isDelayed && (
             <button
               type="button"

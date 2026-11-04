@@ -11,6 +11,7 @@ import type {
 import {
   collectTrackableActivities,
   OfficerActivityTrackerView,
+  trackerActivityStatusLabel,
   trackerCurrentStage,
   trackerDisplayStatus,
   trackerIsDueSoon,
@@ -153,6 +154,43 @@ describe("OfficerActivityTrackerView", () => {
       percent: 33,
       total: 3,
     });
+  });
+
+  it("shows the latest roadmap stage with an actual date as status for an approved plan", () => {
+    const item = makeTrackedItem();
+    const roadmap = item.activity.details!.roadmap.map((stage) => ({
+      ...stage,
+      actualEndDate:
+        stage.name === "Preparation of Specification"
+          ? "2026-08-03"
+          : stage.name === "Bid Opening"
+            ? "2026-08-17"
+            : undefined,
+    }));
+    const approvedItem: OfficerTrackedActivityItem = {
+      ...item,
+      activity: {
+        ...item.activity,
+        details: { ...item.activity.details!, roadmap },
+      },
+      plan: { ...item.plan, status: "Finally Approved" },
+    };
+
+    expect(trackerActivityStatusLabel(approvedItem, "2026-08-22")).toBe(
+      "Bid Opening",
+    );
+  });
+
+  it("keeps operational status labels for plans that are not finally approved", () => {
+    const item = makeTrackedItem();
+    const submittedItem: OfficerTrackedActivityItem = {
+      ...item,
+      plan: { ...item.plan, status: "Submitted to Director" },
+    };
+
+    expect(trackerActivityStatusLabel(submittedItem, "2026-08-22")).toBe(
+      "In Progress",
+    );
   });
 
   it("derives delayed and contracted activity statuses from roadmap progress", () => {

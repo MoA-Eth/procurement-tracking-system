@@ -270,6 +270,56 @@ describe("executive measurements", () => {
       },
     });
   });
+  it("uses parent plan approval and reached stage for Executive Summary buckets", () => {
+    const records: ExecutiveRecord[] = [
+      {
+        ...row,
+        id: "not-approved",
+        activityId: "activity:not-approved",
+        planStatus: "SUBMITTED",
+        activityStage: "Contract Completion",
+      },
+      {
+        ...row,
+        id: "tendering",
+        activityId: "activity:tendering",
+        planStatus: "MANAGEMENT_APPROVED",
+        activityStage: "Receiving Quotations",
+        portfolioStatus: "COMPLETED",
+      },
+      {
+        ...row,
+        id: "notice",
+        activityId: "activity:notice",
+        planStatus: "APPROVED",
+        activityStage: "Notification of Intention of Award",
+        portfolioStatus: "BID_EVALUATION",
+      },
+      {
+        ...row,
+        id: "completed",
+        activityId: "activity:completed",
+        planStatus: "FINALLY_APPROVED",
+        activityStage: "Contract Completion",
+      },
+      {
+        ...row,
+        id: "notice-contract-1",
+        activityId: "activity:notice",
+        contractId: "contract-1",
+        planStatus: "APPROVED",
+        activityStage: "Notification of Intention of Award",
+      },
+    ];
+
+    expect(summarizeProcurementProgress(records)).toMatchObject({
+      activities: 4,
+      notYetToMarket: 1,
+      inTendering: 1,
+      awardedDelivery: 1,
+      completed: 1,
+    });
+  });
   it("exports only the selected population and neutralizes spreadsheet formula text", () => {
     const selected = filterRecords(
       [row, { ...row, id: "excluded", currency: "USD" }],

@@ -44,7 +44,7 @@ export function ConsolidatedPortfolio({
           id="consolidated-portfolio-title"
           className="mt-1 text-lg font-semibold leading-tight text-slate-950"
         >
-          Consolidated Portfolio at a Glance
+          Consolidated Portfolio 
         </h2>
       </header>
 

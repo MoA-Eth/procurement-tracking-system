@@ -4,6 +4,7 @@ import {
   classifyItemType,
   executiveRegisterColumns,
   executiveRegisterRow,
+  latestReachedStageLabel,
   milestoneDate,
   procurementPortfolioStatus,
   reportedProgress,
@@ -67,6 +68,7 @@ export async function getExecutiveSnapshot() {
             plan: {
               select: {
                 title: true,
+                status: true,
                 procurementCategory: true,
                 project: { select: { id: true, name: true, country: true } },
               },
@@ -78,6 +80,7 @@ export async function getExecutiveSnapshot() {
                 actualStartDate: true,
                 actualEndDate: true,
                 status: true,
+                sequence: true,
                 plannedEndDate: true,
                 currentTargetEndDate: true,
                 isNotApplicable: true,
@@ -116,6 +119,8 @@ export async function getExecutiveSnapshot() {
       activityReference: activity.reference,
       activityContractCount: activity.contracts.length,
       activityStatus: activity.status,
+      planStatus: activity.plan.status,
+      activityStage: latestReachedStageLabel(stages),
       portfolioStatus: procurementPortfolioStatus(
         activity.status,
         stages,
