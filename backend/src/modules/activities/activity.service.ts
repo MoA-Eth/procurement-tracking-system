@@ -16,6 +16,7 @@ import {
   type CustomStageInput,
 } from './stage-generator.js';
 import { notifyOfficersOnEntityChange } from '../alerts/officer-notification.helper.js';
+import { activityStatusForPlanStatus } from '../plans/plan-activity-status.js';
 import type {
   CreateActivityInput,
   UpdateActivityInput,
@@ -261,8 +262,7 @@ export const createActivityService = async (
       reference,
       plan: { connect: { id: plan.id } },
       procurementMethod: { connect: { id: resolvedMethodId } },
-      status:
-        data.status === 'DRAFT' ? ActivityStatus.DRAFT : ActivityStatus.PLANNED,
+      status: activityStatusForPlanStatus(plan.status),
       ...(validActUserId
         ? {
             creator: { connect: { id: validActUserId } },
@@ -507,6 +507,7 @@ export const updateActivityService = async (
 
       const updateData: Prisma.ActivityUpdateInput = {
         ...(cleanScalarData as unknown as Prisma.ActivityUpdateInput),
+        status: activityStatusForPlanStatus(oldActivity.plan.status),
         ...(resolvedMethodId
           ? { procurementMethod: { connect: { id: resolvedMethodId } } }
           : {}),

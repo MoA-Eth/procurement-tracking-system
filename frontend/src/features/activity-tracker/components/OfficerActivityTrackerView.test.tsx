@@ -86,6 +86,60 @@ describe("OfficerActivityTrackerView", () => {
     expect(items.every((item) => item.plan.status === "Approved")).toBe(true);
   });
 
+  it("excludes activities whose plans are not finally approved", () => {
+    const savedRecord = {
+      activity: mockSavedActivity,
+      planReference: mockPlan.reference,
+      projectCode: mockProject.code,
+    };
+    const nonApprovedStatuses = [
+      "Draft",
+      "Submitted to Director",
+      "Committee Review",
+      "Returned",
+      "Cancelled",
+    ] as const;
+
+    for (const status of nonApprovedStatuses) {
+      const project: OfficerProject = {
+        ...mockProject,
+        plans: [{ ...mockPlan, status }],
+      };
+
+      expect(
+        collectTrackableActivities([project], [savedRecord], []),
+      ).toHaveLength(0);
+    }
+  });
+
+  it("includes activities for Finally Approved plans", () => {
+    const project: OfficerProject = {
+      ...mockProject,
+      plans: [{ ...mockPlan, status: "Finally Approved" }],
+    };
+    const savedRecord = {
+      activity: mockSavedActivity,
+      planReference: mockPlan.reference,
+      projectCode: mockProject.code,
+    };
+
+    expect(
+      collectTrackableActivities([project], [savedRecord], []),
+    ).toHaveLength(1);
+  });
+
+  it("does not attach an activity with an unknown plan reference to another plan", () => {
+    const savedRecord = {
+      activity: mockSavedActivity,
+      planReference: "missing-plan",
+      projectCode: mockProject.code,
+    };
+
+    expect(
+      collectTrackableActivities([mockProject], [savedRecord], []),
+    ).toHaveLength(0);
+  });
+
   it("uses the latest revised target and derives due-soon stage progress", () => {
     const item = makeTrackedItem();
     const snapshot = trackerCurrentStage(item, "2026-08-22");

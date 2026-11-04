@@ -7,6 +7,7 @@ import type {
   ProjectStatus,
   PlanStatus,
 } from '../../generated/prisma/index.js';
+import { activityStatusForPlanStatus } from '../plans/plan-activity-status.js';
 
 // Global Excel Theme Color (ARGB Hex Code). Default: MoA green (#00843D), matching the web app
 export const EXCEL_THEME_COLOR = 'FF00843D';
@@ -700,6 +701,7 @@ export class ExcelService {
             where: { reference },
             data: {
               planId: plan.id,
+              status: activityStatusForPlanStatus(plan.status),
               description: description ?? null,
               procurementMethodId: method.id,
               estimatedBudget,
@@ -714,6 +716,7 @@ export class ExcelService {
             data: {
               planId: plan.id,
               reference,
+              status: activityStatusForPlanStatus(plan.status),
               description: description ?? null,
               procurementMethodId: method.id,
               estimatedBudget,
@@ -2233,6 +2236,10 @@ export class ExcelService {
         });
 
         if (existing) {
+          await prisma.activity.updateMany({
+            where: { planId: existing.id },
+            data: { status: activityStatusForPlanStatus(status) },
+          });
           await prisma.plan.update({
             where: { id: existing.id },
             data,

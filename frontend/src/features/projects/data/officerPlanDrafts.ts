@@ -95,21 +95,7 @@ export function mergeSavedPlans(
 
       if (!saved) return plan;
 
-      // Backend status is authoritative if plan is not in local Draft state,
-      // or if the backend returned a new workflow status like Returned / Committee Review / Finally Approved
-      const isBackendAuthoritative =
-        plan.status === "Returned" ||
-        plan.status === "Committee Review" ||
-        plan.status === "Finally Approved" ||
-        (saved.status === "Draft" && plan.status !== "Draft");
-
-      const isUnpersistedAmendmentStatus =
-        saved.status === "Update Requested" &&
-        plan.status !== "Update Requested";
-      const resolvedStatus =
-        isUnpersistedAmendmentStatus || isBackendAuthoritative
-          ? plan.status
-          : saved.status || plan.status;
+      const resolvedStatus = plan.status;
       const resolvedReason = plan.rejectionReason || saved.rejectionReason;
 
       const baseActs = plan.planActivities || [];

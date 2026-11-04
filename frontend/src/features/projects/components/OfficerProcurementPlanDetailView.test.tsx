@@ -224,7 +224,7 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).not.toContain("Register Contract");
   });
 
-  it("renders Add Activity link pointing to create-additional-activity mode when plan is approved", () => {
+  it("hides Add Activity when the plan is approved", () => {
     const approvedPlan: ProcurementPlanSummary = {
       ...mockPlan,
       status: "Approved",
@@ -237,11 +237,8 @@ describe("OfficerProcurementPlanDetailView", () => {
       />,
     );
 
-    // Verify Add Activity link is rendered with non-modal create-additional-activity route
-    expect(markup).toContain("Add Activity");
-    expect(markup).toContain(
-      "/workspace/projects?project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;mode=create-additional-activity",
-    );
+    expect(markup).not.toContain("mode=create-activity");
+    expect(markup).not.toContain("mode=create-additional-activity");
   });
 
   it("renders Add Activity link pointing to create-activity mode when plan is draft", () => {
@@ -264,7 +261,7 @@ describe("OfficerProcurementPlanDetailView", () => {
     );
   });
 
-  it("renders Add Activity link pointing to create-additional-activity mode with justification when plan is under Committee Review", () => {
+  it("hides Add Activity when the plan is under Committee Review", () => {
     const committeePlan: ProcurementPlanSummary = {
       ...mockPlan,
       status: "Committee Review",
@@ -277,11 +274,8 @@ describe("OfficerProcurementPlanDetailView", () => {
       />,
     );
 
-    // Once a plan is submitted (e.g. in Committee Review), adding an activity creates an additional plan requiring justification
-    expect(markup).toContain("Add Activity");
-    expect(markup).toContain(
-      "/workspace/projects?project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;mode=create-additional-activity",
-    );
+    expect(markup).not.toContain("mode=create-activity");
+    expect(markup).not.toContain("mode=create-additional-activity");
   });
 
   it("does not render a Request Cancellation button when plan is Finally Approved", () => {

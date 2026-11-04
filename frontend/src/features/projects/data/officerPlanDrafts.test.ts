@@ -137,22 +137,117 @@ describe("officer plan draft persistence", () => {
     expect(record.plan).not.toHaveProperty("categories");
   });
 
-  it("merges status updates on existing plans when submitted to director", () => {
+  it("uses the backend plan status instead of a stale locally saved status", () => {
     const project = mockProject;
-    const initialPlan = project.plans[0];
-    const submittedPlan = {
-      ...initialPlan,
+    const backendPlan = {
+      ...project.plans[0],
+      id: "00000000-0000-4000-8000-000000000001",
+      status: "Draft" as const,
+    };
+    const staleSavedPlan = {
+      ...backendPlan,
       status: "Submitted to Director" as const,
     };
 
-    const projects = mergeSavedPlans(mockProjects, [
-      { plan: submittedPlan, projectCode: project.code },
-    ]);
+    const projects = mergeSavedPlans(
+      [{ ...project, plans: [backendPlan] }],
+      [
+        {
+          plan: staleSavedPlan,
+          projectCode: project.code,
+        },
+      ],
+    );
 
     const updated = projects[0].plans.find(
-      (p) => p.reference === initialPlan.reference,
+      (p) => p.reference === backendPlan.reference,
+    );
+    expect(updated?.status).toBe("Draft");
+  });
+
+  it("uses the backend plan status for a persisted amendment status", () => {
+    const backendPlan = {
+      ...mockProject.plans[0],
+      status: "Approved" as const,
+    };
+    const staleSavedPlan = {
+      ...backendPlan,
+      status: "Update Requested" as const,
+    };
+
+    const projects = mergeSavedPlans(
+      [{ ...mockProject, plans: [backendPlan] }],
+      [{ plan: staleSavedPlan, projectCode: mockProject.code }],
+    );
+
+    const updated = projects[0].plans.find(
+      (plan) => plan.reference === backendPlan.reference,
+    );
+    expect(updated?.status).toBe("Approved");
+  });
+
+  it("preserves the backend status when local status is out of date", () => {
+    const backendPlan = {
+      ...mockProject.plans[0],
+      status: "Submitted to Director" as const,
+    };
+    const staleSavedPlan = {
+      ...backendPlan,
+      status: "Draft" as const,
+    };
+
+    const projects = mergeSavedPlans(
+      [{ ...mockProject, plans: [backendPlan] }],
+      [{ plan: staleSavedPlan, projectCode: mockProject.code }],
+    );
+
+    const updated = projects[0].plans.find(
+      (plan) => plan.reference === backendPlan.reference,
     );
     expect(updated?.status).toBe("Submitted to Director");
+  });
+
+  it("merges local plan details without replacing the backend status", () => {
+    const backendPlan = {
+      ...mockProject.plans[0],
+      status: "Submitted to Director" as const,
+    };
+    const savedPlan = {
+      ...backendPlan,
+      description: "Locally saved plan detail",
+      status: "Draft" as const,
+    };
+
+    const projects = mergeSavedPlans(
+      [{ ...mockProject, plans: [backendPlan] }],
+      [{ plan: savedPlan, projectCode: mockProject.code }],
+    );
+
+    const updated = projects[0].plans.find(
+      (plan) => plan.reference === backendPlan.reference,
+    );
+    expect(updated?.description).toBe("Locally saved plan detail");
+    expect(updated?.status).toBe("Submitted to Director");
+  });
+
+  it("does not add an extra plan when merging a saved record with its backend plan", () => {
+    const backendPlan = {
+      ...mockProject.plans[0],
+      id: "00000000-0000-4000-8000-000000000002",
+      status: "Draft" as const,
+    };
+    const savedPlan = {
+      ...backendPlan,
+      status: "Submitted to Director" as const,
+    };
+
+    const projects = mergeSavedPlans(
+      [{ ...mockProject, plans: [backendPlan] }],
+      [{ plan: savedPlan, projectCode: mockProject.code }],
+    );
+
+    expect(projects[0].plans).toHaveLength(1);
+    expect(projects[0].plans[0].status).toBe("Draft");
   });
 
   it("marks every merged activity as submitted when its plan is submitted", () => {
@@ -172,8 +267,16 @@ describe("officer plan draft persistence", () => {
       ],
     };
 
+    const submittedProject = {
+      ...mockProject,
+      plans: mockProject.plans.map((plan) =>
+        plan.reference === backendPlan.reference
+          ? { ...plan, status: "Submitted to Director" as const }
+          : plan,
+      ),
+    };
     const projects = mergeSavedPlans(
-      [mockProject],
+      [submittedProject],
       [{ plan: backendPlan, projectCode: mockProject.code }],
     );
 

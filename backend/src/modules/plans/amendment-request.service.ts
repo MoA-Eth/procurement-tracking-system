@@ -11,6 +11,7 @@ import { prisma } from '../../config/database.js';
 import { createNotification } from '../alerts/alerts.service.js';
 import { ApiError } from '../../utils/errors.js';
 import { getAmendmentCommitteeNextStatus } from './amendment-request-workflow.js';
+import { syncPlanActivityStatuses } from './plan-activity-status.js';
 
 const pendingStatuses = [
   AmendmentRequestStatus.PENDING_DIRECTOR,
@@ -322,6 +323,11 @@ export const decideAmendmentRequest = async (
 
     if (!isTerminal && nextStatus === AmendmentRequestStatus.APPROVED) {
       if (request.entityType === AmendmentEntityType.PLAN && request.plan) {
+        await syncPlanActivityStatuses(
+          tx,
+          request.plan.id,
+          PlanStatus.DRAFT,
+        );
         await tx.plan.update({
           where: { id: request.plan.id },
           data: {

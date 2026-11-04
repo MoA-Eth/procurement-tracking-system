@@ -295,6 +295,8 @@ export function collectTrackableActivities(
 
   for (const project of projects) {
     for (const plan of project.plans) {
+      if (!isFinallyApprovedPlan(plan)) continue;
+
       const planDirectActivities = plan.planActivities || [];
 
       const savedActivities = savedActivityRecords
@@ -378,17 +380,16 @@ export function collectTrackableActivities(
         ) || projects[0];
 
       if (projMatch) {
-        const planMatch =
-          projMatch.plans?.find(
+        const planMatch = projMatch.plans?.find(
             (pl) =>
               pl.reference?.toLowerCase() ===
                 record.planReference?.toLowerCase() ||
               pl.name?.toLowerCase() === record.planReference?.toLowerCase() ||
               (Boolean(pl.id) &&
                 pl.id?.toLowerCase() === record.planReference?.toLowerCase()),
-          ) || projMatch.plans?.[0];
+          );
 
-        if (planMatch) {
+        if (planMatch && isFinallyApprovedPlan(planMatch)) {
           const tracking =
             findActivityTrackingRecord(
               trackingRecords,
@@ -416,6 +417,16 @@ export function collectTrackableActivities(
   }
 
   return Array.from(itemsByIdentity.values());
+}
+
+function isFinallyApprovedPlan(plan: ProcurementPlanSummary): boolean {
+  const status = String(plan.status || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+  return ["APPROVED", "FINALLY_APPROVED", "MANAGEMENT_APPROVED"].includes(
+    status,
+  );
 }
 
 interface TrackerStageSnapshot {

@@ -109,12 +109,8 @@ export function OfficerProcurementPlanDetailView({
     activePlanStatus === "Returned for Revision" ||
     (activePlanStatus as string) === "RETURNED_FOR_REVISION";
 
-  const isDraftOrReturned =
-    activePlanStatus === "Draft" ||
-    (activePlanStatus as string) === "DRAFT" ||
-    currentPlan.status === "Draft" ||
-    (currentPlan.status as string) === "DRAFT" ||
-    isReturned;
+  const isDraft =
+    activePlanStatus === "Draft" || (activePlanStatus as string) === "DRAFT";
 
   const isFinallyApproved =
     activePlanStatus === "Finally Approved" ||
@@ -682,42 +678,22 @@ export function OfficerProcurementPlanDetailView({
               </button>
             )}
 
-            {/* Add Activity Button (Always Visible unless Cancelled: normal activity for draft/returned, additional plan & activity with justification once submitted) */}
-            {!isCancelled &&
-              (isDraftOrReturned ? (
-                <Link
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] shadow-xs transition cursor-pointer"
-                  href={
-                    "/workspace/projects?project=" +
-                    encodeURIComponent(project.code) +
-                    "&plan=" +
-                    encodeURIComponent(currentPlan.reference) +
-                    "&mode=create-activity"
-                  }
-                  title="Add procurement activity to this draft plan"
-                >
-                  <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-                  <span>Add Activity</span>
-                </Link>
-              ) : (
-                <Link
-                  href={
-                    "/workspace/projects?project=" +
-                    encodeURIComponent(project.code) +
-                    "&plan=" +
-                    encodeURIComponent(currentPlan.reference) +
-                    "&mode=create-additional-activity"
-                  }
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] shadow-xs transition cursor-pointer"
-                  title="Create an additional procurement plan & activity with mandatory justification"
-                >
-                  <Plus
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 text-emerald-200"
-                  />
-                  <span>Add Activity</span>
-                </Link>
-              ))}
+            {isDraft && (
+              <Link
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] shadow-xs transition cursor-pointer"
+                href={
+                  "/workspace/projects?project=" +
+                  encodeURIComponent(project.code) +
+                  "&plan=" +
+                  encodeURIComponent(currentPlan.reference) +
+                  "&mode=create-activity"
+                }
+                title="Add procurement activity to this draft plan"
+              >
+                <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+                <span>Add Activity</span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -842,19 +818,21 @@ export function OfficerProcurementPlanDetailView({
                 <Edit3 className="h-3.5 w-3.5 text-slate-500" />
                 Edit Plan Information
               </Link>
-              <Link
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
-                href={
-                  "/workspace/projects?project=" +
-                  encodeURIComponent(project.code) +
-                  "&plan=" +
-                  encodeURIComponent(currentPlan.reference) +
-                  "&mode=create-activity"
-                }
-              >
-                <Plus className="h-3.5 w-3.5 text-[#00843D]" />
-                Add Activity
-              </Link>
+              {isDraft && (
+                <Link
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
+                  href={
+                    "/workspace/projects?project=" +
+                    encodeURIComponent(project.code) +
+                    "&plan=" +
+                    encodeURIComponent(currentPlan.reference) +
+                    "&mode=create-activity"
+                  }
+                >
+                  <Plus className="h-3.5 w-3.5 text-[#00843D]" />
+                  Add Activity
+                </Link>
+              )}
               <button
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
                 onClick={() => setIsVersionHistoryOpen(true)}
