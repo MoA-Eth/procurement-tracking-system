@@ -55,7 +55,6 @@ export async function getExecutiveSnapshot() {
         prisma.activity.findMany({
           where: {
             isActive: true,
-            plan: { isActive: true, project: { isActive: true } },
           },
           select: {
             id: true,

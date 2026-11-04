@@ -75,4 +75,25 @@ describe("executive summary", () => {
       "Of 4 activities, 1 activity has not yet been advertised.",
     );
   });
+
+  it("uses the database activity total for the headline and portfolio shares", () => {
+    const records = [
+      { ...base, portfolioStatus: "NOT_STARTED" as const },
+      {
+        ...base,
+        id: "activity:2",
+        activityId: "activity:2",
+        activityStatus: "PLANNED",
+        portfolioStatus: "BID_ADVERTISED" as const,
+        invitationDate: "2026-10-01",
+      },
+    ];
+    const html = renderToStaticMarkup(
+      <ExecutiveSummary rows={records} totalActivities={9} />,
+    );
+
+    expect(html).toContain("9 Total activities");
+    expect(html).toContain("Of 9 activities,");
+    expect(html.match(/11\.1% of portfolio/g)).toHaveLength(2);
+  });
 });

@@ -33,12 +33,15 @@ const cards = [
 
 export function ExecutiveSummary({
   rows,
+  totalActivities: databaseActivityCount,
   projects,
 }: {
   rows: ExecutiveRecord[];
+  totalActivities?: number;
   projects?: number;
 }) {
   const summary = summarizeProcurementProgress(rows);
+  const totalActivities = databaseActivityCount ?? summary.activities;
   const projectCount = projects ?? summary.projects;
   const largestCategory = cards.reduce((largest, card) =>
     summary[card.key] > summary[largest.key] ? card : largest,
@@ -52,8 +55,8 @@ export function ExecutiveSummary({
     completed: `${subject} ${largestCount === 1 ? "has" : "have"} been completed`,
   }[largestCategory.key];
   const share = (count: number) =>
-    summary.activities
-      ? `${((count / summary.activities) * 100).toFixed(1)}%`
+    totalActivities
+      ? `${((count / totalActivities) * 100).toFixed(1)}%`
       : "0.0%";
 
   return (
@@ -64,14 +67,14 @@ export function ExecutiveSummary({
       <header className="border-b-[3px] border-[#31633e] pb-2">
         <p
           id="executive-summary-title"
-          className="text-sm font-bold uppercase tracking-[0.2em] text-[#39804d]"
+          className="mt-1 text-lg font-semibold leading-tight text-slate-950"
         >
           Executive summary
         </p>
-        <p className="mt-1 text-lg font-semibold leading-tight text-slate-950">
+        <p className="mt-1.5 text-sm text-slate-500">
           Procurement Progress:{" "}
           <span className="font-medium text-[#39804d]">
-            {summary.activities} Total activities
+            {totalActivities} Total activities
           </span>
           <span className="mx-3 text-[#39804d]" aria-hidden="true">
             |
@@ -92,7 +95,7 @@ export function ExecutiveSummary({
               style={{ borderTopColor: card.color }}
             >
               <p
-                className="font-serif text-2xl font-semibold leading-none"
+                className="font-serif text-xl  leading-none"
                 style={{ color: card.color }}
               >
                 {count}
@@ -112,7 +115,7 @@ export function ExecutiveSummary({
       </div>
 
       <p className="text-sm leading-6 text-slate-900">
-        Of {summary.activities} activities, {insight}. 
+        Of {totalActivities} activities, {insight}.
       </p>
     </section>
   );
