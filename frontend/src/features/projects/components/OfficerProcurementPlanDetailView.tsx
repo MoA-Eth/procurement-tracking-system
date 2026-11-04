@@ -67,6 +67,7 @@ export function OfficerProcurementPlanDetailView({
   onUpdatePlan,
   onUpdateActivity,
   onDeleteDraftActivity,
+  onDeleteDraftPlan,
   onBulkImportActivities,
   plan,
   project,
@@ -82,6 +83,7 @@ export function OfficerProcurementPlanDetailView({
   onDeleteDraftActivity?: (
     activity: ProcurementActivitySummary,
   ) => Promise<void>;
+  onDeleteDraftPlan?: () => Promise<void>;
   onBulkImportActivities?: (
     activities: ProcurementActivitySummary[],
   ) => Promise<void> | void;
@@ -158,6 +160,9 @@ export function OfficerProcurementPlanDetailView({
   const [isRequestingPlanUpdate, setIsRequestingPlanUpdate] = useState(false);
   const [planUpdateError, setPlanUpdateError] = useState<string | null>(null);
   const [planUpdateSuccess, setPlanUpdateSuccess] = useState(false);
+  const [isDeletingPlan, setIsDeletingPlan] = useState(false);
+  const [planDeleteError, setPlanDeleteError] = useState<string | null>(null);
+  const [isDeletePlanDialogOpen, setIsDeletePlanDialogOpen] = useState(false);
   const [isPlanAmendmentModalOpen, setIsPlanAmendmentModalOpen] =
     useState(false);
   const [planAmendmentReason, setPlanAmendmentReason] = useState("");
@@ -184,6 +189,22 @@ export function OfficerProcurementPlanDetailView({
       );
     } finally {
       setIsRequestingPlanUpdate(false);
+    }
+  };
+
+  const handleDeleteDraftPlan = async () => {
+    if (!onDeleteDraftPlan) return;
+    setIsDeletingPlan(true);
+    setPlanDeleteError(null);
+    try {
+      await onDeleteDraftPlan();
+      setIsDeletePlanDialogOpen(false);
+    } catch (error) {
+      setPlanDeleteError(
+        error instanceof Error ? error.message : "Could not delete the plan.",
+      );
+    } finally {
+      setIsDeletingPlan(false);
     }
   };
 
@@ -363,6 +384,40 @@ export function OfficerProcurementPlanDetailView({
   const totalActivitiesCount =
     activities.length > 0 ? activities.length : (currentPlan.activities ?? 0);
   const isPlanEmpty = totalActivitiesCount === 0;
+  const canRequestPlanAmendment =
+    isFinallyApproved &&
+    activities.length > 0 &&
+    activities.every((activity) => {
+      const tracking = findActivityTrackingRecord(
+        activityTrackingRecords,
+        project.code,
+        currentPlan.reference,
+        activity.reference,
+      );
+      const reachedStage = latestReachedRoadmapStage(
+        activity.details?.roadmap || [],
+        (stage) =>
+          tracking?.stages.find((item) => item.stageName === stage.name) ??
+          defaultStageTracking(activity, stage),
+        (stage) =>
+          tracking?.stages.find((item) => item.stageName === stage.name)
+            ?.actualDate?.gregorian,
+      )?.name;
+      const stageName =
+        reachedStage ||
+        (activity.currentStage !== "Draft" &&
+        activity.currentStage !== "Not Started"
+          ? activity.currentStage
+          : "");
+      const normalizedStage = stageName
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      return (
+        normalizedStage === "draft request for quotations" ||
+        normalizedStage === "draft request for quotation"
+      );
+    });
 
   useEffect(() => {
     if (!isPlanEmpty && emptyPlanNotice) {
@@ -672,7 +727,7 @@ export function OfficerProcurementPlanDetailView({
               Export Excel
             </button>
 
-            {isFinallyApproved && (
+            {canRequestPlanAmendment && (
               <button
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-900 shadow-2xs hover:bg-amber-100 transition cursor-pointer disabled:opacity-60"
                 disabled={isRequestingPlanUpdate || planUpdateSuccess}
@@ -701,20 +756,36 @@ export function OfficerProcurementPlanDetailView({
             )}
 
             {isDraft && (
-              <Link
-                className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] shadow-xs transition cursor-pointer"
-                href={
-                  "/workspace/projects?project=" +
-                  encodeURIComponent(project.code) +
-                  "&plan=" +
-                  encodeURIComponent(currentPlan.reference) +
-                  "&mode=create-activity"
-                }
-                title="Add procurement activity to this draft plan"
-              >
-                <Plus aria-hidden="true" className="h-3.5 w-3.5" />
-                <span>Add Activity</span>
-              </Link>
+              <>
+                {onDeleteDraftPlan && (
+                  <button
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-rose-300 bg-white px-3 text-xs font-semibold text-rose-700 shadow-2xs hover:bg-rose-50 transition cursor-pointer disabled:opacity-60"
+                    disabled={isDeletingPlan}
+                    onClick={() => {
+                      setPlanDeleteError(null);
+                      setIsDeletePlanDialogOpen(true);
+                    }}
+                    type="button"
+                  >
+                    <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                    {isDeletingPlan ? "Deleting..." : "Delete Plan"}
+                  </button>
+                )}
+                <Link
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] shadow-xs transition cursor-pointer"
+                  href={
+                    "/workspace/projects?project=" +
+                    encodeURIComponent(project.code) +
+                    "&plan=" +
+                    encodeURIComponent(currentPlan.reference) +
+                    "&mode=create-activity"
+                  }
+                  title="Add procurement activity to this draft plan"
+                >
+                  <Plus aria-hidden="true" className="h-3.5 w-3.5" />
+                  <span>Add Activity</span>
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -746,7 +817,6 @@ export function OfficerProcurementPlanDetailView({
           {planUpdateError}
         </div>
       )}
-
       {planUpdateSuccess && (
         <div
           className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-xs text-emerald-900"
@@ -1696,6 +1766,69 @@ export function OfficerProcurementPlanDetailView({
                     <span>Submit Cancellation Request</span>
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isDeletePlanDialogOpen && (
+        <div
+          aria-labelledby="delete-plan-dialog-title"
+          aria-modal="true"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-xs"
+          role="dialog"
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start gap-3 border-b border-slate-100 px-5 py-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700">
+                <AlertTriangle aria-hidden="true" className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h2
+                  className="text-lg font-semibold text-slate-900"
+                  id="delete-plan-dialog-title"
+                >
+                  Delete draft plan?
+                </h2>
+                <p className="mt-1 break-words text-sm leading-6 text-slate-600">
+                  Delete{" "}
+                  <span className="font-semibold text-slate-800">
+                    {currentPlan.name}
+                  </span>{" "}
+                  and all {activities.length}{" "}
+                  {activities.length === 1 ? "activity" : "activities"} under
+                  it? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            {planDeleteError && (
+              <p
+                className="mx-5 mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+                role="alert"
+              >
+                {planDeleteError}
+              </p>
+            )}
+            <div className="flex justify-end gap-2 px-5 py-4">
+              <button
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                disabled={isDeletingPlan}
+                onClick={() => {
+                  setIsDeletePlanDialogOpen(false);
+                  setPlanDeleteError(null);
+                }}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isDeletingPlan}
+                onClick={() => void handleDeleteDraftPlan()}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                {isDeletingPlan ? "Deleting..." : "Delete Plan"}
               </button>
             </div>
           </div>

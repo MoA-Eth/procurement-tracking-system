@@ -232,6 +232,53 @@ export const getPlanByIdService = async (id: string) => {
   };
 };
 
+export const deleteDraftPlanService = async (id: string, userId: string) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const plan = await tx.plan.findFirst({
+      where: { OR: [{ id }, { title: id }], isActive: true },
+    });
+    if (!plan) throw ApiError.notFound('Plan not found');
+    if (plan.status !== PlanStatus.DRAFT) {
+      throw ApiError.conflict('Only draft plans can be deleted.');
+    }
+
+    const user = await tx.user.findUnique({ where: { id: userId } });
+    if (!user) throw ApiError.unauthorized('Authenticated user not found.');
+    const isOfficer =
+      user.authRole === UserRole.OFFICER ||
+      (user as { role?: string }).role === 'ProcurementOfficer';
+    if (isOfficer) {
+      const assignment = await tx.userProject.findUnique({
+        where: {
+          userId_projectId: { userId, projectId: plan.projectId },
+        },
+      });
+      if (!assignment) {
+        throw ApiError.forbidden('You are not assigned to this project.');
+      }
+    }
+
+    await tx.activity.updateMany({
+      where: { planId: plan.id, isActive: true },
+      data: { isActive: false },
+    });
+    const deletedPlan = await tx.plan.update({
+      where: { id: plan.id },
+      data: { isActive: false },
+    });
+    await logRevision(
+      tx,
+      RevisionEntityType.PLAN,
+      RevisionChangeType.SOFT_DELETE,
+      plan.id,
+      userId,
+      plan,
+      deletedPlan,
+    );
+    return deletedPlan;
+  });
+};
+
 export const createPlanService = async (
   data: Prisma.PlanUncheckedCreateInput,
   userId: string,
@@ -1180,7 +1227,11 @@ export const submitCommitteeVoteService = async (
           console.warn('logRevision vote reject warning:', auditErr);
         }
       } else {
-        await syncPlanActivityStatuses(tx, oldPlan.id, PlanStatus.WITH_COMMITTEE);
+        await syncPlanActivityStatuses(
+          tx,
+          oldPlan.id,
+          PlanStatus.WITH_COMMITTEE,
+        );
         plan = await tx.plan.update({
           where: { id: oldPlan.id },
           data: {
@@ -1413,12 +1464,12 @@ export const requestPlanUpdateService = async (id: string, userId: string) => {
         }
       }
 
-        await syncPlanActivityStatuses(
-          tx,
-          oldPlan.id,
-          PlanStatus.UPDATE_REQUESTED,
-        );
-        const plan = await tx.plan.update({
+      await syncPlanActivityStatuses(
+        tx,
+        oldPlan.id,
+        PlanStatus.UPDATE_REQUESTED,
+      );
+      const plan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: { status: PlanStatus.UPDATE_REQUESTED },
         include: {

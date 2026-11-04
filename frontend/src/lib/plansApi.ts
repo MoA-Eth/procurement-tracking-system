@@ -298,15 +298,9 @@ export async function updatePlan(
   return res.data || res;
 }
 
-export async function deletePlan(id: string): Promise<boolean> {
-  try {
-    invalidatePlansCache();
-    await apiClient.delete(`/plans/${encodeURIComponent(id)}`);
-    return true;
-  } catch (err) {
-    console.warn(`deletePlan notice for ${id}:`, err);
-    return false;
-  }
+export async function deletePlan(id: string): Promise<void> {
+  await apiClient.delete(`/plans/${encodeURIComponent(id)}`);
+  invalidatePlansCache();
 }
 
 /** Officer submits draft plan to Director */
@@ -661,9 +655,10 @@ export function mapBackendPlanToFrontend(
               const isNA = Boolean(st.isNotApplicable || st.notApplicable);
               return {
                 id: st.id || `stage-${idx + 1}`,
-                stageName:
-                  st.stageType?.label || st.name || `Stage ${idx + 1}`,
-                originalPlannedDate: isNA ? "Not applicable" : plannedDate || "",
+                stageName: st.stageType?.label || st.name || `Stage ${idx + 1}`,
+                originalPlannedDate: isNA
+                  ? "Not applicable"
+                  : plannedDate || "",
                 revisedTargetDate: isNA
                   ? "Not applicable"
                   : targetDate || plannedDate || "",
@@ -816,12 +811,14 @@ export function mapBackendPlanToOfficerPlanSummary(
 
               let rawPlannedDate = st.plannedStartDate
                 ? new Date(st.plannedStartDate).toISOString().slice(0, 10)
-                : (st.gregorianDate || "");
+                : st.gregorianDate || "";
               let rawTargetDate = st.currentTargetStartDate
                 ? new Date(st.currentTargetStartDate).toISOString().slice(0, 10)
-                : (rawPlannedDate || st.gregorianDate || "");
+                : rawPlannedDate || st.gregorianDate || "";
 
-              const dateToUse = isNA ? "" : rawTargetDate || rawPlannedDate || st.gregorianDate || "";
+              const dateToUse = isNA
+                ? ""
+                : rawTargetDate || rawPlannedDate || st.gregorianDate || "";
 
               const rawActualDate =
                 st.actualEndDate || st.actualStartDate
@@ -848,7 +845,7 @@ export function mapBackendPlanToOfficerPlanSummary(
                 days: String(st.plannedDays || 14),
                 ethiopianDate: isNA
                   ? ""
-                  : (st.ethiopianDate || toEthiopianDateString(dateToUse)),
+                  : st.ethiopianDate || toEthiopianDateString(dateToUse),
                 gregorianDate: isNA ? "" : dateToUse,
                 plannedStartDate: isNA ? "" : rawPlannedDate || dateToUse,
                 plannedEndDate: isNA
@@ -1088,11 +1085,11 @@ export function mapBackendPlanToOfficerPlanSummary(
     inProgressActivities: allPlanActivities.filter(
       (a) => a.status === "In Progress",
     ).length,
-    delayedActivities: allPlanActivities.filter(
-      (a) => a.status === "Delayed",
-    ).length,
+    delayedActivities: allPlanActivities.filter((a) => a.status === "Delayed")
+      .length,
     currency: "ETB",
-    estimatedValue: totalPlanEstimatedValue > 0 ? totalPlanEstimatedValue : estimatedValue,
+    estimatedValue:
+      totalPlanEstimatedValue > 0 ? totalPlanEstimatedValue : estimatedValue,
     organizationRegion: backendPlan.organization || "",
     description: backendPlan.description || undefined,
     planActivities: allPlanActivities,

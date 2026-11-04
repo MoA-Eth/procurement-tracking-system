@@ -16,6 +16,7 @@ import {
   getPlanById,
   createPlan,
   updatePlan,
+  deleteDraftPlan,
   submitPlan,
   sendToCommittee,
   rejectPlan,
@@ -63,6 +64,12 @@ router.patch(
   ),
   validate(updatePlanSchema),
   updatePlan,
+);
+
+router.delete(
+  '/:id',
+  authorize('Administrator', 'ProcurementOfficer', 'OFFICER', 'ADMIN'),
+  deleteDraftPlan,
 );
 
 router.post(

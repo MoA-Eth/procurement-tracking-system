@@ -43,6 +43,7 @@ import {
   getCachedPlans,
   invalidatePlansCache,
   mapBackendPlanToOfficerPlanSummary,
+  deletePlan,
   type BackendPlan,
 } from "@/lib/plansApi";
 import {
@@ -681,7 +682,10 @@ export function OfficerProjectsView({
     }
     directBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
     parentBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
-    if (selectedPlan.parentActivities && selectedPlan.parentActivities.length > 0) {
+    if (
+      selectedPlan.parentActivities &&
+      selectedPlan.parentActivities.length > 0
+    ) {
       selectedPlan.parentActivities.forEach((a: any) =>
         upsertSummaryActivity(combined, { ...a, isParentApproved: true }),
       );
@@ -2095,6 +2099,76 @@ export function OfficerProjectsView({
     saveActivity(updatedActivity);
   }
 
+  async function handleDeleteDraftPlan() {
+    if (!selectedProject || !selectedPlan) {
+      throw new Error("The project or procurement plan is no longer selected.");
+    }
+
+    const planIdentifiers = new Set(
+      [selectedPlan.id, selectedPlan.reference, selectedPlan.name]
+        .filter((value): value is string => Boolean(value))
+        .map((value) => value.trim().toLowerCase()),
+    );
+    const matchesPlan = (planReference?: string, planId?: string) => {
+      const identifiers = [planReference, planId]
+        .filter((value): value is string => Boolean(value))
+        .map((value) => value.trim().toLowerCase());
+      return identifiers.some((identifier) => planIdentifiers.has(identifier));
+    };
+    const projectCode = selectedProject.code.trim().toLowerCase();
+
+    if (isPlanInBackend) {
+      const serverId = selectedPlan.id;
+      if (!serverId) {
+        throw new Error(
+          "The saved plan ID is missing; the plan was not deleted.",
+        );
+      }
+      await deletePlan(serverId);
+      setBackendPlans((plans) => plans.filter((plan) => plan.id !== serverId));
+      setBackendActivities((records) =>
+        records.filter(
+          (record) =>
+            !(
+              record.projectCode.trim().toLowerCase() === projectCode &&
+              matchesPlan(record.planReference)
+            ),
+        ),
+      );
+    }
+
+    const nextPlanRecords = savedPlanRecords.filter(
+      (record) =>
+        !(
+          record.projectCode.trim().toLowerCase() === projectCode &&
+          matchesPlan(record.plan.reference, record.plan.id)
+        ),
+    );
+    setSavedPlanRecords(nextPlanRecords);
+    window.localStorage.setItem(
+      OFFICER_PLAN_DRAFTS_STORAGE_KEY,
+      JSON.stringify(nextPlanRecords),
+    );
+
+    const nextActivityRecords = savedActivityRecords.filter(
+      (record) =>
+        !(
+          record.projectCode.trim().toLowerCase() === projectCode &&
+          matchesPlan(record.planReference)
+        ),
+    );
+    setSavedActivityRecords(nextActivityRecords);
+    window.localStorage.setItem(
+      OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+      JSON.stringify(nextActivityRecords),
+    );
+
+    router.push(
+      "/workspace/projects?project=" + encodeURIComponent(selectedProject.code),
+    );
+    void loadData();
+  }
+
   async function handleDeleteDraftActivity(
     activity: ProcurementActivitySummary,
   ) {
@@ -2157,20 +2231,15 @@ export function OfficerProjectsView({
       records.filter(
         (record) =>
           !(
-            belongsToSelectedPlan(
-              record.planReference,
-              record.projectCode,
-            ) && matchesActivity(record.activity)
+            belongsToSelectedPlan(record.planReference, record.projectCode) &&
+            matchesActivity(record.activity)
           ),
       ),
     );
     setBackendPlans((plans) =>
       plans.map((plan) => ({
         ...plan,
-        activities: belongsToSelectedPlan(
-          plan.id,
-          plan.project?.code,
-        )
+        activities: belongsToSelectedPlan(plan.id, plan.project?.code)
           ? (plan.activities || []).filter(
               (candidate) =>
                 !matchesActivity(
@@ -2562,9 +2631,10 @@ export function OfficerProjectsView({
               ? "create-additional-activity"
               : "create-activity"
         }
-        existingActivityCount={
-          Math.max(selectedPlan.activities || 0, selectedPlanActivities.length)
-        }
+        existingActivityCount={Math.max(
+          selectedPlan.activities || 0,
+          selectedPlanActivities.length,
+        )}
         initialActivity={
           mode === "edit-activity" ? selectedActivity : undefined
         }
@@ -2596,6 +2666,7 @@ export function OfficerProjectsView({
   if (selectedProject && selectedPlan) {
     return (
       <OfficerProcurementPlanDetailView
+        onDeleteDraftPlan={handleDeleteDraftPlan}
         onDeleteDraftActivity={handleDeleteDraftActivity}
         onBulkImportActivities={handleBulkImportActivities}
         onSubmitToDirector={submitPlanToDirector}

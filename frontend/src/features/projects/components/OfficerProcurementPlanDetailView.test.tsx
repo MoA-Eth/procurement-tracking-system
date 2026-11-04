@@ -103,6 +103,31 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).not.toContain("Submit to Director");
   });
 
+  it("shows Delete Plan only for a draft plan when a delete handler is available", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const draftMarkup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        onDeleteDraftPlan={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+      />,
+    );
+    const approvedMarkup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        onDeleteDraftPlan={async () => {}}
+        plan={mockPlan}
+        project={mockProject}
+      />,
+    );
+
+    expect(draftMarkup).toContain("Delete Plan");
+    expect(draftMarkup).not.toContain("delete-plan-dialog-title");
+    expect(approvedMarkup).not.toContain("Delete Plan");
+  });
+
   it("displays submitted status banner when plan is submitted to director", () => {
     const submittedPlan: ProcurementPlanSummary = {
       ...mockPlan,
@@ -315,6 +340,46 @@ describe("OfficerProcurementPlanDetailView", () => {
 
     expect(markup).not.toContain("Request Cancellation");
     expect(markup).toContain("Request Amendment");
+  });
+
+  it("hides Request Amendment when any approved-plan activity is at another stage", () => {
+    const approvedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      activities: 2,
+      status: "Finally Approved",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={approvedPlan}
+        project={mockProject}
+        savedActivities={[
+          sampleActivity,
+          {
+            ...sampleActivity,
+            currentStage: "Invitation to Bidders",
+            reference: "ET-MoA-000002-GO-RFQ",
+          },
+        ]}
+      />,
+    );
+
+    expect(markup).not.toContain("Request Amendment");
+  });
+
+  it("hides Request Amendment when approved-plan activities are unavailable", () => {
+    const approvedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      activities: 1,
+      status: "Finally Approved",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={approvedPlan}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).not.toContain("Request Amendment");
   });
 
   it("renders pending banner when plan is Cancellation Requested", () => {
