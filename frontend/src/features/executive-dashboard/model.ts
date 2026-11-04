@@ -248,17 +248,6 @@ export function summarizeProcurementProgress(records: ExecutiveRecord[]) {
               : ["CONTRACTED"].includes(activity.status)
                 ? "CONTRACT_AWARDED"
                 : "BIDDING_DOCUMENT_PREPARATION");
-    const countKey = {
-      NOT_STARTED: "notStarted",
-      BIDDING_DOCUMENT_PREPARATION: "biddingDocumentPreparation",
-      BID_ADVERTISED: "bidAdvertised",
-      BID_EVALUATION: "bidEvaluation",
-      CONTRACT_AWARDED: "contractAwarded",
-      CONTRACT_DELIVERY: "contractDelivery",
-      COMPLETED: "completed",
-    } as const;
-    counts[countKey[status]] += 1;
-
     if (activity.planStatus !== undefined) {
       const normalizedPlanStatus = activity.planStatus
         .trim()
@@ -267,18 +256,41 @@ export function summarizeProcurementProgress(records: ExecutiveRecord[]) {
       const isFinallyApproved = [
         "APPROVED",
         "FINALLY_APPROVED",
+        "FINALLY_APPROVE",
         "MANAGEMENT_APPROVED",
       ].includes(normalizedPlanStatus);
-      if (!isFinallyApproved) {
-        notYetToMarket += 1;
-        continue;
-      }
-
-      const normalizedStage = (activity.activityStage || "")
+      const normalizedStage = (activity.activityStage || activity.status || "")
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, " ")
         .trim();
+      if (!isFinallyApproved) {
+        counts.notStarted += 1;
+        notYetToMarket += 1;
+        continue;
+      }
+
+      if (
+        normalizedStage === "draft request for quotations" ||
+        normalizedStage === "draft request for quotation"
+      ) {
+        counts.biddingDocumentPreparation += 1;
+      } else if (normalizedStage === "invitation to bidders") {
+        counts.bidAdvertised += 1;
+      } else if (
+        normalizedStage === "receive quotations" ||
+        normalizedStage === "receiving quotations"
+      ) {
+        counts.bidEvaluation += 1;
+      } else if (normalizedStage === "signed contract") {
+        counts.contractAwarded += 1;
+      } else if (normalizedStage === "notification of intention of award") {
+        counts.contractAwarded += 1;
+        counts.contractDelivery += 1;
+      } else if (normalizedStage === "contract completion") {
+        counts.completed += 1;
+      }
+
       if (normalizedStage === "contract completion") {
         completed += 1;
       } else if (
@@ -290,6 +302,17 @@ export function summarizeProcurementProgress(records: ExecutiveRecord[]) {
       }
       continue;
     }
+
+    const countKey = {
+      NOT_STARTED: "notStarted",
+      BIDDING_DOCUMENT_PREPARATION: "biddingDocumentPreparation",
+      BID_ADVERTISED: "bidAdvertised",
+      BID_EVALUATION: "bidEvaluation",
+      CONTRACT_AWARDED: "contractAwarded",
+      CONTRACT_DELIVERY: "contractDelivery",
+      COMPLETED: "completed",
+    } as const;
+    counts[countKey[status]] += 1;
 
     if (status === "NOT_STARTED" || status === "BIDDING_DOCUMENT_PREPARATION") {
       notYetToMarket += 1;

@@ -20,6 +20,7 @@ vi.mock('../executive-dashboard/executive-dashboard.service.js', () => ({
 import router from './integrations.routes.js';
 import { authenticateIntegrationApiKey } from './integration-api-key.service.js';
 import { getExecutiveSnapshot } from '../executive-dashboard/executive-dashboard.service.js';
+import { executiveDashboardCharts } from '../executive-dashboard/executive-dashboard.model.js';
 
 let server: Server;
 let origin: string;
@@ -74,6 +75,7 @@ describe('external executive dashboard API', () => {
       records: [],
       register: { columns: [{ key: 'no', label: 'No.' }], rows: [] },
       fetchedAt: '2026-11-01T00:00:00Z',
+      charts: executiveDashboardCharts([]),
     });
     expect(authenticateIntegrationApiKey).toHaveBeenCalledWith(
       'valid-test-key',

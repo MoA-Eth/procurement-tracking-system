@@ -74,8 +74,13 @@ describe("consolidated portfolio", () => {
     ];
     const html = renderToStaticMarkup(<ConsolidatedPortfolio records={records} />);
 
+    expect(html).toContain('class="w-full min-w-[620px] table-fixed');
+    expect(html).toContain(
+      '<colgroup><col style="width:7%"/><col style="width:22%"/><col style="width:10%"/><col style="width:10%"/><col style="width:51%"/></colgroup>',
+    );
+
     for (const label of [
-      "Not Started / Awaiting Bank Approvals",
+      "Not Started / Awaiting Approvals",
       "On Bidding Document Preparation",
       "Bid Advertised",
       "Under Bid Evaluation",

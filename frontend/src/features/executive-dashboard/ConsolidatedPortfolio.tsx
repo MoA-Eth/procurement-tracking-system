@@ -3,7 +3,7 @@ import { summarizeProcurementProgress, type ExecutiveRecord } from "./model";
 const rows = [
   {
     key: "notStarted",
-    label: "Not Started / Awaiting Bank Approvals",
+    label: "Not Started / Awaiting Approvals",
     color: "#c9362b",
   },
   {
@@ -49,7 +49,14 @@ export function ConsolidatedPortfolio({
       </header>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[620px] border-collapse text-sm">
+        <table className="w-full min-w-[620px] table-fixed border-collapse text-sm">
+          <colgroup>
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "22%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "51%" }} />
+          </colgroup>
           <thead className="bg-[#2e6038] text-left text-xs font-semibold text-white">
             <tr>
               <th scope="col" className="px-3 py-3">
@@ -64,7 +71,7 @@ export function ConsolidatedPortfolio({
               <th scope="col" className="px-3 py-3 text-right">
                 Share
               </th>
-              <th scope="col" className="w-52 px-3 py-3">
+              <th scope="col" className="px-3 py-3">
                 Distribution
               </th>
             </tr>
@@ -135,9 +142,9 @@ export function ConsolidatedPortfolio({
         </table>
       </div>
       <p className="text-[11px] italic leading-5 text-slate-500">
-        Shares recalculated on the {summary.activities}-activity portfolio.
-        Activities with no recorded status are classified as On Bidding Document
-        Preparation.
+        Shares use the {summary.activities}-activity portfolio. Status rows may
+        overlap where a roadmap stage matches multiple categories; the total
+        counts each activity once.
       </p>
     </section>
   );

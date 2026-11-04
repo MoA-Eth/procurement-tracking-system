@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { ApiError } from '../../utils/errors.js';
 import { getExecutiveSnapshot } from '../executive-dashboard/executive-dashboard.service.js';
+import { executiveDashboardCharts } from '../executive-dashboard/executive-dashboard.model.js';
 import {
   authenticateIntegrationApiKey,
   requireIntegrationKeyHeader,
@@ -27,7 +28,11 @@ router.get(
       }
 
       res.set('Cache-Control', 'no-store');
-      res.json(await getExecutiveSnapshot());
+      const snapshot = await getExecutiveSnapshot();
+      res.json({
+        ...snapshot,
+        charts: executiveDashboardCharts(snapshot.records),
+      });
     } catch (error) {
       next(error);
     }

@@ -320,6 +320,85 @@ describe("executive measurements", () => {
       completed: 1,
     });
   });
+  it("counts Consolidated Portfolio rows from plan approval and reached stage", () => {
+    const records: ExecutiveRecord[] = [
+      {
+        ...row,
+        activityId: "activity:not-approved",
+        planStatus: "SUBMITTED",
+        activityStage: "Contract Completion",
+      },
+      {
+        ...row,
+        activityId: "activity:draft-rfq",
+        planStatus: "MANAGEMENT_APPROVED",
+        activityStage: "Draft Request for Quotations",
+      },
+      {
+        ...row,
+        activityId: "activity:invitation",
+        planStatus: "APPROVED",
+        activityStage: "Invitation to Bidders",
+      },
+      {
+        ...row,
+        id: "invitation-contract",
+        activityId: "activity:invitation",
+        contractId: "contract:invitation",
+        planStatus: "APPROVED",
+        activityStage: "Invitation to Bidders",
+      },
+      {
+        ...row,
+        activityId: "activity:signed",
+        planStatus: "APPROVED",
+        activityStage: "Signed Contract",
+      },
+      {
+        ...row,
+        activityId: "activity:award-notice",
+        planStatus: "APPROVED",
+        activityStage: "Notification of Intention of Award",
+      },
+      {
+        ...row,
+        activityId: "activity:completion",
+        planStatus: "FINALLY_APPROVED",
+        activityStage: "Contract Completion",
+      },
+      {
+        ...row,
+        activityId: "activity:other-approved",
+        planStatus: "APPROVED",
+        activityStage: "Receive Quotations",
+      },
+    ];
+
+    expect(summarizeProcurementProgress(records)).toMatchObject({
+      activities: 7,
+      statuses: {
+        notStarted: 1,
+        biddingDocumentPreparation: 1,
+        bidAdvertised: 1,
+        bidEvaluation: 1,
+        contractAwarded: 2,
+        contractDelivery: 1,
+        completed: 1,
+      },
+    });
+  });
+  it("counts finally approved RFQ activities when approval or stage labels use UI variants", () => {
+    const result = summarizeProcurementProgress([
+      {
+        ...row,
+        activityId: "activity:rfq-label-variant",
+        planStatus: "Finally Approve",
+        activityStage: "Draft Request for Quotation",
+      },
+    ]);
+
+    expect(result.statuses.biddingDocumentPreparation).toBe(1);
+  });
   it("exports only the selected population and neutralizes spreadsheet formula text", () => {
     const selected = filterRecords(
       [row, { ...row, id: "excluded", currency: "USD" }],
