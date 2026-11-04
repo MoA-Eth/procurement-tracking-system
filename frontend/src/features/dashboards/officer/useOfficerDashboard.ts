@@ -217,14 +217,18 @@ export function useOfficerDashboard(user: AuthUser) {
         const mappedStatus =
           rawStatus === "SUBMITTED_TO_DIRECTOR" || rawStatus === "SUBMITTED"
             ? "SUBMITTED"
-            : rawStatus === "COMMITTEE_REVIEW" || rawStatus === "WITH_COMMITTEE"
-              ? "WITH_COMMITTEE"
+              : rawStatus === "COMMITTEE_REVIEW" ||
+                  rawStatus === "UNDER_COMMITTEE_REVIEW" ||
+                  rawStatus === "WITH_COMMITTEE"
+                ? "WITH_COMMITTEE"
               : rawStatus === "RETURNED" ||
-                  rawStatus === "RETURNED_FOR_REVISION"
-                ? "RETURNED_FOR_REVISION"
-                : rawStatus === "APPROVED" || rawStatus === "FINALLY_APPROVED"
-                  ? "APPROVED"
-                  : "DRAFT";
+                    rawStatus === "RETURNED_FOR_REVISION"
+                  ? "RETURNED_FOR_REVISION"
+                  : rawStatus === "APPROVED" ||
+                      rawStatus === "FINALLY_APPROVED" ||
+                      rawStatus === "MANAGEMENT_APPROVED"
+                    ? "APPROVED"
+                    : rawStatus;
 
         return {
           id: planId,

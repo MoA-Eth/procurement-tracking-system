@@ -30,31 +30,23 @@ export function DirectorSummaryCards({
   return (
     <section
       aria-label="Director metrics summary"
-      className="grid grid-cols-1 gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-[1.28fr_1fr_1fr_1fr]"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
     >
-      {/* CARD 1: TOTAL PROJECTS */}
-      <article className="flex flex-col justify-between rounded-2xl bg-white p-4 border border-slate-200/80 shadow-2xs transition-all duration-200 hover:shadow-md min-h-[136px]">
-        <div>
-          <div className="flex items-start justify-between">
-            <h3 className="text-xs font-semibold text-slate-800 tracking-tight">
-              Total Projects
-            </h3>
-            <span className="h-2 w-2 rounded-full bg-emerald-600 shrink-0 mt-0.5" />
-          </div>
-          <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-2xl font-sans font-semibold tabular-nums tracking-tight text-black leading-none">
-              {totalProjectsCount}
-            </p>
-            <span className="text-xs font-semibold text-slate-500">active</span>
-          </div>
-        </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px] truncate">
+      <article className="flex min-w-0 flex-col border-t-[7px] border-violet-600 bg-white px-5 pb-5 pt-7 shadow-sm">
+        <p className="font-serif text-2xl leading-none font-semibold tabular-nums text-violet-600">
+          {totalProjectsCount}
+        </p>
+        <p className="mt-3 text-sm font-medium text-slate-600">active</p>
+        <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.12em] text-[#175b31]">
+          Total Projects
+        </h3>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="min-w-0 truncate text-slate-500">
             {selectedFiscalYear}, {sectorSubtitle}
           </span>
           <Link
             href="/workspace/projects"
-            className="text-[#00843D] hover:text-[#0B6B3A] font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="flex shrink-0 items-center gap-1 font-semibold text-[#00843D] transition-colors hover:text-[#0B6B3A]"
           >
             <span>View All</span>
             <span aria-hidden="true">&rarr;</span>
@@ -62,33 +54,25 @@ export function DirectorSummaryCards({
         </div>
       </article>
 
-      {/* CARD 2: AWAITING REVIEW (Amber Dot & Amber Link) */}
-      <article className="flex flex-col justify-between rounded-2xl bg-white p-4 border border-slate-200/80 shadow-2xs transition-all duration-200 hover:shadow-md min-h-[136px]">
-        <div>
-          <div className="flex items-start justify-between">
-            <h3 className="text-xs font-semibold text-slate-800 tracking-tight">
-              {userRole === "MANAGEMENT"
-                ? "Executive Authorization"
-                : "Awaiting Review"}
-            </h3>
-            <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0 mt-0.5" />
-          </div>
-          <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-2xl font-sans font-semibold tabular-nums tracking-tight text-black leading-none">
-              {awaitingReviewCount}
-            </p>
-            <span className="text-xs font-semibold text-slate-500">plans</span>
-          </div>
-        </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
+      <article className="flex min-w-0 flex-col border-t-[7px] border-[#d99b08] bg-white px-5 pb-5 pt-7 shadow-sm">
+        <p className="font-serif text-2xl leading-none font-semibold tabular-nums text-[#d99b08]">
+          {awaitingReviewCount}
+        </p>
+        <p className="mt-3 text-sm font-medium text-slate-600">plans</p>
+        <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.12em] text-[#175b31]">
+          {userRole === "MANAGEMENT"
+            ? "Executive Authorization"
+            : "Awaiting Review"}
+        </h3>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="text-slate-500">
             {userRole === "MANAGEMENT"
               ? "Pending Decision"
               : "Pending Director"}
           </span>
           <Link
             href="/workspace/plan-for-review"
-            className="text-amber-700 hover:text-amber-800 font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="flex shrink-0 items-center gap-1 font-semibold text-amber-700 transition-colors hover:text-amber-800"
           >
             <span>Review Now</span>
             <span aria-hidden="true">&rarr;</span>
@@ -96,31 +80,23 @@ export function DirectorSummaryCards({
         </div>
       </article>
 
-      {/* CARD 3: COMMITTEE PROGRESS (Blue Dot & Blue Link) */}
-      <article className="flex flex-col justify-between rounded-2xl bg-white p-4 border border-slate-200/80 shadow-2xs transition-all duration-200 hover:shadow-md min-h-[136px]">
-        <div>
-          <div className="flex items-start justify-between">
-            <h3 className="text-xs font-semibold text-slate-800 tracking-tight">
-              {userRole === "MANAGEMENT"
-                ? "Committee Endorsed"
-                : "Committee Progress"}
-            </h3>
-            <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0 mt-0.5" />
-          </div>
-          <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-2xl font-sans font-semibold tabular-nums tracking-tight text-black leading-none">
-              {committeePlansCount}
-            </p>
-            <span className="text-xs font-semibold text-slate-500">plans</span>
-          </div>
-        </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
+      <article className="flex min-w-0 flex-col border-t-[7px] border-[#238b55] bg-white px-5 pb-5 pt-7 shadow-sm">
+        <p className="font-serif text-2xl leading-none font-semibold tabular-nums text-[#238b55]">
+          {committeePlansCount}
+        </p>
+        <p className="mt-3 text-sm font-medium text-slate-600">plans</p>
+        <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.12em] text-[#175b31]">
+          {userRole === "MANAGEMENT"
+            ? "Committee Endorsed"
+            : "Committee Progress"}
+        </h3>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="text-slate-500">
             {userRole === "MANAGEMENT" ? "Deliberations" : "Voting"}
           </span>
           <Link
             href="/workspace/vote-progress"
-            className="text-blue-600 hover:text-blue-700 font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="flex shrink-0 items-center gap-1 font-semibold text-blue-600 transition-colors hover:text-blue-700"
           >
             <span>Check Votes</span>
             <span aria-hidden="true">&rarr;</span>
@@ -128,31 +104,19 @@ export function DirectorSummaryCards({
         </div>
       </article>
 
-      {/* CARD 4: CRITICAL DELAYS (Red Dot & Red Link) */}
-      <article className="flex flex-col justify-between rounded-2xl bg-white p-4 border border-slate-200/80 shadow-2xs transition-all duration-200 hover:shadow-md min-h-[136px]">
-        <div>
-          <div className="flex items-start justify-between">
-            <h3 className="text-xs font-semibold text-slate-800 tracking-tight">
-              Critical Delays
-            </h3>
-            <span className="h-2 w-2 rounded-full bg-rose-600 shrink-0 mt-0.5" />
-          </div>
-          <div className="pt-2.5 pb-4 flex items-baseline gap-2">
-            <p className="text-2xl font-sans font-semibold tabular-nums tracking-tight text-black leading-none">
-              {criticalDelaysCount}
-            </p>
-            <span className="text-xs font-semibold text-slate-600">
-              &gt;7d overdue
-            </span>
-          </div>
-        </div>
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-          <span className="text-slate-400 font-medium text-[11px]">
-            Requires action
-          </span>
+      <article className="flex min-w-0 flex-col border-t-[7px] border-rose-600 bg-white px-5 pb-5 pt-7 shadow-sm">
+        <p className="font-serif text-2xl leading-none font-semibold tabular-nums text-rose-600">
+          {criticalDelaysCount}
+        </p>
+        <p className="mt-3 text-sm font-medium text-slate-600">&gt;7d overdue</p>
+        <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.12em] text-[#175b31]">
+          Critical Delays
+        </h3>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="text-slate-500">Requires action</span>
           <Link
             href="/workspace/activity-tracker"
-            className="text-rose-600 hover:text-rose-700 font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors shrink-0"
+            className="flex shrink-0 items-center gap-1 font-semibold text-rose-600 transition-colors hover:text-rose-700"
           >
             <span>Needs Action</span>
             <span aria-hidden="true">&rarr;</span>

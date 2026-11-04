@@ -12,18 +12,20 @@ interface OfficerProjectItem {
 }
 
 interface OfficerActiveProjectsTableProps {
+  className?: string;
   projects: OfficerProjectItem[];
   loading?: boolean;
 }
 
 export function OfficerActiveProjectsTable({
+  className,
   projects,
   loading = false,
 }: OfficerActiveProjectsTableProps) {
   return (
     <section
       aria-labelledby="my-active-projects"
-      className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+      className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ${className || ""}`}
     >
       <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
         <h2

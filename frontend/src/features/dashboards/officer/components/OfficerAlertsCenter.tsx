@@ -5,18 +5,22 @@ import { ArrowRight, Bell, CheckCircle2, Clock } from "lucide-react";
 import { alertToneClasses, type OfficerAlert } from "../officerData";
 
 interface OfficerAlertsCenterProps {
+  className?: string;
   alerts: readonly OfficerAlert[];
   loading?: boolean;
   onSelectDelay?: (alert: OfficerAlert) => void;
 }
 
 export function OfficerAlertsCenter({
+  className,
   alerts,
   loading = false,
   onSelectDelay,
 }: OfficerAlertsCenterProps) {
   return (
-    <div className="min-h-[380px] xl:min-h-[415px] max-h-[640px] xl:max-h-none xl:h-full xl:relative">
+    <div
+      className={`min-h-[380px] max-h-[640px] xl:relative xl:min-h-[415px] xl:h-full xl:max-h-none ${className || ""}`}
+    >
       <aside
         aria-labelledby="alerts-center-title"
         className="flex flex-col min-w-0 w-full h-full xl:absolute xl:inset-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
