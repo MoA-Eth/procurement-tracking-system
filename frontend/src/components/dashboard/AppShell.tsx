@@ -14,6 +14,8 @@ import {
   LayoutDashboard,
   ListChecks,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Sliders,
   UserRound,
@@ -100,6 +102,7 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDesktopSidebarVisible, setIsDesktopSidebarVisible] = useState(true);
   const navigation = getNavigationForRole(user.role);
   const userInitials = initials(user.displayName);
 
@@ -277,9 +280,11 @@ export function AppShell({
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Desktop Sidebar */}
-      <div className="sticky top-0 hidden h-screen shrink-0 lg:block">
-        {sidebar}
-      </div>
+      {isDesktopSidebarVisible && (
+        <div className="sticky top-0 hidden h-screen shrink-0 lg:block">
+          {sidebar}
+        </div>
+      )}
 
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
@@ -320,6 +325,23 @@ export function AppShell({
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:hidden transition-colors"
             >
               <Menu size={20} />
+            </button>
+            <button
+              type="button"
+              aria-label={
+                isDesktopSidebarVisible ? "Hide navigation" : "Show navigation"
+              }
+              aria-expanded={isDesktopSidebarVisible}
+              onClick={() =>
+                setIsDesktopSidebarVisible((visible) => !visible)
+              }
+              className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-[4px] border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:flex"
+            >
+              {isDesktopSidebarVisible ? (
+                <PanelLeftClose size={20} />
+              ) : (
+                <PanelLeftOpen size={20} />
+              )}
             </button>
             <div className="h-5 w-px shrink-0 bg-slate-200 lg:hidden" />
             {pageTitle ? (
