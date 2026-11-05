@@ -15,7 +15,7 @@ export function CommitteeRecentDecisions({
 }: CommitteeRecentDecisionsProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 select-none">
+      <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight flex items-center gap-1.5 select-none">
         <History className="h-4 w-4 text-slate-400" /> My Recent Decisions
       </h3>
 

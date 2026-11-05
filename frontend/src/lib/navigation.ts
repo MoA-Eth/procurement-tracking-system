@@ -59,7 +59,7 @@ const workspaceSections = {
     href: "/workspace/activity-tracker",
     icon: "activity",
     description: "Track procurement activities, milestones and upcoming work.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT", "EXECUTIVE"],
   },
   "plan-for-review": {
     section: "plan-for-review",
@@ -201,7 +201,7 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "activity-tracker",
     "reports",
   ],
-  EXECUTIVE: ["executive-dashboard", "reports"],
+  EXECUTIVE: ["executive-dashboard", "activity-tracker", "reports"],
   ENDORSING_COMMITTEE: [
     "plan-for-review",
     "amendment-requests",

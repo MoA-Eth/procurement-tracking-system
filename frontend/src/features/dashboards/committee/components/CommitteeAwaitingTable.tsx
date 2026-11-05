@@ -32,7 +32,7 @@ export function CommitteeAwaitingTable({
       <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-2 flex-wrap">
           <ClipboardCheck className="h-5 w-5 text-emerald-700 shrink-0" />
-          <h2 className="text-sm font-semibold text-slate-900">
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Plans Awaiting My Vote
           </h2>
           {filter === "delayed" && (

@@ -33,11 +33,11 @@ export function DirectorSummaryCards({
       className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
     >
       <article className="flex min-w-0 flex-col border-t-[7px] border-violet-600 bg-white px-5 pb-5 pt-7 shadow-sm">
-        <p className="font-serif text-2xl leading-none font-semibold tabular-nums text-violet-600">
+        <p className="font-serif text-xl leading-none font-semibold tabular-nums text-violet-600">
           {totalProjectsCount}
         </p>
         <p className="mt-3 text-sm font-medium text-slate-600">active</p>
-        <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.12em] text-[#175b31]">
+        <h3 className="mt-6 text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
           Total Projects
         </h3>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -55,11 +55,11 @@ export function DirectorSummaryCards({
       </article>
 
       <article className="flex min-w-0 flex-col border-t-[7px] border-[#d99b08] bg-white px-5 pb-5 pt-7 shadow-sm">
-        <p className="font-serif text-2xl leading-none font-semibold tabular-nums text-[#d99b08]">
+        <p className="font-serif text-xl leading-none font-semibold tabular-nums text-[#d99b08]">
           {awaitingReviewCount}
         </p>
         <p className="mt-3 text-sm font-medium text-slate-600">plans</p>
-        <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.12em] text-[#175b31]">
+        <h3 className="mt-6 text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
           {userRole === "MANAGEMENT"
             ? "Executive Authorization"
             : "Awaiting Review"}
@@ -81,11 +81,11 @@ export function DirectorSummaryCards({
       </article>
 
       <article className="flex min-w-0 flex-col border-t-[7px] border-[#238b55] bg-white px-5 pb-5 pt-7 shadow-sm">
-        <p className="font-serif text-2xl leading-none font-semibold tabular-nums text-[#238b55]">
+        <p className="font-serif text-xl leading-none font-semibold tabular-nums text-[#238b55]">
           {committeePlansCount}
         </p>
         <p className="mt-3 text-sm font-medium text-slate-600">plans</p>
-        <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.12em] text-[#175b31]">
+        <h3 className="mt-6 text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
           {userRole === "MANAGEMENT"
             ? "Committee Endorsed"
             : "Committee Progress"}
@@ -105,11 +105,11 @@ export function DirectorSummaryCards({
       </article>
 
       <article className="flex min-w-0 flex-col border-t-[7px] border-rose-600 bg-white px-5 pb-5 pt-7 shadow-sm">
-        <p className="font-serif text-2xl leading-none font-semibold tabular-nums text-rose-600">
+        <p className="font-serif text-xl leading-none font-semibold tabular-nums text-rose-600">
           {criticalDelaysCount}
         </p>
         <p className="mt-3 text-sm font-medium text-slate-600">&gt;7d overdue</p>
-        <h3 className="mt-6 text-xs font-bold uppercase tracking-[0.12em] text-[#175b31]">
+        <h3 className="mt-6 text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
           Critical Delays
         </h3>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">

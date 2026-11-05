@@ -703,6 +703,12 @@ function DirectorActivityTrackerList({
   onViewActivity: (item: DirectorTrackedActivityItem) => void;
   userRole?: UserRole;
 }) {
+  const isExecutiveView = userRole === "EXECUTIVE";
+  const isReadOnlyOversight =
+    userRole === "MANAGEMENT" || isExecutiveView;
+  const oversightRoleLabel = isExecutiveView
+    ? "Executive"
+    : "Executive Management";
   const todayIso = new Date().toISOString().slice(0, 10);
   const [searchQuery, setSearchQuery] = useState("");
   const [projectCode, setProjectCode] = useState("all");
@@ -928,18 +934,20 @@ function DirectorActivityTrackerList({
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-semibold text-slate-950 tracking-tight">
-              {userRole === "MANAGEMENT"
-                ? "Management Activity Tracker"
-                : "Director Activity Tracker"}
+              {isExecutiveView
+                ? "Executive Activity Tracker"
+                : userRole === "MANAGEMENT"
+                  ? "Management Activity Tracker"
+                  : "Director Activity Tracker"}
             </h1>
-            {userRole === "MANAGEMENT" && (
+            {isReadOnlyOversight && (
               <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                 View-Only Oversight
               </span>
             )}
           </div>
           <p className="mt-1.5 text-xs sm:text-sm text-slate-500 max-w-3xl">
-            {userRole === "MANAGEMENT"
+            {isReadOnlyOversight
               ? "Executive view-only oversight of active officer progress, procurement milestones, stage completion, and critical project delays."
               : "Track active officer progress, procurement milestones, stage completion, and critical project delays across the directorate."}
           </p>
@@ -1494,6 +1502,12 @@ function DirectorActivityDetailView({
   onBack: () => void;
   userRole?: UserRole;
 }) {
+  const isExecutiveView = userRole === "EXECUTIVE";
+  const isReadOnlyOversight =
+    userRole === "MANAGEMENT" || isExecutiveView;
+  const oversightRoleLabel = isExecutiveView
+    ? "Executive"
+    : "Executive Management";
   const [activeTab, setActiveTab] = useState<
     "overview" | "roadmap" | "contract"
   >("overview");
@@ -1541,7 +1555,7 @@ function DirectorActivityDetailView({
             <ArrowLeft className="h-4 w-4" /> Back to Activity Tracker List
           </button>
           <div className="flex items-center gap-2">
-            {userRole === "MANAGEMENT" && (
+            {isReadOnlyOversight && (
               <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                 View-Only
               </span>
@@ -1992,7 +2006,7 @@ function DirectorActivityDetailView({
             <LockKeyhole className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <span>
               Activity Tracker execution handoff details are read-only for{" "}
-              {userRole === "MANAGEMENT" ? "Executive Management" : "Director"}{" "}
+              {isReadOnlyOversight ? oversightRoleLabel : "Director"}{" "}
               oversight.
             </span>
           </div>

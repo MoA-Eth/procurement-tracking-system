@@ -242,7 +242,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
               <div>
                 <h2
                   id="user-roles-breakdown-heading"
-                  className="text-base font-semibold text-slate-900"
+                  className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
                 >
                   Access Role Allocation
                 </h2>
@@ -434,7 +434,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             <div>
               <h2
                 id="system-controls-heading"
-                className="text-base font-semibold text-slate-900"
+                className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
               >
                 Environment Health
               </h2>
@@ -486,7 +486,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             <div>
               <h2
                 id="user-access-table-heading"
-                className="text-base font-semibold text-slate-900"
+                className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
               >
                 User Profiles &amp; Access Controls
               </h2>
@@ -569,7 +569,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
           <div>
             <h2
               id="recent-audit-logs-heading"
-              className="text-base font-semibold text-slate-900"
+              className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
             >
               Recent Audit Trail
             </h2>

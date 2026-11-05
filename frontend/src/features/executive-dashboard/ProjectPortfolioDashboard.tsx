@@ -47,7 +47,7 @@ export function ProjectPortfolioDashboard({
       <header className="border-b-[3px] border-[#31633e] pb-2">
         <h2
           id="project-portfolio-title"
-          className="mt-1 text-lg font-semibold leading-tight text-slate-950"
+          className="mt-1 text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
         >
           Project Portfolio Dashboard
         </h2>

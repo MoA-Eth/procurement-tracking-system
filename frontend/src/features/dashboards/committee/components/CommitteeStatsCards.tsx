@@ -51,11 +51,11 @@ export function CommitteeStatsCards({
               {delayedCount > 0 && (
                 <span className="h-2 w-2 rounded-full bg-rose-600 animate-pulse" />
               )}
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-rose-900 leading-tight">
+              <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
                 Delayed Votes
               </h3>
             </div>
-            <p className="text-2xl font-semibold text-rose-950 mt-2 font-mono leading-none">
+            <p className="text-xl font-semibold text-rose-950 mt-2 font-mono leading-none">
               {delayedCount}
             </p>
           </div>
@@ -81,11 +81,11 @@ export function CommitteeStatsCards({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-700 leading-tight">
+              <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
                 Awaiting My Vote
               </h3>
             </div>
-            <p className="text-2xl font-semibold text-slate-900 mt-2 font-mono leading-none">
+            <p className="text-xl font-semibold text-slate-900 mt-2 font-mono leading-none">
               {awaitingCount}
             </p>
           </div>
@@ -102,7 +102,7 @@ export function CommitteeStatsCards({
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-3xs flex flex-row items-center justify-between min-h-[140px] hover:border-slate-300 hover:shadow-xs transition-shadow gap-4">
         <div className="flex flex-col justify-between h-full">
           <div>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 leading-tight">
+            <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
               Total Reviewed
             </h3>
             <p className="text-xs text-slate-400 font-medium mt-1">

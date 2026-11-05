@@ -33,7 +33,7 @@ export function OfficerAlertsCenter({
             />
             <h2
               id="alerts-center-title"
-              className="text-lg font-semibold text-[#16253d] truncate"
+              className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
             >
               Alerts Center
             </h2>

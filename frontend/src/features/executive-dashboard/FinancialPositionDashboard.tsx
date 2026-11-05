@@ -112,7 +112,7 @@ export function FinancialPositionDashboard({
       <header className="border-b-[3px] border-[#31633e] pb-2">
         <h2
           id="financial-position-title"
-          className="text-sm font-bold uppercase tracking-[0.12em] text-[#175b31]"
+          className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
         >
           Financial position
         </h2>
@@ -127,11 +127,11 @@ export function FinancialPositionDashboard({
             key={currency}
             className="min-w-0 border-t-[5px] border-[#31633e] bg-white px-3 py-3 shadow-sm"
           >
-            <p className="font-serif text-xl font-semibold leading-tight text-[#31633e]">
+            <p className="font-serif text-lg font-semibold leading-tight text-[#31633e]">
               {formatValue(currencyTotals.get(currency) ?? 0)}{" "}
               <span className="font-sans text-xs font-semibold">{currency}</span>
             </p>
-            <p className="mt-1 text-[11px] font-semibold text-slate-900">
+            <p className="mt-1 text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
               {currency}-denominated activities
             </p>
             <p className="mt-1 text-[10px] leading-4 text-slate-500">
@@ -150,7 +150,7 @@ export function FinancialPositionDashboard({
         <section aria-labelledby="financial-stage-title" className="lg:col-span-3">
           <h3
             id="financial-stage-title"
-            className="text-xs font-bold uppercase tracking-[0.08em] text-[#175b31]"
+            className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
           >
             Birr portfolio by procurement stage
           </h3>
@@ -197,7 +197,7 @@ export function FinancialPositionDashboard({
         <section aria-labelledby="largest-projects-title" className="lg:col-span-2">
           <h3
             id="largest-projects-title"
-            className="text-xs font-bold uppercase tracking-[0.08em] text-[#175b31]"
+            className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
           >
             Largest projects by value
           </h3>

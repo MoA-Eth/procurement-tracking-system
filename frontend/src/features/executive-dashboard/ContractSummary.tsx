@@ -52,8 +52,8 @@ export function ContractSummary({
             key={label}
             className="min-w-0 rounded-xl border border-slate-200 bg-white p-4 sm:p-5"
           >
-            <h2 className="text-xs font-medium text-slate-500">{label}</h2>
-            <p className="mt-3 break-words text-xl font-semibold text-slate-900">
+            <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">{label}</h2>
+            <p className="mt-3 break-words text-lg font-semibold text-slate-900">
               {value}
             </p>
             <p className="mt-2 text-xs leading-5 text-slate-500">{note}</p>

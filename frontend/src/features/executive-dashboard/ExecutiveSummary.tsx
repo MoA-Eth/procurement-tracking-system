@@ -95,7 +95,7 @@ export function ExecutiveSummary({
               style={{ borderTopColor: card.color }}
             >
               <p
-                className="font-serif text-xl  leading-none"
+                className="font-serif text-lg leading-none"
                 style={{ color: card.color }}
               >
                 {count}
@@ -103,7 +103,7 @@ export function ExecutiveSummary({
               <p className="mt-3 text-sm font-medium text-slate-600">
                 {share(count)} of portfolio
               </p>
-              <h2 className="mt-6 text-xs font-bold uppercase tracking-[0.12em] text-[#175b31]">
+              <h2 className="mt-6 text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
                 {card.label}
               </h2>
               <p className="mt-2 text-xs leading-5 text-slate-600">

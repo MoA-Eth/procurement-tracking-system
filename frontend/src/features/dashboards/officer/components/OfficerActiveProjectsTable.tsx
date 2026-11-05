@@ -30,7 +30,7 @@ export function OfficerActiveProjectsTable({
       <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
         <h2
           id="my-active-projects"
-          className="text-lg font-semibold text-[#16253d]"
+          className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
         >
           My Active Projects
         </h2>

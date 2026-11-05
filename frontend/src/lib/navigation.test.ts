@@ -40,7 +40,10 @@ describe("role navigation permission matrix", () => {
         "Reports",
       ],
     ],
-    ["EXECUTIVE", ["Executive Dashboard", "Reports"]],
+    [
+      "EXECUTIVE",
+      ["Executive Dashboard", "Activity Tracker", "Reports"],
+    ],
     [
       "ENDORSING_COMMITTEE",
       ["Dashboard", "Plan for Review", "Amendment Requests", "My Decisions"],
@@ -66,6 +69,9 @@ describe("role navigation permission matrix", () => {
       true,
     );
     expect(canAccessWorkspaceSection("EXECUTIVE", "reports")).toBe(true);
+    expect(canAccessWorkspaceSection("EXECUTIVE", "activity-tracker")).toBe(
+      true,
+    );
     expect(canAccessWorkspaceSection("OFFICER", "executive-dashboard")).toBe(
       false,
     );

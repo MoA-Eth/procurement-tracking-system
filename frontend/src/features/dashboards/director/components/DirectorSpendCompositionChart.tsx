@@ -54,7 +54,7 @@ export function DirectorSpendCompositionChart({
       <div>
         {/* Header */}
         <div className="pb-3 border-b border-slate-100">
-          <h3 className="text-lg sm:text-xl font-serif font-semibold text-slate-900 tracking-tight">
+          <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Spend Composition
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">

@@ -23,7 +23,7 @@ export function ChartCard({
     >
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id={id} className="font-semibold text-slate-900">
+          <h2 id={id} className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             {title}
           </h2>
           <p className="mt-1 text-xs leading-5 text-slate-500">{description}</p>

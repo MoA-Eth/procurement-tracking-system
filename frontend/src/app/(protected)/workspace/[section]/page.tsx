@@ -211,7 +211,11 @@ export default async function WorkspaceSectionPage({
   }
 
   if (section === "activity-tracker") {
-    if (userRole === "DIRECTOR" || userRole === "MANAGEMENT") {
+    if (
+      userRole === "DIRECTOR" ||
+      userRole === "MANAGEMENT" ||
+      userRole === "EXECUTIVE"
+    ) {
       return (
         <DirectorActivityTrackerView
           userRole={session.user.role}

@@ -26,4 +26,16 @@ describe("DirectorActivityTrackerView", () => {
       "Executive view-only oversight of active officer progress, procurement milestones, stage completion, and critical project delays.",
     );
   });
+
+  it("renders Executive Activity Tracker as view-only", () => {
+    const markup = renderToStaticMarkup(
+      <DirectorActivityTrackerView userRole="EXECUTIVE" />,
+    );
+
+    expect(markup).toContain("Executive Activity Tracker");
+    expect(markup).toContain("View-Only Oversight");
+    expect(markup).toContain(
+      "Executive view-only oversight of active officer progress",
+    );
+  });
 });

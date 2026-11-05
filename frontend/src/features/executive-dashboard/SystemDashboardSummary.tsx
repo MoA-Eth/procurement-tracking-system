@@ -43,7 +43,7 @@ export function SystemDashboardSummary({
         </p>
         <h2
           id="system-dashboard-summary"
-          className="mt-1 text-base font-semibold"
+          className="mt-1 text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
         >
           Approvals and operational follow-up
         </h2>
@@ -58,8 +58,8 @@ export function SystemDashboardSummary({
             key={label}
             className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 p-4"
           >
-            <h3 className="text-xs font-medium text-slate-600">{label}</h3>
-            <p className="mt-2 text-xl font-semibold tabular-nums">{value}</p>
+            <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">{label}</h3>
+            <p className="mt-2 text-lg font-semibold tabular-nums">{value}</p>
             <p className="mt-2 text-xs leading-5 text-slate-500">{note}</p>
           </div>
         ))}

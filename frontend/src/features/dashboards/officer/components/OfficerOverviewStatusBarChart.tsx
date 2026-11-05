@@ -40,7 +40,7 @@ export function OfficerOverviewStatusBarChart({
       <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
         <div className="flex items-center gap-2.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#00843D]" />
-          <h2 className="text-lg font-semibold text-[#16253d]">
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Procurement Overview
           </h2>
         </div>
