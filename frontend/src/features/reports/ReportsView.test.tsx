@@ -303,7 +303,9 @@ describe("ReportTables - Dedicated Tables & Empty State", () => {
     expect(html).toContain("Plan vs Actual Output");
     expect(html).toContain("MOA/G-01");
     expect(html).toContain(fullDescription);
-    expect(html).toContain("max-w-[320px] whitespace-normal break-words");
+    expect(html).toContain(
+      "w-[320px] min-w-[320px] whitespace-pre-wrap break-words [overflow-wrap:anywhere]",
+    );
     expect(html).toContain("Plan Advert");
     expect(html).toContain("Actual Signed");
   });

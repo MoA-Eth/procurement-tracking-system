@@ -25,7 +25,7 @@ function formatReportActivityDate(value?: string | null) {
 }
 
 const descriptionCellClass =
-  "py-2.5 px-3 max-w-[320px] whitespace-normal break-words align-top";
+  "py-2.5 px-3 w-[320px] min-w-[320px] whitespace-pre-wrap break-words [overflow-wrap:anywhere] align-top";
 
 export interface ReportTablesProps {
   activeReport: ReportType;
