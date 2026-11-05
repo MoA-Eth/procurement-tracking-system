@@ -412,6 +412,7 @@ export function UserManagementView({
         DIRECTOR: "ProcurementDirector",
         ENDORSING_COMMITTEE: "EndorsingCommittee",
         MANAGEMENT: "ManagementTeam",
+        EXECUTIVE: "EXECUTIVE",
         ADMIN: "Administrator",
       };
 
@@ -471,6 +472,7 @@ export function UserManagementView({
       DIRECTOR: "ProcurementDirector",
       ENDORSING_COMMITTEE: "EndorsingCommittee",
       MANAGEMENT: "ManagementTeam",
+      EXECUTIVE: "EXECUTIVE",
       ADMIN: "Administrator",
     };
 
@@ -1171,7 +1173,11 @@ export function UserManagementView({
                     Endorsement Committee (Committee Review)
                   </option>
                   <option value="MANAGEMENT">
-                    Executive (Executive Dashboard, Reports &amp; Approval)
+                    Executive Management (Executive Dashboard, Reports &amp;
+                    Approval)
+                  </option>
+                  <option value="EXECUTIVE">
+                    Executive (Executive Dashboard &amp; Reports only)
                   </option>
                   <option value="ADMIN">
                     Administrator (System Administration / Governance)
@@ -1299,7 +1305,8 @@ export function UserManagementView({
                   <option value="ENDORSING_COMMITTEE">
                     Endorsement Committee
                   </option>
-                  <option value="MANAGEMENT">Management</option>
+                  <option value="MANAGEMENT">Executive Management</option>
+                  <option value="EXECUTIVE">Executive</option>
                   <option value="ADMIN">Administrator</option>
                 </select>
 

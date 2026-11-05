@@ -35,7 +35,7 @@ const workspaceSections = {
     icon: "reports",
     description:
       "Read-only oversight of works, goods and services procurement.",
-    allowedRoles: ["DIRECTOR", "MANAGEMENT"],
+    allowedRoles: ["DIRECTOR", "MANAGEMENT", "EXECUTIVE"],
   },
   projects: {
     section: "projects",
@@ -120,6 +120,7 @@ const workspaceSections = {
       "OFFICER",
       "ENDORSING_COMMITTEE",
       "ADMIN",
+      "EXECUTIVE",
     ],
   },
   "my-decisions": {
@@ -200,6 +201,7 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "activity-tracker",
     "reports",
   ],
+  EXECUTIVE: ["executive-dashboard", "reports"],
   ENDORSING_COMMITTEE: [
     "plan-for-review",
     "amendment-requests",
@@ -215,11 +217,15 @@ export function getNavigationForRole(role: UserRole): NavigationItem[] {
     ...sections
       .filter((section) => section === "executive-dashboard")
       .map((section) => workspaceSections[section]),
-    {
-      label: "Dashboard",
-      href: dashboardPath(role),
-      icon: "dashboard",
-    },
+    ...(normRole === "EXECUTIVE"
+      ? []
+      : [
+          {
+            label: "Dashboard" as const,
+            href: dashboardPath(role),
+            icon: "dashboard" as const,
+          },
+        ]),
     ...sections
       .filter((section) => section !== "executive-dashboard")
       .map((section) => workspaceSections[section]),

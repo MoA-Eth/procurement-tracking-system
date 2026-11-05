@@ -24,6 +24,8 @@ export function normalizeToUserRole(role?: string): UserRole {
     case 'MANAGEMENT':
     case 'MANAGEMENT_TEAM':
       return UserRole.MANAGEMENT;
+    case 'EXECUTIVE':
+      return UserRole.EXECUTIVE;
     case 'EndorsingCommittee':
     case 'ENDORSING_COMMITTEE':
       return UserRole.ENDORSING_COMMITTEE;

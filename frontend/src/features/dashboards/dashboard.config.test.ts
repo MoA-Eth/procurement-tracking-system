@@ -9,6 +9,7 @@ describe("dashboard configuration", () => {
       "DIRECTOR",
       "ENDORSING_COMMITTEE",
       "MANAGEMENT",
+      "EXECUTIVE",
       "ADMIN",
     ];
 

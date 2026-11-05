@@ -24,6 +24,11 @@ export const DASHBOARD_HEADINGS: Record<
     description:
       "Review endorsed procurement plans, provide comments, and record executive approvals or rejections.",
   },
+  EXECUTIVE: {
+    eyebrow: "Executive oversight",
+    description:
+      "View the Executive Dashboard and procurement reports.",
+  },
   ADMIN: {
     eyebrow: "System administration",
     description:

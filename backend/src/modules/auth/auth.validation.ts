@@ -119,6 +119,7 @@ export const adminCreateUserSchema = registry.register(
         'DIRECTOR',
         'ENDORSING_COMMITTEE',
         'MANAGEMENT_TEAM',
+        'EXECUTIVE',
         'ADMIN',
       ])
       .openapi({ example: 'OFFICER' }),

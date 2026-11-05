@@ -82,8 +82,13 @@ const AVAILABLE_ROLES: {
   },
   {
     role: "MANAGEMENT",
-    label: "Executive",
+    label: "Executive Management",
     desc: "High-level strategic review, oversight comments, and executive approvals.",
+  },
+  {
+    role: "EXECUTIVE",
+    label: "Executive",
+    desc: "Access to the Executive Dashboard and procurement reports only.",
   },
   {
     role: "ADMIN",

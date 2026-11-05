@@ -13,6 +13,7 @@ const roleValues = [
   'ENDORSING_COMMITTEE',
   'MANAGEMENT',
   'MANAGEMENT_TEAM',
+  'EXECUTIVE',
   'ADMIN',
   'ADMINISTRATOR',
 ] as const;

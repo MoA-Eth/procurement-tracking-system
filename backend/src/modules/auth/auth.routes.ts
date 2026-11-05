@@ -148,6 +148,9 @@ const createUserSchema = z.object({
       if (clean === 'MANAGEMENTTEAM' || clean === 'MANAGEMENT') {
         return UserRole.MANAGEMENT;
       }
+      if (clean === 'EXECUTIVE') {
+        return UserRole.EXECUTIVE;
+      }
       if (clean === 'ENDORSINGCOMMITTEE') {
         return UserRole.ENDORSING_COMMITTEE;
       }
@@ -169,7 +172,7 @@ const createUserSchema = z.object({
     .pipe(
       z.nativeEnum(UserRole, {
         message:
-          'Role must be OFFICER, DIRECTOR, ENDORSING_COMMITTEE, MANAGEMENT, or ADMIN',
+          'Role must be OFFICER, DIRECTOR, ENDORSING_COMMITTEE, MANAGEMENT, EXECUTIVE, or ADMIN',
       }),
     ),
 });
@@ -279,6 +282,7 @@ async function deliverUserInvitation(values: {
     [UserRole.DIRECTOR]: 'Procurement Director',
     [UserRole.ENDORSING_COMMITTEE]: 'Endorsement Committee Member',
     [UserRole.MANAGEMENT]: 'Management Team',
+    [UserRole.EXECUTIVE]: 'Executive',
     [UserRole.ADMIN]: 'System Administrator',
   };
 

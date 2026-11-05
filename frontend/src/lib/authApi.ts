@@ -28,6 +28,8 @@ function mapPrismaRoleToUserRole(role: string): UserRole {
     case "ManagementTeam":
     case "MANAGEMENT_TEAM":
       return "MANAGEMENT";
+    case "EXECUTIVE":
+      return "EXECUTIVE";
     case "ENDORSING_COMMITTEE":
       return "ENDORSING_COMMITTEE";
     case "Administrator":
