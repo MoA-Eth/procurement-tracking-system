@@ -266,11 +266,13 @@ describe("ReportTables - Dedicated Tables & Empty State", () => {
   });
 
   it("renders dedicated table headers and rows for Plan vs Actual report", () => {
+    const fullDescription =
+      "Supply and delivery of agricultural inputs, including transportation, storage, and distribution to participating communities.";
     const mockRows = [
       {
         id: "act-1",
         refNo: "MOA/G-01",
-        description: "Fertilizer procurement",
+        description: fullDescription,
         method: "RFB - National",
         plannedAdvertisingDate: "2025-08-01",
         actualAdvertisingDate: "2025-08-10",
@@ -300,7 +302,8 @@ describe("ReportTables - Dedicated Tables & Empty State", () => {
 
     expect(html).toContain("Plan vs Actual Output");
     expect(html).toContain("MOA/G-01");
-    expect(html).toContain("Fertilizer procurement");
+    expect(html).toContain(fullDescription);
+    expect(html).toContain("max-w-[320px] whitespace-normal break-words");
     expect(html).toContain("Plan Advert");
     expect(html).toContain("Actual Signed");
   });

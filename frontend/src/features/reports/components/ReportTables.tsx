@@ -24,6 +24,9 @@ function formatReportActivityDate(value?: string | null) {
   return formatDualCalendarDate(value) || value || "—";
 }
 
+const descriptionCellClass =
+  "py-2.5 px-3 max-w-[320px] whitespace-normal break-words align-top";
+
 export interface ReportTablesProps {
   activeReport: ReportType;
   annualPlanRows: AnnualPlanReportRow[];
@@ -327,7 +330,7 @@ export function ReportTables({
                     </span>
                   </td>
                   <td
-                    className="py-2.5 px-3 max-w-[200px] truncate"
+                    className={descriptionCellClass}
                     title={row.description}
                   >
                     {row.description}
@@ -399,7 +402,7 @@ export function ReportTables({
                         </span>
                       </td>
                       <td
-                        className="py-2.5 px-3 max-w-[160px] truncate"
+                        className={descriptionCellClass}
                         title={row.description}
                       >
                         {row.description}
@@ -478,7 +481,7 @@ export function ReportTables({
                         </span>
                       </td>
                       <td
-                        className="py-2.5 px-3 max-w-[160px] truncate"
+                        className={descriptionCellClass}
                         title={row.description}
                       >
                         {row.description}
@@ -567,7 +570,7 @@ export function ReportTables({
                     </span>
                   </td>
                   <td
-                    className="py-2.5 px-3 max-w-[160px] truncate"
+                    className={descriptionCellClass}
                     title={row.description}
                   >
                     {row.description}
@@ -649,7 +652,7 @@ export function ReportTables({
                     </span>
                   </td>
                   <td
-                    className="py-2.5 px-3 max-w-[180px] truncate"
+                    className={descriptionCellClass}
                     title={row.description}
                   >
                     {row.description}
@@ -772,7 +775,7 @@ export function ReportTables({
                         </span>
                       </td>
                       <td
-                        className="py-2.5 px-3 max-w-[180px] truncate"
+                        className={descriptionCellClass}
                         title={row.description}
                       >
                         {row.description || "Package details"}
@@ -910,7 +913,7 @@ export function ReportTables({
                     {row.rowNo || idx + 1}
                   </td>
                   <td
-                    className="py-2.5 px-3 max-w-[200px] truncate font-medium"
+                    className={`${descriptionCellClass} font-medium`}
                     title={row.description}
                   >
                     {row.description}
