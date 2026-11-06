@@ -32,6 +32,11 @@ import {
   parseNumberWithCommas,
 } from "@/lib/numberFormatting";
 import { formatDualCalendarDate } from "@/features/projects/utils/ethiopianCalendar";
+import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
 
 interface ActivitiesListViewProps {
   plan: ProcurementPlan;
@@ -183,6 +188,18 @@ export function ActivitiesListView({
       statusFilter === "ALL" || getActivityStatus(act) === statusFilter;
     return matchesSearch && matchesMethod && matchesReview && matchesStatus;
   });
+  const {
+    pageItems: paginatedActivities,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(filteredActivities, 15);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, methodFilter, reviewFilter, statusFilter, setPage]);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200 pb-8">
@@ -973,7 +990,7 @@ export function ActivitiesListView({
 
           {/* Tabular Activity Directory */}
           <div className="rounded-xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
+            <HorizontalTableScroller label="Activity list">
               <table className="w-full text-left border-collapse min-w-[920px]">
                 <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                   <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -1013,7 +1030,7 @@ export function ActivitiesListView({
                       </td>
                     </tr>
                   ) : (
-                    filteredActivities.map((act, index) => {
+                    paginatedActivities.map((act, index) => {
                       const completedStages = act.roadmap.filter(
                         (s) => s.stageStatus === "Completed",
                       ).length;
@@ -1064,7 +1081,7 @@ export function ActivitiesListView({
                           className="hover:bg-slate-50 transition-colors cursor-pointer"
                         >
                           <td className="py-2 px-3 font-mono text-slate-400 font-semibold text-center">
-                            {index + 1}
+                            {startIndex + index + 1}
                           </td>
 
                           <td className="py-2 px-3 text-xs">
@@ -1133,7 +1150,15 @@ export function ActivitiesListView({
                   )}
                 </tbody>
               </table>
-            </div>
+            </HorizontalTableScroller>
+            <PaginationControls
+              page={page}
+              pageCount={pageCount}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              totalItems={filteredActivities.length}
+              setPage={setPage}
+            />
           </div>
 
           {/* Director Decision & Workflow Actions Card (Aligned Below Activities Directory Table) */}

@@ -1273,7 +1273,7 @@ export function OfficerProcurementPlanDetailView({
                   Method
                 </th>
                 <th className="w-[12%] px-2 py-3 text-right" scope="col">
-                  Est. Amount ({currentPlan.currency})
+                  Est. amount
                 </th>
                 <th className="w-[11%] px-2 py-3" scope="col">
                   Current Stage
@@ -1324,6 +1324,7 @@ export function OfficerProcurementPlanDetailView({
                       <ActivityRow
                         key={activity.reference}
                         activity={activity}
+                        planCurrency={currentPlan.currency}
                         stageLabel={stageLabel}
                         canEdit={activePlanStatus === "Draft" || isReturned}
                         canDeleteDraft={
@@ -1840,6 +1841,7 @@ export function OfficerProcurementPlanDetailView({
 
 function ActivityRow({
   activity,
+  planCurrency,
   stageLabel,
   canEdit = true,
   canDeleteDraft = false,
@@ -1851,6 +1853,7 @@ function ActivityRow({
   registerContractHref,
 }: {
   activity: PlanActivity;
+  planCurrency?: string;
   stageLabel?: string;
   canEdit?: boolean;
   canDeleteDraft?: boolean;
@@ -1937,6 +1940,9 @@ function ActivityRow({
         {activity.method}
       </td>
       <td className="px-2 py-2.5 text-right align-top font-mono text-[10px] font-medium tabular-nums text-slate-800">
+        <span className="mr-1 text-slate-500">
+          {activity.currency || planCurrency || "ETB"}
+        </span>
         {formatAmount(activity.estimatedAmount)}
       </td>
       <td className="px-2 py-2.5 align-top text-[10px] text-slate-500">
