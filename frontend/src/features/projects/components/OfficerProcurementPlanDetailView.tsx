@@ -52,6 +52,7 @@ import {
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
 import { exportPlanActivitiesToExcel } from "@/features/projects/utils/projectExcelUtils";
 import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
+import type { AuthUser } from "@/lib/authTypes";
 import {
   PhaseDelayBreakdownModal,
   calculateRealActivityDelay,
@@ -69,6 +70,7 @@ export function OfficerProcurementPlanDetailView({
   onDeleteDraftActivity,
   onDeleteDraftPlan,
   onBulkImportActivities,
+  currentUser,
   plan,
   project,
   savedActivities = [],
@@ -87,6 +89,7 @@ export function OfficerProcurementPlanDetailView({
   onBulkImportActivities?: (
     activities: ProcurementActivitySummary[],
   ) => Promise<void> | void;
+  currentUser?: AuthUser | null;
   plan: ProcurementPlanSummary;
   project: OfficerProject;
   savedActivities?: readonly ProcurementActivitySummary[];
@@ -1319,6 +1322,25 @@ export function OfficerProcurementPlanDetailView({
                       activity.currentStage !== "Not Started"
                         ? activity.currentStage
                         : undefined);
+                    const isActivityCreator =
+                      currentUser?.role === "OFFICER" &&
+                      (activity.createdById
+                        ? activity.createdById === currentUser.id
+                        : Boolean(
+                            activity.createdByName &&
+                              activity.createdByName
+                                .trim()
+                                .toLowerCase() ===
+                                currentUser.displayName
+                                  .trim()
+                                  .toLowerCase() &&
+                              ![
+                                "assigned officer",
+                                "procurement officer",
+                              ].includes(
+                                activity.createdByName.trim().toLowerCase(),
+                              ),
+                          ));
 
                     return (
                       <ActivityRow
@@ -1326,8 +1348,12 @@ export function OfficerProcurementPlanDetailView({
                         activity={activity}
                         planCurrency={currentPlan.currency}
                         stageLabel={stageLabel}
-                        canEdit={activePlanStatus === "Draft" || isReturned}
+                        canEdit={
+                          isActivityCreator &&
+                          (activePlanStatus === "Draft" || isReturned)
+                        }
                         canDeleteDraft={
+                          isActivityCreator &&
                           (activePlanStatus === "Draft" || isReturned) &&
                           activity.status === "Draft"
                         }

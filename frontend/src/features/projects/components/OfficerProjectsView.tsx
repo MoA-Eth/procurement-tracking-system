@@ -1270,6 +1270,17 @@ export function OfficerProjectsView({
             a.activityId === activity.activityId)) ||
         a.reference.toLowerCase() === activity.reference.toLowerCase(),
     );
+    const activityToSave: ProcurementActivitySummary = {
+        ...activity,
+        createdById:
+          existing?.createdById ||
+          activity.createdById ||
+          (existing ? undefined : effectiveUser?.id),
+        createdByName:
+          existing?.createdByName ||
+          activity.createdByName ||
+          (existing ? undefined : effectiveUser?.displayName),
+    };
     if (existing) {
       const existingAny = existing as any;
       const activityAny = activity as any;
@@ -1322,7 +1333,7 @@ export function OfficerProjectsView({
     }
 
     const nextRecords = addSavedActivityRecord(savedActivityRecords, {
-      activity,
+      activity: activityToSave,
       planReference: planRef,
       projectCode: selectedProject.code,
     });
@@ -1338,7 +1349,7 @@ export function OfficerProjectsView({
         a.reference.toLowerCase() !== activity.reference.toLowerCase() &&
         (!a.id || !(activity as any).id || a.id !== (activity as any).id),
     );
-    const updatedActivities = [...currentPlanActivities, activity];
+    const updatedActivities = [...currentPlanActivities, activityToSave];
 
     const updatedPlan: ProcurementPlanSummary = {
       ...selectedPlan,
@@ -2666,6 +2677,7 @@ export function OfficerProjectsView({
   if (selectedProject && selectedPlan) {
     return (
       <OfficerProcurementPlanDetailView
+        currentUser={effectiveUser}
         onDeleteDraftPlan={handleDeleteDraftPlan}
         onDeleteDraftActivity={handleDeleteDraftActivity}
         onBulkImportActivities={handleBulkImportActivities}

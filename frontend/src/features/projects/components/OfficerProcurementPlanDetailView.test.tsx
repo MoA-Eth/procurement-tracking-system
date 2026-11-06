@@ -238,10 +238,18 @@ describe("OfficerProcurementPlanDetailView", () => {
     };
     const draftActivity = {
       ...sampleActivity,
+      createdById: "officer-1",
       status: "Draft" as const,
     };
     const markup = renderToStaticMarkup(
       <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer One",
+          role: "OFFICER",
+        }}
         onDeleteDraftActivity={async () => {}}
         plan={draftPlan}
         project={mockProject}
@@ -253,6 +261,40 @@ describe("OfficerProcurementPlanDetailView", () => {
       `aria-label="Delete draft activity ${draftActivity.reference}"`,
     );
     expect(markup).not.toContain('role="dialog"');
+  });
+
+  it("hides activity edit and delete actions from an officer who did not create it", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const draftActivity = {
+      ...sampleActivity,
+      createdById: "officer-1",
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-2",
+          email: "other@example.com",
+          username: "other",
+          displayName: "Officer Two",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[draftActivity]}
+      />,
+    );
+
+    expect(markup).not.toContain(
+      `aria-label="Edit activity ${draftActivity.reference}"`,
+    );
+    expect(markup).not.toContain(
+      `aria-label="Delete draft activity ${draftActivity.reference}"`,
+    );
   });
 
   it("does not render Register Contract while the plan is under review", () => {
