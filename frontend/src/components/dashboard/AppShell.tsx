@@ -112,22 +112,29 @@ export function AppShell({
       (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
     )
     .sort((a, b) => b.href.length - a.href.length)[0];
-  const pageTitle =
-    currentNav?.label ??
-    (pathname.startsWith("/workspace/settings")
-      ? "Settings"
-      : pathname.startsWith("/profile")
-        ? "My Profile"
-        : pathname.startsWith("/dashboard")
-          ? "Dashboard"
-          : "");
-  const PageIcon: LucideIcon = currentNav
-    ? navigationIcons[currentNav.icon]
-    : pathname.startsWith("/workspace/settings")
-      ? Settings
-      : pathname.startsWith("/profile")
-        ? UserRound
-        : LayoutDashboard;
+  const isFinanceDisbursements =
+    pathname.startsWith("/workspace/finance-disbursements") ||
+    pathname === "/dashboard/finance";
+
+  const pageTitle = isFinanceDisbursements
+    ? "Finance Disbursements · የፋይናንስ ክፍያዎች ክትትል"
+    : currentNav?.label ??
+      (pathname.startsWith("/workspace/settings")
+        ? "Settings"
+        : pathname.startsWith("/profile")
+          ? "My Profile"
+          : pathname.startsWith("/dashboard")
+            ? "Dashboard"
+            : "");
+  const PageIcon: LucideIcon = isFinanceDisbursements
+    ? Banknote
+    : currentNav
+      ? navigationIcons[currentNav.icon]
+      : pathname.startsWith("/workspace/settings")
+        ? Settings
+        : pathname.startsWith("/profile")
+          ? UserRound
+          : LayoutDashboard;
 
   // Set after mount so the server's time zone never shows a different day
   const [today, setToday] = useState<ReturnType<typeof todayLabels> | null>(

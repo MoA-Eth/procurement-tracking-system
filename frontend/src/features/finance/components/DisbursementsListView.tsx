@@ -371,10 +371,10 @@ export function DisbursementsListView({
       {/* Top Header & Tab Navigation */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 pr-4">
-          <h1 className="text-xl font-semibold text-slate-900">
+          <h1 className="sr-only">
             Finance Disbursements · የፋይናንስ ክፍያዎች ክትትል
           </h1>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <p className="text-sm text-slate-500">
             Record and monitor ministry disbursements. Payments ≥ ETB{" "}
             {new Intl.NumberFormat("en-US").format(liveThreshold)} trigger SMS alerts to{" "}
             {liveRecipientCount} executive recipient{liveRecipientCount !== 1 ? "s" : ""}.
