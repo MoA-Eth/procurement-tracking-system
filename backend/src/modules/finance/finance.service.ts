@@ -197,21 +197,56 @@ export async function createDisbursement(data: DisbursementInput, userId: string
   const threshold = settings.thresholdEtb;
   const willTriggerSms = settings.smsEnabled && data.amount >= threshold;
 
-  const payment = await prisma.payment.create({
-    data: {
-      referenceNo: data.referenceNo,
-      payeeName: data.payeeName,
-      amount: data.amount,
-      category: data.category,
-      paymentMethod: data.paymentMethod,
-      paymentDate: new Date(data.paymentDate),
-      remarks: data.remarks ?? null,
-      contractId: data.contractId || null,
-      createdById: userId,
-      status: 'PAID',
-      smsTriggered: false,
-      smsStatus: willTriggerSms ? 'PENDING' : null,
-    },
+  const payment = await prisma.$transaction(async (tx) => {
+    let resolvedPayee = data.payeeName;
+    let resolvedContractId: string | null = null;
+
+    if (data.contractId) {
+      const contract = await tx.contract.findUnique({
+        where: { id: data.contractId },
+        include: { supplier: true },
+      });
+
+      if (contract) {
+        resolvedContractId = contract.id;
+        if (!resolvedPayee) {
+          resolvedPayee = contract.supplier?.name || resolvedPayee;
+        }
+
+        const currentPaid = Number(contract.paidAmount || 0);
+        const limit = Number(
+          contract.contractAmountWithVat || contract.totalValue,
+        );
+        const newPaid = currentPaid + data.amount;
+        const newRemaining = Math.max(0, limit - newPaid);
+
+        await tx.contract.update({
+          where: { id: contract.id },
+          data: {
+            paidAmount: newPaid,
+            remainingValue: newRemaining,
+          },
+        });
+      }
+    }
+
+    return await tx.payment.create({
+      data: {
+        referenceNo: data.referenceNo,
+        payeeName: resolvedPayee,
+        amount: data.amount,
+        category: data.category,
+        paymentMethod: data.paymentMethod,
+        paymentType: data.paymentType ?? null,
+        paymentDate: new Date(data.paymentDate),
+        remarks: data.remarks ?? null,
+        contractId: resolvedContractId,
+        createdById: userId,
+        status: 'PAID',
+        smsTriggered: false,
+        smsStatus: willTriggerSms ? 'PENDING' : null,
+      },
+    });
   });
 
   // Fire-and-forget SMS dispatch if threshold met
@@ -220,6 +255,61 @@ export async function createDisbursement(data: DisbursementInput, userId: string
   }
 
   return payment;
+}
+
+export async function getContractsLookup(search?: string) {
+  const where: Record<string, unknown> = {
+    deletedAt: null,
+  };
+
+  if (search) {
+    where.OR = [
+      { contractNo: { contains: search, mode: 'insensitive' } },
+      { purchaseOrderNo: { contains: search, mode: 'insensitive' } },
+      { supplier: { name: { contains: search, mode: 'insensitive' } } },
+    ];
+  }
+
+  const contracts = await prisma.contract.findMany({
+    where,
+    select: {
+      id: true,
+      contractNo: true,
+      purchaseOrderNo: true,
+      totalValue: true,
+      contractAmountWithVat: true,
+      paidAmount: true,
+      remainingValue: true,
+      currency: true,
+      sector: true,
+      status: true,
+      supplier: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          tinNumber: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 40,
+  });
+
+  return contracts.map((c) => ({
+    id: c.id,
+    contractNo: c.contractNo,
+    purchaseOrderNo: c.purchaseOrderNo,
+    totalValue: Number(c.contractAmountWithVat || c.totalValue),
+    paidAmount: Number(c.paidAmount),
+    remainingValue: Number(c.remainingValue),
+    currency: c.currency || 'ETB',
+    sector: c.sector,
+    status: c.status,
+    supplierName: c.supplier?.name || '',
+    supplierPhone: c.supplier?.phone || null,
+    supplierTin: c.supplier?.tinNumber || null,
+  }));
 }
 
 export async function getDisbursements(params: {
@@ -260,7 +350,13 @@ export async function getDisbursements(params: {
       take: limit,
       include: {
         creator: { select: { id: true, displayName: true, email: true } },
-        contract: { select: { id: true, contractNo: true } },
+        contract: {
+          select: {
+            id: true,
+            contractNo: true,
+            supplier: { select: { id: true, name: true } },
+          },
+        },
         smsLogs: { orderBy: { sentAt: 'desc' }, take: 10 },
       },
     }),

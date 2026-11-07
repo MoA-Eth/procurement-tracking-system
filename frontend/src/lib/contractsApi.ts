@@ -93,6 +93,10 @@ export interface RecordPaymentInput {
   amount: number;
   referenceNo: string;
   idempotencyKey: string;
+  paymentMethod?: "BANK_TRANSFER" | "CHEQUE_CPO" | "CASH" | null;
+  paymentType?: string | null;
+  paymentDate?: string | Date | null;
+  remarks?: string | null;
 }
 
 import { apiClient, directApiFetch, ApiClientError } from "./apiClient";

@@ -29,6 +29,8 @@ import {
   CATEGORY_LABELS_AM,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHOD_LABELS_AM,
+  CONTRACT_PAYMENT_TYPE_LABELS,
+  CONTRACT_PAYMENT_TYPE_LABELS_AM,
   type Disbursement,
   type DisbursementCategory,
   type PaymentMethod,
@@ -236,6 +238,14 @@ function DisbursementDetailPanel({
                 <dt className="text-slate-500">Contract · ውል</dt>
                 <dd className="font-mono text-slate-900 text-right text-xs">
                   {data.contract.contractNo || data.contract.contractNumber}
+                </dd>
+              </div>
+            )}
+            {data.paymentType && (
+              <div className="flex justify-between">
+                <dt className="text-slate-500">Milestone · ምዕራፍ</dt>
+                <dd className="text-slate-900 text-right text-xs font-semibold">
+                  {CONTRACT_PAYMENT_TYPE_LABELS[data.paymentType] || data.paymentType}
                 </dd>
               </div>
             )}
@@ -525,8 +535,13 @@ export function DisbursementsListView({
                             <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-700">
                               {item.referenceNo}
                             </td>
-                            <td className="px-4 py-3 text-slate-900 max-w-[180px] truncate font-medium">
-                              {item.payeeName}
+                            <td className="px-4 py-3 text-slate-900 max-w-[200px]">
+                              <p className="truncate font-medium">{item.payeeName}</p>
+                              {item.contract?.contractNo && (
+                                <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 font-mono">
+                                  {item.contract.contractNo}
+                                </span>
+                              )}
                             </td>
                             <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-slate-900">
                               <span

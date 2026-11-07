@@ -15,6 +15,18 @@ export const DisbursementSchema = z.object({
   paymentDate: z.string().min(1, 'Payment date is required'),
   remarks: z.string().max(1000).optional(),
   contractId: z.string().optional().nullable(),
+  paymentType: z
+    .enum([
+      'ADVANCE',
+      'INTERIM_1',
+      'INTERIM_2',
+      'FINAL',
+      'RETENTION_WITHHOLDING',
+      'RETENTION_PAYMENT',
+      'OTHER',
+    ])
+    .optional()
+    .nullable(),
 });
 
 export type DisbursementInput = z.infer<typeof DisbursementSchema>;

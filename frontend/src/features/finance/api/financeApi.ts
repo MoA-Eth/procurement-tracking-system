@@ -11,6 +11,35 @@ export type DisbursementCategory =
 
 export type PaymentMethod = "BANK_TRANSFER" | "CHEQUE_CPO" | "CASH";
 
+export type ContractPaymentType =
+  | "ADVANCE"
+  | "INTERIM_1"
+  | "INTERIM_2"
+  | "FINAL"
+  | "RETENTION_WITHHOLDING"
+  | "RETENTION_PAYMENT"
+  | "OTHER";
+
+export const CONTRACT_PAYMENT_TYPE_LABELS: Record<ContractPaymentType, string> = {
+  ADVANCE: "Advance Payment",
+  INTERIM_1: "1st Interim Payment",
+  INTERIM_2: "2nd Interim Payment",
+  FINAL: "Final Payment",
+  RETENTION_PAYMENT: "Retention Release",
+  RETENTION_WITHHOLDING: "Retention Withholding",
+  OTHER: "Other Milestone / General",
+};
+
+export const CONTRACT_PAYMENT_TYPE_LABELS_AM: Record<ContractPaymentType, string> = {
+  ADVANCE: "ቅድመ ክፍያ",
+  INTERIM_1: "የመጀመሪያ ምዕራፍ ክፍያ",
+  INTERIM_2: "ሁለተኛ ምዕራፍ ክፍያ",
+  FINAL: "የመጨረሻ ክፍያ",
+  RETENTION_PAYMENT: "የተያዘ ገንዘብ ክፍያ",
+  RETENTION_WITHHOLDING: "የዋስትና ገንዘብ ተቀናሽ",
+  OTHER: "ሌላ ክፍያ",
+};
+
 export const CATEGORY_LABELS: Record<DisbursementCategory, string> = {
   PROCUREMENT_GOODS: "Procurement / Goods & Supplies",
   CONTRACTOR_WORKS: "Contractor & Construction Works",
@@ -65,8 +94,14 @@ export interface Disbursement {
   smsStatus: string | null;
   createdAt: string;
   status: string;
+  paymentType?: ContractPaymentType | null;
   creator?: { id: string; displayName: string; email: string } | null;
-  contract?: { id: string; contractNo?: string; contractNumber?: string } | null;
+  contract?: {
+    id: string;
+    contractNo?: string;
+    contractNumber?: string;
+    supplier?: { id: string; name: string } | null;
+  } | null;
   smsLogs?: SmsLogEntry[];
 }
 
@@ -78,12 +113,28 @@ export interface DisbursementListResponse {
   totalPages: number;
 }
 
+export interface ContractLookupItem {
+  id: string;
+  contractNo: string;
+  purchaseOrderNo?: string | null;
+  totalValue: number;
+  paidAmount: number;
+  remainingValue: number;
+  currency: string;
+  sector?: string | null;
+  status: string;
+  supplierName: string;
+  supplierPhone?: string | null;
+  supplierTin?: string | null;
+}
+
 export interface DisbursementFormData {
   referenceNo: string;
   payeeName: string;
   amount: number;
   category: DisbursementCategory;
   paymentMethod: PaymentMethod;
+  paymentType?: ContractPaymentType | null;
   paymentDate: string; // ISO date string
   remarks?: string;
   contractId?: string | null;
@@ -104,6 +155,14 @@ export interface SmsSettings {
 }
 
 // ─── API functions ─────────────────────────────────────────────────────────────
+
+export async function fetchContractsLookup(
+  search?: string,
+): Promise<{ data: ContractLookupItem[] }> {
+  return directApiFetch("/finance/contracts-lookup", {
+    params: search ? { search } : undefined,
+  });
+}
 
 export async function createDisbursement(
   data: DisbursementFormData,

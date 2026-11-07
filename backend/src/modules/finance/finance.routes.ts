@@ -5,7 +5,12 @@ import { financeController } from './finance.controller.js';
 const router = Router();
 router.use(authenticate);
 
-// Disbursements
+// Disbursements & Contracts Lookup
+router.get(
+  '/contracts-lookup',
+  authorize('FINANCE', 'ADMIN'),
+  (req, res, next) => financeController.getContractsLookup(req, res).catch(next),
+);
 router.post(
   '/disbursements',
   authorize('FINANCE', 'ADMIN'),

@@ -39,6 +39,12 @@ export const financeController = {
     res.json({ data });
   },
 
+  async getContractsLookup(req: Request, res: Response) {
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    const contracts = await financeService.getContractsLookup(search);
+    res.json({ data: contracts });
+  },
+
   async retrySms(req: Request, res: Response) {
     const id = String(req.params.id);
     const result = await financeService.retrySms(id);

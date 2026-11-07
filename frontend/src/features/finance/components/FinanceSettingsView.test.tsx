@@ -6,11 +6,9 @@ import type { AuthUser } from "@/lib/authTypes";
 const mockCurrentUser: AuthUser = {
   id: "user-1",
   email: "finance@moa.gov.et",
+  username: "finance",
+  displayName: "Finance Officer",
   role: "FINANCE",
-  name: "Finance Officer",
-  nameAmharic: "የፋይናንስ ኦፊሰር",
-  department: "Finance",
-  departmentAmharic: "ፋይናንስ",
 };
 
 describe("FinanceSettingsView", () => {
