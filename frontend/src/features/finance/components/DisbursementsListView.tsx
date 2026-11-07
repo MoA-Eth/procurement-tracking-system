@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Plus,
   Search,
@@ -15,6 +16,7 @@ import {
   RotateCcw,
   Loader2,
   Banknote,
+  Settings,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/authTypes";
 import {
@@ -33,7 +35,6 @@ import {
   type SmsLogEntry,
 } from "../api/financeApi";
 import { DisbursementForm } from "./DisbursementForm";
-import { SmsSettingsPanel } from "./SmsSettingsPanel";
 
 interface DisbursementsListViewProps {
   currentUser: AuthUser;
@@ -330,7 +331,7 @@ export function DisbursementsListView({
         }
       })
       .catch(() => {});
-  }, [activeTab]);
+  }, [showForm]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -354,10 +355,8 @@ export function DisbursementsListView({
   }, [page, search, categoryFilter, smsStatusFilter]);
 
   useEffect(() => {
-    if (activeTab === "disbursements") {
-      load();
-    }
-  }, [load, activeTab]);
+    load();
+  }, [load]);
 
   function handleSearchKey(e: React.KeyboardEvent) {
     if (e.key === "Enter") {
@@ -382,33 +381,16 @@ export function DisbursementsListView({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {isAdmin && (
-            <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
-              <button
-                type="button"
-                onClick={() => setActiveTab("disbursements")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  activeTab === "disbursements"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Disbursements
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("settings")}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  activeTab === "settings"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                SMS Gateway
-              </button>
-            </div>
+          {isFinanceOrAdmin && (
+            <Link
+              href="/workspace/finance-settings"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-sm transition-colors"
+            >
+              <Settings size={15} className="text-slate-500" />
+              Settings · ቅንብሮች
+            </Link>
           )}
-          {isFinanceOrAdmin && activeTab === "disbursements" && (
+          {isFinanceOrAdmin && (
             <button
               onClick={() => setShowForm(true)}
               className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm"
@@ -420,10 +402,7 @@ export function DisbursementsListView({
         </div>
       </div>
 
-      {activeTab === "settings" && isAdmin ? (
-        <SmsSettingsPanel />
-      ) : (
-        <div className="flex flex-1 gap-4">
+      <div className="flex flex-1 gap-4">
           {/* Main panel */}
           <div className="flex flex-1 flex-col min-w-0">
             {/* Filters */}
@@ -660,7 +639,6 @@ export function DisbursementsListView({
             </div>
           )}
         </div>
-      )}
     </div>
   );
 }

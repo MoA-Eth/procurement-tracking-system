@@ -35,12 +35,12 @@ router.get(
 );
 router.put(
   '/settings',
-  authorize('ADMIN'),
+  authorize('ADMIN', 'FINANCE'),
   (req, res, next) => financeController.updateSmsSettings(req, res).catch(next),
 );
 router.post(
   '/settings/test-sms',
-  authorize('ADMIN'),
+  authorize('ADMIN', 'FINANCE'),
   (req, res, next) => financeController.testSms(req, res).catch(next),
 );
 

@@ -171,6 +171,15 @@ const workspaceSections = {
       "Record and monitor high-value ministry disbursements with executive SMS alerts.",
     allowedRoles: ["FINANCE", "ADMIN"],
   },
+  "finance-settings": {
+    section: "finance-settings",
+    label: "Settings",
+    href: "/workspace/finance-settings",
+    icon: "settings",
+    description:
+      "Configure SMS gateway credentials, high-value alert threshold, and manage subscribers.",
+    allowedRoles: ["FINANCE", "ADMIN"],
+  },
 } as const satisfies Record<string, WorkspaceSection>;
 
 type WorkspaceSectionKey = keyof typeof workspaceSections;
@@ -194,14 +203,22 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "reports",
   ],
   ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],
-  ADMIN: ["user-management", "system-logs", "finance-disbursements"],
-  FINANCE: ["finance-disbursements"],
+  ADMIN: [
+    "user-management",
+    "system-logs",
+    "finance-disbursements",
+    "finance-settings",
+  ],
+  FINANCE: ["finance-disbursements", "finance-settings"],
 };
 
 export function getNavigationForRole(role: UserRole): NavigationItem[] {
   const normRole = normalizeUserRole(role);
   if (normRole === "FINANCE") {
-    return [workspaceSections["finance-disbursements"]];
+    return [
+      workspaceSections["finance-disbursements"],
+      workspaceSections["finance-settings"],
+    ];
   }
   const sections = roleSectionOrder[role] || roleSectionOrder[normRole] || [];
   return [

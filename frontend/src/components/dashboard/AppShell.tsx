@@ -115,26 +115,32 @@ export function AppShell({
   const isFinanceDisbursements =
     pathname.startsWith("/workspace/finance-disbursements") ||
     pathname === "/dashboard/finance";
+  const isFinanceSettings =
+    pathname.startsWith("/workspace/finance-settings");
 
   const pageTitle = isFinanceDisbursements
     ? "Finance Disbursements · የፋይናንስ ክፍያዎች ክትትል"
-    : currentNav?.label ??
-      (pathname.startsWith("/workspace/settings")
-        ? "Settings"
-        : pathname.startsWith("/profile")
-          ? "My Profile"
-          : pathname.startsWith("/dashboard")
-            ? "Dashboard"
-            : "");
+    : isFinanceSettings
+      ? "Settings · ማስተካከያዎች"
+      : currentNav?.label ??
+        (pathname.startsWith("/workspace/settings")
+          ? "Settings"
+          : pathname.startsWith("/profile")
+            ? "My Profile"
+            : pathname.startsWith("/dashboard")
+              ? "Dashboard"
+              : "");
   const PageIcon: LucideIcon = isFinanceDisbursements
     ? Banknote
-    : currentNav
-      ? navigationIcons[currentNav.icon]
-      : pathname.startsWith("/workspace/settings")
-        ? Settings
-        : pathname.startsWith("/profile")
-          ? UserRound
-          : LayoutDashboard;
+    : isFinanceSettings
+      ? Settings
+      : currentNav
+        ? navigationIcons[currentNav.icon]
+        : pathname.startsWith("/workspace/settings")
+          ? Settings
+          : pathname.startsWith("/profile")
+            ? UserRound
+            : LayoutDashboard;
 
   // Set after mount so the server's time zone never shows a different day
   const [today, setToday] = useState<ReturnType<typeof todayLabels> | null>(

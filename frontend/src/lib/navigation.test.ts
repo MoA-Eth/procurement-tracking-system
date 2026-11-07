@@ -39,9 +39,10 @@ describe("role navigation permission matrix", () => {
         "User Management",
         "System Logs (Timestamp)",
         "Finance Disbursements",
+        "Settings",
       ],
     ],
-    ["FINANCE", ["Finance Disbursements"]],
+    ["FINANCE", ["Finance Disbursements", "Settings"]],
   ] as const)("shows only %s menu items", (role, labels) => {
     expect(getNavigationForRole(role).map((item) => item.label)).toEqual(
       labels,
@@ -58,6 +59,9 @@ describe("role navigation permission matrix", () => {
     expect(canAccessWorkspaceSection("OFFICER", "finance-disbursements")).toBe(
       false,
     );
+    expect(canAccessWorkspaceSection("FINANCE", "finance-settings")).toBe(true);
+    expect(canAccessWorkspaceSection("ADMIN", "finance-settings")).toBe(true);
+    expect(canAccessWorkspaceSection("OFFICER", "finance-settings")).toBe(false);
     expect(canAccessWorkspaceSection("ADMIN", "executive-dashboard")).toBe(
       false,
     );
