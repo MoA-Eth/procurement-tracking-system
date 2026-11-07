@@ -180,6 +180,8 @@ export async function fetchDisbursements(params?: {
   search?: string;
   category?: string;
   smsStatus?: string;
+  minAmount?: number;
+  maxAmount?: number;
   fromDate?: string;
   toDate?: string;
 }): Promise<DisbursementListResponse> {

@@ -324,10 +324,12 @@ export async function getDisbursements(params: {
   search?: string | undefined;
   category?: string | undefined;
   smsStatus?: string | undefined;
+  minAmount?: number | undefined;
+  maxAmount?: number | undefined;
   fromDate?: string | undefined;
   toDate?: string | undefined;
 }) {
-  const { page, limit, search, category, smsStatus, fromDate, toDate } = params;
+  const { page, limit, search, category, smsStatus, minAmount, maxAmount, fromDate, toDate } = params;
   const skip = (page - 1) * limit;
 
   const where: Record<string, unknown> = {};
@@ -341,6 +343,12 @@ export async function getDisbursements(params: {
   }
   if (category) where.category = category;
   if (smsStatus) where.smsStatus = smsStatus;
+  if (minAmount !== undefined || maxAmount !== undefined) {
+    where.amount = {
+      ...(minAmount !== undefined ? { gte: minAmount } : {}),
+      ...(maxAmount !== undefined ? { lte: maxAmount } : {}),
+    };
+  }
   if (fromDate || toDate) {
     where.paymentDate = {
       ...(fromDate ? { gte: new Date(fromDate) } : {}),

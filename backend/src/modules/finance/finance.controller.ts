@@ -27,6 +27,8 @@ export const financeController = {
       search: typeof req.query.search === 'string' ? req.query.search : undefined,
       category: typeof req.query.category === 'string' ? req.query.category : undefined,
       smsStatus: typeof req.query.smsStatus === 'string' ? req.query.smsStatus : undefined,
+      minAmount: req.query.minAmount ? Number(req.query.minAmount) : undefined,
+      maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : undefined,
       fromDate: typeof req.query.fromDate === 'string' ? req.query.fromDate : undefined,
       toDate: typeof req.query.toDate === 'string' ? req.query.toDate : undefined,
     });

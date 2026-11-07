@@ -324,6 +324,7 @@ export function DisbursementsListView({
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [smsStatusFilter, setSmsStatusFilter] = useState("");
+  const [amountTierFilter, setAmountTierFilter] = useState("");
 
   const [showForm, setShowForm] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -347,12 +348,30 @@ export function DisbursementsListView({
     setLoading(true);
     setError(null);
     try {
+      let minAmount: number | undefined;
+      let maxAmount: number | undefined;
+      if (amountTierFilter === "HIGH_VALUE") {
+        minAmount = liveThreshold;
+      } else if (amountTierFilter === "GE_10M") {
+        minAmount = 10000000;
+      } else if (amountTierFilter === "GE_20M") {
+        minAmount = 20000000;
+      } else if (amountTierFilter === "GE_50M") {
+        minAmount = 50000000;
+      } else if (amountTierFilter === "GE_100M") {
+        minAmount = 100000000;
+      } else if (amountTierFilter === "LT_10M") {
+        maxAmount = 9999999.99;
+      }
+
       const r = await fetchDisbursements({
         page,
         limit: 20,
         search: search || undefined,
         category: categoryFilter || undefined,
         smsStatus: smsStatusFilter || undefined,
+        minAmount,
+        maxAmount,
       });
       setItems(r.items);
       setTotal(r.total);
@@ -362,7 +381,7 @@ export function DisbursementsListView({
     } finally {
       setLoading(false);
     }
-  }, [page, search, categoryFilter, smsStatusFilter]);
+  }, [page, search, categoryFilter, smsStatusFilter, amountTierFilter, liveThreshold]);
 
   useEffect(() => {
     load();
@@ -455,6 +474,21 @@ export function DisbursementsListView({
                 <option value="FAILED">Failed · አልተሳካም</option>
                 <option value="PARTIAL">Partial · በከፊል</option>
                 <option value="PENDING">Pending · በመጠባበቅ ላይ</option>
+              </select>
+              <select
+                value={amountTierFilter}
+                onChange={(e) => { setAmountTierFilter(e.target.value); setPage(1); }}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <option value="">All Amounts · ሁሉም የክፍያ መጠኖች</option>
+                <option value="HIGH_VALUE">
+                  ⚡ High-Value (≥ {new Intl.NumberFormat("en-US").format(liveThreshold)} ETB) · ከፍተኛ ክፍያዎች
+                </option>
+                <option value="GE_10M">≥ 10,000,000 ETB</option>
+                <option value="GE_20M">≥ 20,000,000 ETB</option>
+                <option value="GE_50M">≥ 50,000,000 ETB</option>
+                <option value="GE_100M">≥ 100,000,000 ETB</option>
+                <option value="LT_10M">&lt; 10,000,000 ETB · መደበኛ ክፍያዎች</option>
               </select>
               <button
                 onClick={() => load()}
