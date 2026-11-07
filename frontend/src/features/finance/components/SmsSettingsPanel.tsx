@@ -324,7 +324,7 @@ export function SmsSettingsPanel() {
                 onClick={handleAddRecipient}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-900"
               >
-                <Plus size={15} /> Add · አክል
+                <Plus size={15} /> Add
               </button>
             </div>
           </div>
@@ -338,11 +338,11 @@ export function SmsSettingsPanel() {
             >
               {saving ? (
                 <>
-                  <Loader2 className="animate-spin" size={16} /> በመመዝገብ ላይ… · Saving…
+                  <Loader2 className="animate-spin" size={16} /> Saving…
                 </>
               ) : (
                 <>
-                  <ShieldCheck size={16} /> Save SMS Configuration · ቅንብሩን መዝግብ
+                  <ShieldCheck size={16} /> Save SMS Configuration
                 </>
               )}
             </button>
@@ -375,11 +375,11 @@ export function SmsSettingsPanel() {
           >
             {testing ? (
               <>
-                <Loader2 className="animate-spin" size={14} /> በመሞከር ላይ… · Testing…
+                <Loader2 className="animate-spin" size={14} /> Testing…
               </>
             ) : (
               <>
-                <Send size={14} /> Send Test SMS · የሙከራ SMS ላክ
+                <Send size={14} /> Send Test SMS
               </>
             )}
           </button>

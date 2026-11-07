@@ -378,7 +378,7 @@ export function DisbursementForm({
           disabled={submitting}
           className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
-          Cancel · ሰርዝ
+          Cancel
         </button>
         <button
           type="submit"
@@ -388,15 +388,15 @@ export function DisbursementForm({
           {submitting ? (
             <>
               <Loader2 className="animate-spin" size={16} />
-              በመመዝገብ ላይ… · Recording…
+              Recording…
             </>
           ) : willTriggerSms ? (
             <>
               <MessageSquare size={16} />
-              Record & Send SMS Alert · መዝግብ እና የSMS ማሳወቂያ ላክ
+              Record & Send SMS Alert
             </>
           ) : (
-            "Record Disbursement · ክፍያ መዝግብ"
+            "Record Disbursement"
           )}
         </button>
       </div>

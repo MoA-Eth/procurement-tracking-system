@@ -266,7 +266,7 @@ function DisbursementDetailPanel({
                       ) : (
                         <RotateCcw size={12} />
                       )}
-                      Retry SMS · እንደገና ላክ
+                      Retry SMS
                     </button>
                   )}
               </div>
@@ -370,7 +370,7 @@ export function DisbursementsListView({
     <div className="flex h-full flex-col">
       {/* Top Header & Tab Navigation */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="min-w-0 pr-4">
           <h1 className="text-xl font-semibold text-slate-900">
             Finance Disbursements · የፋይናንስ ክፍያዎች ክትትል
           </h1>
@@ -381,7 +381,7 @@ export function DisbursementsListView({
             (ከብር {new Intl.NumberFormat("en-US").format(liveThreshold)} በላይ የሆኑ ክፍያዎች ለ{liveRecipientCount} ኃላፊዎች በኤስኤምኤስ ይላካሉ።)
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {isAdmin && (
             <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
               <button
@@ -393,7 +393,7 @@ export function DisbursementsListView({
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                Disbursements · ክፍያዎች
+                Disbursements
               </button>
               <button
                 type="button"
@@ -404,7 +404,7 @@ export function DisbursementsListView({
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                SMS Gateway · የኤስኤምኤስ ቅንብር
+                SMS Gateway
               </button>
             </div>
           )}
@@ -414,7 +414,7 @@ export function DisbursementsListView({
               className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 shadow-sm"
             >
               <Plus size={16} />
-              New Disbursement · አዲስ ክፍያ መዝግብ
+              New Disbursement
             </button>
           )}
         </div>
