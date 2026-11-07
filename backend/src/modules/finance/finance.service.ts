@@ -266,6 +266,9 @@ export async function createDisbursement(data: DisbursementInput, userId: string
 export async function getContractsLookup(search?: string) {
   const where: Record<string, unknown> = {
     deletedAt: null,
+    status: {
+      notIn: ['CANCELLED', 'TERMINATED'],
+    },
   };
 
   if (search) {
