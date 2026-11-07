@@ -41,7 +41,7 @@ describe("role navigation permission matrix", () => {
         "Finance Disbursements",
       ],
     ],
-    ["FINANCE", ["Dashboard", "Finance Disbursements"]],
+    ["FINANCE", ["Finance Disbursements"]],
   ] as const)("shows only %s menu items", (role, labels) => {
     expect(getNavigationForRole(role).map((item) => item.label)).toEqual(
       labels,

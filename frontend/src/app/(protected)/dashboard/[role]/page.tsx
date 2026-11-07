@@ -18,6 +18,7 @@ export default async function DashboardPage({
 
   const userRole = normalizeUserRole(session.user.role);
   if (requestedRole !== userRole) redirect("/access-denied");
+  if (userRole === "FINANCE") redirect("/workspace/finance-disbursements");
 
   return <DashboardRenderer user={{ ...session.user, role: userRole }} />;
 }

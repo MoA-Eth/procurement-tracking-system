@@ -72,6 +72,9 @@ export function normalizeUserRole(role: string): UserRole {
 
 export function dashboardPath(role: string): string {
   const norm = normalizeUserRole(role);
+  if (norm === "FINANCE") {
+    return "/workspace/finance-disbursements";
+  }
   return `/dashboard/${ROLE_SLUGS[norm] || "officer"}`;
 }
 

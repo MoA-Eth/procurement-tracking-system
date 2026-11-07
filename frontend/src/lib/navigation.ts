@@ -200,6 +200,9 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
 
 export function getNavigationForRole(role: UserRole): NavigationItem[] {
   const normRole = normalizeUserRole(role);
+  if (normRole === "FINANCE") {
+    return [workspaceSections["finance-disbursements"]];
+  }
   const sections = roleSectionOrder[role] || roleSectionOrder[normRole] || [];
   return [
     ...sections
