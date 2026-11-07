@@ -10,6 +10,7 @@ describe("dashboard configuration", () => {
       "ENDORSING_COMMITTEE",
       "MANAGEMENT",
       "ADMIN",
+      "FINANCE",
     ];
 
     expect(Object.keys(DASHBOARD_HEADINGS)).toHaveLength(roles.length);

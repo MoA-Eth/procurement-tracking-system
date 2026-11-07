@@ -32,7 +32,16 @@ describe("role navigation permission matrix", () => {
       ],
     ],
     ["ENDORSING_COMMITTEE", ["Dashboard", "Plan for Review", "My Decisions"]],
-    ["ADMIN", ["Dashboard", "User Management", "System Logs (Timestamp)"]],
+    [
+      "ADMIN",
+      [
+        "Dashboard",
+        "User Management",
+        "System Logs (Timestamp)",
+        "Finance Disbursements",
+      ],
+    ],
+    ["FINANCE", ["Dashboard", "Finance Disbursements"]],
   ] as const)("shows only %s menu items", (role, labels) => {
     expect(getNavigationForRole(role).map((item) => item.label)).toEqual(
       labels,
@@ -40,6 +49,15 @@ describe("role navigation permission matrix", () => {
   });
 
   it("enforces shared and role-only workspace access", () => {
+    expect(canAccessWorkspaceSection("FINANCE", "finance-disbursements")).toBe(
+      true,
+    );
+    expect(canAccessWorkspaceSection("ADMIN", "finance-disbursements")).toBe(
+      true,
+    );
+    expect(canAccessWorkspaceSection("OFFICER", "finance-disbursements")).toBe(
+      false,
+    );
     expect(canAccessWorkspaceSection("ADMIN", "executive-dashboard")).toBe(
       false,
     );

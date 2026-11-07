@@ -19,6 +19,7 @@ import {
   UserRound,
   Users,
   X,
+  Banknote,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -52,6 +53,7 @@ const navigationIcons: Record<NavigationIconName, LucideIcon> = {
   settings: Settings,
   sliders: Sliders,
   users: Users,
+  finance: Banknote,
 };
 
 const roleContext: Record<UserRole, string> = {
@@ -60,6 +62,7 @@ const roleContext: Record<UserRole, string> = {
   ENDORSING_COMMITTEE: "Committee Review",
   MANAGEMENT: "Executive Management",
   ADMIN: "System Administration",
+  FINANCE: "Finance & Disbursements",
 };
 
 // Today in the Ethiopian calendar ("18 Tikimt 2019 E.C.") and Gregorian

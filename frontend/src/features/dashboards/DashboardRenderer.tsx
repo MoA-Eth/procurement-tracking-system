@@ -4,6 +4,7 @@ import { CommitteeDashboard } from "./committee/CommitteeDashboard";
 import { DirectorDashboard } from "./director/DirectorDashboard";
 import { OfficerDashboard } from "./officer/OfficerDashboard";
 import { ManagementDashboard } from "./management/ManagementDashboard";
+import { DisbursementsListView } from "@/features/finance/components/DisbursementsListView";
 
 export function DashboardRenderer({ user }: { user: AuthUser }) {
   switch (user.role) {
@@ -17,5 +18,7 @@ export function DashboardRenderer({ user }: { user: AuthUser }) {
       return <CommitteeDashboard user={user} />;
     case "ADMIN":
       return <AdminDashboard user={user} />;
+    case "FINANCE":
+      return <DisbursementsListView currentUser={user} />;
   }
 }

@@ -12,6 +12,7 @@ import { PlanForReviewView } from "@/features/plans/components/PlanForReviewView
 import { MyDecisionsView } from "@/features/plans/components/MyDecisionsView";
 import { NotificationsView } from "@/features/notifications/components/NotificationsView";
 import { SettingsManagementView } from "@/features/settings/SettingsManagementView";
+import { DisbursementsListView } from "@/features/finance/components/DisbursementsListView";
 import { PanelsTopLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { ROLE_LABELS, normalizeUserRole } from "../../../../lib/authTypes";
@@ -137,6 +138,10 @@ export default async function WorkspaceSectionPage({
 
   if (section === "settings") {
     return <SettingsManagementView currentUser={session.user} />;
+  }
+
+  if (section === "finance-disbursements") {
+    return <DisbursementsListView currentUser={session.user} />;
   }
 
   if (

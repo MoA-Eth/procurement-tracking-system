@@ -1,5 +1,10 @@
 export type UserRole =
-  "OFFICER" | "DIRECTOR" | "ENDORSING_COMMITTEE" | "MANAGEMENT" | "ADMIN";
+  | "OFFICER"
+  | "DIRECTOR"
+  | "ENDORSING_COMMITTEE"
+  | "MANAGEMENT"
+  | "ADMIN"
+  | "FINANCE";
 
 export type UserStatus = "INVITED" | "ACTIVE" | "INACTIVE";
 

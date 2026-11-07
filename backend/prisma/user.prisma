@@ -41,6 +41,7 @@ model User {
   contractAmendments  ContractAmendment[]   @relation("ContractAmendedBy")
   planStatusChanges   PlanStatusHistory[]   @relation("PlanStatusChangedBy")
   notifications       UserNotification[]    @relation("UserNotifications")
+  createdPayments     Payment[]             @relation("PaymentCreator")
 
   @@index([authRole, status])
   @@index([isActive])

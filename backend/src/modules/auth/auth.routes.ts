@@ -275,6 +275,7 @@ async function deliverUserInvitation(values: {
     [UserRole.ENDORSING_COMMITTEE]: 'Endorsement Committee Member',
     [UserRole.MANAGEMENT]: 'Management Team',
     [UserRole.ADMIN]: 'System Administrator',
+    [UserRole.FINANCE]: 'Finance Officer',
   };
 
   const roleTitle = roleDisplayNames[values.role] || values.role;

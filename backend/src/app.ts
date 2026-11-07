@@ -29,6 +29,7 @@ import reportsRouter from './modules/reports/reports.routes.js';
 import contractsRouter from './modules/contracts/contracts.routes.js';
 import excelRouter from './modules/excel/excel.routes.js';
 import executiveDashboardRouter from './modules/executive-dashboard/executive-dashboard.routes.js';
+import financeRouter from './modules/finance/finance.routes.js';
 
 import { rateLimit } from 'express-rate-limit';
 
@@ -127,6 +128,7 @@ app.use('/api/executive-dashboard', executiveDashboardRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/excel', excelRouter);
+app.use('/api/finance', financeRouter);
 app.use('/api', protectedRouter);
 
 // Error handlers

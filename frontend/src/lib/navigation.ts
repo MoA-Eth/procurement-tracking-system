@@ -13,7 +13,8 @@ export type NavigationIconName =
   | "reports"
   | "settings"
   | "sliders"
-  | "users";
+  | "users"
+  | "finance";
 
 export interface NavigationItem {
   label: string;
@@ -161,6 +162,15 @@ const workspaceSections = {
       "Manage project short codes, acronyms and system lookup configurations.",
     allowedRoles: ["DIRECTOR", "ADMIN"],
   },
+  "finance-disbursements": {
+    section: "finance-disbursements",
+    label: "Finance Disbursements",
+    href: "/workspace/finance-disbursements",
+    icon: "finance",
+    description:
+      "Record and monitor high-value ministry disbursements with executive SMS alerts.",
+    allowedRoles: ["FINANCE", "ADMIN"],
+  },
 } as const satisfies Record<string, WorkspaceSection>;
 
 type WorkspaceSectionKey = keyof typeof workspaceSections;
@@ -184,7 +194,8 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "reports",
   ],
   ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],
-  ADMIN: ["user-management", "system-logs"],
+  ADMIN: ["user-management", "system-logs", "finance-disbursements"],
+  FINANCE: ["finance-disbursements"],
 };
 
 export function getNavigationForRole(role: UserRole): NavigationItem[] {

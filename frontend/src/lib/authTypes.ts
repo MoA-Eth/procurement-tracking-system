@@ -33,6 +33,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   ENDORSING_COMMITTEE: "Endorsement Committee Member",
   MANAGEMENT: "Executive",
   ADMIN: "Administrator",
+  FINANCE: "Finance Officer",
 };
 
 export const ROLE_SLUGS: Record<UserRole, string> = {
@@ -41,6 +42,7 @@ export const ROLE_SLUGS: Record<UserRole, string> = {
   ENDORSING_COMMITTEE: "endorsing-committee",
   MANAGEMENT: "management",
   ADMIN: "admin",
+  FINANCE: "finance",
 };
 
 const ROLE_MAP: Record<string, UserRole> = {
@@ -49,6 +51,7 @@ const ROLE_MAP: Record<string, UserRole> = {
   ENDORSING_COMMITTEE: "ENDORSING_COMMITTEE",
   MANAGEMENT: "MANAGEMENT",
   ADMIN: "ADMIN",
+  FINANCE: "FINANCE",
   // Prisma/backend aliases safely normalized to standard roles
   PROCUREMENTOFFICER: "OFFICER",
   PROCUREMENT_OFFICER: "OFFICER",

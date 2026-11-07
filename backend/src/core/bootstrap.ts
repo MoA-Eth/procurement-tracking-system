@@ -271,6 +271,13 @@ const DEMO_ONLY_USERS: BaselineUser[] = [
     authRole: UserRole.MANAGEMENT,
     password: DEFAULT_SEED_PASSWORD,
   },
+  {
+    email: 'finance@moa.gov.et',
+    name: 'Finance Officer',
+    displayName: 'Finance Officer',
+    authRole: UserRole.FINANCE,
+    password: DEFAULT_SEED_PASSWORD,
+  },
 ];
 
 /**
