@@ -52,7 +52,7 @@ export function SmsSettingsPanel() {
       const res = await fetchSmsSettings();
       setSettings(res.data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load SMS settings");
+      setError(err instanceof Error ? err.message : "Failed to load SMS settings · ቅንብሩን መጫን አልተቻለም");
     } finally {
       setLoading(false);
     }
@@ -99,9 +99,9 @@ export function SmsSettingsPanel() {
         mockMode: settings.mockMode,
       });
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setTimeout(() => setSaveSuccess(false), 3500);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save SMS settings");
+      setError(err instanceof Error ? err.message : "Failed to save SMS settings · ቅንብሩን ማስቀመጥ አልተቻለም");
     } finally {
       setSaving(false);
     }
@@ -117,7 +117,7 @@ export function SmsSettingsPanel() {
     } catch (err: unknown) {
       setTestResult({
         success: false,
-        message: err instanceof Error ? err.message : "Test failed",
+        message: err instanceof Error ? err.message : "Test failed · የሙከራ መልዕክቱ አልተሳካም",
       });
     } finally {
       setTesting(false);
@@ -143,17 +143,18 @@ export function SmsSettingsPanel() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-slate-900">
-                Executive High-Value SMS Alert Gateway
+                Executive High-Value SMS Alert Gateway · የከፍተኛ ክፍያ የኤስኤምኤስ ማስጠንቀቂያ ጌትዌይ
               </h2>
               <p className="text-sm text-slate-500">
                 Dispatches urgent SMS notifications to executives when disbursements exceed the threshold.
+                (ክፍያዎች ከተፈቀደው ወሰን በላይ ሲሆኑ ለተቆጣጣሪ ኃላፊዎች አፋጣኝ የኤስኤምኤስ ማሳወቂያ ይልካል።)
               </p>
             </div>
           </div>
           <button
             onClick={loadSettings}
             className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50"
-            title="Refresh settings"
+            title="Refresh settings · አድስ"
           >
             <RefreshCw size={15} />
           </button>
@@ -161,7 +162,7 @@ export function SmsSettingsPanel() {
 
         {saveSuccess && (
           <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">
-            <CheckCircle2 size={16} /> SMS settings updated successfully.
+            <CheckCircle2 size={16} /> SMS settings updated successfully · የኤስኤምኤስ ቅንብር በተሳካ ሁኔታ ተቀምጧል።
           </div>
         )}
 
@@ -174,10 +175,14 @@ export function SmsSettingsPanel() {
         <form onSubmit={handleSave} className="mt-6 space-y-5">
           {/* Toggles */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4 bg-slate-50/50">
               <div>
-                <p className="text-sm font-semibold text-slate-900">SMS Notifications</p>
-                <p className="text-xs text-slate-500">Enable automatic SMS dispatch on high payment</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  SMS Notifications · የኤስኤምኤስ ማሳወቂያዎች
+                </p>
+                <p className="text-xs text-slate-500">
+                  Enable automatic SMS dispatch on high payment · በከፍተኛ ክፍያ ወቅት ራስ-ሰር ማሳወቂያ ላክ
+                </p>
               </div>
               <input
                 type="checkbox"
@@ -189,10 +194,14 @@ export function SmsSettingsPanel() {
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4 bg-slate-50/50">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Mock / Console Mode</p>
-                <p className="text-xs text-slate-500">Logs SMS to system without calling physical gateway</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  Mock / Console Mode · የሙከራ ሁነታ (Mock Mode)
+                </p>
+                <p className="text-xs text-slate-500">
+                  Logs SMS to system without calling physical gateway · እውነተኛ ኤስኤምኤስ ሳይላክ በሲስተም ውስጥ መዝግብ
+                </p>
               </div>
               <input
                 type="checkbox"
@@ -208,7 +217,7 @@ export function SmsSettingsPanel() {
           {/* Threshold input */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Notification Threshold (ETB)
+              Notification Threshold (ETB) · የማሳወቂያ መነሻ ወሰን (በብር)
             </label>
             <div className="relative">
               <input
@@ -222,11 +231,11 @@ export function SmsSettingsPanel() {
                     thresholdEtb: parseInt(e.target.value, 10) || 0,
                   }))
                 }
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              Currently: ETB {formatEtb(settings.thresholdEtb)} — payments equal to or exceeding this trigger SMS.
+              Currently · በአሁን ወቅት: <span className="font-semibold text-slate-800">ETB {formatEtb(settings.thresholdEtb)}</span> — payments equal to or exceeding this trigger SMS. (ይህን መጠን ወይም ከዚያ በላይ የሆኑ ክፍያዎች የSMS ማሳወቂያ ያስነሳሉ።)
             </p>
           </div>
 
@@ -234,7 +243,7 @@ export function SmsSettingsPanel() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Gateway URL
+                Gateway URL · የኤስኤምኤስ ጌትዌይ አድራሻ (URL)
               </label>
               <input
                 type="text"
@@ -243,13 +252,13 @@ export function SmsSettingsPanel() {
                   setSettings((s) => ({ ...s, gatewayUrl: e.target.value }))
                 }
                 placeholder="http://192.168.1.50:8080/sms/send or https://sms.moa.gov.et"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-mono text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Gateway API Key / Bearer Token
+                Gateway API Key / Token · የኤፒአይ ቁልፍ (ምስጢራዊ ኮድ)
               </label>
               <input
                 type="password"
@@ -257,7 +266,7 @@ export function SmsSettingsPanel() {
                 onChange={(e) =>
                   setSettings((s) => ({ ...s, gatewayApiKey: e.target.value }))
                 }
-                placeholder="Leave blank or enter token"
+                placeholder="Leave blank or enter secret token · የይለፍ ቁልፍ ያስገቡ"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
@@ -266,10 +275,10 @@ export function SmsSettingsPanel() {
           {/* Recipients List */}
           <div className="border-t border-slate-100 pt-5">
             <h3 className="text-sm font-semibold text-slate-900">
-              Executive Recipients ({settings.recipients.length})
+              Executive Recipients ({settings.recipients.length}) · የማሳወቂያ ተቀባዮች ማውጫ
             </h3>
             <p className="mt-0.5 text-xs text-slate-500">
-              Authorized phone numbers that will receive the high-value disbursement alert.
+              Authorized phone numbers that will receive high-value disbursement alerts. (የከፍተኛ ክፍያ ማሳወቂያ የሚደርሳቸው የተፈቀደላቸው ስልክ ቁጥሮች።)
             </p>
 
             <div className="mt-3 space-y-2">
@@ -285,8 +294,8 @@ export function SmsSettingsPanel() {
                   <button
                     type="button"
                     onClick={() => handleRemoveRecipient(idx)}
-                    className="text-slate-400 hover:text-red-600"
-                    title="Remove recipient"
+                    className="text-slate-400 hover:text-red-600 p-1"
+                    title="Remove recipient · ሰርዝ"
                   >
                     <Trash2 size={15} />
                   </button>
@@ -298,10 +307,10 @@ export function SmsSettingsPanel() {
             <div className="mt-3 flex flex-wrap gap-2">
               <input
                 type="text"
-                placeholder="Recipient name (e.g. State Minister)"
+                placeholder="Recipient name / የተቆጣጣሪ ኃላፊ ስም (e.g. State Minister)"
                 value={newRecipientName}
                 onChange={(e) => setNewRecipientName(e.target.value)}
-                className="flex-1 min-w-[160px] rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="flex-1 min-w-[200px] rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
               <input
                 type="tel"
@@ -313,9 +322,9 @@ export function SmsSettingsPanel() {
               <button
                 type="button"
                 onClick={handleAddRecipient}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white hover:bg-slate-900"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-900"
               >
-                <Plus size={15} /> Add
+                <Plus size={15} /> Add · አክል
               </button>
             </div>
           </div>
@@ -325,15 +334,15 @@ export function SmsSettingsPanel() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 shadow-sm"
             >
               {saving ? (
                 <>
-                  <Loader2 className="animate-spin" size={16} /> Saving…
+                  <Loader2 className="animate-spin" size={16} /> በመመዝገብ ላይ… · Saving…
                 </>
               ) : (
                 <>
-                  <ShieldCheck size={16} /> Save SMS Configuration
+                  <ShieldCheck size={16} /> Save SMS Configuration · ቅንብሩን መዝግብ
                 </>
               )}
             </button>
@@ -344,10 +353,10 @@ export function SmsSettingsPanel() {
       {/* Gateway Connectivity Test */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-900">
-          Test SMS Gateway Connectivity
+          Test SMS Gateway Connectivity · የጌትዌይ ግንኙነት ሙከራ
         </h3>
         <p className="mt-0.5 text-xs text-slate-500">
-          Send a verification test message to confirm network reachability to the on-premise gateway.
+          Send a verification test message to confirm network reachability to the SMS gateway. (የጌትዌይ ኔትወርክ ግንኙነቱን ለማረጋገጥ የሙከራ መልዕክት ይላኩ።)
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -356,7 +365,7 @@ export function SmsSettingsPanel() {
             placeholder="+251911234567"
             value={testPhone}
             onChange={(e) => setTestPhone(e.target.value)}
-            className="flex-1 min-w-[180px] rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            className="flex-1 min-w-[200px] rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
           />
           <button
             type="button"
@@ -366,11 +375,11 @@ export function SmsSettingsPanel() {
           >
             {testing ? (
               <>
-                <Loader2 className="animate-spin" size={14} /> Testing…
+                <Loader2 className="animate-spin" size={14} /> በመሞከር ላይ… · Testing…
               </>
             ) : (
               <>
-                <Send size={14} /> Send Test SMS
+                <Send size={14} /> Send Test SMS · የሙከራ SMS ላክ
               </>
             )}
           </button>
@@ -391,4 +400,3 @@ export function SmsSettingsPanel() {
     </div>
   );
 }
-

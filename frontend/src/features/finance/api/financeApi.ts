@@ -19,10 +19,24 @@ export const CATEGORY_LABELS: Record<DisbursementCategory, string> = {
   OTHER_GENERAL: "Other General Ministry Payment",
 };
 
+export const CATEGORY_LABELS_AM: Record<DisbursementCategory, string> = {
+  PROCUREMENT_GOODS: "የዕቃዎችና አቅርቦቶች ግዥ",
+  CONTRACTOR_WORKS: "የኮንትራክተርና ግንባታ ሥራዎች",
+  PROJECT_GRANT: "የፕሮጀክት / እርዳታ ክፍያ",
+  OPERATIONAL_ADMIN: "አስተዳደራዊና የሥራ ማስኬጃ",
+  OTHER_GENERAL: "ሌሎች አጠቃላይ የሚኒስቴር ክፍያዎች",
+};
+
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   BANK_TRANSFER: "Bank Transfer",
   CHEQUE_CPO: "Cheque (CPO)",
   CASH: "Cash",
+};
+
+export const PAYMENT_METHOD_LABELS_AM: Record<PaymentMethod, string> = {
+  BANK_TRANSFER: "የባንክ ዝውውር",
+  CHEQUE_CPO: "ቼክ (ሲፒኦ)",
+  CASH: "ጥሬ ገንዘብ",
 };
 
 export interface SmsLogEntry {
