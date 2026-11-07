@@ -66,6 +66,7 @@ async function formatSmsMessage(
   payeeName: string,
   referenceNo: string,
   category: string,
+  contractNo?: string | null,
 ): Promise<string> {
   const amountFormatted = new Intl.NumberFormat('en-US').format(amount);
   const categoryLabels: Record<string, string> = {
@@ -76,7 +77,8 @@ async function formatSmsMessage(
     OTHER_GENERAL: 'General Ministry',
   };
   const catLabel = categoryLabels[category] || category;
-  return `[MoA Alert] High-Value Disbursement: ETB ${amountFormatted} paid to ${payeeName} (${catLabel}). Ref: ${referenceNo}. Approve via Finance Portal.`;
+  const contractPart = contractNo ? ` Contract: ${contractNo}.` : '';
+  return `[MoA Alert] High-Value Disbursement: ETB ${amountFormatted} paid to ${payeeName} (${catLabel}).${contractPart} Ref: ${referenceNo}. Approve via Finance Portal.`;
 }
 
 async function sendSmsToGateway(
@@ -117,7 +119,10 @@ export async function dispatchSms(paymentId: string): Promise<void> {
       return;
     }
 
-    const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { contract: true },
+    });
     if (!payment) return;
 
     const message = await formatSmsMessage(
@@ -125,6 +130,7 @@ export async function dispatchSms(paymentId: string): Promise<void> {
       payment.payeeName || 'Unknown Payee',
       payment.referenceNo,
       payment.category || 'OTHER_GENERAL',
+      payment.contract?.contractNo,
     );
 
     const statuses: string[] = [];

@@ -167,6 +167,7 @@ export function DisbursementForm({
           form.payeeName || "Payee",
           form.referenceNo || "REF-XXX",
           form.category as DisbursementCategory,
+          origin === "CONTRACT" ? selectedContract?.contractNo : null,
         )
       : null;
 

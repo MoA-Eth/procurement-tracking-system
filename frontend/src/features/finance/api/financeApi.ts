@@ -242,9 +242,11 @@ export function buildSmsPreview(
   payeeName: string,
   referenceNo: string,
   category: DisbursementCategory,
+  contractNo?: string | null,
 ): string {
   const amountFormatted = new Intl.NumberFormat("en-US").format(amount);
   const catLabel = CATEGORY_LABELS[category] || category;
-  return `[MoA Alert] High-Value Disbursement: ETB ${amountFormatted} paid to ${payeeName} (${catLabel}). Ref: ${referenceNo}. Approve via Finance Portal.`;
+  const contractPart = contractNo ? ` Contract: ${contractNo}.` : "";
+  return `[MoA Alert] High-Value Disbursement: ETB ${amountFormatted} paid to ${payeeName} (${catLabel}).${contractPart} Ref: ${referenceNo}. Approve via Finance Portal.`;
 }
 
