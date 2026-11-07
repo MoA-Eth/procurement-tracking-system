@@ -52,6 +52,16 @@ function formatAmountDisplay(raw: string): string {
   return new Intl.NumberFormat("en-US").format(num);
 }
 
+function generateContractVoucher(c: ContractLookupItem): string {
+  const nextSeq = (c.paymentsCount ?? 0) + 1;
+  const cleanContractNo = c.contractNo.trim().replace(/[\/\s_]+/g, "-");
+  return `PV-${cleanContractNo}-${String(nextSeq).padStart(2, "0")}`;
+}
+
+function generateDirectVoucher(): string {
+  return `PV-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`;
+}
+
 export function DisbursementForm({
   onSuccess,
   onCancel,
@@ -117,9 +127,17 @@ export function DisbursementForm({
 
   function handleSelectContract(c: ContractLookupItem) {
     setSelectedContract(c);
+    const defaultAmount = c.remainingValue > 0 ? c.remainingValue : c.totalValue;
+    const suggestedVoucher = generateContractVoucher(c);
+
     setForm((prev) => ({
       ...prev,
       payeeName: c.supplierName,
+      referenceNo:
+        !prev.referenceNo.trim() || prev.referenceNo.startsWith("PV-")
+          ? suggestedVoucher
+          : prev.referenceNo,
+      amountRaw: formatAmountDisplay(String(defaultAmount)),
       category:
         c.sector?.toUpperCase().includes("WORK") ||
         c.sector?.toUpperCase().includes("CONSTRUCT")
@@ -131,6 +149,12 @@ export function DisbursementForm({
   function handleClearContract() {
     setSelectedContract(null);
     setContractSearch("");
+    setForm((prev) => ({
+      ...prev,
+      payeeName: "",
+      amountRaw: "",
+      referenceNo: prev.referenceNo.startsWith("PV-") ? "" : prev.referenceNo,
+    }));
   }
 
   function handleSwitchOrigin(newOrigin: DisbursementOrigin) {
@@ -493,18 +517,48 @@ export function DisbursementForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Reference / Voucher No */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Payment Voucher Reference · የማጣቀሻ ቁጥር <span className="text-red-500">*</span>
-            </label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="block text-sm font-medium text-slate-700">
+                Payment Voucher Reference · የማጣቀሻ ቁጥር <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedContract) {
+                    setForm((f) => ({
+                      ...f,
+                      referenceNo: generateContractVoucher(selectedContract),
+                    }));
+                  } else {
+                    setForm((f) => ({
+                      ...f,
+                      referenceNo: generateDirectVoucher(),
+                    }));
+                  }
+                }}
+                className="text-[11px] font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
+              >
+                Auto-Generate · አፍልቅ
+              </button>
+            </div>
             <input
               type="text"
               value={form.referenceNo}
               onChange={(e) =>
                 setForm((f) => ({ ...f, referenceNo: e.target.value }))
               }
-              placeholder="e.g. VOUCH-2026-0041"
+              placeholder={
+                selectedContract
+                  ? `e.g. ${generateContractVoucher(selectedContract)}`
+                  : "e.g. PV-2026-0041"
+              }
               className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
             />
+            {selectedContract && form.referenceNo.startsWith("PV-") && (
+              <p className="mt-1 text-[11px] text-slate-500">
+                Prepopulated from contract. You can replace with physical/IFMIS voucher number if applicable.
+              </p>
+            )}
             {errors.referenceNo && (
               <p className="mt-1 text-xs text-red-600">{errors.referenceNo}</p>
             )}
@@ -531,10 +585,17 @@ export function DisbursementForm({
 
           {/* Amount */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Disbursement Amount · የክፍያ መጠን (ETB / በብር){" "}
-              <span className="text-red-500">*</span>
-            </label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="block text-sm font-medium text-slate-700">
+                Disbursement Amount · የክፍያ መጠን (ETB / በብር){" "}
+                <span className="text-red-500">*</span>
+              </label>
+              {selectedContract && (
+                <span className="text-[11px] text-slate-500">
+                  Bal: ETB {formatEtb(selectedContract.remainingValue)}
+                </span>
+              )}
+            </div>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-semibold text-slate-400">
                 ETB
@@ -558,6 +619,73 @@ export function DisbursementForm({
                 className="w-full rounded-lg border border-slate-300 py-2.5 pl-12 pr-3 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
+            {selectedContract && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Presets:
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      amountRaw: formatAmountDisplay(
+                        String(
+                          selectedContract.remainingValue > 0
+                            ? selectedContract.remainingValue
+                            : selectedContract.totalValue,
+                        ),
+                      ),
+                    }))
+                  }
+                  className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                  title="Full remaining balance"
+                >
+                  Full Bal: ETB {formatEtb(selectedContract.remainingValue)}
+                </button>
+                {selectedContract.totalValue > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          amountRaw: formatAmountDisplay(
+                            String(Math.round(selectedContract.totalValue * 0.3)),
+                          ),
+                        }))
+                      }
+                      className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-200 border border-slate-200"
+                      title="30% advance payment"
+                    >
+                      30% (ETB {formatEtb(Math.round(selectedContract.totalValue * 0.3))})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          amountRaw: formatAmountDisplay(
+                            String(Math.round(selectedContract.totalValue * 0.5)),
+                          ),
+                        }))
+                      }
+                      className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-200 border border-slate-200"
+                      title="50% milestone payment"
+                    >
+                      50% (ETB {formatEtb(Math.round(selectedContract.totalValue * 0.5))})
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, amountRaw: "" }))}
+                  className="rounded px-1.5 py-0.5 text-[11px] text-slate-400 hover:text-slate-600"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
             {amount >= smsThreshold && (
               <p className="mt-1 text-xs font-medium text-amber-700">
                 ⚡ Exceeds high-value threshold (ETB {formatEtb(smsThreshold)}) · የከፍተኛ ክፍያ ወሰን አልፏል

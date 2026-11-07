@@ -297,6 +297,9 @@ export async function getContractsLookup(search?: string) {
           tinNumber: true,
         },
       },
+      _count: {
+        select: { payments: true },
+      },
     },
     orderBy: { createdAt: 'desc' },
     take: 40,
@@ -315,6 +318,7 @@ export async function getContractsLookup(search?: string) {
     supplierName: c.supplier?.name || '',
     supplierPhone: c.supplier?.phone || null,
     supplierTin: c.supplier?.tinNumber || null,
+    paymentsCount: c._count?.payments ?? 0,
   }));
 }
 

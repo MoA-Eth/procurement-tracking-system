@@ -126,6 +126,7 @@ export interface ContractLookupItem {
   supplierName: string;
   supplierPhone?: string | null;
   supplierTin?: string | null;
+  paymentsCount?: number;
 }
 
 export interface DisbursementFormData {
