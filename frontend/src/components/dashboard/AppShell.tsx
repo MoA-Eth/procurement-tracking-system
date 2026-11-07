@@ -14,6 +14,8 @@ import {
   LayoutDashboard,
   ListChecks,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Sliders,
   UserRound,
@@ -102,6 +104,27 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("moa_pts_sidebar_collapsed");
+      if (saved !== null) {
+        setIsSidebarCollapsed(saved === "1");
+      }
+    } catch {}
+  }, []);
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("moa_pts_sidebar_collapsed", next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  };
+
   const navigation = getNavigationForRole(user.role);
   const userInitials = initials(user.displayName);
 
@@ -171,39 +194,80 @@ export function AppShell({
     }
   };
 
-  const sidebar = (
-    <aside className="flex h-full w-64 flex-col justify-between bg-gradient-to-b from-[#0B6B3A] via-[#086034] to-[#06542D] text-white border-r border-black/20 shrink-0 z-20">
+  const renderSidebar = (collapsed: boolean) => (
+    <aside
+      className={`flex h-full flex-col justify-between bg-gradient-to-b from-[#0B6B3A] via-[#086034] to-[#06542D] text-white border-r border-black/20 shrink-0 z-20 transition-all duration-300 select-none ${
+        collapsed ? "w-16" : "w-64"
+      }`}
+    >
       <div>
-        <div className="p-4 flex items-center gap-3.5 border-b border-white/10 bg-[#06542D]">
-          <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 bg-white shadow-sm border border-emerald-300/30 relative">
-            <Image
-              src="/moa-logo.png"
-              alt="Ministry of Agriculture emblem"
-              width={220}
-              height={220}
-              priority
-              quality={100}
-              className="absolute w-27.5 h-auto max-w-none"
-              style={{
-                left: "-33px",
-                top: "-4px",
-              }}
-            />
+        {collapsed ? (
+          <div className="h-14 p-2 flex items-center justify-center border-b border-white/10 bg-[#06542D]">
+            <button
+              type="button"
+              onClick={toggleSidebarCollapse}
+              className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-white shadow-sm border border-emerald-300/30 relative hover:scale-105 transition-transform cursor-pointer"
+              title="Expand sidebar · የጎን ማውጫን አስፋ"
+              aria-label="Expand sidebar"
+            >
+              <Image
+                src="/moa-logo.png"
+                alt="Ministry of Agriculture emblem"
+                width={200}
+                height={200}
+                priority
+                quality={100}
+                className="absolute w-25 h-auto max-w-none"
+                style={{
+                  left: "-30px",
+                  top: "-3px",
+                }}
+              />
+            </button>
           </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-md tracking-tight text-white leading-tight">
-              MoA PTS
-            </p>
-            <p className="text-xs text-emerald-200 font-medium tracking-wide truncate mt-0.5">
-              {roleContext[user.role]}
-            </p>
+        ) : (
+          <div className="h-14 p-4 flex items-center justify-between border-b border-white/10 bg-[#06542D]">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-white shadow-sm border border-emerald-300/30 relative">
+                <Image
+                  src="/moa-logo.png"
+                  alt="Ministry of Agriculture emblem"
+                  width={220}
+                  height={220}
+                  priority
+                  quality={100}
+                  className="absolute w-27.5 h-auto max-w-none"
+                  style={{
+                    left: "-33px",
+                    top: "-4px",
+                  }}
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-md tracking-tight text-white leading-tight">
+                  MoA PTS
+                </p>
+                <p className="text-xs text-emerald-200 font-medium tracking-wide truncate mt-0.5">
+                  {roleContext[user.role]}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleSidebarCollapse}
+              className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-emerald-200/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              title="Collapse sidebar · የጎን ማውጫን አሳንስ"
+              aria-label="Collapse sidebar"
+            >
+              <PanelLeftClose size={16} />
+            </button>
           </div>
-        </div>
+        )}
 
         {/* Navigation Items */}
         <nav
           aria-label={`${ROLE_LABELS[user.role]} navigation`}
-          className="p-3 space-y-1 mt-2 overflow-y-auto"
+          className={`${collapsed ? "p-2 space-y-1.5" : "p-3 space-y-1"} mt-2 overflow-y-auto`}
         >
           {navigation.map((item) => {
             const Icon = navigationIcons[item.icon];
@@ -214,20 +278,32 @@ export function AppShell({
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 onClick={(event) => handleNavClick(item.href, event)}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                title={collapsed ? item.label : undefined}
+                aria-label={item.label}
+                className={`relative flex items-center ${
+                  collapsed
+                    ? "justify-center px-0 py-2.5 rounded-lg"
+                    : "gap-3 px-3.5 py-2.5 rounded-lg"
+                } text-sm font-medium transition-all ${
                   isActive
                     ? "bg-white/[0.13] text-white font-semibold"
                     : "text-[#D1F2E7] hover:bg-white/[0.07] hover:text-white"
                 }`}
               >
+                {collapsed && isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-[#FCDD09] shadow-[0_0_6px_rgba(252,221,9,0.7)]"
+                  />
+                )}
                 <Icon
-                  size={16}
+                  size={collapsed ? 18 : 16}
                   strokeWidth={isActive ? 2.2 : 1.8}
-                  className={`w-4 h-4 shrink-0 ${
+                  className={`${collapsed ? "w-5 h-5" : "w-4 h-4"} shrink-0 ${
                     isActive ? "text-[#FCDD09]" : "text-emerald-300/80"
                   }`}
                 />
-                <span className="truncate">{item.label}</span>
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
             );
           })}
@@ -235,56 +311,93 @@ export function AppShell({
       </div>
 
       {/* Pinned Utility Footer: Settings & User Account */}
-      <div className="border-t border-white/10 bg-[#06542D] p-3 space-y-1.5">
+      <div
+        className={`border-t border-white/10 bg-[#06542D] ${
+          collapsed ? "p-2 space-y-2" : "p-3 space-y-1.5"
+        }`}
+      >
         {(user.role === "DIRECTOR" || user.role === "ADMIN") && (
           <Link
             href="/workspace/settings"
             onClick={(event) => handleNavClick("/workspace/settings", event)}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            title={collapsed ? "Settings · ማስተካከያዎች" : undefined}
+            aria-label="Settings"
+            className={`relative flex items-center ${
+              collapsed
+                ? "justify-center px-0 py-2.5 rounded-lg"
+                : "gap-3 px-3.5 py-2.5 rounded-lg"
+            } text-sm font-medium transition-colors ${
               pathname === "/workspace/settings"
                 ? "bg-white/[0.13] text-white font-semibold"
                 : "text-[#D1F2E7] hover:bg-white/[0.07] hover:text-white"
             }`}
           >
+            {collapsed && pathname === "/workspace/settings" && (
+              <span
+                aria-hidden="true"
+                className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-[#FCDD09] shadow-[0_0_6px_rgba(252,221,9,0.7)]"
+              />
+            )}
             <Settings
-              size={18}
+              size={collapsed ? 18 : 18}
               strokeWidth={1.8}
-              className={`w-4.5 h-4.5 shrink-0 ${
+              className={`${collapsed ? "w-5 h-5" : "w-4.5 h-4.5"} shrink-0 ${
                 pathname === "/workspace/settings"
                   ? "text-[#FCDD09]"
                   : "text-emerald-300/80"
               }`}
             />
-            <span className="truncate">Settings</span>
+            {!collapsed && <span className="truncate">Settings</span>}
           </Link>
         )}
 
         {/* User Footer Card */}
-        <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10">
-          <Link
-            href="/profile"
-            onClick={() => setIsMobileMenuOpen(false)}
-            title="View & Edit Profile"
-            className={`flex items-center gap-2.5 min-w-0 flex-1 group rounded-xl p-1.5 transition-all ${
-              pathname === "/profile"
-                ? "bg-white/[0.13] ring-1 ring-white/20"
-                : "hover:bg-white/[0.07]"
-            }`}
-          >
-            <div className="w-8 h-8 rounded-full bg-[#00843D] text-white font-semibold text-xs flex items-center justify-center shrink-0 border border-emerald-400/30 shadow-xs group-hover:scale-105 transition-transform">
-              {userInitials}
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-white truncate group-hover:text-emerald-200 transition-colors">
-                {user.displayName}
-              </p>
-              <p className="text-[11px] text-emerald-200 truncate capitalize">
-                {ROLE_LABELS[user.role]}
-              </p>
-            </div>
-          </Link>
-          <SignOutButton compact />
-        </div>
+        {collapsed ? (
+          <div className="flex flex-col items-center gap-1.5 pt-1 border-t border-white/10">
+            <Link
+              href="/profile"
+              onClick={() => setIsMobileMenuOpen(false)}
+              title={`${user.displayName} (${ROLE_LABELS[user.role]})`}
+              aria-label="View Profile"
+              className={`p-1 rounded-xl transition-all group ${
+                pathname === "/profile"
+                  ? "bg-white/[0.13] ring-1 ring-white/20"
+                  : "hover:bg-white/[0.07]"
+              }`}
+            >
+              <div className="w-8 h-8 rounded-full bg-[#00843D] text-white font-semibold text-xs flex items-center justify-center shrink-0 border border-emerald-400/30 shadow-xs group-hover:scale-105 transition-transform">
+                {userInitials}
+              </div>
+            </Link>
+            <SignOutButton compact />
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10">
+            <Link
+              href="/profile"
+              onClick={() => setIsMobileMenuOpen(false)}
+              title="View & Edit Profile"
+              className={`flex items-center gap-2.5 min-w-0 flex-1 group rounded-xl p-1.5 transition-all ${
+                pathname === "/profile"
+                  ? "bg-white/[0.13] ring-1 ring-white/20"
+                  : "hover:bg-white/[0.07]"
+              }`}
+            >
+              <div className="w-8 h-8 rounded-full bg-[#00843D] text-white font-semibold text-xs flex items-center justify-center shrink-0 border border-emerald-400/30 shadow-xs group-hover:scale-105 transition-transform">
+                {userInitials}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-white truncate group-hover:text-emerald-200 transition-colors">
+                  {user.displayName}
+                </p>
+                <p className="text-[11px] text-emerald-200 truncate capitalize">
+                  {ROLE_LABELS[user.role]}
+                </p>
+              </div>
+            </Link>
+            <SignOutButton compact />
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -293,7 +406,7 @@ export function AppShell({
     <div className="flex min-h-screen bg-slate-50">
       {/* Desktop Sidebar */}
       <div className="sticky top-0 hidden h-screen shrink-0 lg:block">
-        {sidebar}
+        {renderSidebar(isSidebarCollapsed)}
       </div>
 
       {/* Mobile Drawer */}
@@ -306,7 +419,7 @@ export function AppShell({
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-xs"
           />
           <div className="relative h-full w-64 max-w-[85vw]">
-            {sidebar}
+            {renderSidebar(false)}
             <button
               type="button"
               aria-label="Close navigation"
@@ -337,6 +450,23 @@ export function AppShell({
               <Menu size={20} />
             </button>
             <div className="h-5 w-px shrink-0 bg-slate-200 lg:hidden" />
+
+            {/* Desktop Sidebar Minimizer Toggle */}
+            <button
+              type="button"
+              onClick={toggleSidebarCollapse}
+              className="hidden lg:flex items-center justify-center h-8.5 w-8.5 shrink-0 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer border border-slate-200/80 shadow-2xs"
+              title={isSidebarCollapsed ? "Expand sidebar · የጎን ማውጫን አስፋ" : "Collapse sidebar · የጎን ማውጫን አሳንስ"}
+              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isSidebarCollapsed ? (
+                <PanelLeftOpen className="w-4.5 h-4.5 text-emerald-700 shrink-0" />
+              ) : (
+                <PanelLeftClose className="w-4.5 h-4.5 shrink-0" />
+              )}
+            </button>
+            <div className="hidden lg:block h-5 w-px shrink-0 bg-slate-200" />
+
             {pageTitle ? (
               <div className="flex min-w-0 items-center gap-2">
                 <PageIcon
