@@ -627,8 +627,8 @@ export function DisbursementsListView({
           {/* New Disbursement Modal */}
           {showForm && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-              <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl overflow-y-auto max-h-[90vh]">
-                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
+                <div className="shrink-0 flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-white">
                   <div>
                     <h2 className="text-base font-semibold text-slate-900">
                       Record New Disbursement · አዲስ ክፍያ መዝግብ
@@ -646,18 +646,16 @@ export function DisbursementsListView({
                     <X size={18} />
                   </button>
                 </div>
-                <div className="p-6">
-                  <DisbursementForm
-                    onSuccess={() => {
-                      setShowForm(false);
-                      setPage(1);
-                      load();
-                    }}
-                    onCancel={() => setShowForm(false)}
-                    smsThreshold={liveThreshold}
-                    smsRecipientCount={liveRecipientCount}
-                  />
-                </div>
+                <DisbursementForm
+                  onSuccess={() => {
+                    setShowForm(false);
+                    setPage(1);
+                    load();
+                  }}
+                  onCancel={() => setShowForm(false)}
+                  smsThreshold={liveThreshold}
+                  smsRecipientCount={liveRecipientCount}
+                />
               </div>
             </div>
           )}

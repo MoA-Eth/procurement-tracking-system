@@ -120,7 +120,7 @@ export function DisbursementForm({
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center gap-4 py-16 text-center">
+      <div className="flex flex-1 flex-col items-center gap-4 p-8 py-16 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
           <CheckCircle2 className="text-emerald-600" size={36} />
         </div>
@@ -136,8 +136,10 @@ export function DisbursementForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* SMS Threshold Banner */}
+    <form onSubmit={handleSubmit} className="flex flex-1 flex-col min-h-0 overflow-hidden">
+      {/* Scrollable Form Body */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-5 min-h-0">
+        {/* SMS Threshold Banner */}
       {willTriggerSms && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <div className="flex items-start gap-3">
@@ -369,9 +371,10 @@ export function DisbursementForm({
           {submitError}
         </div>
       )}
+      </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+      {/* Sticky Actions Footer */}
+      <div className="shrink-0 flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50/90 px-6 py-4">
         <button
           type="button"
           onClick={onCancel}
