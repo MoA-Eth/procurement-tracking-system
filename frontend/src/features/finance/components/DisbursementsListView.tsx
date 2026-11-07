@@ -655,7 +655,7 @@ export function DisbursementsListView({
           {/* New Disbursement Modal */}
           {showForm && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-              <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[90vh] overflow-hidden">
+              <div className="w-full max-w-4xl lg:max-w-5xl rounded-2xl bg-white shadow-xl flex flex-col max-h-[92vh] overflow-hidden">
                 <div className="shrink-0 flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-white">
                   <div>
                     <h2 className="text-base font-semibold text-slate-900">
