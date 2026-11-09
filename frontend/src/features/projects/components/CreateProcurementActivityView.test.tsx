@@ -13,6 +13,7 @@ import type { ProcurementActivitySummary } from "../data/officerActivityDrafts";
 import {
   CreateProcurementActivityView,
   RelatedInformationStep,
+  SavedPanel,
   STANDARD_PROCUREMENT_PROCESSES,
   normalizeProcurementProcess,
   roadmapForMethodPreservingDates,
@@ -50,6 +51,24 @@ const project: OfficerProject = {
 };
 
 describe("CreateProcurementActivityView", () => {
+  it("shows a success dialog with a link back to the activity list", () => {
+    const markup = renderToStaticMarkup(
+      <SavedPanel
+        activityReference="ACT-001"
+        planHref="/workspace/projects?project=DRIVE&plan=PLAN-001"
+        returnToActivityListOnSave
+      />,
+    );
+
+    expect(markup).toContain('role="dialog"');
+    expect(markup).toContain("Activity created successfully");
+    expect(markup).toContain("ACT-001 has been saved with its roadmap.");
+    expect(markup).toContain("Return to activity list");
+    expect(markup).toContain(
+      'href="/workspace/projects?project=DRIVE&amp;plan=PLAN-001"',
+    );
+  });
+
   it("starts with the four-step structure and lets each activity select its category", () => {
     const markup = renderToStaticMarkup(
       <CreateProcurementActivityView plan={plan} project={project} />,

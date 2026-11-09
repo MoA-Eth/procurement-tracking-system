@@ -6,6 +6,7 @@ import {
   mergeActivityRoadmaps,
   mapBackendActivityToProcurementActivitySummary,
   mapRoadmapStagesForBackend,
+  nextAvailableActivityReference,
   parseSavedActivityRecords,
   type SavedOfficerActivityRecord,
 } from "./officerActivityDrafts";
@@ -24,6 +25,25 @@ describe("activity status derived from plan status", () => {
     ["Cancelled", "Cancelled"],
   ] as const)("maps plan status %s to activity status %s", (plan, activity) => {
     expect(activityStatusForPlanStatus(plan)).toBe(activity);
+  });
+});
+
+describe("nextAvailableActivityReference", () => {
+  it("increments a colliding generated reference until it is unused", () => {
+    expect(
+      nextAvailableActivityReference("ET-MoA-000004-GO-RFQ", [
+        "ET-MoA-000004-GO-RFQ",
+        "ET-MoA-000005-GO-RFQ",
+      ]),
+    ).toBe("ET-MoA-000006-GO-RFQ");
+  });
+
+  it("preserves references that are already available", () => {
+    expect(
+      nextAvailableActivityReference("ET-MoA-000004-GO-RFQ", [
+        "ET-MoA-000003-GO-RFQ",
+      ]),
+    ).toBe("ET-MoA-000004-GO-RFQ");
   });
 });
 

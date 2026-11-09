@@ -115,6 +115,7 @@ export function CreateProcurementActivityView({
   parentPlan,
   plan,
   project,
+  returnToActivityListOnSave = false,
 }: {
   existingActivityCount?: number;
   initialActivity?: ProcurementActivitySummary;
@@ -129,6 +130,7 @@ export function CreateProcurementActivityView({
   parentPlan?: ProcurementPlanSummary;
   plan: ProcurementPlanSummary;
   project: OfficerProject;
+  returnToActivityListOnSave?: boolean;
 }) {
   const isEditing = Boolean(initialActivity);
   const category = normalizeActivityCategory(plan.category);
@@ -759,6 +761,7 @@ export function CreateProcurementActivityView({
           activityReference={activityReference}
           isAdditionalPlan={isAdditionalPlan}
           planHref={planHref}
+          returnToActivityListOnSave={returnToActivityListOnSave}
         />
       ) : (
         <>
@@ -2026,39 +2029,53 @@ function WizardFooter({
   );
 }
 
-function SavedPanel({
+export function SavedPanel({
   activityReference,
   isAdditionalPlan = false,
   planHref,
+  returnToActivityListOnSave,
 }: {
   activityReference: string;
   isAdditionalPlan?: boolean;
   planHref: string;
+  returnToActivityListOnSave?: boolean;
 }) {
   return (
-    <section className="mt-5 rounded-lg border border-emerald-200 bg-white p-8 text-center shadow-sm">
-      <CheckCircle2
-        aria-hidden="true"
-        className="mx-auto h-10 w-10 text-[#00843D]"
-      />
-      <h2 className="mt-3 text-lg font-semibold text-[#10243f]">
-        {isAdditionalPlan
-          ? "Additional Procurement Plan & Activity Submitted"
-          : "Procurement activity saved"}
-      </h2>
-      <p className="mx-auto mt-2 max-w-lg text-xs leading-5 text-slate-600">
-        {isAdditionalPlan
-          ? `Supplementary submission for Activity ${activityReference} has been created and submitted to the Director for review and committee endorsement.`
-          : `Activity ${activityReference} has been prepared with its method-specific roadmap and is ready for the next workflow action.`}
-      </p>
-      <Link
-        className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#00843D] px-5 text-xs font-semibold text-white hover:bg-[#0B6B3A]"
-        href={planHref}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
+      <section
+        aria-labelledby="activity-save-success-title"
+        aria-modal="true"
+        className="w-full max-w-md rounded-xl border border-emerald-200 bg-white p-7 text-center shadow-xl"
+        role="dialog"
       >
-        Return to procurement plan
-        <ArrowRight aria-hidden="true" className="h-4 w-4" />
-      </Link>
-    </section>
+        <CheckCircle2
+          aria-hidden="true"
+          className="mx-auto h-11 w-11 text-[#00843D]"
+        />
+        <h2
+          className="mt-3 text-lg font-semibold text-[#10243f]"
+          id="activity-save-success-title"
+        >
+          {isAdditionalPlan
+            ? "Additional Procurement Plan & Activity Submitted"
+            : "Activity created successfully"}
+        </h2>
+        <p className="mx-auto mt-2 max-w-lg text-xs leading-5 text-slate-600">
+          {isAdditionalPlan
+            ? `Supplementary submission for Activity ${activityReference} has been created and submitted to the Director for review and committee endorsement.`
+            : `Activity ${activityReference} has been saved with its roadmap.`}
+        </p>
+        <Link
+          className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#00843D] px-5 text-xs font-semibold text-white hover:bg-[#0B6B3A]"
+          href={planHref}
+        >
+          {returnToActivityListOnSave
+            ? "Return to activity list"
+            : "Return to procurement plan"}
+          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+        </Link>
+      </section>
+    </div>
   );
 }
 

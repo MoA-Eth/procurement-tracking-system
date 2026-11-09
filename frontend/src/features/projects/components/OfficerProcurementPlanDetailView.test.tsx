@@ -48,6 +48,24 @@ const sampleActivity = {
 };
 
 describe("OfficerProcurementPlanDetailView", () => {
+  it("keeps the plan title and reference on one line", () => {
+    const longName = "Long procurement plan name for an annual budget";
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={{ ...mockPlan, name: longName }}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).toContain(`title="${longName}"`);
+    expect(markup).toContain(
+      "truncate whitespace-nowrap text-2xl font-semibold tracking-tight",
+    );
+    expect(markup).toContain(
+      "inline-flex max-w-full shrink-0 whitespace-nowrap",
+    );
+  });
+
   it("renders the selected plan and activity page without summary cards", () => {
     const markup = renderToStaticMarkup(
       <OfficerProcurementPlanDetailView

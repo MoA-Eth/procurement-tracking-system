@@ -43,6 +43,28 @@ async function generateActivityReference(
   return `MOA-${methodCode}-${seq}`;
 }
 
+async function nextAvailableGeneratedReference(
+  tx: Prisma.TransactionClient,
+  reference: string,
+): Promise<string | undefined> {
+  const match = /^(ET-[^-]+-)(\d+)(-[^-]+-[^-]+)$/i.exec(reference);
+  if (!match) return undefined;
+
+  const prefix = match[1];
+  const sequence = match[2];
+  const suffix = match[3];
+  if (!prefix || !sequence || !suffix) return undefined;
+  let nextSequence = Number(sequence);
+  let candidate: string;
+
+  do {
+    nextSequence += 1;
+    candidate = `${prefix}${String(nextSequence).padStart(sequence.length, '0')}${suffix}`;
+  } while (await tx.activity.findUnique({ where: { reference: candidate } }));
+
+  return candidate;
+}
+
 // ─── Get Activities ───────────────────────────────────────────────────────────
 
 export const updateReference = async (id: string, newRef: string) => {
@@ -233,9 +255,32 @@ export const createActivityService = async (
       reference = await generateActivityReference(resolvedMethodId);
     } else {
       reference = reference.trim();
-      const existing = await tx.activity.findUnique({ where: { reference } });
+      const existing = await tx.activity.findUnique({
+        where: { reference },
+        include: {
+          lots: true,
+          fundings: true,
+          components: true,
+          creator: true,
+          updatedByUser: true,
+          stages: {
+            include: { stageType: true, revisions: true },
+            orderBy: { sequence: 'asc' },
+          },
+        },
+      });
       if (existing) {
-        throw ApiError.conflict('Reference already in use');
+        if (existing.planId === plan.id && existing.createdById === userId) {
+          return existing;
+        }
+        const availableReference = await nextAvailableGeneratedReference(
+          tx,
+          reference,
+        );
+        if (!availableReference) {
+          throw ApiError.conflict('Reference already in use');
+        }
+        reference = availableReference;
       }
     }
 

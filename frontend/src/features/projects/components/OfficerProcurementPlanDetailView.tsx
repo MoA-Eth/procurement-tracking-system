@@ -663,10 +663,13 @@ export function OfficerProcurementPlanDetailView({
           </ol>
         </nav>
 
-        <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
+        <div className="mt-4 flex min-w-0 flex-col gap-3">
+          <div className="w-full min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight text-[#10243f]">
+              <h1
+                className="min-w-0 flex-1 truncate whitespace-nowrap text-2xl font-semibold tracking-tight text-[#10243f]"
+                title={currentPlan.name}
+              >
                 {currentPlan.name}
               </h1>
               <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 border border-slate-300">
@@ -674,7 +677,7 @@ export function OfficerProcurementPlanDetailView({
               </span>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-500">
-              <span>
+              <span className="inline-flex max-w-full shrink-0 whitespace-nowrap">
                 Reference:{" "}
                 <strong className="font-semibold text-[#1261a8]">
                   {currentPlan.reference}
@@ -724,7 +727,7 @@ export function OfficerProcurementPlanDetailView({
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2">
             {/* Version History Button (visible when plan has revisions) */}
             {hasPlanRevisions && (
               <button
@@ -1389,10 +1392,7 @@ export function OfficerProcurementPlanDetailView({
                         activity={activity}
                         planCurrency={currentPlan.currency}
                         stageLabel={stageLabel}
-                        canEdit={
-                          isActivityCreator &&
-                          (isDraft || isReturned)
-                        }
+                        canEdit={isActivityCreator && (isDraft || isReturned)}
                         canDeleteDraft={
                           isActivityCreator &&
                           (isDraft || isReturned) &&

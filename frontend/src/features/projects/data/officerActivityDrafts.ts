@@ -42,7 +42,9 @@ export function activityStatusForPlanStatus(
   }
 }
 
-function normalizePlanStatus(status: unknown): ProcurementPlanStatus | undefined {
+function normalizePlanStatus(
+  status: unknown,
+): ProcurementPlanStatus | undefined {
   if (typeof status !== "string") return undefined;
   const displayStatuses: ProcurementPlanStatus[] = [
     "Approved",
@@ -360,6 +362,28 @@ export function findBackendActivityForPlan(
       belongsToSelectedPlan(record) &&
       normalize(record.activity.reference) === activityReference,
   );
+}
+
+export function nextAvailableActivityReference(
+  reference: string,
+  usedReferences: readonly string[],
+): string {
+  const normalize = (value: string) => value.trim().toLowerCase();
+  const used = new Set(usedReferences.map(normalize));
+  if (!used.has(normalize(reference))) return reference;
+
+  const match = /^(ET-[^-]+-)(\d+)(-[^-]+-[^-]+)$/i.exec(reference);
+  if (!match?.[1] || !match[2] || !match[3]) return reference;
+
+  const [, prefix, sequence, suffix] = match;
+  let nextSequence = Number(sequence);
+  let candidate: string;
+  do {
+    nextSequence += 1;
+    candidate = `${prefix}${String(nextSequence).padStart(sequence.length, "0")}${suffix}`;
+  } while (used.has(normalize(candidate)));
+
+  return candidate;
 }
 
 export function isTestOrJunkActivity(
@@ -717,13 +741,17 @@ export function mapBackendActivityToProcurementActivitySummary(
 
           let rawPlannedDate = s.plannedStartDate
             ? new Date(s.plannedStartDate).toISOString().slice(0, 10)
-            : (s.gregorianDate || "");
+            : s.gregorianDate || "";
           let rawTargetDate = s.currentTargetStartDate
             ? new Date(s.currentTargetStartDate).toISOString().slice(0, 10)
-            : (rawPlannedDate || s.gregorianDate || "");
+            : rawPlannedDate || s.gregorianDate || "";
 
-          const greg = isNA ? "" : rawTargetDate || rawPlannedDate || s.gregorianDate || "";
-          const eth = isNA ? "" : (s.ethiopianDate || toEthiopianDateString(greg));
+          const greg = isNA
+            ? ""
+            : rawTargetDate || rawPlannedDate || s.gregorianDate || "";
+          const eth = isNA
+            ? ""
+            : s.ethiopianDate || toEthiopianDateString(greg);
 
           return {
             id: s.id,

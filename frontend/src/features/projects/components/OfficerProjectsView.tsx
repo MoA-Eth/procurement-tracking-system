@@ -19,6 +19,7 @@ import {
   mergeActivityRoadmaps,
   mapRoadmapStagesForBackend,
   mapBackendActivityToProcurementActivitySummary,
+  nextAvailableActivityReference,
   OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
   parseSavedActivityRecords,
   type ProcurementActivitySummary,
@@ -1247,20 +1248,38 @@ export function OfficerProjectsView({
     handlePlanUpdated(additionalPlan);
   }
 
-  async function saveActivity(activity: ProcurementActivitySummary) {
+  async function saveActivity(
+    activity: ProcurementActivitySummary,
+    navigateAfterSave = true,
+  ) {
     if (!selectedProject || !selectedPlan) return;
+
+    const isCreatingActivity = mode === "create-activity";
+    if (isCreatingActivity) {
+      activity = {
+        ...activity,
+        reference: nextAvailableActivityReference(activity.reference, [
+          ...selectedPlanActivities.map((item) => item.reference),
+          ...backendActivities.map((record) => record.activity.reference),
+          ...savedActivityRecords.map((record) => record.activity.reference),
+        ]),
+      };
+    }
 
     const planRef = selectedPlan.id || selectedPlan.reference;
 
     // Check if this was an edit to an existing activity
-    const existing = selectedPlanActivities.find(
-      (a) =>
-        (Boolean(activity.id) && a.id === activity.id) ||
-        (Boolean(activity.activityId) &&
-          (a.id === activity.activityId ||
-            a.activityId === activity.activityId)) ||
-        a.reference.toLowerCase() === activity.reference.toLowerCase(),
-    );
+    const existing =
+      mode === "edit-activity"
+        ? selectedPlanActivities.find(
+            (a) =>
+              (Boolean(activity.id) && a.id === activity.id) ||
+              (Boolean(activity.activityId) &&
+                (a.id === activity.activityId ||
+                  a.activityId === activity.activityId)) ||
+              a.reference.toLowerCase() === activity.reference.toLowerCase(),
+          )
+        : undefined;
     const activityToSave: ProcurementActivitySummary = {
       ...activity,
       status: activityStatusForPlanStatus(selectedPlan.status),
@@ -1445,22 +1464,33 @@ export function OfficerProjectsView({
         );
 
         // Check if this activity already exists in the backend
-        const existingBackendAct = findBackendActivityForPlan(
-          backendActivities,
-          activity,
-          [targetBackendPlanId, selectedPlan.id || "", selectedPlan.reference],
-          selectedProject.code,
-        );
+        const existingBackendAct =
+          mode === "edit-activity"
+            ? findBackendActivityForPlan(
+                backendActivities,
+                activity,
+                [
+                  targetBackendPlanId,
+                  selectedPlan.id || "",
+                  selectedPlan.reference,
+                ],
+                selectedProject.code,
+              )
+            : undefined;
         const existingBackendId =
-          existingBackendAct?.activity.id ||
-          (activity.id && activity.id.includes("-") && activity.id.length > 20
-            ? activity.id
-            : undefined) ||
-          (activity.activityId &&
-          activity.activityId.includes("-") &&
-          activity.activityId.length > 20
-            ? activity.activityId
-            : undefined);
+          mode === "edit-activity"
+            ? existingBackendAct?.activity.id ||
+              (activity.id &&
+              activity.id.includes("-") &&
+              activity.id.length > 20
+                ? activity.id
+                : undefined) ||
+              (activity.activityId &&
+              activity.activityId.includes("-") &&
+              activity.activityId.length > 20
+                ? activity.activityId
+                : undefined)
+            : undefined;
 
         const formDetails = activity.details?.form || ({} as any);
 
@@ -1600,9 +1630,7 @@ export function OfficerProjectsView({
             const updatedSavedActs = nextRecords.map((r) => {
               if (
                 r.activity.reference?.toLowerCase() ===
-                  activity.reference?.toLowerCase() ||
-                r.activity.description?.trim().toLowerCase() ===
-                  activity.description?.trim().toLowerCase()
+                activity.reference?.toLowerCase()
               ) {
                 return {
                   ...r,
@@ -1634,9 +1662,7 @@ export function OfficerProjectsView({
                   (a) => {
                     if (
                       a.reference?.toLowerCase() ===
-                        activity.reference?.toLowerCase() ||
-                      a.description?.trim().toLowerCase() ===
-                        activity.description?.trim().toLowerCase()
+                      activity.reference?.toLowerCase()
                     ) {
                       return {
                         ...a,
@@ -1675,23 +1701,25 @@ export function OfficerProjectsView({
     await loadData();
 
     // Navigate back to plan or activity detail
-    const targetActivityRef = activity.reference || selectedActivityReference;
-    if (mode === "edit-activity" && targetActivityRef) {
-      router.push(
-        "/workspace/projects?project=" +
-          encodeURIComponent(selectedProject.code) +
-          "&plan=" +
-          encodeURIComponent(selectedPlan.reference) +
-          "&activity=" +
-          encodeURIComponent(targetActivityRef),
-      );
-    } else {
-      router.push(
-        "/workspace/projects?project=" +
-          encodeURIComponent(selectedProject.code) +
-          "&plan=" +
-          encodeURIComponent(selectedPlan.reference),
-      );
+    if (navigateAfterSave) {
+      const targetActivityRef = activity.reference || selectedActivityReference;
+      if (mode === "edit-activity" && targetActivityRef) {
+        router.push(
+          "/workspace/projects?project=" +
+            encodeURIComponent(selectedProject.code) +
+            "&plan=" +
+            encodeURIComponent(selectedPlan.reference) +
+            "&activity=" +
+            encodeURIComponent(targetActivityRef),
+        );
+      } else {
+        router.push(
+          "/workspace/projects?project=" +
+            encodeURIComponent(selectedProject.code) +
+            "&plan=" +
+            encodeURIComponent(selectedPlan.reference),
+        );
+      }
     }
   }
 
@@ -1784,9 +1812,7 @@ export function OfficerProjectsView({
 
       const existingBackendAct = existingBackendActs.find(
         (existing) =>
-          existing.reference?.toLowerCase() === act.reference?.toLowerCase() ||
-          existing.description?.trim().toLowerCase() ===
-            act.description?.trim().toLowerCase(),
+          existing.reference?.toLowerCase() === act.reference?.toLowerCase(),
       );
 
       if (existingBackendAct) {
@@ -2598,13 +2624,16 @@ export function OfficerProjectsView({
           mode === "edit-activity" ? selectedActivity : undefined
         }
         isAdditionalPlan={mode === "create-additional-activity"}
+        onSaveActivity={(activity) =>
+          saveActivity(activity, mode !== "create-activity")
+        }
         parentPlan={
           mode === "create-additional-activity" ? selectedPlan : undefined
         }
-        onSaveActivity={saveActivity}
         onSubmitAdditionalPlan={handleCreateAdditionalPlanAndActivity}
         plan={selectedPlan}
         project={selectedProject}
+        returnToActivityListOnSave={mode === "create-activity"}
       />
     );
   }
