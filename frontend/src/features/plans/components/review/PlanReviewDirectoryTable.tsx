@@ -160,6 +160,9 @@ export function PlanReviewDirectoryTable({
     useState<ProcurementPlan | null>(null);
   const [singleReturnFeedback, setSingleReturnFeedback] = useState("");
   const [isReturningSingle, setIsReturningSingle] = useState(false);
+  const [singleReturnError, setSingleReturnError] = useState<string | null>(
+    null,
+  );
 
   // Fallback plans source
   const effectiveAllPlans = allPlans.length > 0 ? allPlans : filteredPlans;
@@ -414,6 +417,13 @@ export function PlanReviewDirectoryTable({
       await onReturnPlan(singleReturnModalPlan, singleReturnFeedback.trim());
       setSingleReturnModalPlan(null);
       setSingleReturnFeedback("");
+      setSingleReturnError(null);
+    } catch (err) {
+      setSingleReturnError(
+        err instanceof Error
+          ? `Could not return plan: ${err.message}`
+          : "Could not return plan to the officer.",
+      );
     } finally {
       setIsReturningSingle(false);
     }
@@ -1148,9 +1158,10 @@ export function PlanReviewDirectoryTable({
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() =>
-                                          setSingleReturnModalPlan(plan)
-                                        }
+                                        onClick={() => {
+                                          setSingleReturnError(null);
+                                          setSingleReturnModalPlan(plan);
+                                        }}
                                         className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer"
                                       >
                                         Return
@@ -1488,6 +1499,14 @@ export function PlanReviewDirectoryTable({
             </div>
 
             <div className="p-5 space-y-4">
+              {singleReturnError && (
+                <p
+                  className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+                  role="alert"
+                >
+                  {singleReturnError}
+                </p>
+              )}
               <p className="text-xs text-slate-600 leading-relaxed">
                 You are returning plan{" "}
                 <strong className="text-slate-900 font-semibold">

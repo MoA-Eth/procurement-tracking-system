@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ActivityStatus, PlanStatus } from '../../generated/prisma/index.js';
 
 const { prismaMock, txMock } = vi.hoisted(() => {
   const tx = {
@@ -88,6 +89,29 @@ describe('createActivityService', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           reference: 'ET-MoA-000002-GO-RFQ',
+        }),
+      }),
+    );
+  });
+
+  it('creates new activities as the current returned plan version and draft status', async () => {
+    txMock.plan.findFirst.mockResolvedValue({
+      id: 'plan-id',
+      status: PlanStatus.RETURNED_FOR_REVISION,
+      version: 2,
+    });
+    txMock.activity.findUnique.mockResolvedValue(null);
+    txMock.activity.create.mockImplementation(({ data }) =>
+      Promise.resolve({ id: 'new-activity', ...data }),
+    );
+
+    await createActivityService(input, 'user-id');
+
+    expect(txMock.activity.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: ActivityStatus.DRAFT,
+          version: 2,
         }),
       }),
     );

@@ -46,6 +46,7 @@ export interface ProcurementPlanSummary {
   id?: string;
   reference: string;
   status: ProcurementPlanStatus;
+  returnedForRevision?: boolean;
   rejectionReason?: string;
   directorRevisionComment?: string;
   managementComment?: string;

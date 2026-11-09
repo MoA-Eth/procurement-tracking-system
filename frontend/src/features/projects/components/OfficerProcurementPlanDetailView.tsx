@@ -130,6 +130,7 @@ export function OfficerProcurementPlanDetailView({
       : currentPlan.status;
 
   const isReturned =
+    Boolean(currentPlan.returnedForRevision) ||
     activePlanStatus === "Returned" ||
     activePlanStatus === "Returned for Revision" ||
     (activePlanStatus as string) === "RETURNED_FOR_REVISION";
@@ -342,8 +343,9 @@ export function OfficerProcurementPlanDetailView({
     (project.assignedOfficers?.length ?? 0) > 1 ||
     (project.assignedOfficerIds?.length ?? 0) > 1;
 
-  const versionNumber = getCurrentPlanVersionNumber(
-    currentPlan.reference || currentPlan.id || "",
+  const versionNumber = Math.max(
+    getCurrentPlanVersionNumber(currentPlan.reference || currentPlan.id || ""),
+    currentPlan.version || 1,
   );
 
   const planHistory = getPlanVersionHistory(
@@ -371,7 +373,13 @@ export function OfficerProcurementPlanDetailView({
     if (currentPlan.planActivities && currentPlan.planActivities.length > 0) {
       currentPlan.planActivities.forEach((pa) => {
         const ref = (pa.reference || pa.id || "").toLowerCase();
-        if (ref && !existingRefs.has(ref)) {
+        const existingIndex = list.findIndex(
+          (activity) =>
+            (activity.reference || activity.id || "").toLowerCase() === ref,
+        );
+        if (ref && existingIndex >= 0) {
+          list[existingIndex] = { ...list[existingIndex], ...pa };
+        } else if (ref) {
           existingRefs.add(ref);
           list.push(pa);
         }
@@ -568,7 +576,8 @@ export function OfficerProcurementPlanDetailView({
 
       setSubmittedPlanReference(currentPlan.reference);
 
-      const nextVer = isReturned ? versionNumber + 1 : versionNumber;
+      const nextVer =
+        isReturned && !currentPlan.version ? versionNumber + 1 : versionNumber;
 
       // Record audit revision
       recordPlanVersionEvent({
@@ -693,7 +702,15 @@ export function OfficerProcurementPlanDetailView({
               <span aria-hidden="true" className="text-slate-300">
                 •
               </span>
-              <StatusText className="text-[10px]" label={activePlanStatus} />
+              <StatusText
+                className="text-[10px]"
+                label={isReturned ? "Draft" : activePlanStatus}
+              />
+              {isReturned && (
+                <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800">
+                  Return
+                </span>
+              )}
               <span aria-hidden="true" className="text-slate-300">
                 •
               </span>
@@ -898,7 +915,7 @@ export function OfficerProcurementPlanDetailView({
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-semibold text-slate-900">
-                  Plan Returned by Director for Revision
+                  Plan Returned for Revision
                 </h2>
                 <span className="badge-status-base badge-status-delayed font-medium">
                   Action Required
@@ -908,7 +925,7 @@ export function OfficerProcurementPlanDetailView({
                 <div className="notice-quote-clean text-xs">
                   <p className="font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
                     <MessageSquare className="h-3.5 w-3.5 text-slate-600" />
-                    Director Feedback &amp; Revision Instructions:
+                    Return Remark &amp; Revision Instructions:
                   </p>
                   <p className="italic leading-relaxed text-slate-700 font-normal">
                     &ldquo;
@@ -1980,7 +1997,17 @@ function ActivityRow({
   return (
     <tr className="even:bg-[#fbfcff] hover:bg-[#f7fbf9] transition-colors">
       <td className="px-2 py-2.5 align-top font-mono text-[10px] font-semibold text-[#1261a8] truncate">
-        {activity.reference}
+        <div className="flex items-center gap-1">
+          <span>{activity.reference}</span>
+          <span className="rounded bg-slate-100 px-1 text-[8px] font-sans font-medium text-slate-600">
+            v{activity.version || 1}
+          </span>
+          {activity.returnedForRevision && (
+            <span className="rounded border border-amber-200 bg-amber-50 px-1 text-[8px] font-sans font-semibold text-amber-800">
+              Return
+            </span>
+          )}
+        </div>
       </td>
       <td className="px-2 py-2.5 align-top text-[10px] font-medium leading-4 text-slate-700 wrap-break-word">
         <p className="wrap-break-word line-clamp-2">{activity.description}</p>

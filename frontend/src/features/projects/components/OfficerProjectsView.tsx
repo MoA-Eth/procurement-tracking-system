@@ -1858,12 +1858,14 @@ export function OfficerProjectsView({
     const submittedPlanActivities = planActs.map((activity) => ({
       ...activity,
       status: "Submitted to Director" as const,
+      returnedForRevision: false,
     }));
     const updatedPlan: ProcurementPlanSummary = {
       ...targetPlan,
       id: planIdToSubmit,
       reference: targetPlan.reference || planIdToSubmit,
       status: "Submitted to Director",
+      returnedForRevision: false,
       activities: planActs.length || targetPlan.activities,
       planActivities: submittedPlanActivities,
     };
@@ -1906,6 +1908,7 @@ export function OfficerProjectsView({
               ...record,
               activity: {
                 ...activity,
+                returnedForRevision: false,
                 status: "Submitted to Director" as const,
               },
             }
@@ -1930,9 +1933,9 @@ export function OfficerProjectsView({
       return nextRecords;
     });
 
-    const isReturned = (targetPlan.status || "")
-      .toLowerCase()
-      .includes("returned");
+    const isReturned =
+      Boolean(targetPlan.returnedForRevision) ||
+      (targetPlan.status || "").toLowerCase().includes("returned");
 
     const officerName =
       effectiveUser?.displayName ||
@@ -1970,7 +1973,7 @@ export function OfficerProjectsView({
       planName: targetPlan.name,
       projectCode: selectedProject.code,
       projectName: selectedProject.name,
-      versionNumber: isReturned ? 2 : 1,
+      versionNumber: targetPlan.version || (isReturned ? 2 : 1),
       action: isReturned ? "RESUBMITTED" : "SUBMITTED",
       actionLabel: isReturned
         ? "Plan Resubmitted to Director"

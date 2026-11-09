@@ -101,6 +101,36 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).toContain("Not Started");
   });
 
+  it("shows a returned plan and its activities as draft with return remarks and versions", () => {
+    const returnedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+      returnedForRevision: true,
+      version: 2,
+      directorRevisionComment: "Please correct the activity budget.",
+      planActivities: [
+        {
+          ...sampleActivity,
+          status: "Draft",
+          returnedForRevision: true,
+          version: 2,
+        },
+      ],
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={returnedPlan}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).toContain("Plan Returned for Revision");
+    expect(markup).toContain("Draft");
+    expect(markup).toContain("Return");
+    expect(markup).toContain("Please correct the activity budget.");
+    expect(markup).toContain("v2");
+  });
+
   it("does not display single-plan submit banner for draft plans since submissions are done in batch", () => {
     const draftPlan: ProcurementPlanSummary = {
       ...mockPlan,

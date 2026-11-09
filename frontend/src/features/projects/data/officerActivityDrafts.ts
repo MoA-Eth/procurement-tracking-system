@@ -32,7 +32,7 @@ export function activityStatusForPlanStatus(
       return "Cancelled";
     case "Returned":
     case "Returned for Revision":
-      return "Returned";
+      return "Draft";
     case "Submitted to Director":
       return "Submitted to Director";
     case "Committee Review":
@@ -298,6 +298,8 @@ export interface ProcurementActivitySummary {
   activityId?: string;
   planId?: string;
   projectId?: string;
+  version?: number;
+  returnedForRevision?: boolean;
   category: string;
   currentStage: string;
   description: string;
@@ -891,6 +893,8 @@ export function mapBackendActivityToProcurementActivitySummary(
     method: ba.procurementMethod?.label || ba.procurementMethod?.code || "RFB",
     reference: ba.reference || ba.id,
     status,
+    version: Number(ba.version || ba.plan?.version) || undefined,
+    returnedForRevision: ba.plan?.status === "RETURNED_FOR_REVISION",
     currency: ba.currency || "ETB",
     fundingSource:
       ba.fundings?.[0]?.fundingSource || ba.fundingSource || undefined,

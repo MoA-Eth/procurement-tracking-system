@@ -119,10 +119,17 @@ export function mergeSavedPlans(
             ? savedActs
             : baseActs;
 
+      const isReturnedForRevision =
+        plan.returnedForRevision ?? saved.returnedForRevision ?? false;
       const resolvedActivities = rawActivities.map((act: any) => ({
         ...act,
-        status:
-          resolvedStatus === "Submitted to Director"
+        returnedForRevision: isReturnedForRevision,
+        version: isReturnedForRevision
+          ? plan.version || act.version || 1
+          : act.version,
+        status: isReturnedForRevision
+          ? "Draft"
+          : resolvedStatus === "Submitted to Director"
             ? "Submitted to Director"
             : resolvedStatus === "Returned" &&
                 (act.status === "Submitted to Director" ||

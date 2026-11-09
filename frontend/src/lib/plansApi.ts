@@ -86,6 +86,7 @@ export interface BackendPlanActivity {
     }[];
   }[];
   status?: string;
+  version?: number;
   createdById?: string;
   creator?: { id: string; name: string; displayName?: string; email?: string };
   updatedById?: string;
@@ -135,6 +136,7 @@ export interface BackendPlan {
     | "UPDATE_REQUESTED"
     | "CANCELLED"
     | string;
+  version?: number;
   committeeRound?: number;
   committeeVoteDeadline?: string | null;
   title: string;
@@ -378,25 +380,17 @@ export async function submitManagementDecision(
   return res.data || res;
 }
 
-/** Director returns rejected plan to Officer for revision with comments */
+/** An approver returns a plan to its officer for revision with comments. */
 export async function returnPlanForRevision(
   planId: string,
   comment: string,
   userId?: string,
 ): Promise<BackendPlan> {
-  try {
-    const res = await apiClient.post<any>(
-      `/plans/${encodeURIComponent(planId)}/return-to-officer`,
-      { comment, reason: comment, userId },
-    );
-    return res.data || res;
-  } catch (err: any) {
-    const res = await apiClient.post<any>(
-      `/plans/${encodeURIComponent(planId)}/reject`,
-      { comment, reason: comment, userId },
-    );
-    return res.data || res;
-  }
+  const res = await apiClient.post<any>(
+    `/plans/${encodeURIComponent(planId)}/return-to-officer`,
+    { comment, reason: comment, userId },
+  );
+  return res.data || res;
 }
 
 /** Fetch comments for a plan and its activities */
@@ -589,6 +583,8 @@ export function mapBackendPlanToFrontend(
     organizationRegion: backendPlan.organization || "Federal",
     description: backendPlan.description || undefined,
     status,
+    version: backendPlan.version,
+    returnedForRevision: backendPlan.status === "RETURNED_FOR_REVISION",
     createdBy:
       (backendPlan as any).creator?.name ||
       backendPlan.createdBy ||
@@ -731,8 +727,7 @@ export function mapBackendPlanToOfficerPlanSummary(
   else if (backendPlan.status === "CANCELLATION_REQUESTED")
     status = "Cancellation Requested";
   else if (backendPlan.status === "CANCELLED") status = "Cancelled";
-  else if (backendPlan.status === "RETURNED_FOR_REVISION")
-    status = "Returned for Revision";
+  else if (backendPlan.status === "RETURNED_FOR_REVISION") status = "Draft";
   else if (
     backendPlan.status === "REJECTED" ||
     backendPlan.status === "COMMITTEE_REJECTED" ||
@@ -948,6 +943,11 @@ export function mapBackendPlanToOfficerPlanSummary(
         activityId: a.id,
         planId: backendPlan.id,
         projectId: backendPlan.projectId || backendPlan.project?.id,
+        version:
+          backendPlan.status === "RETURNED_FOR_REVISION"
+            ? backendPlan.version || Number(a.version) || 1
+            : Number(a.version || backendPlan.version) || 1,
+        returnedForRevision: backendPlan.status === "RETURNED_FOR_REVISION",
         reference: a.reference || a.id,
         description: a.description || "Procurement activity package",
         category: activityCategory,
@@ -958,18 +958,20 @@ export function mapBackendPlanToOfficerPlanSummary(
         estimatedAmount: Number(a.estimatedBudget || 0),
         currentStage: currentStageObj?.name || "Not Started",
         status:
-          backendPlan.status === "SUBMITTED"
-            ? "Submitted to Director"
-            : a.status === "DRAFT" ||
-                (a.status === "PLANNED" && backendPlan.status === "DRAFT")
-              ? "Draft"
-              : a.status === "COMPLETED"
-                ? "Completed"
-                : a.status === "IN_PROGRESS" || a.status === "IN_EXECUTION"
-                  ? "In Progress"
-                  : a.status === "DELAYED"
-                    ? "Delayed"
-                    : "Not Started",
+          backendPlan.status === "RETURNED_FOR_REVISION"
+            ? "Draft"
+            : backendPlan.status === "SUBMITTED"
+              ? "Submitted to Director"
+              : a.status === "DRAFT" ||
+                  (a.status === "PLANNED" && backendPlan.status === "DRAFT")
+                ? "Draft"
+                : a.status === "COMPLETED"
+                  ? "Completed"
+                  : a.status === "IN_PROGRESS" || a.status === "IN_EXECUTION"
+                    ? "In Progress"
+                    : a.status === "DELAYED"
+                      ? "Delayed"
+                      : "Not Started",
         createdById: a.createdById || a.creator?.id,
         createdByName,
         updatedById: a.updatedById || a.updatedByUser?.id,
@@ -1076,6 +1078,8 @@ export function mapBackendPlanToOfficerPlanSummary(
     budgetYear: backendPlan.budgetYear || "",
     category,
     status,
+    version: backendPlan.version || 1,
+    returnedForRevision: backendPlan.status === "RETURNED_FOR_REVISION",
     rejectionReason: backendPlan.rejectionReason || undefined,
     directorRevisionComment: backendPlan.directorRevisionComment || undefined,
     managementComment: backendPlan.managementComment || undefined,

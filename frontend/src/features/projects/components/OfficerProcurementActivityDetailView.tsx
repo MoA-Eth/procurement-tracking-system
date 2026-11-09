@@ -314,11 +314,19 @@ export function OfficerProcurementActivityDetailView({
                 <span className="rounded-md bg-slate-100/90 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-800 border border-slate-200/80">
                   {activity.reference}
                 </span>
+                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium text-slate-600">
+                  v{activity.version || 1}
+                </span>
               </span>
               <span aria-hidden="true" className="text-slate-300">
                 •
               </span>
               <StatusText className="text-[10px]" label={activity.status} />
+              {activity.returnedForRevision && (
+                <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800">
+                  Return
+                </span>
+              )}
               {isMultiOfficerProject && activity.createdByName && (
                 <>
                   <span aria-hidden="true" className="text-slate-300">

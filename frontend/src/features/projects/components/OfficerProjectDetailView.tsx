@@ -471,7 +471,14 @@ export function OfficerProjectDetailView({
                       {actCount}
                     </td>
                     <td className="px-5 py-4">
-                      <StatusText className="text-xs" label={plan.status} />
+                      <div className="flex items-center gap-2">
+                        <StatusText className="text-xs" label={plan.status} />
+                        {plan.returnedForRevision && (
+                          <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800">
+                            Return
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

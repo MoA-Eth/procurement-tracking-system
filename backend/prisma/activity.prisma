@@ -45,6 +45,7 @@ model Activity {
   contractId     String?
   processStatus  String?
   status         ActivityStatus @default(PLANNED)
+  version        Int            @default(1)
   performancePct Float?
 
   createdById String?

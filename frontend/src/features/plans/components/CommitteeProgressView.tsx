@@ -868,7 +868,7 @@ export function CommitteeProgressView({
 
     try {
       setIsSubmittingRevision(true);
-      await returnPlanForRevision(
+      const returnedPlan = await returnPlanForRevision(
         planToReturn.id,
         instructions,
         currentUser?.id,
@@ -879,7 +879,9 @@ export function CommitteeProgressView({
         planReference: planToReturn.planNumber || planToReturn.id,
         planName: planToReturn.planTitle || planToReturn.planNumber,
         projectCode: planToReturn.projectCode,
-        versionNumber: getCurrentPlanVersionNumber(planToReturn.id),
+        versionNumber:
+          returnedPlan.version ||
+          getCurrentPlanVersionNumber(planToReturn.id) + 1,
         action: "RETURNED",
         actionLabel: "Plan Returned by Committee for Revision",
         changedBy:

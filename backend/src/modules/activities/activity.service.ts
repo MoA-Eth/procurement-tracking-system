@@ -340,6 +340,7 @@ export const createActivityService = async (
       plan: { connect: { id: plan.id } },
       procurementMethod: { connect: { id: resolvedMethodId } },
       status: activityStatusForPlanStatus(plan.status),
+      version: plan.version,
       ...(validActUserId
         ? {
             creator: { connect: { id: validActUserId } },

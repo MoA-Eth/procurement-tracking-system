@@ -5,7 +5,7 @@ import { type ProcurementPlan, parseRejectionDetails } from "../../plansData";
 import {
   fetchPlans,
   sendPlanToCommittee,
-  rejectPlan,
+  returnPlanForRevision,
   submitVote,
   submitManagementDecision,
   addPlanComment,
@@ -350,6 +350,7 @@ export function usePlanForReview({
     rejectionScope?: "ALL" | "SPECIFIC",
     rejectedActivityIds?: string[],
     rejectedActivityRefs?: string[],
+    returnedForRevision = false,
   ) => {
     if (typeof window === "undefined") return;
     try {
@@ -406,6 +407,7 @@ export function usePlanForReview({
                     );
                     return {
                       ...act,
+                      returnedForRevision,
                       status: isSpecific
                         ? flagged
                           ? newActivityStatus || "Returned for Revision"
@@ -421,6 +423,7 @@ export function usePlanForReview({
                 plan: {
                   ...item.plan,
                   status: newPlanStatus,
+                  returnedForRevision,
                   rejectionReason:
                     rejectionReason !== undefined
                       ? rejectionReason
@@ -602,17 +605,22 @@ export function usePlanForReview({
     const reasonText =
       (customRemarks !== undefined ? customRemarks : returnRemarks).trim() ||
       "Returned by Director for revisions.";
+    let returnedPlan: BackendPlan;
     try {
-      await rejectPlan(plan.id, reasonText);
+      returnedPlan = await returnPlanForRevision(plan.id, reasonText, user.id);
     } catch (err) {
-      console.warn("Backend rejectPlan note:", err);
+      throw err;
     }
 
     updateLocalStoragePlanAndActivities(
       plan,
-      "Returned",
-      "Returned",
+      "Draft",
+      "Draft",
       reasonText,
+      undefined,
+      undefined,
+      undefined,
+      true,
     );
 
     const directorName = user.displayName || user.email || "Director";
@@ -621,7 +629,9 @@ export function usePlanForReview({
       planReference: plan.reference || plan.planName,
       planName: plan.planName,
       projectCode: plan.projectCode,
-      versionNumber: getCurrentPlanVersionNumber(plan.id),
+      versionNumber:
+        returnedPlan.version ||
+        Math.max(plan.version || 1, getCurrentPlanVersionNumber(plan.id)) + 1,
       action: "RETURNED",
       actionLabel: "Plan Returned by Director for Revision",
       changedBy: directorName,
@@ -642,7 +652,7 @@ export function usePlanForReview({
         planReference: plan.reference,
         budgetYear: plan.budgetYear,
         category: plan.category,
-        status: "Returned for Revision",
+        status: "Draft",
         estimatedTotal: Number(plan.estimatedValue || plan.estimatedTotal) || 0,
         currency: "ETB",
         activitiesCount: Math.max(
@@ -659,7 +669,8 @@ export function usePlanForReview({
         method: a.method,
         estimatedAmount: Number(a.estimatedAmount || a.estimatedBudget) || 0,
         currency: a.currency || "ETB",
-        status: "Returned",
+        status: "Draft",
+        version: returnedPlan.version || plan.version || 2,
       })),
     });
 
@@ -852,22 +863,39 @@ export function usePlanForReview({
     }
 
     // 2. Process Unapproved / Returned Plans with Feedback
+    let returnedCount = 0;
+    const returnFailures: string[] = [];
     for (const [planId, comment] of Object.entries(unapprovedComments)) {
       const plan = plans.find((p) => p.id === planId);
       if (!plan) continue;
 
       const reasonText = comment.trim() || "Returned by Director for revision.";
+      let returnedPlan: BackendPlan;
       try {
-        await rejectPlan(plan.id, reasonText);
+        returnedPlan = await returnPlanForRevision(
+          plan.id,
+          reasonText,
+          user.id,
+        );
       } catch (err) {
-        console.warn("rejectPlan batch note:", err);
+        returnFailures.push(
+          `${plan.planName}: ${
+            err instanceof Error ? err.message : "return request failed"
+          }`,
+        );
+        continue;
       }
+      returnedCount += 1;
 
       updateLocalStoragePlanAndActivities(
         plan,
-        "Returned",
-        "Returned",
+        "Draft",
+        "Draft",
         reasonText,
+        undefined,
+        undefined,
+        undefined,
+        true,
       );
 
       const directorName = user.displayName || user.email || "Director";
@@ -876,7 +904,9 @@ export function usePlanForReview({
         planReference: plan.reference || plan.planName,
         planName: plan.planName,
         projectCode: plan.projectCode,
-        versionNumber: getCurrentPlanVersionNumber(plan.id),
+        versionNumber:
+          returnedPlan.version ||
+          Math.max(plan.version || 1, getCurrentPlanVersionNumber(plan.id)) + 1,
         action: "RETURNED",
         actionLabel: "Plan Returned by Director for Revision",
         changedBy: directorName,
@@ -897,7 +927,7 @@ export function usePlanForReview({
           planReference: plan.reference,
           budgetYear: plan.budgetYear,
           category: plan.category,
-          status: "Returned for Revision",
+          status: "Draft",
           estimatedTotal:
             Number(plan.estimatedValue || plan.estimatedTotal) || 0,
           currency: "ETB",
@@ -915,7 +945,8 @@ export function usePlanForReview({
           method: a.method,
           estimatedAmount: Number(a.estimatedAmount || a.estimatedBudget) || 0,
           currency: a.currency || "ETB",
-          status: "Returned",
+          status: "Draft",
+          version: returnedPlan.version || plan.version || 2,
         })),
       });
 
@@ -934,20 +965,26 @@ export function usePlanForReview({
     setReturnRemarks("");
 
     const approvedCount = approvedPlanIds.length;
-    const returnedCount = Object.keys(unapprovedComments).length;
+    const resultMessages: string[] = [];
     if (approvedCount > 0 && returnedCount > 0) {
-      showToast(
+      resultMessages.push(
         `${approvedCount} ${approvedCount === 1 ? "plan" : "plans"} forwarded to Committee, and ${returnedCount} ${returnedCount === 1 ? "plan" : "plans"} returned to Officer with revision instructions.`,
       );
     } else if (approvedCount > 0) {
-      showToast(
+      resultMessages.push(
         `All ${approvedCount} ${approvedCount === 1 ? "plan" : "plans"} approved and forwarded to Endorsement Committee!`,
       );
     } else if (returnedCount > 0) {
-      showToast(
+      resultMessages.push(
         `${returnedCount} ${returnedCount === 1 ? "plan" : "plans"} returned to Officer for revision.`,
       );
     }
+    if (returnFailures.length > 0) {
+      resultMessages.push(
+        `${returnFailures.length} return request(s) failed: ${returnFailures.join("; ")}`,
+      );
+    }
+    if (resultMessages.length > 0) showToast(resultMessages.join(" "));
   };
 
   // Committee Decision: Vote Approve or Reject

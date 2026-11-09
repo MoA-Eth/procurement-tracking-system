@@ -1023,11 +1023,16 @@ export const returnToOfficerService = async (
         oldPlan.id,
         PlanStatus.RETURNED_FOR_REVISION,
       );
+      await tx.activity.updateMany({
+        where: { planId: oldPlan.id },
+        data: { version: { increment: 1 } },
+      });
 
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: {
           status: PlanStatus.RETURNED_FOR_REVISION,
+          version: { increment: 1 },
           directorRevisionComment: reason,
           rejectedById: validUserId,
           rejectedAt: new Date(),
@@ -1079,10 +1084,10 @@ export const returnToOfficerService = async (
     creatorId: plan.createdBy,
     actorUserId: userId,
     title: `Plan Returned for Revision: ${plan.title}`,
-    message: `Director returned plan "${plan.title}" for revision with comments: "${reason}"`,
+    message: `An approver returned plan "${plan.title}" for revision with comments: "${reason}"`,
     type: 'DECISION',
     severity: 'HIGH',
-    link: '/workspace/plan-management',
+    link: '/workspace/projects',
   }).catch(() => {});
 
   return plan;

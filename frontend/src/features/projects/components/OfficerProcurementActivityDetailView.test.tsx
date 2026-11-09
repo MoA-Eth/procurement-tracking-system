@@ -122,6 +122,25 @@ const detailedActivity: ProcurementActivitySummary = {
 };
 
 describe("OfficerProcurementActivityDetailView", () => {
+  it("shows a returned activity as a draft with its return marker and version", () => {
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={{
+          ...detailedActivity,
+          status: "Draft",
+          returnedForRevision: true,
+          version: 2,
+        }}
+        plan={plan}
+        project={project}
+      />,
+    );
+
+    expect(markup).toContain("Draft");
+    expect(markup).toContain("Return");
+    expect(markup).toContain("v2");
+  });
+
   it("shows every saved wizard section and its entered values", () => {
     const markup = renderToStaticMarkup(
       <OfficerProcurementActivityDetailView

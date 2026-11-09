@@ -100,7 +100,13 @@ router.post(
 
 router.post(
   '/:id/return-to-officer',
-  authorize('ProcurementDirector', 'DIRECTOR', 'Administrator', 'ADMIN'),
+  authorize(
+    'ProcurementDirector',
+    'DIRECTOR',
+    'ENDORSING_COMMITTEE',
+    'Administrator',
+    'ADMIN',
+  ),
   returnToOfficer,
 );
 

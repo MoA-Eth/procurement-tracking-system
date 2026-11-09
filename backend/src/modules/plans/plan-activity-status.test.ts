@@ -16,7 +16,7 @@ describe('activity status inherited from plan', () => {
     [PlanStatus.AWAITING_MANAGEMENT_APPROVAL, ActivityStatus.PLANNED],
     [PlanStatus.MANAGEMENT_APPROVED, ActivityStatus.APPROVED],
     [PlanStatus.MANAGEMENT_REJECTED, ActivityStatus.PLANNED],
-    [PlanStatus.RETURNED_FOR_REVISION, ActivityStatus.PLANNED],
+    [PlanStatus.RETURNED_FOR_REVISION, ActivityStatus.DRAFT],
     [PlanStatus.APPROVED, ActivityStatus.APPROVED],
     [PlanStatus.REJECTED, ActivityStatus.PLANNED],
     [PlanStatus.UPDATE_REQUESTED, ActivityStatus.PLANNED],
