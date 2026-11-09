@@ -1,4 +1,4 @@
-import dynamic from "next/dynamic";
+import dynamicImport from "next/dynamic";
 
 const SectionLoadingFallback = () => (
   <div className="p-6 space-y-4 animate-pulse" role="status" aria-busy="true">
@@ -14,63 +14,63 @@ const SectionLoadingFallback = () => (
   </div>
 );
 
-const ReportsView = dynamic(
+const ReportsView = dynamicImport(
   () => import("@/features/reports/components/ReportsView").then((m) => m.ReportsView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const ExecutiveDashboard = dynamic(
+const ExecutiveDashboard = dynamicImport(
   () => import("@/features/executive-dashboard/ExecutiveDashboard").then((m) => m.ExecutiveDashboard),
   { loading: () => <SectionLoadingFallback /> }
 );
-const CommitteeProgressView = dynamic(
+const CommitteeProgressView = dynamicImport(
   () => import("@/features/plans/components/CommitteeProgressView").then((m) => m.CommitteeProgressView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const AmendmentRequestsView = dynamic(
+const AmendmentRequestsView = dynamicImport(
   () => import("@/features/plans/components/AmendmentRequestsView").then((m) => m.AmendmentRequestsView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const SystemLogsView = dynamic(
+const SystemLogsView = dynamicImport(
   () => import("@/features/dashboards/admin/SystemLogsView").then((m) => m.SystemLogsView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const UserManagementView = dynamic(
+const UserManagementView = dynamicImport(
   () => import("@/features/dashboards/admin/UserManagementView").then((m) => m.UserManagementView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const OfficerContractsView = dynamic(
+const OfficerContractsView = dynamicImport(
   () => import("@/features/contracts/components/OfficerContractsView").then((m) => m.OfficerContractsView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const OfficerActivityTrackerView = dynamic(
+const OfficerActivityTrackerView = dynamicImport(
   () => import("@/features/activity-tracker/components/OfficerActivityTrackerView").then((m) => m.OfficerActivityTrackerView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const DirectorActivityTrackerView = dynamic(
+const DirectorActivityTrackerView = dynamicImport(
   () => import("@/features/activity-tracker/components/DirectorActivityTrackerView").then((m) => m.DirectorActivityTrackerView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const OfficerProjectsView = dynamic(
+const OfficerProjectsView = dynamicImport(
   () => import("@/features/projects/components/OfficerProjectsView").then((m) => m.OfficerProjectsView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const ProjectsManagementView = dynamic(
+const ProjectsManagementView = dynamicImport(
   () => import("@/features/projects/management/ProjectsManagementView").then((m) => m.ProjectsManagementView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const PlanForReviewView = dynamic(
+const PlanForReviewView = dynamicImport(
   () => import("@/features/plans/components/PlanForReviewView").then((m) => m.PlanForReviewView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const MyDecisionsView = dynamic(
+const MyDecisionsView = dynamicImport(
   () => import("@/features/plans/components/MyDecisionsView").then((m) => m.MyDecisionsView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const NotificationsView = dynamic(
+const NotificationsView = dynamicImport(
   () => import("@/features/notifications/components/NotificationsView").then((m) => m.NotificationsView),
   { loading: () => <SectionLoadingFallback /> }
 );
-const SettingsManagementView = dynamic(
+const SettingsManagementView = dynamicImport(
   () => import("@/features/settings/SettingsManagementView").then((m) => m.SettingsManagementView),
   { loading: () => <SectionLoadingFallback /> }
 );
