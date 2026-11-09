@@ -414,6 +414,7 @@ export function UserManagementView({
         MANAGEMENT: "ManagementTeam",
         EXECUTIVE: "EXECUTIVE",
         ADMIN: "Administrator",
+        SUPERUSER: "SUPERUSER",
       };
 
       const isRestrictedFilter =
@@ -474,6 +475,7 @@ export function UserManagementView({
       MANAGEMENT: "ManagementTeam",
       EXECUTIVE: "EXECUTIVE",
       ADMIN: "Administrator",
+      SUPERUSER: "SUPERUSER",
     };
 
     const isRestrictedFilter =
@@ -1182,6 +1184,9 @@ export function UserManagementView({
                   <option value="ADMIN">
                     Administrator (System Administration / Governance)
                   </option>
+                  <option value="SUPERUSER">
+                    Superuser (Full System Access)
+                  </option>
                 </select>
 
                 <p className="text-xs text-[#64748b] font-medium mt-2 flex items-center gap-1.5">
@@ -1308,6 +1313,7 @@ export function UserManagementView({
                   <option value="MANAGEMENT">Executive Management</option>
                   <option value="EXECUTIVE">Executive</option>
                   <option value="ADMIN">Administrator</option>
+                  <option value="SUPERUSER">Superuser</option>
                 </select>
 
                 <select

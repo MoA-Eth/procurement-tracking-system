@@ -208,6 +208,20 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "my-decisions",
   ],
   ADMIN: ["user-management", "system-logs"],
+  SUPERUSER: [
+    "executive-dashboard",
+    "projects",
+    "contracts",
+    "plan-for-review",
+    "amendment-requests",
+    "vote-progress",
+    "activity-tracker",
+    "reports",
+    "my-decisions",
+    "user-management",
+    "system-logs",
+    "notifications",
+  ],
 };
 
 export function getNavigationForRole(role: UserRole): NavigationItem[] {
@@ -243,6 +257,7 @@ export function canAccessWorkspaceSection(
   section: string,
 ): boolean {
   const normRole = normalizeUserRole(role);
+  if (normRole === "SUPERUSER") return getWorkspaceSection(section) !== undefined;
   const sec = getWorkspaceSection(section);
   if (!sec) return false;
   return sec.allowedRoles.includes(role) || sec.allowedRoles.includes(normRole);

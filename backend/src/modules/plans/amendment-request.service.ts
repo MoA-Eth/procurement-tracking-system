@@ -13,7 +13,7 @@ import { ApiError } from '../../utils/errors.js';
 import { getAmendmentCommitteeNextStatus } from './amendment-request-workflow.js';
 import { syncPlanActivityStatuses } from './plan-activity-status.js';
 
-const pendingStatuses = [
+const pendingStatuses: AmendmentRequestStatus[] = [
   AmendmentRequestStatus.PENDING_DIRECTOR,
   AmendmentRequestStatus.PENDING_COMMITTEE,
   AmendmentRequestStatus.PENDING_MANAGEMENT,
@@ -187,6 +187,13 @@ export const listAmendmentRequests = async (role: string, userId?: string) => {
       orderBy: { createdAt: 'desc' },
     });
   }
+  if (role === UserRole.SUPERUSER) {
+    return prisma.amendmentRequest.findMany({
+      where: { status: { in: pendingStatuses } },
+      include: amendmentRequestDetails,
+      orderBy: { createdAt: 'asc' },
+    });
+  }
   const stage = roleStages[role];
   if (!stage) {
     throw ApiError.forbidden('You cannot review amendment requests.');
@@ -205,11 +212,12 @@ export const decideAmendmentRequest = async (
   decision: 'APPROVE' | 'REJECT' | 'RETURN',
   comment: string,
 ) => {
-  const stage = roleStages[role];
-  if (!stage) {
+  const allowedStage = roleStages[role];
+  if (!allowedStage && role !== UserRole.SUPERUSER) {
     throw ApiError.forbidden('You cannot review amendment requests.');
   }
 
+  let reviewedStage: AmendmentRequestStatus | undefined;
   const updatedRequest = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT "id" FROM "AmendmentRequest" WHERE "id" = ${id} FOR UPDATE`;
     const request = await tx.amendmentRequest.findUnique({
@@ -221,11 +229,18 @@ export const decideAmendmentRequest = async (
       },
     });
     if (!request) throw ApiError.notFound('Amendment request not found.');
+    const stage = role === UserRole.SUPERUSER ? request.status : allowedStage;
+    if (!stage || !pendingStatuses.includes(stage)) {
+      throw ApiError.conflict(
+        'This request is not awaiting a review decision.',
+      );
+    }
     if (request.status !== stage) {
       throw ApiError.conflict(
         'This request is not awaiting a decision from your role.',
       );
     }
+    reviewedStage = stage;
 
     if (stage === AmendmentRequestStatus.PENDING_COMMITTEE) {
       if (decision === 'RETURN') {
@@ -323,11 +338,7 @@ export const decideAmendmentRequest = async (
 
     if (!isTerminal && nextStatus === AmendmentRequestStatus.APPROVED) {
       if (request.entityType === AmendmentEntityType.PLAN && request.plan) {
-        await syncPlanActivityStatuses(
-          tx,
-          request.plan.id,
-          PlanStatus.DRAFT,
-        );
+        await syncPlanActivityStatuses(tx, request.plan.id, PlanStatus.DRAFT);
         await tx.plan.update({
           where: { id: request.plan.id },
           data: {
@@ -363,7 +374,7 @@ export const decideAmendmentRequest = async (
   });
   if (
     updatedRequest.status === AmendmentRequestStatus.PENDING_COMMITTEE &&
-    stage === AmendmentRequestStatus.PENDING_DIRECTOR
+    reviewedStage === AmendmentRequestStatus.PENDING_DIRECTOR
   ) {
     await createNotification({
       targetRole: 'ENDORSING_COMMITTEE',

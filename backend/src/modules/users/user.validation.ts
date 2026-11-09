@@ -16,6 +16,7 @@ const roleValues = [
   'EXECUTIVE',
   'ADMIN',
   'ADMINISTRATOR',
+  'SUPERUSER',
 ] as const;
 
 export const roleEnum = z.enum(roleValues);

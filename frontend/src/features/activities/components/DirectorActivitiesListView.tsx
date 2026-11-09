@@ -432,9 +432,10 @@ export function DirectorActivitiesListView({
   onManagementDecision,
   onAddActivityComment,
 }: DirectorActivitiesListViewProps) {
-  const isCommittee = userRole === "ENDORSING_COMMITTEE";
-  const isManagement = userRole === "MANAGEMENT";
-  const isDirector = userRole === "DIRECTOR";
+  const isSuperuser = userRole === "SUPERUSER";
+  const isCommittee = userRole === "ENDORSING_COMMITTEE" || isSuperuser;
+  const isManagement = userRole === "MANAGEMENT" || isSuperuser;
+  const isDirector = userRole === "DIRECTOR" || isSuperuser;
   const isCancellationRequested =
     plan.status === "Cancellation Requested" ||
     (plan as any).status === "CANCELLATION_REQUESTED";

@@ -751,7 +751,7 @@ export function PlanFullScreenReviewView({
       {Boolean(
         (userRole === "ENDORSING_COMMITTEE" && Boolean(onCommitteeVote)) ||
         (userRole === "MANAGEMENT" && Boolean(onManagementDecision)) ||
-        (userRole === "DIRECTOR" &&
+        ((userRole === "DIRECTOR" || userRole === "SUPERUSER") &&
           (Boolean(onApprovePlan && onReturnPlan) ||
             (isCancellationRequested && Boolean(onApproveCancellation)))),
       ) && (
@@ -920,7 +920,7 @@ export function PlanFullScreenReviewView({
                 <span>Reject Plan (Return to Director)</span>
               </button>
             </div>
-          ) : userRole === "DIRECTOR" ? (
+          ) : userRole === "DIRECTOR" || userRole === "SUPERUSER" ? (
             <div className="space-y-4 pt-2 border-t border-slate-100">
               {isCancellationRequested ? (
                 <div className="space-y-3">

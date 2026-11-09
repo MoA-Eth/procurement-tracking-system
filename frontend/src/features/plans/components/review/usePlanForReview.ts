@@ -265,6 +265,24 @@ export function usePlanForReview({
           p.status === "Committee Endorsed" ||
           (p as any).committeeStatus === "Endorsed") &&
         !alreadyDecided;
+    } else if (user?.role === "SUPERUSER") {
+      isAwaitingReview =
+        p.status === "Submitted to Director" ||
+        p.status === "Cancellation Requested" ||
+        p.status === "Returned" ||
+        p.status === "Returned for Revision" ||
+        p.status === "Committee Rejected" ||
+        p.status === "Committee Review" ||
+        p.status === "Committee Endorsed" ||
+        p.status === "Awaiting Management Approval" ||
+        (p as any).status === "SUBMITTED" ||
+        (p as any).status === "CANCELLATION_REQUESTED" ||
+        (p as any).status === "RETURNED_FOR_REVISION" ||
+        (p as any).status === "REJECTED" ||
+        (p as any).status === "COMMITTEE_REJECTED" ||
+        (p as any).status === "WITH_COMMITTEE" ||
+        (p as any).status === "AWAITING_MANAGEMENT_APPROVAL" ||
+        (p as any).committeeStatus === "Endorsed";
     } else {
       isAwaitingReview =
         p.status === "Submitted to Director" ||

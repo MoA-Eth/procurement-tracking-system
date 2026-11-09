@@ -7,7 +7,9 @@ router.use(loadSession, requireAuthenticated);
 router.get('/', async (req, res, next) => {
   if (
     !req.auth ||
-    !['DIRECTOR', 'MANAGEMENT', 'EXECUTIVE'].includes(req.auth.user.role)
+    !['DIRECTOR', 'MANAGEMENT', 'EXECUTIVE', 'SUPERUSER'].includes(
+      req.auth.user.role,
+    )
   ) {
     res.status(403).json({
       message:

@@ -53,6 +53,7 @@ export function DashboardRenderer({ user }: { user: AuthUser }) {
     case "ENDORSING_COMMITTEE":
       return <CommitteeDashboard user={user} />;
     case "ADMIN":
+    case "SUPERUSER":
       return <AdminDashboard user={user} />;
   }
 }

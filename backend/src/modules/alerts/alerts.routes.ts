@@ -10,7 +10,10 @@ const router = Router();
 // Creating, editing and deleting alerts is an administrative action; regular
 // users only list their own alerts and mark them as read.
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (req.auth?.user.role !== UserRole.ADMIN) {
+  if (
+    req.auth?.user.role !== UserRole.ADMIN &&
+    req.auth?.user.role !== UserRole.SUPERUSER
+  ) {
     res.status(403).json({
       code: 'FORBIDDEN',
       message: 'You do not have access to this resource.',

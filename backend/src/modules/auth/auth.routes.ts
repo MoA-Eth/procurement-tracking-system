@@ -167,12 +167,15 @@ const createUserSchema = z.object({
       if (clean === 'ADMIN' || clean === 'ADMINISTRATOR') {
         return UserRole.ADMIN;
       }
+      if (clean === 'SUPERUSER') {
+        return UserRole.SUPERUSER;
+      }
       return val as UserRole;
     })
     .pipe(
       z.nativeEnum(UserRole, {
         message:
-          'Role must be OFFICER, DIRECTOR, ENDORSING_COMMITTEE, MANAGEMENT, EXECUTIVE, or ADMIN',
+          'Role must be OFFICER, DIRECTOR, ENDORSING_COMMITTEE, MANAGEMENT, EXECUTIVE, ADMIN, or SUPERUSER',
       }),
     ),
 });
@@ -284,6 +287,7 @@ async function deliverUserInvitation(values: {
     [UserRole.MANAGEMENT]: 'Management Team',
     [UserRole.EXECUTIVE]: 'Executive',
     [UserRole.ADMIN]: 'System Administrator',
+    [UserRole.SUPERUSER]: 'Superuser',
   };
 
   const roleTitle = roleDisplayNames[values.role] || values.role;
@@ -472,7 +476,10 @@ export const requireAuthenticated: RequestHandler = (req, res, next) => {
 
 function requireRole(role: UserRole): RequestHandler {
   return (req, res, next) => {
-    if (req.auth?.user.role !== role) {
+    if (
+      req.auth?.user.role !== role &&
+      req.auth?.user.role !== UserRole.SUPERUSER
+    ) {
       res.status(403).json({
         code: 'FORBIDDEN',
         message: 'You do not have access to this resource.',

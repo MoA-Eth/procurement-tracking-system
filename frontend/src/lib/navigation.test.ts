@@ -49,6 +49,24 @@ describe("role navigation permission matrix", () => {
       ["Dashboard", "Plan for Review", "Amendment Requests", "My Decisions"],
     ],
     ["ADMIN", ["Dashboard", "User Management", "System Logs (Timestamp)"]],
+    [
+      "SUPERUSER",
+      [
+        "Executive Dashboard",
+        "Dashboard",
+        "Projects",
+        "Contracts",
+        "Plan for Review",
+        "Amendment Requests",
+        "Vote Progress",
+        "Activity Tracker",
+        "Reports",
+        "My Decisions",
+        "User Management",
+        "System Logs (Timestamp)",
+        "Notifications",
+      ],
+    ],
   ] as const)("shows only %s menu items", (role, labels) => {
     expect(getNavigationForRole(role).map((item) => item.label)).toEqual(
       labels,
@@ -86,6 +104,7 @@ describe("role navigation permission matrix", () => {
     expect(canAccessWorkspaceSection("EXECUTIVE", "vote-progress")).toBe(false);
     expect(canAccessWorkspaceSection("DIRECTOR", "projects")).toBe(true);
     expect(canAccessWorkspaceSection("ADMIN", "projects")).toBe(false);
+    expect(canAccessWorkspaceSection("SUPERUSER", "projects")).toBe(true);
 
     expect(
       canAccessWorkspaceSection("ENDORSING_COMMITTEE", "plan-for-review"),
@@ -94,6 +113,10 @@ describe("role navigation permission matrix", () => {
     expect(canAccessWorkspaceSection("OFFICER", "plan-for-review")).toBe(false);
 
     expect(canAccessWorkspaceSection("ADMIN", "user-management")).toBe(true);
+    expect(canAccessWorkspaceSection("SUPERUSER", "user-management")).toBe(
+      true,
+    );
+    expect(canAccessWorkspaceSection("SUPERUSER", "settings")).toBe(true);
     expect(canAccessWorkspaceSection("OFFICER", "user-management")).toBe(false);
     expect(canAccessWorkspaceSection("DIRECTOR", "unknown")).toBe(false);
   });

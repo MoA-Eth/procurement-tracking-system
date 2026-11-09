@@ -34,6 +34,11 @@ export const DASHBOARD_HEADINGS: Record<
     description:
       "Manage authorized users and review timestamped authentication activity.",
   },
+  SUPERUSER: {
+    eyebrow: "System superuser",
+    description:
+      "Manage every workspace, system setting, user role and operational workflow.",
+  },
 };
 
 export function getDashboardHeading(role: UserRole) {

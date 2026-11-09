@@ -34,6 +34,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   MANAGEMENT: "Executive Management",
   EXECUTIVE: "Executive",
   ADMIN: "Administrator",
+  SUPERUSER: "Superuser",
 };
 
 export const ROLE_SLUGS: Record<UserRole, string> = {
@@ -43,6 +44,7 @@ export const ROLE_SLUGS: Record<UserRole, string> = {
   MANAGEMENT: "management",
   EXECUTIVE: "executive",
   ADMIN: "admin",
+  SUPERUSER: "superuser",
 };
 
 const ROLE_MAP: Record<string, UserRole> = {
@@ -52,6 +54,7 @@ const ROLE_MAP: Record<string, UserRole> = {
   MANAGEMENT: "MANAGEMENT",
   EXECUTIVE: "EXECUTIVE",
   ADMIN: "ADMIN",
+  SUPERUSER: "SUPERUSER",
   // Prisma/backend aliases safely normalized to standard roles
   PROCUREMENTOFFICER: "OFFICER",
   PROCUREMENT_OFFICER: "OFFICER",
@@ -63,6 +66,7 @@ const ROLE_MAP: Record<string, UserRole> = {
   MANAGEMENT_TEAM: "MANAGEMENT",
   COMMITTEE: "ENDORSING_COMMITTEE",
   ADMINISTRATOR: "ADMIN",
+  SUPER_USER: "SUPERUSER",
 };
 
 export function normalizeUserRole(role: string): UserRole {

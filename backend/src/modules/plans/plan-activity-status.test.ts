@@ -11,9 +11,16 @@ describe('activity status inherited from plan', () => {
     [PlanStatus.DRAFT, ActivityStatus.DRAFT],
     [PlanStatus.SUBMITTED, ActivityStatus.PLANNED],
     [PlanStatus.WITH_COMMITTEE, ActivityStatus.PLANNED],
-    [PlanStatus.RETURNED_FOR_REVISION, ActivityStatus.PLANNED],
+    [PlanStatus.COMMITTEE_ENDORSED, ActivityStatus.PLANNED],
+    [PlanStatus.COMMITTEE_REJECTED, ActivityStatus.PLANNED],
+    [PlanStatus.AWAITING_MANAGEMENT_APPROVAL, ActivityStatus.PLANNED],
     [PlanStatus.MANAGEMENT_APPROVED, ActivityStatus.APPROVED],
+    [PlanStatus.MANAGEMENT_REJECTED, ActivityStatus.PLANNED],
+    [PlanStatus.RETURNED_FOR_REVISION, ActivityStatus.PLANNED],
     [PlanStatus.APPROVED, ActivityStatus.APPROVED],
+    [PlanStatus.REJECTED, ActivityStatus.PLANNED],
+    [PlanStatus.UPDATE_REQUESTED, ActivityStatus.PLANNED],
+    [PlanStatus.CANCELLATION_REQUESTED, ActivityStatus.PLANNED],
     [PlanStatus.CANCELLED, ActivityStatus.CANCELLED],
   ])('maps plan status %s to activity status %s', (plan, activity) => {
     expect(activityStatusForPlanStatus(plan)).toBe(activity);

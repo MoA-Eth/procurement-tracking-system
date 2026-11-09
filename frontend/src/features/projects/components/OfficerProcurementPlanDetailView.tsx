@@ -68,6 +68,13 @@ type ActivityStatus = ProcurementActivityStatus;
 
 type PlanActivity = ProcurementActivitySummary;
 
+function normalizeActivityCreatorName(name: string): string {
+  return name
+    .replace(/\s*\((?:procurement\s+)?officer\)\s*$/i, "")
+    .trim()
+    .toLowerCase();
+}
+
 export function OfficerProcurementPlanDetailView({
   onSubmitToDirector,
   onUpdatePlan,
@@ -1272,10 +1279,16 @@ export function OfficerProcurementPlanDetailView({
               >
                 <option value="All">All Statuses</option>
                 <option value="Approved">Approved</option>
+                <option value="Cancelled">Cancelled</option>
                 <option value="Not Started">Not Started</option>
                 <option value="In Progress">In Progress</option>
                 <option value="Completed">Completed</option>
                 <option value="Delayed">Delayed</option>
+                <option value="Draft">Draft</option>
+                <option value="Returned">Returned</option>
+                <option value="Submitted to Director">
+                  Submitted to Director
+                </option>
               </select>
               <ChevronDown
                 aria-hidden="true"
@@ -1354,13 +1367,19 @@ export function OfficerProcurementPlanDetailView({
                         ? activity.createdById === currentUser.id
                         : Boolean(
                             activity.createdByName &&
-                            activity.createdByName.trim().toLowerCase() ===
-                              currentUser.displayName.trim().toLowerCase() &&
+                            normalizeActivityCreatorName(
+                              activity.createdByName,
+                            ) ===
+                              normalizeActivityCreatorName(
+                                currentUser.displayName,
+                              ) &&
                             ![
                               "assigned officer",
                               "procurement officer",
                             ].includes(
-                              activity.createdByName.trim().toLowerCase(),
+                              normalizeActivityCreatorName(
+                                activity.createdByName,
+                              ),
                             ),
                           ));
 
@@ -1372,12 +1391,13 @@ export function OfficerProcurementPlanDetailView({
                         stageLabel={stageLabel}
                         canEdit={
                           isActivityCreator &&
-                          (activePlanStatus === "Draft" || isReturned)
+                          (isDraft || isReturned)
                         }
                         canDeleteDraft={
                           isActivityCreator &&
-                          (activePlanStatus === "Draft" || isReturned) &&
-                          activity.status === "Draft"
+                          (isDraft || isReturned) &&
+                          (activity.status === "Draft" ||
+                            (activity.status as string) === "DRAFT")
                         }
                         isMultiOfficer={isMultiOfficerProject}
                         onSelectDelay={handleSelectActivityDelay}

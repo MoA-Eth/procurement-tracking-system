@@ -4,7 +4,8 @@ export type UserRole =
   | "ENDORSING_COMMITTEE"
   | "MANAGEMENT"
   | "EXECUTIVE"
-  | "ADMIN";
+  | "ADMIN"
+  | "SUPERUSER";
 
 export type UserStatus = "INVITED" | "ACTIVE" | "INACTIVE";
 

@@ -7,6 +7,7 @@ export type JwtRole =
   | 'ENDORSING_COMMITTEE'
   | 'MANAGEMENT'
   | 'ADMIN'
+  | 'SUPERUSER'
   | 'ProcurementOfficer'
   | 'ProcurementDirector'
   | 'Administrator'

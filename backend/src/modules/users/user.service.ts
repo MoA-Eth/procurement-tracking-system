@@ -33,6 +33,8 @@ export function normalizeToUserRole(role?: string): UserRole {
     case 'ADMIN':
     case 'ADMINISTRATOR':
       return UserRole.ADMIN;
+    case 'SUPERUSER':
+      return UserRole.SUPERUSER;
     default:
       return UserRole.OFFICER;
   }

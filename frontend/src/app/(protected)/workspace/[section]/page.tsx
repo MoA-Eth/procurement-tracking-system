@@ -207,7 +207,9 @@ export default async function WorkspaceSectionPage({
 
   if (
     section === "projects" &&
-    (userRole === "DIRECTOR" || userRole === "MANAGEMENT")
+    (userRole === "DIRECTOR" ||
+      userRole === "MANAGEMENT" ||
+      userRole === "SUPERUSER")
   ) {
     const selectedProjectCode =
       typeof query.project === "string" ? query.project : undefined;
@@ -228,7 +230,10 @@ export default async function WorkspaceSectionPage({
     );
   }
 
-  if (section === "contracts" && userRole === "OFFICER") {
+  if (
+    section === "contracts" &&
+    (userRole === "OFFICER" || userRole === "SUPERUSER")
+  ) {
     const selectedContractNumber =
       typeof query.contract === "string" ? query.contract : undefined;
     const fromOpen = query.from === "open";
@@ -275,7 +280,8 @@ export default async function WorkspaceSectionPage({
     if (
       userRole === "DIRECTOR" ||
       userRole === "MANAGEMENT" ||
-      userRole === "EXECUTIVE"
+      userRole === "EXECUTIVE" ||
+      userRole === "SUPERUSER"
     ) {
       return (
         <DirectorActivityTrackerView

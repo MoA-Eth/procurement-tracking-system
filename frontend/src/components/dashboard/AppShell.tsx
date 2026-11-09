@@ -63,6 +63,7 @@ const roleContext: Record<UserRole, string> = {
   MANAGEMENT: "Executive Management",
   EXECUTIVE: "Executive Oversight",
   ADMIN: "System Administration",
+  SUPERUSER: "System Superuser",
 };
 
 // Today in the Ethiopian calendar ("18 Tikimt 2019 E.C.") and Gregorian
@@ -225,7 +226,9 @@ export function AppShell({
 
       {/* Pinned Utility Footer: Settings & User Account */}
       <div className="border-t border-white/10 bg-[#06542D] p-3 space-y-1.5">
-        {(user.role === "DIRECTOR" || user.role === "ADMIN") && (
+        {(user.role === "DIRECTOR" ||
+          user.role === "ADMIN" ||
+          user.role === "SUPERUSER") && (
           <Link
             href="/workspace/settings"
             prefetch={true}

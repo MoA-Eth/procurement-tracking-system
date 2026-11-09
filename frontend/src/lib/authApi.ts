@@ -35,6 +35,8 @@ function mapPrismaRoleToUserRole(role: string): UserRole {
     case "Administrator":
     case "ADMIN":
       return "ADMIN";
+    case "SUPERUSER":
+      return "SUPERUSER";
     case "ProcurementOfficer":
     case "OFFICER":
       return "OFFICER";

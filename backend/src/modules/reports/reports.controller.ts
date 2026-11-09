@@ -34,7 +34,7 @@ function handleError(res: Response, error: unknown): void {
 }
 
 function isDirectorOrAdmin(role: UserRole): boolean {
-  return role === 'DIRECTOR' || role === 'ADMIN';
+  return role === 'DIRECTOR' || role === 'ADMIN' || role === 'SUPERUSER';
 }
 
 async function getActiveUser(req: Request) {

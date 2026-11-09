@@ -5,4 +5,5 @@ enum UserRole {
   MANAGEMENT
   EXECUTIVE
   ADMIN
+  SUPERUSER
 }

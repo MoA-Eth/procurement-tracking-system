@@ -12,6 +12,7 @@ const roles: ProvisionableRole[] = [
   "MANAGEMENT",
   "EXECUTIVE",
   "ADMIN",
+  "SUPERUSER",
 ];
 
 export function CreateUserForm() {

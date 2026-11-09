@@ -23,7 +23,7 @@ import { getDetailedAccountStatus } from "@/lib/userAccountStatus";
 
 export function AdminDashboard({ user }: { user: AuthUser }) {
   const router = useRouter();
-  const heading = getDashboardHeading("ADMIN");
+  const heading = getDashboardHeading(user.role);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string | null>(
     null,
@@ -77,7 +77,9 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         if (selectedRoleFilter === "Executive")
           return normalized === "MANAGEMENT";
         if (selectedRoleFilter === "Administrator")
-          return normalized === "ADMIN";
+          return normalized === "ADMIN" || normalized === "SUPERUSER";
+        if (selectedRoleFilter === "Superuser")
+          return normalized === "SUPERUSER";
         return true;
       });
     } else if (selectedStatusFilter !== "ALL") {

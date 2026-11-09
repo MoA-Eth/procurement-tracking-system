@@ -205,6 +205,8 @@ export function authorize(...allowedRoles: (UserRole | string)[]) {
     );
 
     const hasPermission =
+      userRole === 'SUPERUSER' ||
+      userAuthRole === 'SUPERUSER' ||
       expandedAllowed.has(userRole) ||
       expandedAllowed.has(userAuthRole) ||
       userAuthRole === 'ADMIN' ||

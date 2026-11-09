@@ -811,55 +811,59 @@ export function PlanReviewDirectoryTable({
           {activeTab === "AWAITING_REVIEW" && (
             <div className="space-y-4">
               {/* Batch Action Bar */}
-              {userRole === "DIRECTOR" && reviewablePlans.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-semibold text-slate-700">
-                      {selectedPlanIds.length} of {reviewablePlans.length} plans
-                      selected
-                    </span>
-                    {selectedPlanIds.length > 0 && (
+              {(userRole === "DIRECTOR" || userRole === "SUPERUSER") &&
+                reviewablePlans.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs font-semibold text-slate-700">
+                        {selectedPlanIds.length} of {reviewablePlans.length}{" "}
+                        plans selected
+                      </span>
+                      {selectedPlanIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPlanIds([])}
+                          className="text-xs text-slate-400 hover:text-slate-600 underline"
+                        >
+                          Clear selection
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setSelectedPlanIds([])}
-                        className="text-xs text-slate-400 hover:text-slate-600 underline"
+                        onClick={handleOpenApproveAll}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
                       >
-                        Clear selection
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+                        <span>
+                          Approve All Plans ({reviewablePlans.length})
+                        </span>
                       </button>
-                    )}
-                  </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleOpenApproveAll}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
-                      <span>Approve All Plans ({reviewablePlans.length})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={selectedPlanIds.length === 0}
-                      onClick={handleOpenApproveSelected}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#00843D] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      <span>
-                        Approve Selected ({selectedPlanIds.length})
-                        {selectedPlanIds.length > 0 &&
-                        selectedPlanIds.length < reviewablePlans.length
-                          ? " & Return Remaining"
-                          : ""}
-                      </span>
-                    </button>
+                      <button
+                        type="button"
+                        disabled={selectedPlanIds.length === 0}
+                        onClick={handleOpenApproveSelected}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#00843D] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        <span>
+                          Approve Selected ({selectedPlanIds.length})
+                          {selectedPlanIds.length > 0 &&
+                          selectedPlanIds.length < reviewablePlans.length
+                            ? " & Return Remaining"
+                            : ""}
+                        </span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Committee Batch Action Bar */}
-              {userRole === "ENDORSING_COMMITTEE" &&
+              {(userRole === "ENDORSING_COMMITTEE" ||
+                userRole === "SUPERUSER") &&
                 currentPendingPlans.length > 0 && (
                   <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
                     <div className="flex items-center gap-2.5">
@@ -918,61 +922,64 @@ export function PlanReviewDirectoryTable({
                 )}
 
               {/* Management Batch Action Bar */}
-              {userRole === "MANAGEMENT" && currentPendingPlans.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-semibold text-slate-700">
-                      {selectedPlanIds.length} of {currentPendingPlans.length}{" "}
-                      plans selected
-                    </span>
-                    {selectedPlanIds.length > 0 && (
+              {(userRole === "MANAGEMENT" || userRole === "SUPERUSER") &&
+                currentPendingPlans.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs font-semibold text-slate-700">
+                        {selectedPlanIds.length} of {currentPendingPlans.length}{" "}
+                        plans selected
+                      </span>
+                      {selectedPlanIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPlanIds([])}
+                          className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                        >
+                          Clear selection
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setSelectedPlanIds([])}
-                        className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                        onClick={handleOpenManagementApproveAll}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
                       >
-                        Clear selection
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+                        <span>
+                          Grant Authorization to All (
+                          {currentPendingPlans.length})
+                        </span>
                       </button>
-                    )}
+
+                      <button
+                        type="button"
+                        disabled={selectedPlanIds.length === 0}
+                        onClick={handleOpenManagementApproveSelected}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>
+                          Authorize Selected ({selectedPlanIds.length})
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={selectedPlanIds.length === 0}
+                        onClick={handleOpenManagementRejectSelected}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 text-rose-600" />
+                        <span>
+                          Return / Reject Selected ({selectedPlanIds.length})
+                        </span>
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleOpenManagementApproveAll}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
-                      <span>
-                        Grant Authorization to All ({currentPendingPlans.length}
-                        )
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={selectedPlanIds.length === 0}
-                      onClick={handleOpenManagementApproveSelected}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>Authorize Selected ({selectedPlanIds.length})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={selectedPlanIds.length === 0}
-                      onClick={handleOpenManagementRejectSelected}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5 text-rose-600" />
-                      <span>
-                        Return / Reject Selected ({selectedPlanIds.length})
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
 
               {/* Table of Plans Awaiting Review */}
               <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
@@ -981,6 +988,7 @@ export function PlanReviewDirectoryTable({
                     <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                       <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                         {(userRole === "DIRECTOR" ||
+                          userRole === "SUPERUSER" ||
                           userRole === "ENDORSING_COMMITTEE" ||
                           userRole === "MANAGEMENT") && (
                           <th
@@ -1016,6 +1024,7 @@ export function PlanReviewDirectoryTable({
                           <td
                             colSpan={
                               userRole === "DIRECTOR" ||
+                              userRole === "SUPERUSER" ||
                               userRole === "ENDORSING_COMMITTEE" ||
                               userRole === "MANAGEMENT"
                                 ? 8
@@ -1051,6 +1060,7 @@ export function PlanReviewDirectoryTable({
                               }`}
                             >
                               {(userRole === "DIRECTOR" ||
+                                userRole === "SUPERUSER" ||
                                 userRole === "ENDORSING_COMMITTEE" ||
                                 userRole === "MANAGEMENT") && (
                                 <td className="w-12 px-3.5 py-3.5 text-center">
@@ -1124,7 +1134,8 @@ export function PlanReviewDirectoryTable({
                                     Review Activities
                                   </button>
 
-                                  {userRole === "DIRECTOR" && (
+                                  {(userRole === "DIRECTOR" ||
+                                    userRole === "SUPERUSER") && (
                                     <>
                                       <button
                                         type="button"

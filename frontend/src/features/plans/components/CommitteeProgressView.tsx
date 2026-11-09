@@ -147,7 +147,8 @@ export function CommitteeProgressView({
   const [resendComment, setResendComment] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const isDirector = currentUser?.role === "DIRECTOR";
+  const isDirector =
+    currentUser?.role === "DIRECTOR" || currentUser?.role === "SUPERUSER";
 
   const loadData = useCallback(async () => {
     try {

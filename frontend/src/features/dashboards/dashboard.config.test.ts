@@ -11,6 +11,7 @@ describe("dashboard configuration", () => {
       "MANAGEMENT",
       "EXECUTIVE",
       "ADMIN",
+      "SUPERUSER",
     ];
 
     expect(Object.keys(DASHBOARD_HEADINGS)).toHaveLength(roles.length);

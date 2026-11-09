@@ -3,12 +3,14 @@ import {
   gregorianToEthiopian,
   formatEthiopianDate,
 } from "../utils/ethiopianCalendar";
+import type { ProcurementPlanStatus } from "./officerProjects";
 
 export const OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY =
   "moa-pts:officer-activity-drafts:v2";
 
 export type ProcurementActivityStatus =
   | "Approved"
+  | "Cancelled"
   | "Completed"
   | "Delayed"
   | "In Progress"
@@ -16,6 +18,66 @@ export type ProcurementActivityStatus =
   | "Returned"
   | "Submitted to Director"
   | "Draft";
+
+export function activityStatusForPlanStatus(
+  status: ProcurementPlanStatus,
+): ProcurementActivityStatus {
+  switch (status) {
+    case "Draft":
+      return "Draft";
+    case "Approved":
+    case "Finally Approved":
+      return "Approved";
+    case "Cancelled":
+      return "Cancelled";
+    case "Returned":
+    case "Returned for Revision":
+      return "Returned";
+    case "Submitted to Director":
+      return "Submitted to Director";
+    case "Committee Review":
+    case "Update Requested":
+    case "Cancellation Requested":
+      return "Not Started";
+  }
+}
+
+function normalizePlanStatus(status: unknown): ProcurementPlanStatus | undefined {
+  if (typeof status !== "string") return undefined;
+  const displayStatuses: ProcurementPlanStatus[] = [
+    "Approved",
+    "Committee Review",
+    "Draft",
+    "Finally Approved",
+    "Returned",
+    "Returned for Revision",
+    "Update Requested",
+    "Submitted to Director",
+    "Cancellation Requested",
+    "Cancelled",
+  ];
+  const statusMap: Record<string, ProcurementPlanStatus> = {
+    DRAFT: "Draft",
+    SUBMITTED: "Submitted to Director",
+    SUBMITTED_TO_DIRECTOR: "Submitted to Director",
+    WITH_COMMITTEE: "Committee Review",
+    COMMITTEE_ENDORSED: "Committee Review",
+    COMMITTEE_REJECTED: "Returned",
+    AWAITING_MANAGEMENT_APPROVAL: "Committee Review",
+    MANAGEMENT_APPROVED: "Finally Approved",
+    MANAGEMENT_REJECTED: "Returned",
+    RETURNED_FOR_REVISION: "Returned for Revision",
+    APPROVED: "Approved",
+    REJECTED: "Returned",
+    UPDATE_REQUESTED: "Update Requested",
+    CANCELLATION_REQUESTED: "Cancellation Requested",
+    CANCELLED: "Cancelled",
+  };
+  return (
+    statusMap[status.toUpperCase()] ||
+    displayStatuses.find((displayStatus) => displayStatus === status)
+  );
+}
 
 export interface ProcurementActivityAllocation {
   id: string;
@@ -716,19 +778,25 @@ export function mapBackendActivityToProcurementActivitySummary(
     ba.stages?.at(-1)?.stageType?.label ||
     "Draft";
 
-  let status: ProcurementActivityStatus = "Not Started";
-  if (ba.plan?.status === "SUBMITTED") {
-    status = "Submitted to Director";
-  } else if (
-    ba.status === "DRAFT" ||
-    (ba.status === "PLANNED" && ba.plan?.status === "DRAFT")
-  ) {
+  const planStatus = normalizePlanStatus(ba.plan?.status);
+  let status: ProcurementActivityStatus;
+  if (planStatus) {
+    status = activityStatusForPlanStatus(planStatus);
+  } else if (ba.status === "DRAFT") {
     status = "Draft";
-  } else if (ba.status === "APPROVED") status = "Approved";
-  else if (ba.status === "COMPLETED") status = "Completed";
-  else if (ba.status === "IN_PROGRESS") status = "In Progress";
-  else if (ba.stages?.some((s: any) => s.status === "DELAYED"))
+  } else if (ba.status === "APPROVED") {
+    status = "Approved";
+  } else if (ba.status === "CANCELLED") {
+    status = "Cancelled";
+  } else if (ba.status === "COMPLETED") {
+    status = "Completed";
+  } else if (ba.status === "IN_PROGRESS") {
+    status = "In Progress";
+  } else if (ba.stages?.some((s: any) => s.status === "DELAYED")) {
     status = "Delayed";
+  } else {
+    status = "Not Started";
+  }
 
   const rawCat = (
     ba.procurementCategory ||

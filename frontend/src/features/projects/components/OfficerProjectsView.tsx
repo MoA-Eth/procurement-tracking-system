@@ -12,6 +12,7 @@ import { OfficerProcurementActivityDetailView } from "@/features/projects/compon
 import { OfficerProcurementPlanDetailView } from "@/features/projects/components/OfficerProcurementPlanDetailView";
 import { OfficerProjectDetailView } from "@/features/projects/components/OfficerProjectDetailView";
 import {
+  activityStatusForPlanStatus,
   addSavedActivityRecord,
   findBackendActivityForPlan,
   isTestOrJunkActivity,
@@ -690,18 +691,10 @@ export function OfficerProjectsView({
     }
     matchingSaved.forEach((a) => upsertSummaryActivity(combined, a));
 
-    const activitiesList = combined.map((act) => {
-      if (
-        (selectedPlan.status === "Returned" ||
-          selectedPlan.status === "Returned for Revision") &&
-        (act.status === "Submitted to Director" ||
-          (act as any).status === "Under Review" ||
-          !act.status)
-      ) {
-        return { ...act, status: "Returned" as const };
-      }
-      return act;
-    });
+    const activitiesList = combined.map((activity) => ({
+      ...activity,
+      status: activityStatusForPlanStatus(selectedPlan.status),
+    }));
 
     return activitiesList;
   }, [
@@ -1270,6 +1263,7 @@ export function OfficerProjectsView({
     );
     const activityToSave: ProcurementActivitySummary = {
       ...activity,
+      status: activityStatusForPlanStatus(selectedPlan.status),
       createdById:
         existing?.createdById ||
         activity.createdById ||
@@ -1591,55 +1585,11 @@ export function OfficerProjectsView({
             throw updateErr;
           }
         } else {
-          let createdBackendAct: any = null;
-          try {
-            createdBackendAct = await createActivity({
-              ...baseActivityPayload,
-              planId: targetBackendPlanId,
-              reference: activity.reference,
-            });
-          } catch (firstErr) {
-            console.warn(
-              "First createActivity attempt failed, attempting fallback:",
-              firstErr,
-            );
-            try {
-              createdBackendAct = await createActivity({
-                planId: targetBackendPlanId,
-                reference: activity.reference,
-                procurementCategory: toBackendProcurementCategory(
-                  activity.category,
-                ),
-                ...(activity.status === "Draft" ? { status: "DRAFT" } : {}),
-                procurementMethodId: resolvedMethodId,
-                description: activity.description || "Activity description",
-                estimatedBudget: Number(activity.estimatedAmount) || 500000,
-                currency:
-                  formDetails.currency ||
-                  (activity as any).currency ||
-                  selectedPlan.currency ||
-                  "ETB",
-                contractAwardDate: formDetails.contractAwardDate || null,
-                stages: customStages.length > 0 ? customStages : undefined,
-                roadmap: customStages.length > 0 ? customStages : undefined,
-                fundings: [
-                  {
-                    fundingSource:
-                      formDetails.fundingSource ||
-                      (activity as any).fundingSource ||
-                      selectedProject.fundingSource ||
-                      "World Bank",
-                    loanGrantNumber:
-                      selectedProject.financingNumbers?.[0] || undefined,
-                    allocationPct: 100,
-                  },
-                ],
-              });
-            } catch (secondErr) {
-              console.warn("Second createActivity attempt failed:", secondErr);
-              throw secondErr;
-            }
-          }
+          const createdBackendAct = await createActivity({
+            ...baseActivityPayload,
+            planId: targetBackendPlanId,
+            reference: activity.reference,
+          });
 
           if (createdBackendAct && createdBackendAct.id) {
             const backendId = createdBackendAct.id;

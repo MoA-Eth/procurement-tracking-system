@@ -63,6 +63,18 @@ describe('Unified Authorization Middleware', () => {
     expect(next).toHaveBeenCalledWith();
   });
 
+  it('allows Superuser access to protected routes regardless of specified role', () => {
+    const req = createMockReq({
+      role: 'SUPERUSER',
+      authRole: 'SUPERUSER',
+    });
+    const next: NextFunction = vi.fn();
+
+    authorize('ProcurementOfficer')(req, mockRes, next);
+
+    expect(next).toHaveBeenCalledWith();
+  });
+
   it('rejects unauthorized roles with 403 Forbidden', () => {
     const req = createMockReq({
       role: 'ProcurementOfficer',

@@ -263,6 +263,74 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).not.toContain('role="dialog"');
   });
 
+  it("matches the activity creator when their name includes the officer role", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const draftActivity = {
+      ...sampleActivity,
+      createdByName: "Officer One (Procurement Officer)",
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer One",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[draftActivity]}
+      />,
+    );
+
+    expect(markup).toContain(
+      `aria-label="Edit activity ${draftActivity.reference}"`,
+    );
+    expect(markup).toContain(
+      `aria-label="Delete draft activity ${draftActivity.reference}"`,
+    );
+  });
+
+  it("shows owner actions when draft statuses use backend enum values", () => {
+    const draftPlan = {
+      ...mockPlan,
+      status: "DRAFT",
+    } as unknown as ProcurementPlanSummary;
+    const draftActivity = {
+      ...sampleActivity,
+      createdById: "officer-1",
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer One",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[draftActivity]}
+      />,
+    );
+
+    expect(markup).toContain(
+      `aria-label="Edit activity ${draftActivity.reference}"`,
+    );
+    expect(markup).toContain(
+      `aria-label="Delete draft activity ${draftActivity.reference}"`,
+    );
+  });
+
   it("hides activity edit and delete actions from an officer who did not create it", () => {
     const draftPlan: ProcurementPlanSummary = {
       ...mockPlan,

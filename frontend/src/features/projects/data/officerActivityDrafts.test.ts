@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  activityStatusForPlanStatus,
   addSavedActivityRecord,
   findBackendActivityForPlan,
   mergeActivityRoadmaps,
@@ -8,6 +9,23 @@ import {
   parseSavedActivityRecords,
   type SavedOfficerActivityRecord,
 } from "./officerActivityDrafts";
+
+describe("activity status derived from plan status", () => {
+  it.each([
+    ["Draft", "Draft"],
+    ["Submitted to Director", "Submitted to Director"],
+    ["Committee Review", "Not Started"],
+    ["Approved", "Approved"],
+    ["Finally Approved", "Approved"],
+    ["Returned", "Returned"],
+    ["Returned for Revision", "Returned"],
+    ["Update Requested", "Not Started"],
+    ["Cancellation Requested", "Not Started"],
+    ["Cancelled", "Cancelled"],
+  ] as const)("maps plan status %s to activity status %s", (plan, activity) => {
+    expect(activityStatusForPlanStatus(plan)).toBe(activity);
+  });
+});
 
 const record: SavedOfficerActivityRecord = {
   activity: {
@@ -171,6 +189,22 @@ describe("officer activity draft storage", () => {
 
       expect(activity.status).toBe("Submitted to Director");
     }
+  });
+
+  it("uses the parent plan status when it conflicts with the activity status", () => {
+    const activity = mapBackendActivityToProcurementActivitySummary({
+      id: "activity-id",
+      reference: "ACT-001",
+      status: "IN_PROGRESS",
+      description: "Supply of equipment",
+      estimatedBudget: 500,
+      procurementCategory: "GOODS",
+      procurementMethod: { label: "Request for Bids" },
+      plan: { status: "DRAFT" },
+      stages: [],
+    });
+
+    expect(activity.status).toBe("Draft");
   });
 
   it("maps entered roadmap dates into backend stage payloads", () => {

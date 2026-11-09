@@ -262,7 +262,7 @@ export function SettingsManagementView({
   }, [activeTab]);
 
   useEffect(() => {
-    if (currentUser.role === "ADMIN") {
+    if (currentUser.role === "ADMIN" || currentUser.role === "SUPERUSER") {
       void loadIntegrationKey();
     }
   }, [currentUser.role]);
@@ -519,7 +519,8 @@ export function SettingsManagementView({
         >
           System
         </button>
-        {currentUser.role === "ADMIN" && (
+        {(currentUser.role === "ADMIN" ||
+          currentUser.role === "SUPERUSER") && (
           <button
             aria-selected={activeSettingsSection === "api"}
             className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
@@ -536,7 +537,9 @@ export function SettingsManagementView({
         )}
       </div>
 
-      {activeSettingsSection === "api" && currentUser.role === "ADMIN" && (
+      {activeSettingsSection === "api" &&
+        (currentUser.role === "ADMIN" ||
+          currentUser.role === "SUPERUSER") && (
         <section
           aria-labelledby="external-dashboard-api-title"
           className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs sm:p-6"

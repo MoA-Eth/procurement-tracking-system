@@ -235,7 +235,7 @@ export const createActivityService = async (
       reference = reference.trim();
       const existing = await tx.activity.findUnique({ where: { reference } });
       if (existing) {
-        reference = await generateActivityReference(resolvedMethodId);
+        throw ApiError.conflict('Reference already in use');
       }
     }
 

@@ -143,6 +143,7 @@ export function CreateProcurementActivityView({
   });
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const saveInProgressRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [additionalPlanReason, setAdditionalPlanReason] = useState<string>("");
 
@@ -429,6 +430,7 @@ export function CreateProcurementActivityView({
   }
 
   async function handleSave() {
+    if (saveInProgressRef.current || saved) return;
     if (!activityReference.trim()) {
       setSaveError("Activity Reference No. is required.");
       moveTo(2);
@@ -459,8 +461,10 @@ export function CreateProcurementActivityView({
       return;
     }
 
+    saveInProgressRef.current = true;
     setIsSaving(true);
     setSaveError(null);
+    let saveCompleted = false;
     try {
       if (onSaveActivity) {
         const cleanAdditionalRefs = additionalReferences
@@ -549,6 +553,7 @@ export function CreateProcurementActivityView({
         }
       }
       setSaved(true);
+      saveCompleted = true;
       window.scrollTo({ behavior: "smooth", top: 0 });
     } catch (err) {
       console.error("Save activity error:", err);
@@ -559,6 +564,7 @@ export function CreateProcurementActivityView({
       );
     } finally {
       setIsSaving(false);
+      if (!saveCompleted) saveInProgressRef.current = false;
     }
   }
 

@@ -95,6 +95,11 @@ const AVAILABLE_ROLES: {
     label: "Administrator",
     desc: "System governance, user account management, roles, and audit trails.",
   },
+  {
+    role: "SUPERUSER",
+    label: "Superuser",
+    desc: "Full access to every system role, workspace, setting, and workflow.",
+  },
 ];
 
 export function UserProfileModal({
