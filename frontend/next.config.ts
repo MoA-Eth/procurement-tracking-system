@@ -4,6 +4,14 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [75, 100],
   },
+  experimental: {
+    optimizePackageImports: [
+      "lucide-react",
+      "@moa-eth/moa-design-library",
+      "date-fns",
+      "recharts",
+    ],
+  },
   async rewrites() {
     const backendUrl =
       process.env.BACKEND_API_URL ||
