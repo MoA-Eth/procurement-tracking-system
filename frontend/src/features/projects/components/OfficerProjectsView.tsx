@@ -1,6 +1,11 @@
 "use client";
 
 import { StatusText } from "../../../components/dashboard/StatusText";
+import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
 import { CreateProcurementActivityView } from "@/features/projects/components/CreateProcurementActivityView";
 import { CreateProcurementPlanView } from "@/features/projects/components/CreateProcurementPlanView";
 import { OfficerProcurementActivityDetailView } from "@/features/projects/components/OfficerProcurementActivityDetailView";
@@ -81,14 +86,7 @@ import {
 import { usePlanAvailability } from "../data/usePlanAvailability";
 import { getCurrentUser } from "@/lib/authApi";
 import type { AuthUser } from "@/lib/authTypes";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  FolderLock,
-  Search,
-  ShieldAlert,
-} from "lucide-react";
+import { ChevronDown, FolderLock, Search, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1271,15 +1269,15 @@ export function OfficerProjectsView({
         a.reference.toLowerCase() === activity.reference.toLowerCase(),
     );
     const activityToSave: ProcurementActivitySummary = {
-        ...activity,
-        createdById:
-          existing?.createdById ||
-          activity.createdById ||
-          (existing ? undefined : effectiveUser?.id),
-        createdByName:
-          existing?.createdByName ||
-          activity.createdByName ||
-          (existing ? undefined : effectiveUser?.displayName),
+      ...activity,
+      createdById:
+        existing?.createdById ||
+        activity.createdById ||
+        (existing ? undefined : effectiveUser?.id),
+      createdByName:
+        existing?.createdByName ||
+        activity.createdByName ||
+        (existing ? undefined : effectiveUser?.displayName),
     };
     if (existing) {
       const existingAny = existing as any;
@@ -2807,10 +2805,14 @@ function OfficerProjectsList({
   }, [fundingSource, projects, searchQuery, status]);
 
   const resultCount = filteredProjects.length;
-  const entrySummary =
-    resultCount === 0
-      ? "Showing 0 entries"
-      : `Showing 1 to ${resultCount} of ${resultCount} entries`;
+  const {
+    pageItems: paginatedProjects,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(filteredProjects, 15);
 
   return (
     <div className="space-y-5 pb-6">
@@ -2980,12 +2982,7 @@ function OfficerProjectsList({
             <h2 className="sr-only" id="projects-table-title">
               Assigned projects
             </h2>
-            <div
-              aria-label="Assigned projects table"
-              className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#00843D]"
-              role="region"
-              tabIndex={0}
-            >
+            <HorizontalTableScroller label="Assigned projects">
               <table className="w-full min-w-[880px] border-collapse text-left">
                 <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                   <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -3019,8 +3016,8 @@ function OfficerProjectsList({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {filteredProjects.length > 0 ? (
-                    filteredProjects.map((project, index) => (
+                  {resultCount > 0 ? (
+                    paginatedProjects.map((project, index) => (
                       <tr
                         key={project.id || `${project.code}-${index}`}
                         className="hover:bg-slate-50"
@@ -3134,32 +3131,15 @@ function OfficerProjectsList({
                   )}
                 </tbody>
               </table>
-            </div>
-
-            <footer className="flex items-center justify-between gap-4 border-t border-slate-200 bg-[#fbfcfd] px-4 py-4 text-xs text-slate-500">
-              <p aria-live="polite">{entrySummary}</p>
-              <div
-                aria-label="Project table pagination"
-                className="flex gap-1.5"
-              >
-                <button
-                  aria-label="Previous page"
-                  className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
-                  disabled
-                  type="button"
-                >
-                  <ChevronLeft aria-hidden="true" className="h-4 w-4" />
-                </button>
-                <button
-                  aria-label="Next page"
-                  className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
-                  disabled
-                  type="button"
-                >
-                  <ChevronRight aria-hidden="true" className="h-4 w-4" />
-                </button>
-              </div>
-            </footer>
+            </HorizontalTableScroller>
+            <PaginationControls
+              page={page}
+              pageCount={pageCount}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              totalItems={resultCount}
+              setPage={setPage}
+            />
           </section>
         </>
       )}

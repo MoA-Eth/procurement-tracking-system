@@ -32,6 +32,11 @@ import { PlanBatchReviewModal } from "./PlanBatchReviewModal";
 import { CommitteeBatchReviewModal } from "./CommitteeBatchReviewModal";
 import { ManagementBatchReviewModal } from "./ManagementBatchReviewModal";
 import { StatusText } from "@/components/dashboard/StatusText";
+import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
 import type { ProjectItem } from "@/features/projects/management/projectsData";
 
 export interface PlanReviewDirectoryTableProps {
@@ -283,6 +288,10 @@ export function PlanReviewDirectoryTable({
   const reviewablePlans = currentPendingPlans;
   const currentApprovedPlans = currentProjectGroup?.approvedPlans || [];
   const currentReturnedPlans = currentProjectGroup?.returnedPlans || [];
+  const projectPagination = useListPagination(filteredProjectGroups, 15);
+  const pendingPagination = useListPagination(currentPendingPlans, 15);
+  const approvedPagination = useListPagination(currentApprovedPlans, 15);
+  const returnedPagination = useListPagination(currentReturnedPlans, 15);
 
   // Toggle selection
   const isAllPendingSelected =
@@ -550,7 +559,7 @@ export function PlanReviewDirectoryTable({
 
           {/* Projects Directory Table */}
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
+            <HorizontalTableScroller label="Projects awaiting review">
               <table className="w-full text-left border-collapse min-w-[960px]">
                 <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                   <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -595,7 +604,7 @@ export function PlanReviewDirectoryTable({
                       </td>
                     </tr>
                   ) : (
-                    filteredProjectGroups.map((group, index) => {
+                    projectPagination.pageItems.map((group, index) => {
                       const hasPending = group.pendingPlans.length > 0;
                       return (
                         <tr
@@ -604,7 +613,7 @@ export function PlanReviewDirectoryTable({
                           className="hover:bg-emerald-50/50 transition-colors cursor-pointer group"
                         >
                           <td className="py-3.5 px-4 font-mono text-slate-400 font-semibold text-center">
-                            {index + 1}
+                            {projectPagination.startIndex + index + 1}
                           </td>
                           <td className="py-3.5 px-4">
                             <span className="font-mono font-medium text-[#00843D] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-xs inline-block whitespace-nowrap">
@@ -672,7 +681,15 @@ export function PlanReviewDirectoryTable({
                   )}
                 </tbody>
               </table>
-            </div>
+            </HorizontalTableScroller>
+            <PaginationControls
+              page={projectPagination.page}
+              pageCount={projectPagination.pageCount}
+              startIndex={projectPagination.startIndex}
+              endIndex={projectPagination.endIndex}
+              totalItems={filteredProjectGroups.length}
+              setPage={projectPagination.setPage}
+            />
           </div>
         </div>
       ) : (
@@ -959,7 +976,7 @@ export function PlanReviewDirectoryTable({
 
               {/* Table of Plans Awaiting Review */}
               <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
+                <HorizontalTableScroller label="Plans awaiting review">
                   <table className="w-full text-left border-collapse min-w-[1040px]">
                     <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                       <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -1018,7 +1035,7 @@ export function PlanReviewDirectoryTable({
                           </td>
                         </tr>
                       ) : (
-                        currentPendingPlans.map((plan) => {
+                        pendingPagination.pageItems.map((plan) => {
                           const isSelected = selectedPlanIds.includes(plan.id);
                           const isReturned =
                             (plan.status || "")
@@ -1173,7 +1190,15 @@ export function PlanReviewDirectoryTable({
                       )}
                     </tbody>
                   </table>
-                </div>
+                </HorizontalTableScroller>
+                <PaginationControls
+                  page={pendingPagination.page}
+                  pageCount={pendingPagination.pageCount}
+                  startIndex={pendingPagination.startIndex}
+                  endIndex={pendingPagination.endIndex}
+                  totalItems={currentPendingPlans.length}
+                  setPage={pendingPagination.setPage}
+                />
               </div>
             </div>
           )}
@@ -1183,7 +1208,7 @@ export function PlanReviewDirectoryTable({
           {/* ──────────────────────────────────────────────────────── */}
           {activeTab === "PREVIOUSLY_APPROVED" && (
             <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="overflow-x-auto">
+              <HorizontalTableScroller label="Previously approved plans">
                 <table className="w-full text-left border-collapse min-w-[960px]">
                   <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                     <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -1213,7 +1238,7 @@ export function PlanReviewDirectoryTable({
                         </td>
                       </tr>
                     ) : (
-                      currentApprovedPlans.map((plan) => (
+                      approvedPagination.pageItems.map((plan) => (
                         <tr
                           key={plan.id}
                           className="hover:bg-slate-50 transition-colors"
@@ -1266,7 +1291,15 @@ export function PlanReviewDirectoryTable({
                     )}
                   </tbody>
                 </table>
-              </div>
+              </HorizontalTableScroller>
+              <PaginationControls
+                page={approvedPagination.page}
+                pageCount={approvedPagination.pageCount}
+                startIndex={approvedPagination.startIndex}
+                endIndex={approvedPagination.endIndex}
+                totalItems={currentApprovedPlans.length}
+                setPage={approvedPagination.setPage}
+              />
             </div>
           )}
 
@@ -1276,7 +1309,7 @@ export function PlanReviewDirectoryTable({
           {activeTab === "RETURNED" && (
             <div className="space-y-4">
               <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
+                <HorizontalTableScroller label="Returned plans">
                   <table className="w-full text-left border-collapse min-w-[960px]">
                     <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                       <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -1307,7 +1340,7 @@ export function PlanReviewDirectoryTable({
                           </td>
                         </tr>
                       ) : (
-                        currentReturnedPlans.map((plan) => (
+                        returnedPagination.pageItems.map((plan) => (
                           <tr
                             key={plan.id}
                             className="hover:bg-slate-50 transition-colors"
@@ -1373,7 +1406,15 @@ export function PlanReviewDirectoryTable({
                       )}
                     </tbody>
                   </table>
-                </div>
+                </HorizontalTableScroller>
+                <PaginationControls
+                  page={returnedPagination.page}
+                  pageCount={returnedPagination.pageCount}
+                  startIndex={returnedPagination.startIndex}
+                  endIndex={returnedPagination.endIndex}
+                  totalItems={currentReturnedPlans.length}
+                  setPage={returnedPagination.setPage}
+                />
               </div>
             </div>
           )}

@@ -4,6 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { StatusText } from "../../../components/dashboard/StatusText";
 import {
+  HorizontalTableScroller,
+  PaginationControls,
+} from "@/components/dashboard/ListPagination";
+import {
   Home,
   ChevronRight,
   ChevronLeft,
@@ -80,7 +84,7 @@ type TrackerSort =
   "attention" | "delay-desc" | "reference" | "stage" | "status" | "target-asc";
 
 const DUE_SOON_DAYS = 7;
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 
 export interface DirectorActivityTrackerViewProps {
   selectedActivityReference?: string;
@@ -704,8 +708,7 @@ function DirectorActivityTrackerList({
   userRole?: UserRole;
 }) {
   const isExecutiveView = userRole === "EXECUTIVE";
-  const isReadOnlyOversight =
-    userRole === "MANAGEMENT" || isExecutiveView;
+  const isReadOnlyOversight = userRole === "MANAGEMENT" || isExecutiveView;
   const oversightRoleLabel = isExecutiveView
     ? "Executive"
     : "Executive Management";
@@ -1254,7 +1257,7 @@ function DirectorActivityTrackerList({
 
       {/* 5. Main Standard Table Container (Matching Projects Directory & Other Views) */}
       <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <HorizontalTableScroller label="Activity tracker">
           <table className="w-full text-left border-collapse min-w-[1240px]">
             <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
               <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -1415,41 +1418,19 @@ function DirectorActivityTrackerList({
               )}
             </tbody>
           </table>
-        </div>
+        </HorizontalTableScroller>
 
-        {/* Footer Pagination */}
-        <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-          <span>
-            Showing {filteredItems.length === 0 ? 0 : firstVisibleIndex + 1} to{" "}
-            {Math.min(firstVisibleIndex + PAGE_SIZE, filteredItems.length)} of{" "}
-            {filteredItems.length} matching activities
-          </span>
-          <div className="flex items-center gap-3">
-            <span>
-              Page {currentPageNumber} of {totalPages}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-label="Previous page"
-                disabled={currentPageNumber === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="Next page"
-                disabled={currentPageNumber === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <PaginationControls
+          page={currentPageNumber}
+          pageCount={totalPages}
+          startIndex={firstVisibleIndex}
+          endIndex={Math.min(
+            firstVisibleIndex + PAGE_SIZE,
+            filteredItems.length,
+          )}
+          totalItems={filteredItems.length}
+          setPage={setPage}
+        />
       </div>
     </div>
   );
@@ -1503,8 +1484,7 @@ function DirectorActivityDetailView({
   userRole?: UserRole;
 }) {
   const isExecutiveView = userRole === "EXECUTIVE";
-  const isReadOnlyOversight =
-    userRole === "MANAGEMENT" || isExecutiveView;
+  const isReadOnlyOversight = userRole === "MANAGEMENT" || isExecutiveView;
   const oversightRoleLabel = isExecutiveView
     ? "Executive"
     : "Executive Management";
@@ -2006,8 +1986,7 @@ function DirectorActivityDetailView({
             <LockKeyhole className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <span>
               Activity Tracker execution handoff details are read-only for{" "}
-              {isReadOnlyOversight ? oversightRoleLabel : "Director"}{" "}
-              oversight.
+              {isReadOnlyOversight ? oversightRoleLabel : "Director"} oversight.
             </span>
           </div>
         </div>

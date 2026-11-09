@@ -30,6 +30,11 @@ import {
 import type { AuthUser } from "../../../lib/authTypes";
 import { parseRejectionDetails, type ProcurementPlan } from "../plansData";
 import { DirectorActivitiesListView } from "../../activities/components/DirectorActivitiesListView";
+import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
 
 interface MyDecisionsViewProps {
   user: AuthUser;
@@ -427,6 +432,14 @@ export function MyDecisionsView({
       return matchesSearch && matchesDecision && matchesProject;
     });
   }, [votedPlans, searchQuery, decisionFilter, projectFilter]);
+  const {
+    pageItems: paginatedDecisions,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(filteredDecisions, 15);
 
   const parsedRejection = useMemo(() => {
     if (!selectedPlan)
@@ -1172,7 +1185,7 @@ export function MyDecisionsView({
 
           {/* Tabular Decisions Directory */}
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
+            <HorizontalTableScroller label="Plan decisions">
               <table className="w-full text-left border-collapse min-w-[1050px] text-xs">
                 <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                   <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -1212,7 +1225,7 @@ export function MyDecisionsView({
                       </td>
                     </tr>
                   ) : (
-                    filteredDecisions.map((plan) => (
+                    paginatedDecisions.map((plan) => (
                       <tr
                         key={plan.id}
                         onClick={() => handleSelectPlan(plan)}
@@ -1305,7 +1318,15 @@ export function MyDecisionsView({
                   )}
                 </tbody>
               </table>
-            </div>
+            </HorizontalTableScroller>
+            <PaginationControls
+              page={page}
+              pageCount={pageCount}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              totalItems={filteredDecisions.length}
+              setPage={setPage}
+            />
           </div>
         </div>
       )}

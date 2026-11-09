@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
 import { StatusText } from "../../../components/dashboard/StatusText";
 import type { OfficerProject } from "@/features/projects/data/officerProjects";
 import {
@@ -49,7 +54,12 @@ function getPlanActivitiesCount(plan: ProcurementPlanSummary): number {
   const direct = plan.activities || 0;
   const listCount = plan.planActivities?.length || 0;
   const parentCount = (plan as any).parentActivities?.length || 0;
-  return Math.max(plan.activitiesCount || 0, direct, listCount, listCount + parentCount);
+  return Math.max(
+    plan.activitiesCount || 0,
+    direct,
+    listCount,
+    listCount + parentCount,
+  );
 }
 
 export function OfficerProjectDetailView({
@@ -71,6 +81,14 @@ export function OfficerProjectDetailView({
   const [revisionNotes, setRevisionNotes] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+  const {
+    pageItems: paginatedPlans,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(project.plans, 15);
 
   const isPlanEligible = (plan: ProcurementPlanSummary) => {
     const s = (plan.status || "").toLowerCase();
@@ -356,7 +374,7 @@ export function OfficerProjectDetailView({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <HorizontalTableScroller label="Project plans">
           <table className="w-full min-w-208 border-collapse text-left">
             <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
               <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -388,7 +406,7 @@ export function OfficerProjectDetailView({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {project.plans.map((plan) => {
+              {paginatedPlans.map((plan) => {
                 const eligible = isPlanEligible(plan);
                 const isSelected = selectedPlanRefs.includes(plan.reference);
                 const s = (plan.status || "").toLowerCase();
@@ -460,7 +478,15 @@ export function OfficerProjectDetailView({
               })}
             </tbody>
           </table>
-        </div>
+        </HorizontalTableScroller>
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalItems={project.plans.length}
+          setPage={setPage}
+        />
       </section>
 
       {/* ── BATCH SUBMISSION MODAL ── */}

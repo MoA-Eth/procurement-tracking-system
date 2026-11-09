@@ -1,4 +1,15 @@
-import { projectNameLabels, summarizeProcurementProgress, type ExecutiveRecord } from "./model";
+"use client";
+
+import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
+import {
+  projectNameLabels,
+  summarizeProcurementProgress,
+  type ExecutiveRecord,
+} from "./model";
 
 const statusColumns = [
   { key: "notStarted", label: "Not started", color: "#c9362b" },
@@ -38,12 +49,17 @@ export function ProjectPortfolioDashboard({
         b.summary.activities - a.summary.activities ||
         a.name.localeCompare(b.name),
     );
+  const {
+    pageItems: paginatedProjects,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(projectRows, 15);
 
   return (
-    <section
-      aria-labelledby="project-portfolio-title"
-      className="space-y-2"
-    >
+    <section aria-labelledby="project-portfolio-title" className="space-y-2">
       <header className="border-b-[3px] border-[#31633e] pb-2">
         <h2
           id="project-portfolio-title"
@@ -53,7 +69,7 @@ export function ProjectPortfolioDashboard({
         </h2>
       </header>
 
-      <div className="overflow-x-auto">
+      <HorizontalTableScroller label="Project portfolio">
         <table className="w-full min-w-[640px] border-collapse text-xs">
           <thead className="bg-[#2e6038] text-left font-semibold text-white">
             <tr>
@@ -80,10 +96,12 @@ export function ProjectPortfolioDashboard({
             </tr>
           </thead>
           <tbody>
-            {projectRows.map((project, index) => (
+            {paginatedProjects.map((project, index) => (
               <tr
                 key={project.id}
-                className={index % 2 === 0 ? "bg-[#f1f4f0]" : "bg-white"}
+                className={
+                  (startIndex + index) % 2 === 0 ? "bg-[#f1f4f0]" : "bg-white"
+                }
               >
                 <th
                   scope="row"
@@ -124,7 +142,15 @@ export function ProjectPortfolioDashboard({
             )}
           </tbody>
         </table>
-      </div>
+      </HorizontalTableScroller>
+      <PaginationControls
+        page={page}
+        pageCount={pageCount}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        totalItems={projectRows.length}
+        setPage={setPage}
+      />
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-500">
         {statusColumns.map((column) => (
           <span key={column.key} className="inline-flex items-center gap-1">

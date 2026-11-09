@@ -54,6 +54,11 @@ import { exportPlanActivitiesToExcel } from "@/features/projects/utils/projectEx
 import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
 import type { AuthUser } from "@/lib/authTypes";
 import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
+import {
   PhaseDelayBreakdownModal,
   calculateRealActivityDelay,
   type PhaseDelayModalData,
@@ -468,6 +473,27 @@ export function OfficerProcurementPlanDetailView({
   }, [activities, categoryFilter, methodFilter, searchQuery, statusFilter]);
 
   const visibleActivities = filteredActivities;
+  const {
+    pageItems: paginatedActivities,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(visibleActivities, 15);
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    activePlanStatus,
+    categoryFilter,
+    currentPlan.reference,
+    methodFilter,
+    searchQuery,
+    setPage,
+    statusFilter,
+  ]);
+
   const projectHref = `/workspace/projects?project=${encodeURIComponent(
     project.code,
   )}`;
@@ -1259,9 +1285,9 @@ export function OfficerProcurementPlanDetailView({
           </div>
         </div>
 
-        <div className="overflow-x-auto max-h-[620px] overflow-y-auto border-b border-slate-200">
-          <table className="w-full table-fixed border-collapse text-left">
-            <thead className="sticky top-0 z-10 table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+        <HorizontalTableScroller label="Activities in plan">
+          <table className="w-full min-w-[1050px] table-fixed border-collapse text-left">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
               <tr className="bg-slate-100 text-slate-600 text-[10px] font-semibold">
                 <th className="w-[10%] px-2 py-3" scope="col">
                   Ref
@@ -1294,7 +1320,7 @@ export function OfficerProcurementPlanDetailView({
             </thead>
             <tbody className="divide-y divide-slate-200">
               {visibleActivities.length ? (
-                visibleActivities.map((activity) =>
+                paginatedActivities.map((activity) =>
                   (() => {
                     const tracking = findActivityTrackingRecord(
                       activityTrackingRecords,
@@ -1328,18 +1354,14 @@ export function OfficerProcurementPlanDetailView({
                         ? activity.createdById === currentUser.id
                         : Boolean(
                             activity.createdByName &&
-                              activity.createdByName
-                                .trim()
-                                .toLowerCase() ===
-                                currentUser.displayName
-                                  .trim()
-                                  .toLowerCase() &&
-                              ![
-                                "assigned officer",
-                                "procurement officer",
-                              ].includes(
-                                activity.createdByName.trim().toLowerCase(),
-                              ),
+                            activity.createdByName.trim().toLowerCase() ===
+                              currentUser.displayName.trim().toLowerCase() &&
+                            ![
+                              "assigned officer",
+                              "procurement officer",
+                            ].includes(
+                              activity.createdByName.trim().toLowerCase(),
+                            ),
                           ));
 
                     return (
@@ -1405,12 +1427,21 @@ export function OfficerProcurementPlanDetailView({
               )}
             </tbody>
           </table>
-        </div>
+        </HorizontalTableScroller>
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalItems={visibleActivities.length}
+          setPage={setPage}
+        />
 
         <footer className="flex flex-col gap-2 bg-[#fbfcfd] px-4 py-3 text-[11px] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p aria-live="polite" className="font-medium text-slate-700">
-            Showing all {filteredActivities.length}{" "}
-            {filteredActivities.length === 1 ? "activity" : "activities"}
+            Showing {visibleActivities.length ? startIndex + 1 : 0}–{endIndex}{" "}
+            of {visibleActivities.length}{" "}
+            {visibleActivities.length === 1 ? "activity" : "activities"}
             {filteredActivities.length !== activities.length && (
               <span className="text-slate-400 font-normal">
                 {" "}
@@ -1420,7 +1451,7 @@ export function OfficerProcurementPlanDetailView({
           </p>
           <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span>All activities on one page • Scrollable list</span>
+            <span>15 activities per page</span>
           </div>
         </footer>
       </section>
