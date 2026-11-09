@@ -9,7 +9,7 @@ import {
   formatEthiopianDate,
   formatGregorianDate,
 } from "@/features/projects/utils/ethiopianCalendar";
-import { apiClient, directApiFetch, ApiClientError } from "./apiClient";
+import { apiClient, directApiFetch, ApiClientError, clearApiCache } from "./apiClient";
 import { downloadReportFile, saveReportFile } from "./reportsApi";
 
 export interface ImportProjectsResult {
@@ -133,6 +133,7 @@ export function setCachedProjects(projects: BackendProject[]) {
 export function invalidateProjectsCache() {
   _cachedProjects = null;
   _cachedProjectsTimestamp = 0;
+  clearApiCache("/projects");
 }
 
 export async function fetchProjects(): Promise<BackendProject[]> {

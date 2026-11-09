@@ -1,18 +1,79 @@
-import { ReportsView } from "@/features/reports/components/ReportsView";
-import { ExecutiveDashboard } from "@/features/executive-dashboard/ExecutiveDashboard";
-import { CommitteeProgressView } from "@/features/plans/components/CommitteeProgressView";
-import { AmendmentRequestsView } from "@/features/plans/components/AmendmentRequestsView";
-import { SystemLogsView } from "@/features/dashboards/admin/SystemLogsView";
-import { UserManagementView } from "@/features/dashboards/admin/UserManagementView";
-import { OfficerContractsView } from "@/features/contracts/components/OfficerContractsView";
-import { OfficerActivityTrackerView } from "@/features/activity-tracker/components/OfficerActivityTrackerView";
-import { DirectorActivityTrackerView } from "@/features/activity-tracker/components/DirectorActivityTrackerView";
-import { OfficerProjectsView } from "@/features/projects/components/OfficerProjectsView";
-import { ProjectsManagementView } from "@/features/projects/management/ProjectsManagementView";
-import { PlanForReviewView } from "@/features/plans/components/PlanForReviewView";
-import { MyDecisionsView } from "@/features/plans/components/MyDecisionsView";
-import { NotificationsView } from "@/features/notifications/components/NotificationsView";
-import { SettingsManagementView } from "@/features/settings/SettingsManagementView";
+import dynamic from "next/dynamic";
+
+const SectionLoadingFallback = () => (
+  <div className="p-6 space-y-4 animate-pulse" role="status" aria-busy="true">
+    <div className="h-7 w-56 bg-slate-200 rounded-md" />
+    <div className="h-4 w-80 bg-slate-100 rounded-md" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+      <div className="h-24 bg-slate-100 rounded-xl" />
+      <div className="h-24 bg-slate-100 rounded-xl" />
+      <div className="h-24 bg-slate-100 rounded-xl" />
+      <div className="h-24 bg-slate-100 rounded-xl" />
+    </div>
+    <div className="h-64 bg-slate-100 rounded-xl mt-4" />
+  </div>
+);
+
+const ReportsView = dynamic(
+  () => import("@/features/reports/components/ReportsView").then((m) => m.ReportsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const ExecutiveDashboard = dynamic(
+  () => import("@/features/executive-dashboard/ExecutiveDashboard").then((m) => m.ExecutiveDashboard),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const CommitteeProgressView = dynamic(
+  () => import("@/features/plans/components/CommitteeProgressView").then((m) => m.CommitteeProgressView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const AmendmentRequestsView = dynamic(
+  () => import("@/features/plans/components/AmendmentRequestsView").then((m) => m.AmendmentRequestsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const SystemLogsView = dynamic(
+  () => import("@/features/dashboards/admin/SystemLogsView").then((m) => m.SystemLogsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const UserManagementView = dynamic(
+  () => import("@/features/dashboards/admin/UserManagementView").then((m) => m.UserManagementView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const OfficerContractsView = dynamic(
+  () => import("@/features/contracts/components/OfficerContractsView").then((m) => m.OfficerContractsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const OfficerActivityTrackerView = dynamic(
+  () => import("@/features/activity-tracker/components/OfficerActivityTrackerView").then((m) => m.OfficerActivityTrackerView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const DirectorActivityTrackerView = dynamic(
+  () => import("@/features/activity-tracker/components/DirectorActivityTrackerView").then((m) => m.DirectorActivityTrackerView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const OfficerProjectsView = dynamic(
+  () => import("@/features/projects/components/OfficerProjectsView").then((m) => m.OfficerProjectsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const ProjectsManagementView = dynamic(
+  () => import("@/features/projects/management/ProjectsManagementView").then((m) => m.ProjectsManagementView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const PlanForReviewView = dynamic(
+  () => import("@/features/plans/components/PlanForReviewView").then((m) => m.PlanForReviewView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const MyDecisionsView = dynamic(
+  () => import("@/features/plans/components/MyDecisionsView").then((m) => m.MyDecisionsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const NotificationsView = dynamic(
+  () => import("@/features/notifications/components/NotificationsView").then((m) => m.NotificationsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const SettingsManagementView = dynamic(
+  () => import("@/features/settings/SettingsManagementView").then((m) => m.SettingsManagementView),
+  { loading: () => <SectionLoadingFallback /> }
+);
 import { PanelsTopLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { ROLE_LABELS, normalizeUserRole } from "../../../../lib/authTypes";

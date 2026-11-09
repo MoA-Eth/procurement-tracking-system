@@ -112,8 +112,24 @@ export const getActivitiesService = async (planId?: string) => {
     where,
     include: {
       plan: { include: { project: true } },
-      creator: true,
-      updatedByUser: true,
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          email: true,
+          authRole: true,
+        },
+      },
+      updatedByUser: {
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          email: true,
+          authRole: true,
+        },
+      },
       lots: true,
       fundings: true,
       components: true,
@@ -134,8 +150,24 @@ export const getActivityByIdService = async (id: string) => {
     where: { id, isActive: true },
     include: {
       plan: true,
-      creator: true,
-      updatedByUser: true,
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          email: true,
+          authRole: true,
+        },
+      },
+      updatedByUser: {
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          email: true,
+          authRole: true,
+        },
+      },
       lots: true,
       fundings: true,
       components: true,

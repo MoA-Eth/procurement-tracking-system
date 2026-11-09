@@ -200,6 +200,7 @@ export function AppShell({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 aria-current={isActive ? "page" : undefined}
                 onClick={(event) => handleNavClick(item.href, event)}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all ${
@@ -227,6 +228,7 @@ export function AppShell({
         {(user.role === "DIRECTOR" || user.role === "ADMIN") && (
           <Link
             href="/workspace/settings"
+            prefetch={true}
             onClick={(event) => handleNavClick("/workspace/settings", event)}
             className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
               pathname === "/workspace/settings"
@@ -251,6 +253,7 @@ export function AppShell({
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10">
           <Link
             href="/profile"
+            prefetch={true}
             onClick={() => setIsMobileMenuOpen(false)}
             title="View & Edit Profile"
             className={`flex items-center gap-2.5 min-w-0 flex-1 group rounded-xl p-1.5 transition-all ${

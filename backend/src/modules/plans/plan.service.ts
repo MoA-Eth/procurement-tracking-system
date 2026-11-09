@@ -55,11 +55,29 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
         project: {
           include: {
             members: {
-              include: { user: true },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    displayName: true,
+                    email: true,
+                    authRole: true,
+                  },
+                },
+              },
             },
           },
         },
-        creator: true,
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            email: true,
+            authRole: true,
+          },
+        },
         parentPlan: {
           include: {
             activities: { where: { isActive: true } },
@@ -106,16 +124,19 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
       plans.flatMap((p) => (p.committeeVotes || []).map((v) => v.memberId)),
     ),
   );
-  const users = await prisma.user.findMany({
-    where: { id: { in: voterIds } },
-    select: {
-      id: true,
-      name: true,
-      displayName: true,
-      email: true,
-      authRole: true,
-    },
-  });
+  const users =
+    voterIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: voterIds } },
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            email: true,
+            authRole: true,
+          },
+        })
+      : [];
   const userMap = new Map(users.map((u) => [u.id, u]));
 
   const mappedPlans = plans.map((p) => ({
@@ -158,11 +179,29 @@ export const getPlanByIdService = async (id: string) => {
         project: {
           include: {
             members: {
-              include: { user: true },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    displayName: true,
+                    email: true,
+                    authRole: true,
+                  },
+                },
+              },
             },
           },
         },
-        creator: true,
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            email: true,
+            authRole: true,
+          },
+        },
         parentPlan: {
           include: {
             activities: { where: { isActive: true } },
@@ -205,16 +244,19 @@ export const getPlanByIdService = async (id: string) => {
   if (!plan) return null;
 
   const voterIds = (plan.committeeVotes || []).map((v) => v.memberId);
-  const users = await prisma.user.findMany({
-    where: { id: { in: voterIds } },
-    select: {
-      id: true,
-      name: true,
-      displayName: true,
-      email: true,
-      authRole: true,
-    },
-  });
+  const users =
+    voterIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: voterIds } },
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            email: true,
+            authRole: true,
+          },
+        })
+      : [];
   const userMap = new Map(users.map((u) => [u.id, u]));
 
   return {

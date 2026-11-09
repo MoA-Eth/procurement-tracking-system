@@ -231,7 +231,7 @@ export interface UpdatePlanInput {
   additionalPlanReason?: string;
 }
 
-import { apiClient } from "./apiClient";
+import { apiClient, clearApiCache } from "./apiClient";
 
 let _cachedPlans: BackendPlan[] | null = null;
 let _cachedPlansTimestamp = 0;
@@ -248,12 +248,14 @@ export function setCachedPlans(plans: BackendPlan[]) {
 export function invalidatePlansCache() {
   _cachedPlans = null;
   _cachedPlansTimestamp = 0;
+  clearApiCache("/plans");
 }
 
-export async function fetchPlans(): Promise<BackendPlan[]> {
+export async function fetchPlans(forceRefresh = false): Promise<BackendPlan[]> {
   try {
     const res = await apiClient.get<any>("/plans", {
       params: { pageSize: 500 },
+      noCache: forceRefresh,
     });
     const data = Array.isArray(res)
       ? res

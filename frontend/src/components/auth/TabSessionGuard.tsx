@@ -11,7 +11,15 @@ interface TabSessionGuardProps {
 
 export function TabSessionGuard({ children }: TabSessionGuardProps) {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(() => {
+    if (typeof window === "undefined") return true;
+    const clientSession = getClientSession();
+    return clientSession &&
+      clientSession.status === "AUTHENTICATED" &&
+      clientSession.user
+      ? true
+      : null;
+  });
 
   useEffect(() => {
     const clientSession = getClientSession();
