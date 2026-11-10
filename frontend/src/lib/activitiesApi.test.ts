@@ -7,10 +7,12 @@ import {
   replanStage,
   type BackendActivity,
 } from "./activitiesApi";
+import { clearApiCache } from "./apiClient";
 
 describe("activitiesApi", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    clearApiCache();
   });
 
   it("fetches activities list via GET /api/activities", async () => {
@@ -39,7 +41,7 @@ describe("activitiesApi", () => {
     );
   });
 
-  it("requests inactive activities only for a specific plan", async () => {
+  it("retrieves activities, including soft-deleted rows, for a specific plan", async () => {
     const inactiveActivity: BackendActivity = {
       id: "inactive-act",
       reference: "ACT-OLD",
@@ -55,11 +57,11 @@ describe("activitiesApi", () => {
       new Response(JSON.stringify([inactiveActivity]), { status: 200 }),
     );
 
-    await expect(fetchActivities("plan-1", true)).resolves.toEqual([
+    await expect(fetchActivities("plan-1")).resolves.toEqual([
       inactiveActivity,
     ]);
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("/activities?planId=plan-1&includeInactive=true"),
+      expect.stringContaining("/activities?planId=plan-1"),
       expect.any(Object),
     );
   });

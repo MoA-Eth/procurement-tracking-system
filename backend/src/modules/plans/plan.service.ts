@@ -85,7 +85,6 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
         },
         childPlans: true,
         activities: {
-          where: { isActive: true },
           include: {
             procurementMethod: true,
             stages: {
@@ -209,7 +208,6 @@ export const getPlanByIdService = async (id: string) => {
         },
         childPlans: true,
         activities: {
-          where: { isActive: true },
           include: {
             procurementMethod: true,
             stages: {

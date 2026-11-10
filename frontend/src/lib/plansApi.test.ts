@@ -81,4 +81,35 @@ describe("mapBackendPlanToOfficerPlanSummary", () => {
       ]),
     );
   });
+
+  it("counts and preserves soft-deleted activities returned with the plan", () => {
+    const plan = mapBackendPlanToOfficerPlanSummary({
+      id: "plan-with-inactive-activity",
+      projectId: "project-1",
+      status: "DRAFT",
+      title: "Plan with deleted activity",
+      periodStart: "2026-01-01T00:00:00.000Z",
+      periodEnd: "2026-12-31T00:00:00.000Z",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      activities: [
+        {
+          id: "inactive-activity",
+          reference: "ACT-INACTIVE",
+          isActive: false,
+          status: "DRAFT",
+          estimatedBudget: 100,
+        },
+      ],
+    } as BackendPlan);
+
+    expect(plan.activities).toBe(1);
+    expect(plan.planActivities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "inactive-activity",
+          isActive: false,
+        }),
+      ]),
+    );
+  });
 });

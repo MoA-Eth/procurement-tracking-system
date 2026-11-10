@@ -239,7 +239,7 @@ export function OfficerProjectsView({
           fetchPlans(),
           fetchActivities(),
           selectedPlanReference
-            ? fetchActivities(selectedPlanReference, true)
+            ? fetchActivities(selectedPlanReference)
             : Promise.resolve([]),
         ]);
 

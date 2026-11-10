@@ -210,16 +210,10 @@ export async function resolveProcurementMethodId(
 
 export async function fetchActivities(
   planId?: string,
-  includeInactive = false,
 ): Promise<BackendActivity[]> {
   try {
     const res = await apiClient.get<any>("/activities", {
-      params:
-        planId && includeInactive
-          ? { planId, includeInactive: true }
-          : planId
-            ? { planId }
-            : undefined,
+      params: planId ? { planId } : undefined,
     });
     return Array.isArray(res)
       ? res

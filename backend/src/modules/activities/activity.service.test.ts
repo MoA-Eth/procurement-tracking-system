@@ -50,26 +50,48 @@ describe('getActivitiesService', () => {
     vi.clearAllMocks();
   });
 
-  it('includes inactive rows only for the requested active plan ID', async () => {
+  it('returns all activities for the requested plan, including soft-deleted rows', async () => {
     prismaMock.plan.findFirst.mockResolvedValue({ id: 'plan-id' });
     prismaMock.activity.findMany.mockResolvedValue([]);
 
-    await getActivitiesService('plan-id', true);
+    await getActivitiesService('plan-id');
 
     expect(prismaMock.plan.findFirst).toHaveBeenCalledWith({
-      where: { id: 'plan-id', isActive: true },
-      select: { id: true },
+      where: {
+        OR: [
+          { id: 'plan-id' },
+          { title: { equals: 'plan-id', mode: 'insensitive' } },
+        ],
+        isActive: true,
+      },
+      select: { id: true, parentPlanId: true },
     });
     expect(prismaMock.activity.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { planId: 'plan-id' } }),
+      expect.objectContaining({
+        where: { OR: [{ planId: 'plan-id' }] },
+      }),
     );
   });
 
-  it('requires a plan ID when including inactive activities', async () => {
-    await expect(getActivitiesService(undefined, true)).rejects.toMatchObject({
-      status: 400,
+  it('keeps inherited parent activities active-only when loading a plan', async () => {
+    prismaMock.plan.findFirst.mockResolvedValue({
+      id: 'child-plan-id',
+      parentPlanId: 'parent-plan-id',
     });
-    expect(prismaMock.activity.findMany).not.toHaveBeenCalled();
+    prismaMock.activity.findMany.mockResolvedValue([]);
+
+    await getActivitiesService('child-plan-id');
+
+    expect(prismaMock.activity.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [
+            { planId: 'child-plan-id' },
+            { planId: 'parent-plan-id', isActive: true },
+          ],
+        },
+      }),
+    );
   });
 });
 

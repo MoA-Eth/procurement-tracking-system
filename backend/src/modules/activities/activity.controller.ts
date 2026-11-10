@@ -18,7 +18,6 @@ export const getActivities = async (
   try {
     const activities = await activityService.getActivitiesService(
       typeof req.query.planId === 'string' ? req.query.planId : undefined,
-      req.query.includeInactive === 'true',
     );
     res.status(200).json(activities);
   } catch (e) {

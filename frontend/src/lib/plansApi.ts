@@ -37,6 +37,7 @@ export interface BackendCommitteeVote {
 
 export interface BackendPlanActivity {
   id: string;
+  isActive?: boolean;
   reference?: string;
   description?: string;
   estimatedBudget: number;
@@ -947,6 +948,7 @@ export function mapBackendPlanToOfficerPlanSummary(
         id: a.id,
         activityId: a.id,
         planId: backendPlan.id,
+        isActive: a.isActive !== false,
         projectId: backendPlan.projectId || backendPlan.project?.id,
         version:
           backendPlan.status === "RETURNED_FOR_REVISION"

@@ -93,28 +93,9 @@ export const updateReference = async (id: string, newRef: string) => {
   }
 };
 
-export const getActivitiesService = async (
-  planId?: string,
-  includeInactive = false,
-) => {
+export const getActivitiesService = async (planId?: string) => {
   let where: Prisma.ActivityWhereInput = { isActive: true };
-  if (includeInactive) {
-    const trimmed = planId?.trim();
-    if (!trimmed) {
-      throw ApiError.badRequest(
-        'A plan ID is required when including inactive activities.',
-      );
-    }
-    const targetPlan = await prisma.plan.findFirst({
-      where: { id: trimmed, isActive: true },
-      select: { id: true },
-    });
-    if (!targetPlan) {
-      throw ApiError.notFound('Active plan not found.');
-    }
-    where = { planId: targetPlan.id };
-  }
-  if (planId && !includeInactive) {
+  if (planId) {
     const trimmed = planId.trim();
     const targetPlan = await prisma.plan.findFirst({
       where: {
@@ -127,27 +108,29 @@ export const getActivitiesService = async (
       select: { id: true, parentPlanId: true },
     });
 
-    const planIds = [trimmed];
     if (targetPlan) {
-      if (targetPlan.id && !planIds.includes(targetPlan.id)) {
-        planIds.push(targetPlan.id);
-      }
-      if (
-        targetPlan.parentPlanId &&
-        !planIds.includes(targetPlan.parentPlanId)
-      ) {
-        planIds.push(targetPlan.parentPlanId);
-      }
+      where = {
+        OR: [
+          { planId: targetPlan.id },
+          ...(targetPlan.parentPlanId
+            ? [
+                {
+                  planId: targetPlan.parentPlanId,
+                  isActive: true,
+                },
+              ]
+            : []),
+        ],
+      };
+    } else {
+      where = {
+        isActive: true,
+        OR: [
+          { planId: trimmed },
+          { plan: { title: { equals: trimmed, mode: 'insensitive' } } },
+        ],
+      };
     }
-
-    where = {
-      isActive: true,
-      OR: [
-        { planId: { in: planIds } },
-        { plan: { id: { in: planIds } } },
-        { plan: { title: { equals: trimmed, mode: 'insensitive' } } },
-      ],
-    };
   }
   return prisma.activity.findMany({
     where,
