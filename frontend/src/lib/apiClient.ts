@@ -56,12 +56,18 @@ const inFlightRequests = new Map<string, Promise<any>>();
 export function clearApiCache(pathPrefix?: string) {
   if (!pathPrefix) {
     apiGetCache.clear();
+    inFlightRequests.clear();
     return;
   }
   const cleanPrefix = pathPrefix.startsWith('/') ? pathPrefix.slice(1) : pathPrefix;
   for (const key of apiGetCache.keys()) {
     if (key.includes(cleanPrefix)) {
       apiGetCache.delete(key);
+    }
+  }
+  for (const key of inFlightRequests.keys()) {
+    if (key.includes(cleanPrefix)) {
+      inFlightRequests.delete(key);
     }
   }
 }
@@ -128,6 +134,7 @@ export async function directApiFetch<T>(
     }
   }
 
+  let fetchPromise: Promise<T> | undefined;
   const executeFetch = async (): Promise<T> => {
     let response: Response;
     try {
@@ -202,7 +209,12 @@ export async function directApiFetch<T>(
     }
 
     // Cache successful GET response
-    if (method === "GET" && !noCache) {
+    if (
+      method === "GET" &&
+      !noCache &&
+      fetchPromise &&
+      inFlightRequests.get(cacheKey) === fetchPromise
+    ) {
       const defaultTtl = typeof ttlMs === "number" ? ttlMs : 15_000; // 15s default
       if (defaultTtl > 0) {
         if (apiGetCache.size > 200) apiGetCache.clear();
@@ -217,8 +229,10 @@ export async function directApiFetch<T>(
   };
 
   if (method === "GET" && !noCache) {
-    const fetchPromise = executeFetch().finally(() => {
-      inFlightRequests.delete(cacheKey);
+    fetchPromise = executeFetch().finally(() => {
+      if (inFlightRequests.get(cacheKey) === fetchPromise) {
+        inFlightRequests.delete(cacheKey);
+      }
     });
     inFlightRequests.set(cacheKey, fetchPromise);
     return fetchPromise;

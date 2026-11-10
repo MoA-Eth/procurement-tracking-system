@@ -13,8 +13,10 @@ import { OfficerProcurementPlanDetailView } from "@/features/projects/components
 import { OfficerProjectDetailView } from "@/features/projects/components/OfficerProjectDetailView";
 import {
   activityStatusForPlanStatus,
+  activityStatusForSelectedPlan,
   addSavedActivityRecord,
   findBackendActivityForPlan,
+  mergeBackendAndSavedActivityRecords,
   isTestOrJunkActivity,
   mergeActivityRoadmaps,
   mapRoadmapStagesForBackend,
@@ -376,71 +378,10 @@ export function OfficerProjectsView({
   }, []);
 
   const effectiveSavedActivityRecords = useMemo(() => {
-    const list: SavedOfficerActivityRecord[] = [];
-    const norm = (s?: string) => (s || "").trim().toLowerCase();
-
-    const findIndex = (rec: SavedOfficerActivityRecord) => {
-      const rPlan = norm(rec.planReference);
-      const rDesc = norm(rec.activity.description);
-      const rRef = norm(rec.activity.reference);
-      const rId = norm(
-        (rec.activity as any).id || (rec.activity as any).activityId,
-      );
-      const rAmt = Number(rec.activity.estimatedAmount) || 0;
-
-      return list.findIndex((ex) => {
-        const eId = norm(
-          (ex.activity as any).id || (ex.activity as any).activityId,
-        );
-        const rId = norm(
-          (rec.activity as any).id || (rec.activity as any).activityId,
-        );
-        if (rId && eId && rId === eId) return true;
-
-        const eRef = norm(ex.activity.reference);
-        const rRef = norm(rec.activity.reference);
-        if (rRef && eRef && rRef === eRef) return true;
-
-        const ePlan = norm(ex.planReference);
-        const rPlan = norm(rec.planReference);
-        if (rPlan && ePlan && rPlan !== ePlan) return false;
-
-        const eDesc = norm(ex.activity.description);
-        const rDesc = norm(rec.activity.description);
-        const eAmt = Number(ex.activity.estimatedAmount) || 0;
-        const rAmt = Number(rec.activity.estimatedAmount) || 0;
-
-        if (rDesc && eDesc && rDesc === eDesc) {
-          if (rAmt === eAmt || Math.abs(rAmt - eAmt) < 1) return true;
-          if (
-            norm(rec.activity.method) &&
-            norm(rec.activity.method) === norm(ex.activity.method)
-          )
-            return true;
-        }
-        return false;
-      });
-    };
-
-    backendActivities.forEach((rec) => {
-      const idx = findIndex(rec);
-      if (idx === -1) {
-        list.push(rec);
-      } else {
-        list[idx] = rec;
-      }
-    });
-
-    savedActivityRecords.forEach((rec) => {
-      const idx = findIndex(rec);
-      if (idx === -1) {
-        list.push(rec);
-      } else {
-        list[idx] = rec;
-      }
-    });
-
-    return list;
+    return mergeBackendAndSavedActivityRecords(
+      backendActivities,
+      savedActivityRecords,
+    );
   }, [backendActivities, savedActivityRecords]);
 
   const allProjects = useMemo(() => {
@@ -617,7 +558,7 @@ export function OfficerProjectsView({
       .filter((ba) => !isTestOrJunkActivity(ba.reference, ba.description))
       .map((ba) => {
         const s = mapBackendActivityToProcurementActivitySummary(ba);
-        (s as any).isParentApproved = true;
+        s.isInheritedFromParentPlan = true;
         return s;
       });
 
@@ -687,14 +628,17 @@ export function OfficerProjectsView({
       selectedPlan.parentActivities.length > 0
     ) {
       selectedPlan.parentActivities.forEach((a: any) =>
-        upsertSummaryActivity(combined, { ...a, isParentApproved: true }),
+        upsertSummaryActivity(combined, {
+          ...a,
+          isInheritedFromParentPlan: true,
+        }),
       );
     }
     matchingSaved.forEach((a) => upsertSummaryActivity(combined, a));
 
     const activitiesList = combined.map((activity) => ({
       ...activity,
-      status: activityStatusForPlanStatus(selectedPlan.status),
+      status: activityStatusForSelectedPlan(activity, selectedPlan.status),
     }));
 
     return activitiesList;

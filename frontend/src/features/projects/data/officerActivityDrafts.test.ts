@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  activityStatusForSelectedPlan,
   activityStatusForPlanStatus,
   addSavedActivityRecord,
   findBackendActivityForPlan,
+  mergeBackendAndSavedActivityRecords,
   mergeActivityRoadmaps,
   mapBackendActivityToProcurementActivitySummary,
   mapRoadmapStagesForBackend,
@@ -25,6 +27,24 @@ describe("activity status derived from plan status", () => {
     ["Cancelled", "Cancelled"],
   ] as const)("maps plan status %s to activity status %s", (plan, activity) => {
     expect(activityStatusForPlanStatus(plan)).toBe(activity);
+  });
+
+  it("preserves the source status of activities inherited from another plan", () => {
+    expect(
+      activityStatusForSelectedPlan(
+        {
+          category: "Goods",
+          currentStage: "Draft",
+          description: "Inherited activity",
+          estimatedAmount: 100,
+          isInheritedFromParentPlan: true,
+          method: "RFB",
+          reference: "ACT-001",
+          status: "Submitted to Director",
+        },
+        "Draft",
+      ),
+    ).toBe("Submitted to Director");
   });
 });
 
@@ -117,6 +137,49 @@ const detailedRecord: SavedOfficerActivityRecord = {
     },
   },
 };
+
+describe("mergeBackendAndSavedActivityRecords", () => {
+  it("keeps database activity ownership when a saved record has the same reference", () => {
+    const backendRecord: SavedOfficerActivityRecord = {
+      ...record,
+      activity: {
+        ...record.activity,
+        id: "database-activity-id",
+        activityId: "database-activity-id",
+        createdById: "database-owner-id",
+        createdByName: "Database Owner",
+      },
+    };
+    const staleSavedRecord: SavedOfficerActivityRecord = {
+      ...record,
+      activity: {
+        ...record.activity,
+        id: "stale-local-id",
+        activityId: "stale-local-id",
+        createdById: "current-user-id",
+        createdByName: "Current User",
+      },
+    };
+
+    expect(
+      mergeBackendAndSavedActivityRecords([backendRecord], [staleSavedRecord]),
+    ).toEqual([backendRecord]);
+  });
+
+  it("keeps local activities that do not exist in backend records", () => {
+    const savedOnlyRecord: SavedOfficerActivityRecord = {
+      ...record,
+      activity: {
+        ...record.activity,
+        reference: "LOCAL-ACTIVITY",
+      },
+    };
+
+    expect(mergeBackendAndSavedActivityRecords([], [savedOnlyRecord])).toEqual([
+      savedOnlyRecord,
+    ]);
+  });
+});
 
 describe("officer activity draft storage", () => {
   it("does not match another plan's activity by a reused reference", () => {

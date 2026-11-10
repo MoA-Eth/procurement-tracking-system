@@ -42,7 +42,16 @@ export function activityStatusForPlanStatus(
   }
 }
 
-function normalizePlanStatus(
+export function activityStatusForSelectedPlan(
+  activity: ProcurementActivitySummary,
+  planStatus: ProcurementPlanStatus,
+): ProcurementActivityStatus {
+  return activity.isInheritedFromParentPlan
+    ? activity.status
+    : activityStatusForPlanStatus(planStatus);
+}
+
+export function normalizePlanStatus(
   status: unknown,
 ): ProcurementPlanStatus | undefined {
   if (typeof status !== "string") return undefined;
@@ -300,6 +309,7 @@ export interface ProcurementActivitySummary {
   projectId?: string;
   version?: number;
   returnedForRevision?: boolean;
+  isInheritedFromParentPlan?: boolean;
   category: string;
   currentStage: string;
   description: string;
@@ -324,6 +334,40 @@ export interface SavedOfficerActivityRecord {
   activity: ProcurementActivitySummary;
   planReference: string;
   projectCode: string;
+}
+
+export function mergeBackendAndSavedActivityRecords(
+  backendRecords: readonly SavedOfficerActivityRecord[],
+  savedRecords: readonly SavedOfficerActivityRecord[],
+): SavedOfficerActivityRecord[] {
+  const records = [...backendRecords];
+  const normalize = (value?: string) => (value || "").trim().toLowerCase();
+
+  for (const savedRecord of savedRecords) {
+    const savedIds = new Set(
+      [savedRecord.activity.id, savedRecord.activity.activityId]
+        .map(normalize)
+        .filter(Boolean),
+    );
+    const savedReference = normalize(savedRecord.activity.reference);
+    const hasBackendMatch = backendRecords.some((backendRecord) => {
+      const backendIds = [
+        backendRecord.activity.id,
+        backendRecord.activity.activityId,
+      ]
+        .map(normalize)
+        .filter(Boolean);
+      return (
+        backendIds.some((id) => savedIds.has(id)) ||
+        (savedReference &&
+          normalize(backendRecord.activity.reference) === savedReference)
+      );
+    });
+
+    if (!hasBackendMatch) records.push(savedRecord);
+  }
+
+  return records;
 }
 
 export function findBackendActivityForPlan(

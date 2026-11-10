@@ -44,4 +44,41 @@ describe("mapBackendPlanToOfficerPlanSummary", () => {
       ]),
     );
   });
+
+  it("marks inherited parent-plan activities as read-only", () => {
+    const plan = mapBackendPlanToOfficerPlanSummary({
+      id: "additional-plan",
+      projectId: "project-1",
+      status: "DRAFT",
+      title: "Additional Procurement Plan",
+      periodStart: "2026-01-01T00:00:00.000Z",
+      periodEnd: "2026-12-31T00:00:00.000Z",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      activities: [],
+      parentPlan: {
+        id: "parent-plan",
+        title: "Annual Procurement Plan",
+        status: "AWAITING_MANAGEMENT_APPROVAL",
+        activities: [
+          {
+            id: "parent-activity",
+            reference: "ET-MoA-000003-GO-RFB",
+            status: "DRAFT",
+            createdById: "officer-1",
+            estimatedBudget: 100,
+          },
+        ],
+      },
+    } as BackendPlan);
+
+    expect(plan.planActivities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "parent-activity",
+          isInheritedFromParentPlan: true,
+          status: "Not Started",
+        }),
+      ]),
+    );
+  });
 });

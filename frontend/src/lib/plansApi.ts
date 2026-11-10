@@ -5,7 +5,11 @@ import {
   parseRejectionDetails,
 } from "@/features/plans/plansData";
 import { roadmapForMethod } from "@/features/projects/data/procurementActivityConfig";
-import { mapBackendActivityToProcurementActivitySummary } from "@/features/projects/data/officerActivityDrafts";
+import {
+  activityStatusForPlanStatus,
+  mapBackendActivityToProcurementActivitySummary,
+  normalizePlanStatus,
+} from "@/features/projects/data/officerActivityDrafts";
 import {
   gregorianToEthiopian,
   formatEthiopianDate,
@@ -195,6 +199,7 @@ export interface BackendPlan {
     id: string;
     title?: string;
     reference?: string;
+    status?: string;
     activities?: BackendPlanActivity[];
   } | null;
   planType?: "ANNUAL" | "ADDITIONAL" | string | null;
@@ -1061,7 +1066,13 @@ export function mapBackendPlanToOfficerPlanSummary(
       )
       .map((pa: any) => {
         const summary = mapBackendActivityToProcurementActivitySummary(pa);
-        (summary as any).isParentApproved = true;
+        summary.isInheritedFromParentPlan = true;
+        const parentPlanStatus = normalizePlanStatus(
+          backendPlan.parentPlan?.status,
+        );
+        if (parentPlanStatus) {
+          summary.status = activityStatusForPlanStatus(parentPlanStatus);
+        }
         return summary;
       });
 

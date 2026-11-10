@@ -68,13 +68,6 @@ type ActivityStatus = ProcurementActivityStatus;
 
 type PlanActivity = ProcurementActivitySummary;
 
-function normalizeActivityCreatorName(name: string): string {
-  return name
-    .replace(/\s*\((?:procurement\s+)?officer\)\s*$/i, "")
-    .trim()
-    .toLowerCase();
-}
-
 export function OfficerProcurementPlanDetailView({
   onSubmitToDirector,
   onUpdatePlan,
@@ -393,7 +386,7 @@ export function OfficerProcurementPlanDetailView({
         const ref = (pa.reference || pa.id || "").toLowerCase();
         if (ref && !existingRefs.has(ref)) {
           existingRefs.add(ref);
-          list.push({ ...pa, isParentApproved: true });
+          list.push({ ...pa, isInheritedFromParentPlan: true });
         }
       });
     }
@@ -1383,25 +1376,8 @@ export function OfficerProcurementPlanDetailView({
                         : undefined);
                     const isActivityCreator =
                       currentUser?.role === "OFFICER" &&
-                      (activity.createdById
-                        ? activity.createdById === currentUser.id
-                        : Boolean(
-                            activity.createdByName &&
-                            normalizeActivityCreatorName(
-                              activity.createdByName,
-                            ) ===
-                              normalizeActivityCreatorName(
-                                currentUser.displayName,
-                              ) &&
-                            ![
-                              "assigned officer",
-                              "procurement officer",
-                            ].includes(
-                              normalizeActivityCreatorName(
-                                activity.createdByName,
-                              ),
-                            ),
-                          ));
+                      !activity.isInheritedFromParentPlan &&
+                      activity.createdById === currentUser.id;
 
                     return (
                       <ActivityRow

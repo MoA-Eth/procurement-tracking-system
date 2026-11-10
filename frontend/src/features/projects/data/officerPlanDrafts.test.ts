@@ -230,6 +230,59 @@ describe("officer plan draft persistence", () => {
     expect(updated?.status).toBe("Submitted to Director");
   });
 
+  it("keeps backend activity creator and inherited status over stale local data", () => {
+    const backendPlan = {
+      ...mockProject.plans[0],
+      id: "00000000-0000-4000-8000-000000000003",
+      status: "Draft" as const,
+      planActivities: [
+        {
+          id: "database-activity-id",
+          activityId: "database-activity-id",
+          category: "Goods" as const,
+          createdById: "database-owner-id",
+          createdByName: "Database Owner",
+          currentStage: "Management Review",
+          description: "Persisted inherited activity",
+          estimatedAmount: 100,
+          isInheritedFromParentPlan: true,
+          method: "RFB",
+          reference: "ET-MoA(-000003-GO-RFB",
+          status: "Not Started" as const,
+        },
+      ],
+    };
+    const savedPlan = {
+      ...backendPlan,
+      planActivities: [
+        {
+          ...backendPlan.planActivities[0],
+          id: "stale-local-id",
+          activityId: "stale-local-id",
+          createdById: "current-user-id",
+          createdByName: "Current User",
+          isInheritedFromParentPlan: false,
+          status: "Draft" as const,
+        },
+      ],
+    };
+
+    const projects = mergeSavedPlans(
+      [{ ...mockProject, plans: [backendPlan] }],
+      [{ plan: savedPlan, projectCode: mockProject.code }],
+    );
+    const activity = projects[0].plans[0].planActivities?.[0];
+
+    expect(activity).toMatchObject({
+      id: "database-activity-id",
+      activityId: "database-activity-id",
+      createdById: "database-owner-id",
+      createdByName: "Database Owner",
+      isInheritedFromParentPlan: true,
+      status: "Not Started",
+    });
+  });
+
   it("does not add an extra plan when merging a saved record with its backend plan", () => {
     const backendPlan = {
       ...mockProject.plans[0],

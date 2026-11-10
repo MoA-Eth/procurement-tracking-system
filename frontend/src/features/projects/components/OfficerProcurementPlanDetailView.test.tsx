@@ -311,7 +311,43 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).not.toContain('role="dialog"');
   });
 
-  it("matches the activity creator when their name includes the officer role", () => {
+  it("hides edit and delete actions for activities inherited from a parent plan", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const inheritedActivity = {
+      ...sampleActivity,
+      id: "parent-activity-id",
+      createdById: "officer-1",
+      isInheritedFromParentPlan: true,
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer One",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[inheritedActivity]}
+      />,
+    );
+
+    expect(markup).not.toContain(
+      `aria-label="Edit activity ${inheritedActivity.reference}"`,
+    );
+    expect(markup).not.toContain(
+      `aria-label="Delete draft activity ${inheritedActivity.reference}"`,
+    );
+  });
+
+  it("does not grant owner actions based only on a matching creator name", () => {
     const draftPlan: ProcurementPlanSummary = {
       ...mockPlan,
       status: "Draft",
@@ -337,10 +373,10 @@ describe("OfficerProcurementPlanDetailView", () => {
       />,
     );
 
-    expect(markup).toContain(
+    expect(markup).not.toContain(
       `aria-label="Edit activity ${draftActivity.reference}"`,
     );
-    expect(markup).toContain(
+    expect(markup).not.toContain(
       `aria-label="Delete draft activity ${draftActivity.reference}"`,
     );
   });

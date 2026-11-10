@@ -442,27 +442,22 @@ export const deleteDraftActivityService = async (
     const isOfficer =
       user.authRole === UserRole.OFFICER ||
       (user as { role?: string }).role === 'ProcurementOfficer';
-    if (isOfficer) {
-      const assignment = await tx.userProject.findUnique({
-        where: {
-          userId_projectId: { userId, projectId: activity.plan.projectId },
-        },
-      });
-      if (!assignment) {
-        throw ApiError.forbidden('You are not assigned to this project.');
-      }
+    if (isOfficer && activity.createdById !== userId) {
+      throw ApiError.forbidden(
+        'Only the officer who created this activity can delete it.',
+      );
     }
 
     if (!activity.isActive) return activity;
 
-    const editableStatuses: PlanStatus[] = [
+    const editablePlanStatuses: PlanStatus[] = [
       PlanStatus.DRAFT,
       PlanStatus.REJECTED,
       PlanStatus.COMMITTEE_REJECTED,
       PlanStatus.MANAGEMENT_REJECTED,
       PlanStatus.RETURNED_FOR_REVISION,
     ];
-    if (!editableStatuses.includes(activity.plan.status)) {
+    if (!editablePlanStatuses.includes(activity.plan.status)) {
       throw ApiError.conflict(
         `Activity "${activity.reference}" is linked to plan "${activity.plan.title}" (ID: ${activity.planId}), whose current status is ${activity.plan.status}. Activities can only be deleted while the linked plan is editable.`,
       );

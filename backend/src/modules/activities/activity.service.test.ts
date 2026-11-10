@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ActivityStatus, PlanStatus } from '../../generated/prisma/index.js';
+import {
+  ActivityStatus,
+  PlanStatus,
+  UserRole,
+} from '../../generated/prisma/index.js';
 
 const { prismaMock, txMock } = vi.hoisted(() => {
   const tx = {
@@ -8,7 +12,9 @@ const { prismaMock, txMock } = vi.hoisted(() => {
     user: { findUnique: vi.fn() },
     activity: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
   };
   return {
@@ -30,7 +36,10 @@ vi.mock('./stage-generator.js', () => ({
   generateStagesForActivity: vi.fn(),
 }));
 
-import { createActivityService } from './activity.service.js';
+import {
+  createActivityService,
+  deleteDraftActivityService,
+} from './activity.service.js';
 
 describe('createActivityService', () => {
   beforeEach(() => {
@@ -46,6 +55,120 @@ describe('createActivityService', () => {
       reference: 'ACT-100',
       planId: 'plan-id',
       createdById: 'user-id',
+    });
+  });
+
+  describe('deleteDraftActivityService', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      prismaMock.$transaction.mockImplementation(
+        (operation: (tx: typeof txMock) => Promise<unknown>) =>
+          operation(txMock),
+      );
+      txMock.user.findUnique.mockResolvedValue({
+        id: 'officer-id',
+        authRole: UserRole.OFFICER,
+      });
+      txMock.activity.findFirst.mockResolvedValue({
+        id: 'activity-id',
+        reference: 'ACT-100',
+        isActive: true,
+        createdById: 'officer-id',
+        status: ActivityStatus.DRAFT,
+        planId: 'plan-id',
+        plan: {
+          id: 'plan-id',
+          projectId: 'project-id',
+          title: 'Draft plan',
+          status: PlanStatus.DRAFT,
+        },
+      });
+      txMock.activity.update.mockResolvedValue({
+        id: 'activity-id',
+        isActive: false,
+      });
+    });
+
+    it('allows an authenticated officer to delete an editable draft activity', async () => {
+      txMock.activity.findFirst.mockResolvedValue({
+        id: 'activity-id',
+        reference: 'ACT-100',
+        isActive: true,
+        createdById: 'officer-id',
+        status: ActivityStatus.DRAFT,
+        planId: 'plan-id',
+        plan: {
+          id: 'plan-id',
+          projectId: 'project-id',
+          title: 'Draft plan',
+          status: PlanStatus.DRAFT,
+        },
+      });
+
+      await expect(
+        deleteDraftActivityService('activity-id', 'officer-id'),
+      ).resolves.toMatchObject({
+        id: 'activity-id',
+        isActive: false,
+      });
+
+      expect(txMock.activity.update).toHaveBeenCalledWith({
+        where: { id: 'activity-id' },
+        data: { isActive: false },
+      });
+    });
+
+    it('rejects deleting an activity created by another officer', async () => {
+      txMock.activity.findFirst.mockResolvedValue({
+        id: 'activity-id',
+        reference: 'ACT-100',
+        isActive: true,
+        createdById: 'another-officer-id',
+        status: ActivityStatus.DRAFT,
+        planId: 'plan-id',
+        plan: {
+          id: 'plan-id',
+          title: 'Draft plan',
+          status: PlanStatus.DRAFT,
+        },
+      });
+
+      await expect(
+        deleteDraftActivityService('activity-id', 'officer-id'),
+      ).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+        status: 403,
+      });
+
+      expect(txMock.activity.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects deleting a draft activity linked to a plan under review', async () => {
+      txMock.activity.findFirst.mockResolvedValue({
+        id: 'activity-id',
+        reference: 'ACT-100',
+        isActive: true,
+        createdById: 'officer-id',
+        status: ActivityStatus.DRAFT,
+        planId: 'plan-id',
+        plan: {
+          id: 'plan-id',
+          title: 'Plan awaiting management approval',
+          status: PlanStatus.AWAITING_MANAGEMENT_APPROVAL,
+        },
+      });
+
+      await expect(
+        deleteDraftActivityService('activity-id', 'officer-id'),
+      ).rejects.toMatchObject({
+        code: 'CONFLICT',
+        status: 409,
+        message: expect.stringContaining(
+          'Activities can only be deleted while the linked plan is editable.',
+        ),
+      });
+
+      expect(txMock.activity.update).not.toHaveBeenCalled();
     });
   });
 

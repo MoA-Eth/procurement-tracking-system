@@ -12,7 +12,7 @@ export default async function ProtectedLayout({
 }) {
   const session = await requireAuthenticatedSession();
   return (
-    <TabSessionGuard>
+    <TabSessionGuard session={session}>
       <AppShell user={session.user}>{children}</AppShell>
     </TabSessionGuard>
   );
