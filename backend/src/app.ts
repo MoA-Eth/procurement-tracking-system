@@ -33,7 +33,7 @@ import excelRouter from './modules/excel/excel.routes.js';
 import executiveDashboardRouter from './modules/executive-dashboard/executive-dashboard.routes.js';
 import integrationRouter from './modules/integrations/integrations.routes.js';
 
-import { rateLimit } from 'express-rate-limit';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 
 const app = express();
 app.disable('x-powered-by');
@@ -50,7 +50,41 @@ const globalLimiter = rateLimit({
   },
 });
 
+const loginIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 429,
+    message:
+      'Too many authentication attempts from this network, please try again later.',
+  },
+});
+
 const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req) => {
+    const body = req.body as
+      { identifier?: unknown; email?: unknown } | undefined;
+    const identifier =
+      [body?.identifier, body?.email].find(
+        (value): value is string =>
+          typeof value === 'string' && value.trim().length > 0,
+      ) ?? '';
+    const normalizedIdentifier = identifier.trim().toLowerCase();
+    return `${ipKeyGenerator(req.ip ?? '')}:${normalizedIdentifier || 'invalid'}`;
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 429,
+    message: 'Too many authentication attempts, please try again later.',
+  },
+});
+
+const passwordResetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
@@ -90,8 +124,8 @@ app.use(pinoHttp({ logger }));
 // Rate limiters — only active in production to avoid blocking local dev
 if (env.NODE_ENV === 'production') {
   app.use(globalLimiter);
-  app.use('/api/auth/login', authLimiter);
-  app.use('/api/auth/forgot-password', authLimiter);
+  app.use('/api/auth/login', loginIpLimiter, authLimiter);
+  app.use('/api/auth/forgot-password', passwordResetLimiter);
 }
 
 // Swagger UI and OpenAPI JSON spec
