@@ -65,4 +65,17 @@ describe('API routes require authentication', () => {
     const response = await fetch(`${baseUrl}/api/health`);
     expect(response.status).toBe(200);
   });
+
+  it('serves Swagger UI through the public API proxy path', async () => {
+    const response = await fetch(`${baseUrl}/api/docs/`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/html');
+    expect(await response.text()).toContain('Swagger UI');
+  });
+
+  it('serves the OpenAPI specification through the public API proxy path', async () => {
+    const response = await fetch(`${baseUrl}/api/openapi.json`);
+    expect(response.status).toBe(200);
+    expect((await response.json()).openapi).toBeDefined();
+  });
 });

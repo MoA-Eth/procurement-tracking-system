@@ -129,13 +129,25 @@ if (env.NODE_ENV === 'production') {
 }
 
 // Swagger UI and OpenAPI JSON spec
-app.get(['/api-docs.json', '/api-docs/json', '/openapi.json'], (_req, res) => {
-  res.json(swaggerSpec);
-});
+app.get(
+  [
+    '/api-docs.json',
+    '/api-docs/json',
+    '/openapi.json',
+    '/api/openapi.json',
+  ],
+  (_req, res) => {
+    res.json(swaggerSpec);
+  },
+);
 app.get(['/docs', '/swagger'], (_req, res) => {
-  res.redirect('/api-docs/');
+  res.redirect('/api/docs/');
 });
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use(
+  ['/api-docs', '/api/docs'],
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec),
+);
 
 // Health check routes
 app.get(['/', '/api/health'], (_req, res) => {
