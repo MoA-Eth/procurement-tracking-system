@@ -1169,7 +1169,8 @@ export function PlanReviewDirectoryTable({
                                     </>
                                   )}
 
-                                  {userRole === "MANAGEMENT" && (
+                                  {(userRole === "MANAGEMENT" ||
+                                    userRole === "SUPERUSER") && (
                                     <>
                                       <button
                                         type="button"

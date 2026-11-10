@@ -261,19 +261,36 @@ export function invalidatePlansCache() {
 
 export async function fetchPlans(forceRefresh = false): Promise<BackendPlan[]> {
   try {
-    const res = await apiClient.get<any>("/plans", {
-      params: { pageSize: 500 },
+    const firstPage = await apiClient.get<any>("/plans", {
+      params: { page: 1, pageSize: 500 },
       noCache: forceRefresh,
     });
-    const data = Array.isArray(res)
-      ? res
-      : Array.isArray(res?.items)
-        ? res.items
-        : Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res?.data?.items)
-            ? res.data.items
-            : [];
+    const getItems = (response: any): BackendPlan[] =>
+      Array.isArray(response)
+        ? response
+        : Array.isArray(response?.items)
+          ? response.items
+          : Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.data?.items)
+              ? response.data.items
+              : [];
+    const totalPages =
+      firstPage?.pagination?.totalPages ??
+      firstPage?.data?.pagination?.totalPages ??
+      1;
+    const data = getItems(firstPage);
+    if (Number.isInteger(totalPages) && totalPages > 1) {
+      const laterPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          apiClient.get<any>("/plans", {
+            params: { page: index + 2, pageSize: 500 },
+            noCache: forceRefresh,
+          }),
+        ),
+      );
+      data.push(...laterPages.flatMap(getItems));
+    }
     if (Array.isArray(data) && data.length > 0) {
       _cachedPlans = data;
       _cachedPlansTimestamp = Date.now();

@@ -105,6 +105,23 @@ describe("role navigation permission matrix", () => {
     expect(canAccessWorkspaceSection("DIRECTOR", "projects")).toBe(true);
     expect(canAccessWorkspaceSection("ADMIN", "projects")).toBe(false);
     expect(canAccessWorkspaceSection("SUPERUSER", "projects")).toBe(true);
+    for (const section of [
+      "executive-dashboard",
+      "projects",
+      "contracts",
+      "plan-for-review",
+      "amendment-requests",
+      "vote-progress",
+      "activity-tracker",
+      "reports",
+      "my-decisions",
+      "user-management",
+      "system-logs",
+      "notifications",
+      "settings",
+    ]) {
+      expect(canAccessWorkspaceSection("SUPERUSER", section)).toBe(true);
+    }
 
     expect(
       canAccessWorkspaceSection("ENDORSING_COMMITTEE", "plan-for-review"),

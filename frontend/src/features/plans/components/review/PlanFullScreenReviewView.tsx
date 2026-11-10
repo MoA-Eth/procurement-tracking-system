@@ -192,7 +192,7 @@ export function PlanFullScreenReviewView({
               <label className="block text-[11px] font-semibold text-[#00843D] uppercase tracking-wider">
                 Plan Title
               </label>
-              {userRole === "DIRECTOR" ? (
+              {userRole === "DIRECTOR" || userRole === "SUPERUSER" ? (
                 <input
                   type="text"
                   value={plan.planName}
@@ -512,13 +512,13 @@ export function PlanFullScreenReviewView({
             <label className="block text-xs font-semibold text-slate-900">
               Procurement Plan Justification &amp; Directorate Notes
             </label>
-            {userRole === "DIRECTOR" && (
+            {(userRole === "DIRECTOR" || userRole === "SUPERUSER") && (
               <span className="text-[11px] text-slate-400">
                 Auto-saved as Director edits
               </span>
             )}
           </div>
-          {userRole === "DIRECTOR" ? (
+          {userRole === "DIRECTOR" || userRole === "SUPERUSER" ? (
             <textarea
               rows={3}
               value={plan.description || ""}
@@ -702,7 +702,8 @@ export function PlanFullScreenReviewView({
 
                         {/* Action Cell */}
                         <td className="py-3.5 px-3.5 text-center align-top pt-3.5">
-                          {userRole === "DIRECTOR" ? (
+                          {userRole === "DIRECTOR" ||
+                          userRole === "SUPERUSER" ? (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -1029,6 +1030,84 @@ export function PlanFullScreenReviewView({
           ) : null}
         </section>
       )}
+
+      {userRole === "SUPERUSER" &&
+        (onCommitteeVote || onManagementDecision) && (
+          <section
+            aria-label="Additional superuser review actions"
+            className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-6 shadow-2xs space-y-5"
+          >
+            <div className="border-b border-indigo-100 pb-3">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Additional Review-Stage Actions
+              </h3>
+              <p className="mt-1 text-xs text-slate-600">
+                These actions are available to SUPERUSER alongside director
+                actions and remain subject to the plan&apos;s current workflow
+                stage.
+              </p>
+            </div>
+            {onCommitteeVote && plan.status === "Committee Review" && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-slate-800">
+                  Endorsement Committee
+                </h4>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => onCommitteeVote(plan, "APPROVE")}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#00843D] px-5 py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#06542D]"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
+                    Vote: Endorse &amp; Approve Plan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCommitteeRejectionModalOpen(true)}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Vote: Reject / Return Plan
+                  </button>
+                </div>
+              </div>
+            )}
+            {onManagementDecision && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-slate-800">
+                  Executive Management
+                </h4>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onManagementDecision(plan, "APPROVE", returnRemarks)
+                    }
+                    className="flex items-center justify-center gap-2 rounded-xl bg-indigo-700 px-5 py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-indigo-800"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-indigo-200" />
+                    Grant Executive Authorization
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!returnRemarks.trim()}
+                    onClick={() =>
+                      onManagementDecision(plan, "REJECT", returnRemarks)
+                    }
+                    className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-semibold transition-colors ${
+                      returnRemarks.trim()
+                        ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                        : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                    }`}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reject Plan (Return to Director)
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
       {/* Dedicated Activity Quick Edit Modal */}
       <ActivityQuickEditModal

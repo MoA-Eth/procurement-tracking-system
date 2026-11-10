@@ -129,13 +129,15 @@ export function AmendmentRequestsView({ user }: { user: AuthUser }) {
   };
 
   const roleLabel =
-    user.role === "OFFICER"
-      ? "you"
-      : user.role === "DIRECTOR"
-        ? "Director"
-        : user.role === "ENDORSING_COMMITTEE"
-          ? "Endorsement Committee"
-          : "Executive Management";
+    user.role === "SUPERUSER"
+      ? "any review stage"
+      : user.role === "OFFICER"
+        ? "you"
+        : user.role === "DIRECTOR"
+          ? "Director"
+          : user.role === "ENDORSING_COMMITTEE"
+            ? "Endorsement Committee"
+            : "Executive Management";
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-5 px-4 py-6 sm:px-6">
@@ -147,9 +149,11 @@ export function AmendmentRequestsView({ user }: { user: AuthUser }) {
           Amendment Requests
         </h1>
         <p className="mt-1 text-sm text-slate-600">
-          {user.role === "OFFICER"
-            ? "Track your plan and activity amendment requests and read review comments."
-            : `Review plan and activity amendment requests awaiting ${roleLabel}. Approvals continue to the next review stage.`}
+          {user.role === "SUPERUSER"
+            ? "Review and decide amendment requests at any workflow stage."
+            : user.role === "OFFICER"
+              ? "Track your plan and activity amendment requests and read review comments."
+              : `Review plan and activity amendment requests awaiting ${roleLabel}. Approvals continue to the next review stage.`}
         </p>
       </header>
 

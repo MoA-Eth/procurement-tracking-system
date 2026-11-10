@@ -1,8 +1,36 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  fetchPlans,
+  invalidatePlansCache,
   mapBackendPlanToOfficerPlanSummary,
   type BackendPlan,
 } from "./plansApi";
+
+beforeEach(() => {
+  vi.restoreAllMocks();
+  invalidatePlansCache();
+});
+
+describe("fetchPlans", () => {
+  it("fetches every plan across paginated API responses", async () => {
+    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const requestUrl = new URL(String(input));
+      const page = Number(requestUrl.searchParams.get("page"));
+      return new Response(
+        JSON.stringify({
+          items: [{ id: `plan-${page}` }],
+          pagination: { totalPages: 2 },
+        }),
+        { status: 200 },
+      );
+    });
+
+    const plans = await fetchPlans(true);
+
+    expect(plans.map((plan) => plan.id)).toEqual(["plan-1", "plan-2"]);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe("mapBackendPlanToOfficerPlanSummary", () => {
   it("maps a returned plan and its activities to editable draft version", () => {

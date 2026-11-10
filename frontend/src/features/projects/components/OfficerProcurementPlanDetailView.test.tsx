@@ -342,6 +342,40 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).not.toContain('role="dialog"');
   });
 
+  it("allows superusers to edit and delete draft activities created by others", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const draftActivity = {
+      ...sampleActivity,
+      createdById: "another-officer",
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "superuser-1",
+          email: "superuser@example.com",
+          username: "superuser",
+          displayName: "System Superuser",
+          role: "SUPERUSER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[draftActivity]}
+      />,
+    );
+
+    expect(markup).toContain(
+      `aria-label="Edit activity ${draftActivity.reference}"`,
+    );
+    expect(markup).toContain(
+      `aria-label="Delete draft activity ${draftActivity.reference}"`,
+    );
+  });
+
   it("hides edit and delete actions for activities inherited from a parent plan", () => {
     const draftPlan: ProcurementPlanSummary = {
       ...mockPlan,

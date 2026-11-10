@@ -279,7 +279,9 @@ export function OfficerProjectsView({
 
       if (planData.status === "fulfilled" && planData.value.length > 0) {
         // Only load plans that belong to the officer's assigned projects or the currently selected plan
-        if (effectiveUser && assignedProjList.length > 0) {
+        if (effectiveUser?.role === "SUPERUSER") {
+          fetchedPlans = planData.value;
+        } else if (effectiveUser && assignedProjList.length > 0) {
           const assignedIds = new Set(
             assignedProjList.map((p) => p.id).filter(Boolean),
           );

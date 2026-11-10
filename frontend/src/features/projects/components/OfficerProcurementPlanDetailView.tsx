@@ -1375,10 +1375,12 @@ export function OfficerProcurementPlanDetailView({
                         ? activity.currentStage
                         : undefined);
                     const isActivityCreator =
-                      currentUser?.role === "OFFICER" &&
+                      (currentUser?.role === "OFFICER" ||
+                        currentUser?.role === "SUPERUSER") &&
                       !activity.isInheritedFromParentPlan &&
                       activity.isActive !== false &&
-                      activity.createdById === currentUser.id;
+                      (currentUser.role === "SUPERUSER" ||
+                        activity.createdById === currentUser.id);
 
                     return (
                       <ActivityRow

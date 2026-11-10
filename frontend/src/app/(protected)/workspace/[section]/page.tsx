@@ -205,6 +205,57 @@ export default async function WorkspaceSectionPage({
     return <SettingsManagementView currentUser={session.user} />;
   }
 
+  if (section === "projects" && userRole === "SUPERUSER") {
+    const selectedProjectCode =
+      typeof query.project === "string" ? query.project : undefined;
+    const selectedPlanReference =
+      typeof query.plan === "string"
+        ? query.plan
+        : typeof query.planId === "string"
+          ? query.planId
+          : undefined;
+    const selectedActivityReference =
+      typeof query.activity === "string" ? query.activity : undefined;
+    const from = typeof query.from === "string" ? query.from : undefined;
+    const fromTracker = from === "tracker" || from === "activity-tracker";
+    const mode =
+      query.mode === "create-plan" ||
+      query.mode === "create-activity" ||
+      query.mode === "create-additional-activity" ||
+      query.mode === "edit-plan" ||
+      query.mode === "edit-activity"
+        ? query.mode
+        : undefined;
+
+    return (
+      <div className="space-y-10">
+        <section aria-label="Officer project and procurement operations">
+          <h1 className="mb-4 text-xl font-semibold text-slate-900">
+            Officer Project &amp; Procurement Operations
+          </h1>
+          <OfficerProjectsView
+            currentUser={session.user}
+            fromTracker={fromTracker}
+            mode={mode}
+            selectedActivityReference={selectedActivityReference}
+            selectedPlanReference={selectedPlanReference}
+            selectedProjectCode={selectedProjectCode}
+          />
+        </section>
+        <section aria-label="Director project administration">
+          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+            Project Administration &amp; Plan Review
+          </h2>
+          <ProjectsManagementView
+            selectedProjectCode={selectedProjectCode}
+            selectedPlanReference={selectedPlanReference}
+            from={from}
+          />
+        </section>
+      </div>
+    );
+  }
+
   if (
     section === "projects" &&
     (userRole === "DIRECTOR" ||
