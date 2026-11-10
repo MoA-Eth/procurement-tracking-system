@@ -101,6 +101,37 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).toContain("Not Started");
   });
 
+  it("labels soft-deleted activities and hides their edit and delete actions", () => {
+    const inactiveActivity = {
+      ...sampleActivity,
+      createdById: "officer-1",
+      isActive: false,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={{
+          ...mockPlan,
+          status: "Draft",
+          planActivities: [inactiveActivity],
+        }}
+        project={mockProject}
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+      />,
+    );
+
+    expect(markup).toContain("ET-MoA-000001-GO-RFQ");
+    expect(markup).toContain("Soft-deleted");
+    expect(markup).not.toContain('aria-label="Edit activity');
+    expect(markup).not.toContain('aria-label="Delete draft activity');
+  });
+
   it("shows a returned plan and its activities as draft with return remarks and versions", () => {
     const returnedPlan: ProcurementPlanSummary = {
       ...mockPlan,

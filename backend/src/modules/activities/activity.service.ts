@@ -93,9 +93,28 @@ export const updateReference = async (id: string, newRef: string) => {
   }
 };
 
-export const getActivitiesService = async (planId?: string) => {
+export const getActivitiesService = async (
+  planId?: string,
+  includeInactive = false,
+) => {
   let where: Prisma.ActivityWhereInput = { isActive: true };
-  if (planId) {
+  if (includeInactive) {
+    const trimmed = planId?.trim();
+    if (!trimmed) {
+      throw ApiError.badRequest(
+        'A plan ID is required when including inactive activities.',
+      );
+    }
+    const targetPlan = await prisma.plan.findFirst({
+      where: { id: trimmed, isActive: true },
+      select: { id: true },
+    });
+    if (!targetPlan) {
+      throw ApiError.notFound('Active plan not found.');
+    }
+    where = { planId: targetPlan.id };
+  }
+  if (planId && !includeInactive) {
     const trimmed = planId.trim();
     const targetPlan = await prisma.plan.findFirst({
       where: {

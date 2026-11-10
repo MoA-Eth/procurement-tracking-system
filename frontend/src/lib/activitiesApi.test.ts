@@ -39,6 +39,31 @@ describe("activitiesApi", () => {
     );
   });
 
+  it("requests inactive activities only for a specific plan", async () => {
+    const inactiveActivity: BackendActivity = {
+      id: "inactive-act",
+      reference: "ACT-OLD",
+      planId: "plan-1",
+      isActive: false,
+      procurementMethodId: "pm-1",
+      description: "Previously deleted activity",
+      estimatedBudget: 10,
+      currency: "ETB",
+      status: "DRAFT",
+    };
+    vi.spyOn(global, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify([inactiveActivity]), { status: 200 }),
+    );
+
+    await expect(fetchActivities("plan-1", true)).resolves.toEqual([
+      inactiveActivity,
+    ]);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/activities?planId=plan-1&includeInactive=true"),
+      expect.any(Object),
+    );
+  });
+
   it("creates a new activity via POST /api/activities", async () => {
     const created: BackendActivity = {
       id: "act-new",

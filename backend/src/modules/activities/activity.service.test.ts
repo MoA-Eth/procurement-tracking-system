@@ -11,6 +11,7 @@ const { prismaMock, txMock } = vi.hoisted(() => {
     lookupValue: { findFirst: vi.fn() },
     user: { findUnique: vi.fn() },
     activity: {
+      findMany: vi.fn(),
       findUnique: vi.fn(),
       findFirst: vi.fn(),
       create: vi.fn(),
@@ -20,6 +21,8 @@ const { prismaMock, txMock } = vi.hoisted(() => {
   return {
     txMock: tx,
     prismaMock: {
+      plan: { findFirst: vi.fn() },
+      activity: { findMany: vi.fn() },
       $transaction: vi.fn(),
     },
   };
@@ -39,7 +42,36 @@ vi.mock('./stage-generator.js', () => ({
 import {
   createActivityService,
   deleteDraftActivityService,
+  getActivitiesService,
 } from './activity.service.js';
+
+describe('getActivitiesService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('includes inactive rows only for the requested active plan ID', async () => {
+    prismaMock.plan.findFirst.mockResolvedValue({ id: 'plan-id' });
+    prismaMock.activity.findMany.mockResolvedValue([]);
+
+    await getActivitiesService('plan-id', true);
+
+    expect(prismaMock.plan.findFirst).toHaveBeenCalledWith({
+      where: { id: 'plan-id', isActive: true },
+      select: { id: true },
+    });
+    expect(prismaMock.activity.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { planId: 'plan-id' } }),
+    );
+  });
+
+  it('requires a plan ID when including inactive activities', async () => {
+    await expect(getActivitiesService(undefined, true)).rejects.toMatchObject({
+      status: 400,
+    });
+    expect(prismaMock.activity.findMany).not.toHaveBeenCalled();
+  });
+});
 
 describe('createActivityService', () => {
   beforeEach(() => {

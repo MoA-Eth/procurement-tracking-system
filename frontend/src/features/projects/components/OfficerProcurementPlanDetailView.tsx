@@ -1377,6 +1377,7 @@ export function OfficerProcurementPlanDetailView({
                     const isActivityCreator =
                       currentUser?.role === "OFFICER" &&
                       !activity.isInheritedFromParentPlan &&
+                      activity.isActive !== false &&
                       activity.createdById === currentUser.id;
 
                     return (
@@ -1975,6 +1976,11 @@ function ActivityRow({
       <td className="px-2 py-2.5 align-top font-mono text-[10px] font-semibold text-[#1261a8] truncate">
         <div className="flex items-center gap-1">
           <span>{activity.reference}</span>
+          {activity.isActive === false && (
+            <span className="rounded border border-rose-200 bg-rose-50 px-1 text-[8px] font-sans font-semibold text-rose-700">
+              Soft-deleted
+            </span>
+          )}
           <span className="rounded bg-slate-100 px-1 text-[8px] font-sans font-medium text-slate-600">
             v{activity.version || 1}
           </span>

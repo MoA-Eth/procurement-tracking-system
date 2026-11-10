@@ -306,6 +306,7 @@ export interface ProcurementActivitySummary {
   id?: string;
   activityId?: string;
   planId?: string;
+  isActive?: boolean;
   projectId?: string;
   version?: number;
   returnedForRevision?: boolean;
@@ -943,6 +944,7 @@ export function mapBackendActivityToProcurementActivitySummary(
     id: ba.id,
     activityId: ba.id,
     planId: ba.planId,
+    isActive: ba.isActive !== false,
     category: categoryName,
     currentStage: activeStage,
     description: ba.description || "Procurement Activity",

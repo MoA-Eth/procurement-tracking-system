@@ -233,11 +233,15 @@ export function OfficerProjectsView({
       if (backendProjects.length === 0) {
         setIsLoadingData(true);
       }
-      const [projData, planData, actData] = await Promise.allSettled([
-        fetchProjects(),
-        fetchPlans(),
-        fetchActivities(),
-      ]);
+      const [projData, planData, actData, selectedPlanActivitiesData] =
+        await Promise.allSettled([
+          fetchProjects(),
+          fetchPlans(),
+          fetchActivities(),
+          selectedPlanReference
+            ? fetchActivities(selectedPlanReference, true)
+            : Promise.resolve([]),
+        ]);
 
       if (requestId !== loadDataRequestRef.current) return;
 
@@ -304,7 +308,17 @@ export function OfficerProjectsView({
       }
 
       if (actData.status === "fulfilled") {
-        const mappedDbRecords: SavedOfficerActivityRecord[] = actData.value
+        const activitiesById = new Map(
+          actData.value.map((activity) => [activity.id, activity]),
+        );
+        if (selectedPlanActivitiesData.status === "fulfilled") {
+          for (const activity of selectedPlanActivitiesData.value) {
+            activitiesById.set(activity.id, activity);
+          }
+        }
+        const mappedDbRecords: SavedOfficerActivityRecord[] = Array.from(
+          activitiesById.values(),
+        )
           .filter((ba: BackendActivity) => {
             if (isTestOrJunkActivity(ba.reference, ba.description))
               return false;
@@ -322,6 +336,14 @@ export function OfficerProjectsView({
               Boolean(selectedPlanReference) &&
               ba.planId?.toLowerCase().trim() ===
                 selectedPlanReference?.toLowerCase().trim();
+            const belongsToLoadedPlan = Boolean(
+              ba.planId &&
+              fetchedPlans.some(
+                (plan) =>
+                  plan.id?.toLowerCase().trim() ===
+                  ba.planId.toLowerCase().trim(),
+              ),
+            );
             const assignedIds = new Set(
               assignedProjList.map((p) => p.id).filter(Boolean),
             );
@@ -330,6 +352,7 @@ export function OfficerProjectsView({
             );
             return (
               belongsToSelectedPlan ||
+              belongsToLoadedPlan ||
               (projCode && assignedCodes.has(projCode.toLowerCase())) ||
               (projId && assignedIds.has(projId)) ||
               Boolean(ba.planId && parentPlan)
