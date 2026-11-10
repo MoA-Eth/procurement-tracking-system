@@ -336,6 +336,19 @@ export interface SavedOfficerActivityRecord {
   projectCode: string;
 }
 
+export function activityRecordBelongsToPlanId(
+  record: SavedOfficerActivityRecord,
+  planId: string,
+): boolean {
+  const normalizedPlanId = planId.trim().toLowerCase();
+  return Boolean(
+    normalizedPlanId &&
+    [record.activity.planId, record.planReference].some(
+      (value) => value?.trim().toLowerCase() === normalizedPlanId,
+    ),
+  );
+}
+
 export function mergeBackendAndSavedActivityRecords(
   backendRecords: readonly SavedOfficerActivityRecord[],
   savedRecords: readonly SavedOfficerActivityRecord[],

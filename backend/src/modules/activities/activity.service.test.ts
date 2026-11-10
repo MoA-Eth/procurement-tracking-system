@@ -240,15 +240,52 @@ describe('createActivityService', () => {
     );
   });
 
-  it('returns an existing activity when the same officer retries its creation', async () => {
-    await expect(
-      createActivityService(input, 'user-id'),
-    ).resolves.toMatchObject({
-      id: 'existing-activity',
-      reference: 'ACT-100',
-    });
+  it('rejects a reused non-generated reference instead of returning the existing activity', async () => {
+    await expect(createActivityService(input, 'user-id')).rejects.toMatchObject(
+      {
+        code: 'CONFLICT',
+        status: 409,
+      },
+    );
 
     expect(txMock.activity.create).not.toHaveBeenCalled();
+  });
+
+  it('creates a new activity with a fresh reference when a same-owner activity was already stored', async () => {
+    txMock.activity.findUnique
+      .mockResolvedValueOnce({
+        id: 'existing-activity',
+        reference: 'ET-MoA(-000003-GO-RFB',
+        planId: 'plan-id',
+        createdById: 'user-id',
+        isActive: false,
+      })
+      .mockResolvedValueOnce(null);
+    txMock.activity.create.mockImplementation(({ data }) =>
+      Promise.resolve({ id: 'new-activity', isActive: true, ...data }),
+    );
+
+    await expect(
+      createActivityService(
+        {
+          ...input,
+          reference: 'ET-MoA(-000003-GO-RFB',
+        },
+        'user-id',
+      ),
+    ).resolves.toMatchObject({
+      id: 'new-activity',
+      reference: 'ET-MoA(-000004-GO-RFB',
+      isActive: true,
+    });
+
+    expect(txMock.activity.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          reference: 'ET-MoA(-000004-GO-RFB',
+        }),
+      }),
+    );
   });
 
   it('rejects a reference used by another plan or officer', async () => {

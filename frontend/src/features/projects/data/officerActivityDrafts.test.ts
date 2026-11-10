@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   activityStatusForSelectedPlan,
   activityStatusForPlanStatus,
+  activityRecordBelongsToPlanId,
   addSavedActivityRecord,
   findBackendActivityForPlan,
   mergeBackendAndSavedActivityRecords,
@@ -80,6 +81,27 @@ const record: SavedOfficerActivityRecord = {
   planReference: "PP-DRIVE-2016-01",
   projectCode: "PRJ-24-001",
 };
+
+describe("activityRecordBelongsToPlanId", () => {
+  it("uses the activity's plan ID even when project metadata differs", () => {
+    expect(
+      activityRecordBelongsToPlanId(
+        {
+          ...record,
+          activity: { ...record.activity, planId: "plan-id" },
+          projectCode: "another-project",
+        },
+        "PLAN-ID",
+      ),
+    ).toBe(true);
+  });
+
+  it("matches the saved plan reference when the activity has no plan ID", () => {
+    expect(activityRecordBelongsToPlanId(record, record.planReference)).toBe(
+      true,
+    );
+  });
+});
 
 const detailedRecord: SavedOfficerActivityRecord = {
   ...record,

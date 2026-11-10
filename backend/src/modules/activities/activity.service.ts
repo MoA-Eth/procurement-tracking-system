@@ -270,9 +270,6 @@ export const createActivityService = async (
         },
       });
       if (existing) {
-        if (existing.planId === plan.id && existing.createdById === userId) {
-          return existing;
-        }
         const availableReference = await nextAvailableGeneratedReference(
           tx,
           reference,

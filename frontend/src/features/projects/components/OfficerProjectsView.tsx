@@ -14,6 +14,7 @@ import { OfficerProjectDetailView } from "@/features/projects/components/Officer
 import {
   activityStatusForPlanStatus,
   activityStatusForSelectedPlan,
+  activityRecordBelongsToPlanId,
   addSavedActivityRecord,
   findBackendActivityForPlan,
   mergeBackendAndSavedActivityRecords,
@@ -317,6 +318,10 @@ export function OfficerProjectsView({
               (ba.plan as any)?.projectId ||
               ba.plan?.project?.id ||
               "";
+            const belongsToSelectedPlan =
+              Boolean(selectedPlanReference) &&
+              ba.planId?.toLowerCase().trim() ===
+                selectedPlanReference?.toLowerCase().trim();
             const assignedIds = new Set(
               assignedProjList.map((p) => p.id).filter(Boolean),
             );
@@ -324,6 +329,7 @@ export function OfficerProjectsView({
               assignedProjList.map((p) => p.code.toLowerCase()),
             );
             return (
+              belongsToSelectedPlan ||
               (projCode && assignedCodes.has(projCode.toLowerCase())) ||
               (projId && assignedIds.has(projId)) ||
               Boolean(ba.planId && parentPlan)
@@ -350,7 +356,7 @@ export function OfficerProjectsView({
         setIsLoadingData(false);
       }
     }
-  }, [effectiveUser]);
+  }, [effectiveUser, selectedPlanReference]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -426,8 +432,11 @@ export function OfficerProjectsView({
               return false;
             }
             const pCode = (rec.projectCode || "").toLowerCase().trim();
-            if (pCode !== projCode && pCode !== projId) return false;
             const rRef = (rec.planReference || "").toLowerCase().trim();
+            if (planId && activityRecordBelongsToPlanId(rec, planId)) {
+              return true;
+            }
+            if (pCode !== projCode && pCode !== projId) return false;
             return (
               (planId && rRef === planId) ||
               (planRef && rRef === planRef) ||
@@ -582,19 +591,21 @@ export function OfficerProjectsView({
           recProj === selCode ||
           (selShort && recProj === selShort) ||
           (selId && recProj === selId);
-
-        if (!matchesProject) return false;
-
         const recPlan = (record.planReference || "").toLowerCase().trim();
         const bpId = (matchingBackendPlan?.id || "").toLowerCase().trim();
 
         // Must strictly belong to this plan by unique ID or unique reference
-        const matchesPlan =
+        const matchesPlanById =
+          (normId && activityRecordBelongsToPlanId(record, normId)) ||
+          (bpId && activityRecordBelongsToPlanId(record, bpId));
+        const matchesPlanByReference =
           (normId && recPlan === normId) ||
           (normRef && recPlan === normRef) ||
           (bpId && recPlan === bpId);
 
-        if (!matchesPlan) return false;
+        if (!matchesPlanById && !(matchesProject && matchesPlanByReference)) {
+          return false;
+        }
 
         return true;
       })
