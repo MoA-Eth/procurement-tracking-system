@@ -327,7 +327,7 @@ export function OfficerProcurementActivityDetailView({
                   Return
                 </span>
               )}
-              {isMultiOfficerProject && activity.createdByName && (
+              {activity.createdByName && (
                 <>
                   <span aria-hidden="true" className="text-slate-300">
                     •
@@ -484,7 +484,7 @@ export function OfficerProcurementActivityDetailView({
                   : "Not assigned"
               }
             />
-            {isMultiOfficerProject && activity.createdByName && (
+            {activity.createdByName && (
               <DetailItem
                 label="Activity Created By"
                 value={activity.createdByName}

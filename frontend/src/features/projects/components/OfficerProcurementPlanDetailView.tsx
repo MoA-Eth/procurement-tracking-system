@@ -1395,7 +1395,6 @@ export function OfficerProcurementPlanDetailView({
                           (activity.status === "Draft" ||
                             (activity.status as string) === "DRAFT")
                         }
-                        isMultiOfficer={isMultiOfficerProject}
                         onSelectDelay={handleSelectActivityDelay}
                         onDeleteDraft={onDeleteDraftActivity}
                         editHref={
@@ -1920,7 +1919,6 @@ function ActivityRow({
   canDeleteDraft = false,
   editHref,
   href,
-  isMultiOfficer = false,
   onSelectDelay,
   onDeleteDraft,
   registerContractHref,
@@ -1932,7 +1930,6 @@ function ActivityRow({
   canDeleteDraft?: boolean;
   editHref: string;
   href: string;
-  isMultiOfficer?: boolean;
   onSelectDelay?: (activity: PlanActivity) => void;
   onDeleteDraft?: (activity: PlanActivity) => Promise<void>;
   registerContractHref?: string;
@@ -1995,8 +1992,9 @@ function ActivityRow({
       </td>
       <td className="px-2 py-2.5 align-top text-[10px] font-medium leading-4 text-slate-700 wrap-break-word">
         <p className="wrap-break-word line-clamp-2">{activity.description}</p>
-        {isMultiOfficer &&
-          (activity.createdByName || activity.updatedByName) && (
+        {(activity.createdByName ||
+          (activity.updatedByName &&
+            activity.updatedByName !== activity.createdByName)) && (
             <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[9px] text-slate-400">
               {activity.createdByName && (
                 <span>

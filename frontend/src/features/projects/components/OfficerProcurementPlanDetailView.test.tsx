@@ -342,6 +342,29 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).not.toContain('role="dialog"');
   });
 
+  it("shows activity creator names in the plan activity list for one-officer projects", () => {
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={{
+          ...mockPlan,
+          planActivities: [
+            {
+              ...sampleActivity,
+              createdByName: "Yeabsira Fikre",
+              updatedByName: "Abebe Kebede",
+            },
+          ],
+        }}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).toContain("Created by");
+    expect(markup).toContain("Yeabsira Fikre");
+    expect(markup).toContain("Edited by");
+    expect(markup).toContain("Abebe Kebede");
+  });
+
   it("allows superusers to edit and delete draft activities created by others", () => {
     const draftPlan: ProcurementPlanSummary = {
       ...mockPlan,

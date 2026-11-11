@@ -225,7 +225,7 @@ describe("OfficerProcurementActivityDetailView", () => {
     expect(markup).toContain("Activity Tracker");
   });
 
-  it("does not show creator or editor attribution for single-officer project", () => {
+  it("shows activity creator attribution for a single-officer project", () => {
     const activityWithMeta: ProcurementActivitySummary = {
       ...detailedActivity,
       createdByName: "Yeabsira Fikre",
@@ -239,7 +239,8 @@ describe("OfficerProcurementActivityDetailView", () => {
       />,
     );
 
-    expect(markup).not.toContain("Created by:");
+    expect(markup).toContain("Created by:");
+    expect(markup).toContain("Yeabsira Fikre");
     expect(markup).not.toContain("Last edited by:");
   });
 

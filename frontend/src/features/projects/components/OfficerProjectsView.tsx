@@ -223,14 +223,15 @@ export function OfficerProjectsView({
     SavedOfficerActivityRecord[]
   >([]);
   const [isLoadingData, setIsLoadingData] = useState(
-    () => !getCachedProjects(),
+    () => !getCachedProjects()?.length,
   );
+  const hasLoadedDataRef = useRef(Boolean(getCachedProjects()?.length));
   const loadDataRequestRef = useRef(0);
 
   const loadData = useCallback(async () => {
     const requestId = ++loadDataRequestRef.current;
     try {
-      if (backendProjects.length === 0) {
+      if (!hasLoadedDataRef.current) {
         setIsLoadingData(true);
       }
       const [projData, planData, actData, selectedPlanActivitiesData] =
@@ -378,6 +379,7 @@ export function OfficerProjectsView({
       console.warn("loadData officer view note:", err);
     } finally {
       if (requestId === loadDataRequestRef.current) {
+        hasLoadedDataRef.current = true;
         setIsLoadingData(false);
       }
     }
