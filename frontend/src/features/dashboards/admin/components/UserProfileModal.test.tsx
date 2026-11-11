@@ -38,6 +38,31 @@ describe("UserProfileModal - Role Display & Management", () => {
     expect(markup).toContain("Active &amp; Verified");
   });
 
+  it("renders Finance Officer role display cleanly for FINANCE users", () => {
+    const financeUser: ApiUser = {
+      ...managementUser,
+      id: "u-fin-1",
+      name: "Finance Officer",
+      displayName: "Finance Officer",
+      email: "finance@moa.gov.et",
+      username: "finance",
+      role: "FINANCE",
+      authRole: "FINANCE",
+    };
+
+    const markup = renderToStaticMarkup(
+      <UserProfileModal
+        user={financeUser}
+        isOpen={true}
+        onClose={() => {}}
+        onUserUpdated={() => {}}
+      />,
+    );
+
+    expect(markup).toContain("Finance Officer");
+    expect(markup).toContain("finance@moa.gov.et");
+  });
+
   it("does not render when closed or user is null", () => {
     const markupClosed = renderToStaticMarkup(
       <UserProfileModal

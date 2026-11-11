@@ -12,6 +12,7 @@ const roles: ProvisionableRole[] = [
   "MANAGEMENT",
   "EXECUTIVE",
   "ADMIN",
+  "FINANCE",
   "SUPERUSER",
 ];
 

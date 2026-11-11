@@ -42,6 +42,7 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
   Administrator: "Administrator",
   EndorsingCommittee: "Endorsement Committee",
   ManagementTeam: "Executive",
+  FinanceOfficer: "Finance Officer",
   ProjectManager: "Project Manager",
 };
 

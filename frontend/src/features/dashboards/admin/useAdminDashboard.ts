@@ -142,6 +142,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
     let directorsCount = 0;
     let committeeCount = 0;
     let managementTeamCount = 0;
+    let financeCount = 0;
     let adminsCount = 0;
 
     for (const u of users) {
@@ -155,6 +156,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
       else if (normalized === "DIRECTOR") directorsCount++;
       else if (normalized === "ENDORSING_COMMITTEE") committeeCount++;
       else if (normalized === "MANAGEMENT") managementTeamCount++;
+      else if (normalized === "FINANCE") financeCount++;
       else if (normalized === "ADMIN" || normalized === "SUPERUSER")
         adminsCount++;
     }
@@ -169,6 +171,7 @@ export function useAdminDashboard(currentUser: AuthUser) {
       directorsCount,
       committeeCount,
       managementTeamCount,
+      financeCount,
       adminsCount,
     };
   }, [totalUserCount, users, statusVersion]);

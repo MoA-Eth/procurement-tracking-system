@@ -79,7 +79,20 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
   Administrator: "Administrator",
   EndorsingCommittee: "Endorsement Committee",
   ManagementTeam: "Executive",
+  FinanceOfficer: "Finance Officer",
   ProjectManager: "Project Manager",
+};
+
+const ROLE_FILTER_MAP: Record<string, string | undefined> = {
+  ALL: undefined,
+  OFFICER: "ProcurementOfficer",
+  DIRECTOR: "ProcurementDirector",
+  ENDORSING_COMMITTEE: "EndorsingCommittee",
+  MANAGEMENT: "ManagementTeam",
+  EXECUTIVE: "EXECUTIVE",
+  FINANCE: "FINANCE",
+  ADMIN: "Administrator",
+  SUPERUSER: "SUPERUSER",
 };
 
 function displayRole(user: ApiUser): string {
@@ -406,17 +419,6 @@ export function UserManagementView({
   // ─── Fetch Users ────────────────────────────────────────────────────────
   const loadUsers = useCallback(async () => {
     try {
-      const roleFilterMap: Record<string, string | undefined> = {
-        ALL: undefined,
-        OFFICER: "ProcurementOfficer",
-        DIRECTOR: "ProcurementDirector",
-        ENDORSING_COMMITTEE: "EndorsingCommittee",
-        MANAGEMENT: "ManagementTeam",
-        EXECUTIVE: "EXECUTIVE",
-        ADMIN: "Administrator",
-        SUPERUSER: "SUPERUSER",
-      };
-
       const isRestrictedFilter =
         selectedStatus === "Deactivated" ||
         selectedStatus === "Deleted" ||
@@ -434,7 +436,7 @@ export function UserManagementView({
         page: currentPage,
         pageSize: PAGE_SIZE,
         search: searchQuery || undefined,
-        role: roleFilterMap[selectedRole],
+        role: ROLE_FILTER_MAP[selectedRole],
         isActive: isActiveParam,
       });
       setUsersResponse((prev) => {
@@ -467,17 +469,6 @@ export function UserManagementView({
   useEffect(() => {
     let active = true;
 
-    const roleFilterMap: Record<string, string | undefined> = {
-      ALL: undefined,
-      OFFICER: "ProcurementOfficer",
-      DIRECTOR: "ProcurementDirector",
-      ENDORSING_COMMITTEE: "EndorsingCommittee",
-      MANAGEMENT: "ManagementTeam",
-      EXECUTIVE: "EXECUTIVE",
-      ADMIN: "Administrator",
-      SUPERUSER: "SUPERUSER",
-    };
-
     const isRestrictedFilter =
       selectedStatus === "Deactivated" ||
       selectedStatus === "Deleted" ||
@@ -495,7 +486,7 @@ export function UserManagementView({
       page: currentPage,
       pageSize: PAGE_SIZE,
       search: searchQuery || undefined,
-      role: roleFilterMap[selectedRole],
+      role: ROLE_FILTER_MAP[selectedRole],
       isActive: isActiveParam,
     })
       .then((result) => {
@@ -1181,6 +1172,9 @@ export function UserManagementView({
                   <option value="EXECUTIVE">
                     Executive (Executive Dashboard &amp; Reports only)
                   </option>
+                  <option value="FINANCE">
+                    Finance Officer (Disbursements &amp; SMS Alerts)
+                  </option>
                   <option value="ADMIN">
                     Administrator (System Administration / Governance)
                   </option>
@@ -1312,6 +1306,7 @@ export function UserManagementView({
                   </option>
                   <option value="MANAGEMENT">Executive Management</option>
                   <option value="EXECUTIVE">Executive</option>
+                  <option value="FINANCE">Finance Officer</option>
                   <option value="ADMIN">Administrator</option>
                   <option value="SUPERUSER">Superuser</option>
                 </select>

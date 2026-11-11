@@ -46,6 +46,7 @@ const PRISMA_ROLE_LABELS: Record<string, string> = {
   Administrator: "Administrator",
   EndorsingCommittee: "Endorsement Committee",
   ManagementTeam: "Executive",
+  FinanceOfficer: "Finance Officer",
   ProjectManager: "Project Manager",
 };
 
@@ -89,6 +90,11 @@ const AVAILABLE_ROLES: {
     role: "EXECUTIVE",
     label: "Executive",
     desc: "Access to the Executive Dashboard and procurement reports only.",
+  },
+  {
+    role: "FINANCE",
+    label: "Finance Officer",
+    desc: "Record disbursements, monitor payments, and configure high-value SMS alert settings.",
   },
   {
     role: "ADMIN",

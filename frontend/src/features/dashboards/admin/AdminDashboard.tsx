@@ -76,6 +76,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
           return normalized === "ENDORSING_COMMITTEE";
         if (selectedRoleFilter === "Executive")
           return normalized === "MANAGEMENT";
+        if (selectedRoleFilter === "Finance") return normalized === "FINANCE";
         if (selectedRoleFilter === "Administrator")
           return normalized === "ADMIN" || normalized === "SUPERUSER";
         if (selectedRoleFilter === "Superuser")
@@ -274,6 +275,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
               metrics.directorsCount +
               metrics.committeeCount +
               metrics.managementTeamCount +
+              metrics.financeCount +
               metrics.adminsCount;
 
             const roles = [
@@ -304,6 +306,13 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                 count: metrics.managementTeamCount,
                 color: "#9333ea",
                 dotBg: "bg-purple-600",
+              },
+              {
+                name: "Finance Officers",
+                filter: "Finance",
+                count: metrics.financeCount,
+                color: "#0284c7",
+                dotBg: "bg-sky-600",
               },
               {
                 name: "Administrators",
@@ -517,9 +526,11 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                               ? "Officers"
                               : selectedRoleFilter === "Director"
                                 ? "Directors"
-                                : selectedRoleFilter === "Administrator"
-                                  ? "Administrators"
-                                  : selectedRoleFilter
+                                : selectedRoleFilter === "Finance"
+                                  ? "Finance Officers"
+                                  : selectedRoleFilter === "Administrator"
+                                    ? "Administrators"
+                                    : selectedRoleFilter
                       }`
                     : selectedStatusFilter === "ACTIVE"
                       ? "Active Accounts"

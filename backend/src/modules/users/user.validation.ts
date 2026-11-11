@@ -16,6 +16,9 @@ const roleValues = [
   'EXECUTIVE',
   'ADMIN',
   'ADMINISTRATOR',
+  'FINANCE',
+  'FinanceOfficer',
+  'FINANCE_OFFICER',
   'SUPERUSER',
 ] as const;
 
