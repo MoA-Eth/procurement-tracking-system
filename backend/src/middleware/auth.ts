@@ -179,6 +179,7 @@ const ROLE_EQUIVALENTS: Record<string, string[]> = {
   ManagementTeam: ['MANAGEMENT', 'ManagementTeam', 'ENDORSING_COMMITTEE'],
 
   ENDORSING_COMMITTEE: ['ENDORSING_COMMITTEE', 'MANAGEMENT', 'ManagementTeam'],
+  FINANCE: ['FINANCE'],
   ProjectManager: [
     'ProjectManager',
     'DIRECTOR',

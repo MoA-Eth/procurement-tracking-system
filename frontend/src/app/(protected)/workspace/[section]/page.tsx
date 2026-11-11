@@ -74,6 +74,14 @@ const SettingsManagementView = dynamicImport(
   () => import("@/features/settings/SettingsManagementView").then((m) => m.SettingsManagementView),
   { loading: () => <SectionLoadingFallback /> }
 );
+const DisbursementsListView = dynamicImport(
+  () => import("@/features/finance/components/DisbursementsListView").then((m) => m.DisbursementsListView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const FinanceSettingsView = dynamicImport(
+  () => import("@/features/finance/components/FinanceSettingsView").then((m) => m.FinanceSettingsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
 import { PanelsTopLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { ROLE_LABELS, normalizeUserRole } from "../../../../lib/authTypes";
@@ -203,6 +211,14 @@ export default async function WorkspaceSectionPage({
 
   if (section === "settings") {
     return <SettingsManagementView currentUser={session.user} />;
+  }
+
+  if (section === "finance-disbursements") {
+    return <DisbursementsListView currentUser={session.user} />;
+  }
+
+  if (section === "finance-settings") {
+    return <FinanceSettingsView currentUser={session.user} />;
   }
 
   if (section === "projects" && userRole === "SUPERUSER") {

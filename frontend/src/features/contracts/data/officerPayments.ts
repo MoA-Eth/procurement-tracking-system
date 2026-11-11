@@ -21,6 +21,7 @@ export interface OfficerContractPayment {
   paymentType: ContractPaymentType;
   reference?: string;
   remarks?: string;
+  paymentMethod?: "BANK_TRANSFER" | "CHEQUE_CPO" | "CASH";
 }
 
 export function addSavedPayment(

@@ -13,7 +13,8 @@ export type NavigationIconName =
   | "reports"
   | "settings"
   | "sliders"
-  | "users";
+  | "users"
+  | "finance";
 
 export interface NavigationItem {
   label: string;
@@ -171,6 +172,24 @@ const workspaceSections = {
       "Manage project short codes, acronyms and system lookup configurations.",
     allowedRoles: ["DIRECTOR", "ADMIN"],
   },
+  "finance-disbursements": {
+    section: "finance-disbursements",
+    label: "Finance Disbursements",
+    href: "/workspace/finance-disbursements",
+    icon: "finance",
+    description:
+      "Record and monitor high-value ministry disbursements with executive SMS alerts.",
+    allowedRoles: ["FINANCE", "ADMIN"],
+  },
+  "finance-settings": {
+    section: "finance-settings",
+    label: "Settings",
+    href: "/workspace/finance-settings",
+    icon: "settings",
+    description:
+      "Configure SMS gateway credentials, high-value alert threshold, and manage subscribers.",
+    allowedRoles: ["FINANCE", "ADMIN"],
+  },
 } as const satisfies Record<string, WorkspaceSection>;
 
 type WorkspaceSectionKey = keyof typeof workspaceSections;
@@ -207,7 +226,13 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "amendment-requests",
     "my-decisions",
   ],
-  ADMIN: ["user-management", "system-logs"],
+  ADMIN: [
+    "user-management",
+    "system-logs",
+    "finance-disbursements",
+    "finance-settings",
+  ],
+  FINANCE: ["finance-disbursements", "finance-settings"],
   SUPERUSER: [
     "executive-dashboard",
     "projects",
@@ -221,11 +246,19 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "user-management",
     "system-logs",
     "notifications",
+    "finance-disbursements",
+    "finance-settings",
   ],
 };
 
 export function getNavigationForRole(role: UserRole): NavigationItem[] {
   const normRole = normalizeUserRole(role);
+  if (normRole === "FINANCE") {
+    return [
+      workspaceSections["finance-disbursements"],
+      workspaceSections["finance-settings"],
+    ];
+  }
   const sections = roleSectionOrder[role] || roleSectionOrder[normRole] || [];
   return [
     ...sections

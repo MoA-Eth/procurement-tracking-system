@@ -33,6 +33,7 @@ interface PaymentFormState {
   paymentType: ContractPaymentType | "";
   otherPaymentType: string;
   reference: string;
+  paymentMethod: "BANK_TRANSFER" | "CHEQUE_CPO" | "CASH";
   remarks: string;
 }
 
@@ -69,6 +70,7 @@ export function AddContractPaymentView({
     paymentType: "",
     otherPaymentType: "",
     reference: "",
+    paymentMethod: "BANK_TRANSFER",
     remarks: "",
   });
   const contractTotalPaid = Number(contract.totalPaid) || 0;
@@ -133,6 +135,7 @@ export function AddContractPaymentView({
         form.paymentType === "Other" ? form.otherPaymentType.trim() : undefined,
       paymentType: form.paymentType,
       reference: form.reference.trim() || undefined,
+      paymentMethod: form.paymentMethod,
       remarks: form.remarks.trim() || undefined,
     });
   }
@@ -335,6 +338,29 @@ export function AddContractPaymentView({
                     placeholder="Optional reference"
                     value={form.reference}
                   />
+                </Field>
+
+                <Field
+                  hint="Payment instrument used for this disbursement."
+                  label="Payment Method · የክፍያ ዘዴ"
+                >
+                  <select
+                    className={inputClasses}
+                    value={form.paymentMethod}
+                    onChange={(event) =>
+                      updateField(
+                        "paymentMethod",
+                        event.target.value as
+                          | "BANK_TRANSFER"
+                          | "CHEQUE_CPO"
+                          | "CASH",
+                      )
+                    }
+                  >
+                    <option value="BANK_TRANSFER">Bank Transfer (የባንክ ዝውውር)</option>
+                    <option value="CHEQUE_CPO">Cheque / CPO (ቼክ / ሲፒኦ)</option>
+                    <option value="CASH">Cash (ጥሬ ገንዘብ)</option>
+                  </select>
                 </Field>
 
                 <Field

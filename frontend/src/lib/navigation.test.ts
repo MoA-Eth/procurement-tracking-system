@@ -48,7 +48,17 @@ describe("role navigation permission matrix", () => {
       "ENDORSING_COMMITTEE",
       ["Dashboard", "Plan for Review", "Amendment Requests", "My Decisions"],
     ],
-    ["ADMIN", ["Dashboard", "User Management", "System Logs (Timestamp)"]],
+    [
+      "ADMIN",
+      [
+        "Dashboard",
+        "User Management",
+        "System Logs (Timestamp)",
+        "Finance Disbursements",
+        "Settings",
+      ],
+    ],
+    ["FINANCE", ["Finance Disbursements", "Settings"]],
     [
       "SUPERUSER",
       [
@@ -65,6 +75,8 @@ describe("role navigation permission matrix", () => {
         "User Management",
         "System Logs (Timestamp)",
         "Notifications",
+        "Finance Disbursements",
+        "Settings",
       ],
     ],
   ] as const)("shows only %s menu items", (role, labels) => {
@@ -74,6 +86,18 @@ describe("role navigation permission matrix", () => {
   });
 
   it("enforces shared and role-only workspace access", () => {
+    expect(canAccessWorkspaceSection("FINANCE", "finance-disbursements")).toBe(
+      true,
+    );
+    expect(canAccessWorkspaceSection("ADMIN", "finance-disbursements")).toBe(
+      true,
+    );
+    expect(canAccessWorkspaceSection("OFFICER", "finance-disbursements")).toBe(
+      false,
+    );
+    expect(canAccessWorkspaceSection("FINANCE", "finance-settings")).toBe(true);
+    expect(canAccessWorkspaceSection("ADMIN", "finance-settings")).toBe(true);
+    expect(canAccessWorkspaceSection("OFFICER", "finance-settings")).toBe(false);
     expect(canAccessWorkspaceSection("ADMIN", "executive-dashboard")).toBe(
       false,
     );
@@ -119,6 +143,8 @@ describe("role navigation permission matrix", () => {
       "system-logs",
       "notifications",
       "settings",
+      "finance-disbursements",
+      "finance-settings",
     ]) {
       expect(canAccessWorkspaceSection("SUPERUSER", section)).toBe(true);
     }

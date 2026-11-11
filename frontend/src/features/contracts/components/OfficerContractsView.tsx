@@ -327,10 +327,28 @@ export function OfficerContractsView({
 
     // Async backend payment creation
     try {
+      const mappedType =
+        payment.paymentType === "Advance"
+          ? "ADVANCE"
+          : payment.paymentType === "1st / Interim"
+            ? "INTERIM_1"
+            : payment.paymentType === "2nd / Interim"
+              ? "INTERIM_2"
+              : payment.paymentType === "Final"
+                ? "FINAL"
+                : payment.paymentType === "Retention Payment"
+                  ? "RETENTION_PAYMENT"
+                  : payment.paymentType === "Retention Withholding"
+                    ? "RETENTION_WITHHOLDING"
+                    : "OTHER";
+
       await recordContractPayment(payment.contractNumber || "contract-id", {
         amount: payment.amount,
         referenceNo: payment.reference || `VOU-${Date.now()}`,
         idempotencyKey: `pay-${Date.now()}`,
+        paymentMethod: payment.paymentMethod || "BANK_TRANSFER",
+        paymentType: mappedType,
+        remarks: payment.remarks || null,
       });
     } catch (err) {
       console.warn("Backend recordContractPayment note:", err);

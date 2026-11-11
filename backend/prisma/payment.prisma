@@ -1,8 +1,8 @@
 model Payment {
-  id             String       @id @default(uuid())
-  contractId     String
-  contract       Contract     @relation(fields: [contractId], references: [id])
-  amount         Decimal      @db.Decimal(15, 2)
+  id             String        @id @default(uuid())
+  contractId     String?
+  contract       Contract?     @relation(fields: [contractId], references: [id])
+  amount         Decimal       @db.Decimal(15, 2)
   paymentDate    DateTime
   referenceNo    String
   paymentType    PaymentType? // nullable so existing rows are unaffected; required at API layer for new payments
@@ -12,9 +12,45 @@ model Payment {
   deletedAt      DateTime?
   createdAt      DateTime      @default(now())
 
+  // Finance Disbursement & SMS Notification fields
+  payeeName      String?
+  category       String?
+  paymentMethod  String?
+  createdById    String?
+  creator        User?         @relation("PaymentCreator", fields: [createdById], references: [id])
+  smsTriggered   Boolean       @default(false)
+  smsStatus      String?
+  smsLogs        SmsLog[]
+
   @@index([contractId])
   @@index([paymentDate])
   @@index([status])
   @@index([paymentType])
+  @@index([createdById])
 }
+
+model SmsLog {
+  id              String   @id @default(uuid())
+  paymentId       String?
+  payment         Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  recipientPhone  String
+  recipientName   String?
+  message         String
+  status          String   @default("PENDING") // SENT, FAILED, PENDING
+  gatewayResponse String?
+  errorMessage    String?
+  sentAt          DateTime @default(now())
+
+  @@index([paymentId])
+  @@index([status])
+  @@index([sentAt])
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 

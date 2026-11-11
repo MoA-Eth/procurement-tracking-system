@@ -34,6 +34,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   MANAGEMENT: "Executive Management",
   EXECUTIVE: "Executive",
   ADMIN: "Administrator",
+  FINANCE: "Finance Officer",
   SUPERUSER: "Superuser",
 };
 
@@ -44,6 +45,7 @@ export const ROLE_SLUGS: Record<UserRole, string> = {
   MANAGEMENT: "management",
   EXECUTIVE: "executive",
   ADMIN: "admin",
+  FINANCE: "finance",
   SUPERUSER: "superuser",
 };
 
@@ -54,6 +56,7 @@ const ROLE_MAP: Record<string, UserRole> = {
   MANAGEMENT: "MANAGEMENT",
   EXECUTIVE: "EXECUTIVE",
   ADMIN: "ADMIN",
+  FINANCE: "FINANCE",
   SUPERUSER: "SUPERUSER",
   // Prisma/backend aliases safely normalized to standard roles
   PROCUREMENTOFFICER: "OFFICER",
@@ -76,6 +79,9 @@ export function normalizeUserRole(role: string): UserRole {
 
 export function dashboardPath(role: string): string {
   const norm = normalizeUserRole(role);
+  if (norm === "FINANCE") {
+    return "/workspace/finance-disbursements";
+  }
   return `/dashboard/${ROLE_SLUGS[norm] || "officer"}`;
 }
 

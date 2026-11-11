@@ -167,6 +167,9 @@ const createUserSchema = z.object({
       if (clean === 'ADMIN' || clean === 'ADMINISTRATOR') {
         return UserRole.ADMIN;
       }
+      if (clean === 'FINANCE' || clean === 'FINANCEOFFICER') {
+        return UserRole.FINANCE;
+      }
       if (clean === 'SUPERUSER') {
         return UserRole.SUPERUSER;
       }
@@ -175,7 +178,7 @@ const createUserSchema = z.object({
     .pipe(
       z.nativeEnum(UserRole, {
         message:
-          'Role must be OFFICER, DIRECTOR, ENDORSING_COMMITTEE, MANAGEMENT, EXECUTIVE, ADMIN, or SUPERUSER',
+          'Role must be OFFICER, DIRECTOR, ENDORSING_COMMITTEE, MANAGEMENT, EXECUTIVE, ADMIN, FINANCE, or SUPERUSER',
       }),
     ),
 });
@@ -287,6 +290,7 @@ async function deliverUserInvitation(values: {
     [UserRole.MANAGEMENT]: 'Management Team',
     [UserRole.EXECUTIVE]: 'Executive',
     [UserRole.ADMIN]: 'System Administrator',
+    [UserRole.FINANCE]: 'Finance Officer',
     [UserRole.SUPERUSER]: 'Superuser',
   };
 

@@ -34,6 +34,11 @@ export const DASHBOARD_HEADINGS: Record<
     description:
       "Manage authorized users and review timestamped authentication activity.",
   },
+  FINANCE: {
+    eyebrow: "Finance & disbursements",
+    description:
+      "Record disbursements, monitor ministry payments, and review high-value SMS delivery alerts.",
+  },
   SUPERUSER: {
     eyebrow: "System superuser",
     description:

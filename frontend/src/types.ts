@@ -5,6 +5,7 @@ export type UserRole =
   | "MANAGEMENT"
   | "EXECUTIVE"
   | "ADMIN"
+  | "FINANCE"
   | "SUPERUSER";
 
 export type UserStatus = "INVITED" | "ACTIVE" | "INACTIVE";

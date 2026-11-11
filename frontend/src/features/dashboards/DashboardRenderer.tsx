@@ -39,6 +39,13 @@ const ExecutiveOverviewDashboard = dynamic(
   () => import("../executive-dashboard/ExecutiveDashboard").then((m) => m.ExecutiveDashboard),
   { loading: () => <DashboardLoadingFallback /> }
 );
+const DisbursementsListView = dynamic(
+  () =>
+    import("@/features/finance/components/DisbursementsListView").then(
+      (m) => m.DisbursementsListView
+    ),
+  { loading: () => <DashboardLoadingFallback /> }
+);
 
 export function DashboardRenderer({ user }: { user: AuthUser }) {
   switch (user.role) {
@@ -55,5 +62,7 @@ export function DashboardRenderer({ user }: { user: AuthUser }) {
     case "ADMIN":
     case "SUPERUSER":
       return <AdminDashboard user={user} />;
+    case "FINANCE":
+      return <DisbursementsListView currentUser={user} />;
   }
 }

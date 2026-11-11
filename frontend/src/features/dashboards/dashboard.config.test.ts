@@ -11,6 +11,7 @@ describe("dashboard configuration", () => {
       "MANAGEMENT",
       "EXECUTIVE",
       "ADMIN",
+      "FINANCE",
       "SUPERUSER",
     ];
 

@@ -135,6 +135,23 @@ export const createPaymentSchema = registry.register(
       .min(1, 'Idempotency key is required')
       .openapi({ example: 'idemp-uuid-123' }),
     paymentDate: z.coerce.date().optional(),
+    paymentType: z
+      .enum([
+        'ADVANCE',
+        'INTERIM_1',
+        'INTERIM_2',
+        'FINAL',
+        'RETENTION_WITHHOLDING',
+        'RETENTION_PAYMENT',
+        'OTHER',
+      ])
+      .optional()
+      .nullable(),
+    paymentMethod: z
+      .enum(['BANK_TRANSFER', 'CHEQUE_CPO', 'CASH'])
+      .optional()
+      .nullable(),
+    remarks: z.string().max(1000).optional().nullable(),
   }),
 );
 

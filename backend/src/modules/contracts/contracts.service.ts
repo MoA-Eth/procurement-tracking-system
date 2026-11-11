@@ -238,9 +238,10 @@ export class ContractsService {
     data: CreatePaymentDto,
     userId?: string,
   ) {
-    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const payment = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const contract = await tx.contract.findUnique({
         where: { id: contractId },
+        include: { supplier: true },
       });
 
       if (!contract) {
@@ -261,13 +262,27 @@ export class ContractsService {
         );
       }
 
-      const payment = await tx.payment.create({
+      const supplierName = contract.supplier?.name;
+      const category =
+        contract.sector?.toUpperCase().includes('WORK') ||
+        contract.sector?.toUpperCase().includes('CONSTRUCT')
+          ? 'CONTRACTOR_WORKS'
+          : 'PROCUREMENT_GOODS';
+
+      const createdPayment = await tx.payment.create({
         data: {
           contractId,
           amount: data.amount,
           referenceNo: data.referenceNo,
           idempotencyKey: data.idempotencyKey,
           paymentDate: data.paymentDate ?? new Date(),
+          payeeName: supplierName || null,
+          category,
+          paymentMethod: data.paymentMethod ?? 'BANK_TRANSFER',
+          paymentType: data.paymentType ?? null,
+          remarks: data.remarks ?? null,
+          createdById: userId ?? null,
+          status: 'PAID',
         },
       });
 
@@ -284,7 +299,7 @@ export class ContractsService {
           userId: userId ?? null,
           action: 'PAYMENT_ADDED',
           entityType: 'PAYMENT',
-          entityId: payment.id,
+          entityId: createdPayment.id,
           changes: {
             contractNo: contract.contractNo,
             amount: data.amount,
@@ -298,8 +313,23 @@ export class ContractsService {
         tx,
       );
 
-      return payment;
+      return createdPayment;
     });
+
+    // Check high-value SMS alert trigger
+    try {
+      const { getSmsSettings, dispatchSms } = await import(
+        '../finance/finance.service.js'
+      );
+      const settings = await getSmsSettings();
+      if (settings.smsEnabled && data.amount >= settings.thresholdEtb) {
+        setImmediate(() => dispatchSms(payment.id));
+      }
+    } catch {
+      // SMS dispatch non-blocking
+    }
+
+    return payment;
   }
 
   async getContractById(id: string) {
