@@ -122,6 +122,25 @@ const detailedActivity: ProcurementActivitySummary = {
 };
 
 describe("OfficerProcurementActivityDetailView", () => {
+  it("shows a returned activity as a draft with its return marker and version", () => {
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementActivityDetailView
+        activity={{
+          ...detailedActivity,
+          status: "Draft",
+          returnedForRevision: true,
+          version: 2,
+        }}
+        plan={plan}
+        project={project}
+      />,
+    );
+
+    expect(markup).toContain("Draft");
+    expect(markup).toContain("Return");
+    expect(markup).toContain("v2");
+  });
+
   it("shows every saved wizard section and its entered values", () => {
     const markup = renderToStaticMarkup(
       <OfficerProcurementActivityDetailView
@@ -206,7 +225,7 @@ describe("OfficerProcurementActivityDetailView", () => {
     expect(markup).toContain("Activity Tracker");
   });
 
-  it("does not show creator or editor attribution for single-officer project", () => {
+  it("shows activity creator attribution for a single-officer project", () => {
     const activityWithMeta: ProcurementActivitySummary = {
       ...detailedActivity,
       createdByName: "Yeabsira Fikre",
@@ -220,7 +239,8 @@ describe("OfficerProcurementActivityDetailView", () => {
       />,
     );
 
-    expect(markup).not.toContain("Created by:");
+    expect(markup).toContain("Created by:");
+    expect(markup).toContain("Yeabsira Fikre");
     expect(markup).not.toContain("Last edited by:");
   });
 

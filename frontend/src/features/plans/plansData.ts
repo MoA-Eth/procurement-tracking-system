@@ -36,6 +36,8 @@ export interface ProcurementPlan {
   approvalDate?: string;
   generalNoticeDate?: string;
   status: PlanStatus;
+  version?: number;
+  returnedForRevision?: boolean;
   createdBy: string;
   assignedOfficer?: string;
   createdAt: string;

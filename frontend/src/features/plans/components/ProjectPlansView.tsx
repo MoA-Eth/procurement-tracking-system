@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
+import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
@@ -137,6 +142,14 @@ export function ProjectPlansView({
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
+  const {
+    pageItems: paginatedPlans,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(filteredPlans, 15);
 
   // FULL PAGE VIEW: DIRECTOR PLAN REVIEW (Strictly Read-Only, Matching Screenshot 1-to-1)
   if (readOnlyPlan) {
@@ -474,7 +487,7 @@ export function ProjectPlansView({
 
       {/* 4. Tabular View of Procurement Plans */}
       <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <HorizontalTableScroller label="Procurement plans">
           <table className="w-full text-left border-collapse min-w-[1080px]">
             <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
               <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -504,7 +517,7 @@ export function ProjectPlansView({
                   </td>
                 </tr>
               ) : (
-                filteredPlans.map((plan, index) => {
+                paginatedPlans.map((plan, index) => {
                   const catStyle =
                     CATEGORY_BADGES[plan.category] || CATEGORY_BADGES.Goods;
                   const statusStyle =
@@ -635,7 +648,15 @@ export function ProjectPlansView({
               )}
             </tbody>
           </table>
-        </div>
+        </HorizontalTableScroller>
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalItems={filteredPlans.length}
+          setPage={setPage}
+        />
       </div>
     </div>
   );

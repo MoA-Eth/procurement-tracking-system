@@ -1,11 +1,258 @@
 import { describe, expect, it } from 'vitest';
 import {
   classifyItemType,
+  executiveRegisterColumns,
+  executiveRegisterDate,
+  executiveRegisterRow,
+  executiveDashboardCharts,
+  latestReachedStageLabel,
   milestoneDate,
+  procurementPortfolioStatus,
   reportedProgress,
+  type ExecutiveRecord,
 } from './executive-dashboard.model.js';
 
 describe('executive dashboard source mapping', () => {
+  it.each([
+    ['Bank Approval', 'IN_PROGRESS', 'NOT_STARTED'],
+    ['Draft Bidding Documents', 'IN_PROGRESS', 'BIDDING_DOCUMENT_PREPARATION'],
+    ['Issuance of Bidding Document', 'IN_PROGRESS', 'BID_ADVERTISED'],
+    ['Bid Evaluation Report', 'IN_PROGRESS', 'BID_EVALUATION'],
+    ['Contract Signing', 'IN_PROGRESS', 'CONTRACT_AWARDED'],
+  ])('classifies roadmap stage %s', (label, status, expected) => {
+    expect(
+      procurementPortfolioStatus(
+        'IN_PROGRESS',
+        [{ label, status, isNotApplicable: false }],
+        [],
+      ),
+    ).toBe(expected);
+  });
+  it('uses completion and contract execution status before roadmap stage', () => {
+    const stage = [
+      {
+        label: 'Bid Evaluation',
+        status: 'IN_PROGRESS',
+        isNotApplicable: false,
+      },
+    ];
+    expect(
+      procurementPortfolioStatus('IN_PROGRESS', stage, [
+        {
+          status: 'ACTIVE',
+          signatureDate: new Date(),
+          actualCompletionDate: null,
+        },
+      ]),
+    ).toBe('CONTRACT_DELIVERY');
+    expect(
+      procurementPortfolioStatus('IN_PROGRESS', stage, [
+        {
+          status: 'SIGNED',
+          signatureDate: new Date(),
+          actualCompletionDate: null,
+        },
+      ]),
+    ).toBe('CONTRACT_AWARDED');
+    expect(
+      procurementPortfolioStatus('IN_PROGRESS', stage, [
+        {
+          status: 'ACTIVE',
+          signatureDate: new Date(),
+          actualCompletionDate: new Date(),
+        },
+      ]),
+    ).toBe('COMPLETED');
+  });
+  it('defaults unrecorded roadmap status to bidding-document preparation', () => {
+    expect(procurementPortfolioStatus('PLANNED', [], [])).toBe(
+      'BIDDING_DOCUMENT_PREPARATION',
+    );
+  });
+  it('selects the most recently reached stage using actual dates', () => {
+    expect(
+      latestReachedStageLabel([
+        {
+          label: 'Draft Bidding Documents',
+          status: 'COMPLETED',
+          isNotApplicable: false,
+          actualEndDate: new Date('2026-08-01T00:00:00Z'),
+        },
+        {
+          label: 'Notification of Intention of Award',
+          status: 'COMPLETED',
+          isNotApplicable: false,
+          actualStartDate: new Date('2026-08-15T00:00:00Z'),
+        },
+        {
+          label: 'Contract Completion',
+          status: 'NOT_STARTED',
+          isNotApplicable: false,
+        },
+      ]),
+    ).toBe('Notification of Intention of Award');
+  });
+  it('uses the in-progress stage when no actual dates have been recorded', () => {
+    expect(
+      latestReachedStageLabel([
+        {
+          label: 'Draft Bidding Documents',
+          status: 'COMPLETED',
+          isNotApplicable: false,
+        },
+        {
+          label: 'Receiving Quotations',
+          status: 'IN_PROGRESS',
+          isNotApplicable: false,
+        },
+      ]),
+    ).toBe('Receiving Quotations');
+  });
+  it('uses the first applicable stage when no stage has progress evidence', () => {
+    expect(
+      latestReachedStageLabel([
+        {
+          label: 'Draft Request for Quotations',
+          status: 'NOT_STARTED',
+          isNotApplicable: false,
+        },
+        {
+          label: 'Invitation to Bidders',
+          status: 'NOT_STARTED',
+          isNotApplicable: false,
+        },
+      ]),
+    ).toBe('Draft Request for Quotations');
+  });
+  it('builds chart data from unique activities and the dashboard stage rules', () => {
+    const base: ExecutiveRecord = {
+      id: 'activity:1',
+      activityId: 'activity-1',
+      activityStatus: 'PLANNED',
+      planStatus: 'APPROVED',
+      activityStage: 'Draft Request for Quotations',
+      portfolioStatus: 'BIDDING_DOCUMENT_PREPARATION',
+      contractId: null,
+      reference: 'ACT-001',
+      description: 'Activity',
+      projectId: 'project-1',
+      project: 'Project one',
+      itemType: 'WORKS',
+      sourceCategory: 'Works',
+      estimate: 100,
+      estimateCurrency: 'ETB',
+      currency: 'ETB',
+      invitationDate: null,
+      bidOpeningDate: null,
+      signedDate: null,
+      supplier: null,
+      country: null,
+      initialAmount: null,
+      initialCompletionDate: null,
+      revisedCompletionDate: null,
+      actualCompletionDate: null,
+      complete: null,
+      completionPct: null,
+      status: 'PRE_CONTRACT',
+    };
+    const charts = executiveDashboardCharts([
+      base,
+      { ...base, id: 'contract:1', contractId: 'contract-1' },
+      {
+        ...base,
+        id: 'activity:2',
+        activityId: 'activity-2',
+        planStatus: 'SUBMITTED',
+        activityStage: 'Contract Completion',
+        projectId: 'project-2',
+        project: 'Project two',
+        estimate: 50,
+        estimateCurrency: 'USD',
+      },
+      {
+        ...base,
+        id: 'activity:3',
+        activityId: 'activity-3',
+        activityStage: 'Receive Quotations',
+        portfolioStatus: 'BID_EVALUATION',
+        estimate: 200,
+      },
+      {
+        ...base,
+        id: 'activity:4',
+        activityId: 'activity-4',
+        activityStage: 'Contract Completion',
+        portfolioStatus: 'COMPLETED',
+        projectId: 'project-2',
+        project: 'Project two',
+        estimate: 300,
+      },
+    ]);
+
+    expect(charts.executiveSummary).toEqual({
+      totalActivities: 4,
+      totalProjects: 2,
+      notYetToMarket: 1,
+      inTendering: 2,
+      awardedDelivery: 0,
+      completed: 1,
+    });
+    expect(charts.consolidatedPortfolio).toEqual({
+      totalActivities: 4,
+      statuses: {
+        notStarted: 1,
+        biddingDocumentPreparation: 1,
+        bidAdvertised: 0,
+        bidEvaluation: 1,
+        contractAwarded: 0,
+        contractDelivery: 0,
+        completed: 1,
+      },
+    });
+    expect(charts.projectPortfolio).toHaveLength(2);
+    expect(charts.financialPosition.currencyTotals).toEqual({
+      ETB: 600,
+      USD: 50,
+    });
+    expect(charts.financialPosition.totalEtb).toBe(600);
+    expect(charts.financialPosition.procurementStageTotals).toEqual([
+      { key: 'planning', label: 'Planning & submission', value: 100 },
+      { key: 'tendering', label: 'Tendering & evaluation', value: 200 },
+      { key: 'contracted', label: 'Contracted / implementation', value: 0 },
+      { key: 'completed', label: 'Completed', value: 300 },
+    ]);
+    expect(charts.financialPosition.largestProjects).toEqual([
+      {
+        projectId: 'project-1',
+        project: 'Project one',
+        value: 300,
+        activities: 2,
+      },
+      {
+        projectId: 'project-2',
+        project: 'Project two',
+        value: 300,
+        activities: 1,
+      },
+    ]);
+  });
+  it('ignores not-applicable stages when choosing the latest reached stage', () => {
+    expect(
+      latestReachedStageLabel([
+        {
+          label: 'Receiving Quotations',
+          status: 'IN_PROGRESS',
+          isNotApplicable: false,
+        },
+        {
+          label: 'Contract Completion',
+          status: 'COMPLETED',
+          isNotApplicable: true,
+          actualEndDate: new Date('2026-12-01T00:00:00Z'),
+        },
+      ]),
+    ).toBe('Receiving Quotations');
+  });
   it.each([
     ['Works', 'WORKS'],
     ['Goods', 'GOODS'],
@@ -59,5 +306,70 @@ describe('executive dashboard source mapping', () => {
     expect(reportedProgress(-1)).toBeNull();
     expect(reportedProgress(0)).toBe(0);
     expect(reportedProgress(67.5)).toBe(67.5);
+  });
+
+  it('formats records in the external spreadsheet register column order', () => {
+    const record: ExecutiveRecord = {
+      id: 'contract:1',
+      activityId: 'activity-1',
+      contractId: 'contract-1',
+      reference: 'CTR-001',
+      description: 'Road rehabilitation',
+      projectId: 'project-1',
+      project: 'Roads project',
+      itemType: 'WORKS',
+      sourceCategory: 'Works',
+      estimate: 1250000,
+      estimateCurrency: 'ETB',
+      currency: 'ETB',
+      invitationDate: '2026-03-04T00:00:00.000Z',
+      bidOpeningDate: null,
+      signedDate: '2026-04-15T00:00:00.000Z',
+      supplier: 'ABC Construction',
+      country: 'Ethiopia',
+      initialAmount: 1200000,
+      initialCompletionDate: '2027-04-15T00:00:00.000Z',
+      revisedCompletionDate: null,
+      actualCompletionDate: null,
+      complete: false,
+      completionPct: 67.5,
+      status: 'ACTIVE',
+    };
+
+    expect(executiveRegisterColumns.map(({ key }) => key)).toEqual([
+      'no',
+      'contractRef',
+      'contractDescription',
+      'project',
+      'costEstimate',
+      'invitationDate',
+      'bidOpeningDate',
+      'contractSignedDate',
+      'supplierContractorCountry',
+      'initialContractAmount',
+      'initialContractCompletionDate',
+      'complete',
+      'completionPct',
+    ]);
+    expect(executiveRegisterRow(record, 0)).toEqual({
+      no: 1,
+      contractRef: 'CTR-001',
+      contractDescription: 'Road rehabilitation',
+      project: 'Roads project',
+      costEstimate: '1,250,000.00 ETB',
+      invitationDate: '03/04/2026',
+      bidOpeningDate: '',
+      contractSignedDate: '04/15/2026',
+      supplierContractorCountry: 'ABC Construction, Ethiopia',
+      initialContractAmount: '1,200,000.00 ETB',
+      initialContractCompletionDate: '04/15/2027',
+      complete: 'No',
+      completionPct: '67.5%',
+    });
+  });
+
+  it('returns an empty display date for missing or invalid values', () => {
+    expect(executiveRegisterDate(null)).toBe('');
+    expect(executiveRegisterDate('not-a-date')).toBe('');
   });
 });

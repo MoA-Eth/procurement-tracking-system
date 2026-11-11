@@ -2,6 +2,7 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import { pinoHttp } from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
@@ -17,6 +18,7 @@ import {
 import userRoutes from './modules/users/users.routes.js';
 import projectRoutes from './modules/projects/project.routes.js';
 import planRoutes from './modules/plans/plan.routes.js';
+import amendmentRequestRoutes from './modules/plans/amendment-request.routes.js';
 import activityRoutes from './modules/activities/activity.routes.js';
 import lookupRoutes from './modules/lookups/lookup.routes.js';
 import budgetYearRoutes from './modules/lookups/budgetYear.routes.js';
@@ -30,8 +32,9 @@ import contractsRouter from './modules/contracts/contracts.routes.js';
 import excelRouter from './modules/excel/excel.routes.js';
 import executiveDashboardRouter from './modules/executive-dashboard/executive-dashboard.routes.js';
 import financeRouter from './modules/finance/finance.routes.js';
+import integrationRouter from './modules/integrations/integrations.routes.js';
 
-import { rateLimit } from 'express-rate-limit';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 
 const app = express();
 app.disable('x-powered-by');
@@ -48,7 +51,41 @@ const globalLimiter = rateLimit({
   },
 });
 
+const loginIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 429,
+    message:
+      'Too many authentication attempts from this network, please try again later.',
+  },
+});
+
 const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req) => {
+    const body = req.body as
+      { identifier?: unknown; email?: unknown } | undefined;
+    const identifier =
+      [body?.identifier, body?.email].find(
+        (value): value is string =>
+          typeof value === 'string' && value.trim().length > 0,
+      ) ?? '';
+    const normalizedIdentifier = identifier.trim().toLowerCase();
+    return `${ipKeyGenerator(req.ip ?? '')}:${normalizedIdentifier || 'invalid'}`;
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: 429,
+    message: 'Too many authentication attempts, please try again later.',
+  },
+});
+
+const passwordResetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
@@ -71,7 +108,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
   }),
 );
 app.use(
@@ -80,6 +117,7 @@ app.use(
     crossOriginEmbedderPolicy: false,
   }),
 );
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(pinoHttp({ logger }));
@@ -87,18 +125,30 @@ app.use(pinoHttp({ logger }));
 // Rate limiters — only active in production to avoid blocking local dev
 if (env.NODE_ENV === 'production') {
   app.use(globalLimiter);
-  app.use('/api/auth/login', authLimiter);
-  app.use('/api/auth/forgot-password', authLimiter);
+  app.use('/api/auth/login', loginIpLimiter, authLimiter);
+  app.use('/api/auth/forgot-password', passwordResetLimiter);
 }
 
 // Swagger UI and OpenAPI JSON spec
-app.get(['/api-docs.json', '/api-docs/json', '/openapi.json'], (_req, res) => {
-  res.json(swaggerSpec);
-});
+app.get(
+  [
+    '/api-docs.json',
+    '/api-docs/json',
+    '/openapi.json',
+    '/api/openapi.json',
+  ],
+  (_req, res) => {
+    res.json(swaggerSpec);
+  },
+);
 app.get(['/docs', '/swagger'], (_req, res) => {
-  res.redirect('/api-docs/');
+  res.redirect('/api/docs/');
 });
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use(
+  ['/api-docs', '/api/docs'],
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec),
+);
 
 // Health check routes
 app.get(['/', '/api/health'], (_req, res) => {
@@ -116,6 +166,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/plans', planRoutes);
+app.use('/api/amendment-requests', amendmentRequestRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/lookups', lookupRoutes);
 app.use('/api/budget-years', budgetYearRoutes);
@@ -125,6 +176,7 @@ app.use('/api/contracts', contractsRouter);
 app.use('/api/suppliers', supplierRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/executive-dashboard', executiveDashboardRouter);
+app.use('/api/integrations', integrationRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/excel', excelRouter);

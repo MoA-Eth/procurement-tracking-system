@@ -81,6 +81,25 @@ export const updatePlan = async (
   }
 };
 
+export const deleteDraftPlan = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.user?.id) {
+      return next(ApiError.unauthorized('Authentication required'));
+    }
+    await planService.deleteDraftPlanService(
+      req.params.id as string,
+      req.user.id,
+    );
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const requestPlanUpdate = async (
   req: Request,
   res: Response,

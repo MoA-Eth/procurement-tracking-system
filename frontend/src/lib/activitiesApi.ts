@@ -45,6 +45,7 @@ export interface BackendActivity {
   id: string;
   reference: string;
   planId: string;
+  isActive?: boolean;
   procurementMethodId: string;
   procurementMethod?: {
     id: string;

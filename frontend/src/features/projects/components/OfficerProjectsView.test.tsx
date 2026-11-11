@@ -24,6 +24,14 @@ const mockOfficerUser: AuthUser = {
   role: "OFFICER",
 };
 
+const mockSuperuser: AuthUser = {
+  id: "superuser-1",
+  email: "superuser@moa.gov.et",
+  username: "superuser",
+  displayName: "System Superuser",
+  role: "SUPERUSER",
+};
+
 const unassignedProject: BackendProject = {
   id: "prj-unassigned-1",
   code: "PRJ-UNASSIGNED",
@@ -115,6 +123,18 @@ describe("OfficerProjectsView - Assigned Projects Scoping", () => {
     expect(html).toContain("PRJ-ASSIGNED");
     expect(html).not.toContain("Director Only Project");
     expect(html).not.toContain("PRJ-UNASSIGNED");
+  });
+
+  it("allows superusers to view projects regardless of officer assignment", () => {
+    setCachedProjects([unassignedProject, assignedProject]);
+
+    const html = renderToStaticMarkup(
+      <OfficerProjectsView currentUser={mockSuperuser} />,
+    );
+
+    expect(html).toContain("Director Only Project");
+    expect(html).toContain("Assigned Project for Abebe");
+    expect(html).not.toContain("No Projects Assigned");
   });
 
   it("renders access restricted screen when attempting to view an unassigned project code", () => {

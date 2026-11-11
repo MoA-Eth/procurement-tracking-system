@@ -16,6 +16,11 @@ import {
 import type { ProjectItem, ProjectOfficer } from "./projectsData";
 import { QuickAssignOfficerModal } from "./components/QuickAssignOfficerModal";
 import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
+import {
   fetchLookups,
   subscribeToLookups,
   getInitialLookups,
@@ -142,6 +147,14 @@ export function ProjectsDirectoryView({
 
     return matchesSearch && matchesStatus && matchesOfficer && matchesFunding;
   });
+  const {
+    pageItems: paginatedProjects,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(filteredProjects, 15);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -254,7 +267,7 @@ export function ProjectsDirectoryView({
 
       {/* 4. Projects Directory Table Card */}
       <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <HorizontalTableScroller label="Projects directory">
           <table className="w-full text-left border-collapse min-w-[1250px]">
             <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
               <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -289,7 +302,7 @@ export function ProjectsDirectoryView({
                   </td>
                 </tr>
               ) : (
-                filteredProjects.map((project, index) => (
+                paginatedProjects.map((project, index) => (
                   <tr
                     key={project.id}
                     className="hover:bg-slate-50 transition-colors"
@@ -447,7 +460,15 @@ export function ProjectsDirectoryView({
               )}
             </tbody>
           </table>
-        </div>
+        </HorizontalTableScroller>
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalItems={filteredProjects.length}
+          setPage={setPage}
+        />
       </div>
 
       {/* Quick Assign / Change Officer Modal */}

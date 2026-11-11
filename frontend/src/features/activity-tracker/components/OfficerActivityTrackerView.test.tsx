@@ -11,6 +11,7 @@ import type {
 import {
   collectTrackableActivities,
   OfficerActivityTrackerView,
+  trackerActivityStatusLabel,
   trackerCurrentStage,
   trackerDisplayStatus,
   trackerIsDueSoon,
@@ -86,6 +87,60 @@ describe("OfficerActivityTrackerView", () => {
     expect(items.every((item) => item.plan.status === "Approved")).toBe(true);
   });
 
+  it("excludes activities whose plans are not finally approved", () => {
+    const savedRecord = {
+      activity: mockSavedActivity,
+      planReference: mockPlan.reference,
+      projectCode: mockProject.code,
+    };
+    const nonApprovedStatuses = [
+      "Draft",
+      "Submitted to Director",
+      "Committee Review",
+      "Returned",
+      "Cancelled",
+    ] as const;
+
+    for (const status of nonApprovedStatuses) {
+      const project: OfficerProject = {
+        ...mockProject,
+        plans: [{ ...mockPlan, status }],
+      };
+
+      expect(
+        collectTrackableActivities([project], [savedRecord], []),
+      ).toHaveLength(0);
+    }
+  });
+
+  it("includes activities for Finally Approved plans", () => {
+    const project: OfficerProject = {
+      ...mockProject,
+      plans: [{ ...mockPlan, status: "Finally Approved" }],
+    };
+    const savedRecord = {
+      activity: mockSavedActivity,
+      planReference: mockPlan.reference,
+      projectCode: mockProject.code,
+    };
+
+    expect(
+      collectTrackableActivities([project], [savedRecord], []),
+    ).toHaveLength(1);
+  });
+
+  it("does not attach an activity with an unknown plan reference to another plan", () => {
+    const savedRecord = {
+      activity: mockSavedActivity,
+      planReference: "missing-plan",
+      projectCode: mockProject.code,
+    };
+
+    expect(
+      collectTrackableActivities([mockProject], [savedRecord], []),
+    ).toHaveLength(0);
+  });
+
   it("uses the latest revised target and derives due-soon stage progress", () => {
     const item = makeTrackedItem();
     const snapshot = trackerCurrentStage(item, "2026-08-22");
@@ -99,6 +154,43 @@ describe("OfficerActivityTrackerView", () => {
       percent: 33,
       total: 3,
     });
+  });
+
+  it("shows the latest roadmap stage with an actual date as status for an approved plan", () => {
+    const item = makeTrackedItem();
+    const roadmap = item.activity.details!.roadmap.map((stage) => ({
+      ...stage,
+      actualEndDate:
+        stage.name === "Preparation of Specification"
+          ? "2026-08-03"
+          : stage.name === "Bid Opening"
+            ? "2026-08-17"
+            : undefined,
+    }));
+    const approvedItem: OfficerTrackedActivityItem = {
+      ...item,
+      activity: {
+        ...item.activity,
+        details: { ...item.activity.details!, roadmap },
+      },
+      plan: { ...item.plan, status: "Finally Approved" },
+    };
+
+    expect(trackerActivityStatusLabel(approvedItem, "2026-08-22")).toBe(
+      "Bid Opening",
+    );
+  });
+
+  it("keeps operational status labels for plans that are not finally approved", () => {
+    const item = makeTrackedItem();
+    const submittedItem: OfficerTrackedActivityItem = {
+      ...item,
+      plan: { ...item.plan, status: "Submitted to Director" },
+    };
+
+    expect(trackerActivityStatusLabel(submittedItem, "2026-08-22")).toBe(
+      "In Progress",
+    );
   });
 
   it("derives delayed and contracted activity statuses from roadmap progress", () => {

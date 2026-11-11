@@ -10,6 +10,14 @@ import type {
   ProcurementActivitySummary,
 } from "@/features/projects/data/officerActivityDrafts";
 import {
+  defaultStageTracking,
+  findActivityTrackingRecord,
+  latestReachedRoadmapStage,
+  OFFICER_ACTIVITY_TRACKING_STORAGE_KEY,
+  parseActivityTrackingRecords,
+  type OfficerActivityTrackingRecord,
+} from "@/features/activity-tracker/data/officerActivityTracking";
+import {
   ArrowRight,
   CalendarDays,
   CheckCircle2,
@@ -34,7 +42,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState, useEffect } from "react";
-import { requestPlanCancellation, requestPlanUpdate } from "@/lib/plansApi";
+import { requestPlanCancellation } from "@/lib/plansApi";
+import { createAmendmentRequest } from "@/lib/amendmentRequestsApi";
 import {
   getCurrentPlanVersionNumber,
   getPlanVersionHistory,
@@ -43,6 +52,12 @@ import {
 import { VersionHistoryModal } from "@/features/plans/components/VersionHistoryModal";
 import { exportPlanActivitiesToExcel } from "@/features/projects/utils/projectExcelUtils";
 import { ExcelImportModal } from "@/features/projects/components/ExcelImportModal";
+import type { AuthUser } from "@/lib/authTypes";
+import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
 import {
   PhaseDelayBreakdownModal,
   calculateRealActivityDelay,
@@ -58,7 +73,9 @@ export function OfficerProcurementPlanDetailView({
   onUpdatePlan,
   onUpdateActivity,
   onDeleteDraftActivity,
+  onDeleteDraftPlan,
   onBulkImportActivities,
+  currentUser,
   plan,
   project,
   savedActivities = [],
@@ -73,9 +90,11 @@ export function OfficerProcurementPlanDetailView({
   onDeleteDraftActivity?: (
     activity: ProcurementActivitySummary,
   ) => Promise<void>;
+  onDeleteDraftPlan?: () => Promise<void>;
   onBulkImportActivities?: (
     activities: ProcurementActivitySummary[],
   ) => Promise<void> | void;
+  currentUser?: AuthUser | null;
   plan: ProcurementPlanSummary;
   project: OfficerProject;
   savedActivities?: readonly ProcurementActivitySummary[];
@@ -104,16 +123,13 @@ export function OfficerProcurementPlanDetailView({
       : currentPlan.status;
 
   const isReturned =
+    Boolean(currentPlan.returnedForRevision) ||
     activePlanStatus === "Returned" ||
     activePlanStatus === "Returned for Revision" ||
     (activePlanStatus as string) === "RETURNED_FOR_REVISION";
 
-  const isDraftOrReturned =
-    activePlanStatus === "Draft" ||
-    (activePlanStatus as string) === "DRAFT" ||
-    currentPlan.status === "Draft" ||
-    (currentPlan.status as string) === "DRAFT" ||
-    isReturned;
+  const isDraft =
+    activePlanStatus === "Draft" || (activePlanStatus as string) === "DRAFT";
 
   const isFinallyApproved =
     activePlanStatus === "Finally Approved" ||
@@ -152,34 +168,52 @@ export function OfficerProcurementPlanDetailView({
   );
   const [isRequestingPlanUpdate, setIsRequestingPlanUpdate] = useState(false);
   const [planUpdateError, setPlanUpdateError] = useState<string | null>(null);
+  const [planUpdateSuccess, setPlanUpdateSuccess] = useState(false);
+  const [isDeletingPlan, setIsDeletingPlan] = useState(false);
+  const [planDeleteError, setPlanDeleteError] = useState<string | null>(null);
+  const [isDeletePlanDialogOpen, setIsDeletePlanDialogOpen] = useState(false);
+  const [isPlanAmendmentModalOpen, setIsPlanAmendmentModalOpen] =
+    useState(false);
+  const [planAmendmentReason, setPlanAmendmentReason] = useState("");
 
   const handleRequestPlanUpdate = async () => {
-    if (
-      !window.confirm(
-        "Request Director authorization to reopen this approved plan for amendment?",
-      )
-    ) {
-      return;
-    }
-
+    if (planAmendmentReason.trim().length < 10) return;
     setIsRequestingPlanUpdate(true);
     setPlanUpdateError(null);
+    setPlanUpdateSuccess(false);
     try {
-      await requestPlanUpdate(currentPlan.id || currentPlan.reference);
-      const updatedPlan: ProcurementPlanSummary = {
-        ...currentPlan,
-        status: "Update Requested",
-      };
-      setCurrentPlan(updatedPlan);
-      onUpdatePlan?.(updatedPlan);
+      await createAmendmentRequest({
+        entityType: "PLAN",
+        entityId: currentPlan.id || currentPlan.reference,
+        reason: planAmendmentReason.trim(),
+      });
+      setPlanUpdateSuccess(true);
+      setIsPlanAmendmentModalOpen(false);
+      setPlanAmendmentReason("");
     } catch (error) {
       setPlanUpdateError(
         error instanceof Error
           ? error.message
-          : "Could not request authorization to amend this plan.",
+          : "Could not submit the plan amendment request.",
       );
     } finally {
       setIsRequestingPlanUpdate(false);
+    }
+  };
+
+  const handleDeleteDraftPlan = async () => {
+    if (!onDeleteDraftPlan) return;
+    setIsDeletingPlan(true);
+    setPlanDeleteError(null);
+    try {
+      await onDeleteDraftPlan();
+      setIsDeletePlanDialogOpen(false);
+    } catch (error) {
+      setPlanDeleteError(
+        error instanceof Error ? error.message : "Could not delete the plan.",
+      );
+    } finally {
+      setIsDeletingPlan(false);
     }
   };
 
@@ -282,14 +316,29 @@ export function OfficerProcurementPlanDetailView({
   const [statusFilter, setStatusFilter] = useState<"All" | ActivityStatus>(
     "All",
   );
+  const [activityTrackingRecords, setActivityTrackingRecords] = useState<
+    OfficerActivityTrackingRecord[]
+  >([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setActivityTrackingRecords(
+        parseActivityTrackingRecords(
+          window.localStorage.getItem(OFFICER_ACTIVITY_TRACKING_STORAGE_KEY),
+        ),
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const isMultiOfficerProject =
     (project.assignedOfficers?.length ?? 0) > 1 ||
     (project.assignedOfficerIds?.length ?? 0) > 1;
 
-  const versionNumber = getCurrentPlanVersionNumber(
-    currentPlan.reference || currentPlan.id || "",
+  const versionNumber = Math.max(
+    getCurrentPlanVersionNumber(currentPlan.reference || currentPlan.id || ""),
+    currentPlan.version || 1,
   );
 
   const planHistory = getPlanVersionHistory(
@@ -310,32 +359,81 @@ export function OfficerProcurementPlanDetailView({
   const activities = useMemo(() => {
     const list = [...savedActivities];
     const existingRefs = new Set(
-      list.map((a) => (a.reference || a.id || "").toLowerCase()).filter(Boolean),
+      list
+        .map((a) => (a.reference || a.id || "").toLowerCase())
+        .filter(Boolean),
     );
     if (currentPlan.planActivities && currentPlan.planActivities.length > 0) {
       currentPlan.planActivities.forEach((pa) => {
         const ref = (pa.reference || pa.id || "").toLowerCase();
-        if (ref && !existingRefs.has(ref)) {
+        const existingIndex = list.findIndex(
+          (activity) =>
+            (activity.reference || activity.id || "").toLowerCase() === ref,
+        );
+        if (ref && existingIndex >= 0) {
+          list[existingIndex] = { ...list[existingIndex], ...pa };
+        } else if (ref) {
           existingRefs.add(ref);
           list.push(pa);
         }
       });
     }
-    if (currentPlan.parentActivities && currentPlan.parentActivities.length > 0) {
+    if (
+      currentPlan.parentActivities &&
+      currentPlan.parentActivities.length > 0
+    ) {
       currentPlan.parentActivities.forEach((pa: any) => {
         const ref = (pa.reference || pa.id || "").toLowerCase();
         if (ref && !existingRefs.has(ref)) {
           existingRefs.add(ref);
-          list.push({ ...pa, isParentApproved: true });
+          list.push({ ...pa, isInheritedFromParentPlan: true });
         }
       });
     }
     return list;
-  }, [savedActivities, currentPlan.planActivities, currentPlan.parentActivities]);
+  }, [
+    savedActivities,
+    currentPlan.planActivities,
+    currentPlan.parentActivities,
+  ]);
 
   const totalActivitiesCount =
     activities.length > 0 ? activities.length : (currentPlan.activities ?? 0);
   const isPlanEmpty = totalActivitiesCount === 0;
+  const canRequestPlanAmendment =
+    isFinallyApproved &&
+    activities.length > 0 &&
+    activities.every((activity) => {
+      const tracking = findActivityTrackingRecord(
+        activityTrackingRecords,
+        project.code,
+        currentPlan.reference,
+        activity.reference,
+      );
+      const reachedStage = latestReachedRoadmapStage(
+        activity.details?.roadmap || [],
+        (stage) =>
+          tracking?.stages.find((item) => item.stageName === stage.name) ??
+          defaultStageTracking(activity, stage),
+        (stage) =>
+          tracking?.stages.find((item) => item.stageName === stage.name)
+            ?.actualDate?.gregorian,
+      )?.name;
+      const stageName =
+        reachedStage ||
+        (activity.currentStage !== "Draft" &&
+        activity.currentStage !== "Not Started"
+          ? activity.currentStage
+          : "");
+      const normalizedStage = stageName
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      return (
+        normalizedStage === "draft request for quotations" ||
+        normalizedStage === "draft request for quotation"
+      );
+    });
 
   useEffect(() => {
     if (!isPlanEmpty && emptyPlanNotice) {
@@ -383,6 +481,27 @@ export function OfficerProcurementPlanDetailView({
   }, [activities, categoryFilter, methodFilter, searchQuery, statusFilter]);
 
   const visibleActivities = filteredActivities;
+  const {
+    pageItems: paginatedActivities,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(visibleActivities, 15);
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    activePlanStatus,
+    categoryFilter,
+    currentPlan.reference,
+    methodFilter,
+    searchQuery,
+    setPage,
+    statusFilter,
+  ]);
+
   const projectHref = `/workspace/projects?project=${encodeURIComponent(
     project.code,
   )}`;
@@ -450,7 +569,8 @@ export function OfficerProcurementPlanDetailView({
 
       setSubmittedPlanReference(currentPlan.reference);
 
-      const nextVer = isReturned ? versionNumber + 1 : versionNumber;
+      const nextVer =
+        isReturned && !currentPlan.version ? versionNumber + 1 : versionNumber;
 
       // Record audit revision
       recordPlanVersionEvent({
@@ -545,10 +665,13 @@ export function OfficerProcurementPlanDetailView({
           </ol>
         </nav>
 
-        <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0">
+        <div className="mt-4 flex min-w-0 flex-col gap-3">
+          <div className="w-full min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight text-[#10243f]">
+              <h1
+                className="min-w-0 flex-1 truncate whitespace-nowrap text-2xl font-semibold tracking-tight text-[#10243f]"
+                title={currentPlan.name}
+              >
                 {currentPlan.name}
               </h1>
               <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 border border-slate-300">
@@ -556,7 +679,7 @@ export function OfficerProcurementPlanDetailView({
               </span>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-slate-500">
-              <span>
+              <span className="inline-flex max-w-full shrink-0 whitespace-nowrap">
                 Reference:{" "}
                 <strong className="font-semibold text-[#1261a8]">
                   {currentPlan.reference}
@@ -572,7 +695,15 @@ export function OfficerProcurementPlanDetailView({
               <span aria-hidden="true" className="text-slate-300">
                 •
               </span>
-              <StatusText className="text-[10px]" label={activePlanStatus} />
+              <StatusText
+                className="text-[10px]"
+                label={isReturned ? "Draft" : activePlanStatus}
+              />
+              {isReturned && (
+                <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800">
+                  Return
+                </span>
+              )}
               <span aria-hidden="true" className="text-slate-300">
                 •
               </span>
@@ -606,7 +737,7 @@ export function OfficerProcurementPlanDetailView({
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2">
             {/* Version History Button (visible when plan has revisions) */}
             {hasPlanRevisions && (
               <button
@@ -645,33 +776,20 @@ export function OfficerProcurementPlanDetailView({
               Export Excel
             </button>
 
-            {/* Request Cancellation Button (visible when Finally Approved) */}
-            {isFinallyApproved && (
-              <button
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-rose-300 bg-white px-3 text-xs font-semibold text-rose-700 shadow-2xs hover:bg-rose-50 hover:border-rose-400 transition cursor-pointer"
-                onClick={() => {
-                  setCancellationError(null);
-                  setCancellationReason("");
-                  setIsCancelModalOpen(true);
-                }}
-                type="button"
-                title="Request cancellation for this finally approved plan"
-              >
-                <XCircle className="h-3.5 w-3.5 text-rose-600" />
-                <span>Request Cancellation</span>
-              </button>
-            )}
-
-            {isFinallyApproved && (
+            {canRequestPlanAmendment && (
               <button
                 className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-900 shadow-2xs hover:bg-amber-100 transition cursor-pointer disabled:opacity-60"
-                disabled={isRequestingPlanUpdate}
-                onClick={handleRequestPlanUpdate}
+                disabled={isRequestingPlanUpdate || planUpdateSuccess}
+                onClick={() => {
+                  setPlanUpdateError(null);
+                  setPlanAmendmentReason("");
+                  setIsPlanAmendmentModalOpen(true);
+                }}
                 type="button"
-                title="Ask a Director to reopen this approved plan before making amendments"
+                title="Request an amendment through Director, committee, and management review"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                {isRequestingPlanUpdate ? "Requesting..." : "Request Amendment"}
+                {planUpdateSuccess ? "Request Submitted" : "Request Amendment"}
               </button>
             )}
 
@@ -686,9 +804,22 @@ export function OfficerProcurementPlanDetailView({
               </button>
             )}
 
-            {/* Add Activity Button (Always Visible unless Cancelled: normal activity for draft/returned, additional plan & activity with justification once submitted) */}
-            {!isCancelled &&
-              (isDraftOrReturned ? (
+            {isDraft && (
+              <>
+                {onDeleteDraftPlan && (
+                  <button
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-rose-300 bg-white px-3 text-xs font-semibold text-rose-700 shadow-2xs hover:bg-rose-50 transition cursor-pointer disabled:opacity-60"
+                    disabled={isDeletingPlan}
+                    onClick={() => {
+                      setPlanDeleteError(null);
+                      setIsDeletePlanDialogOpen(true);
+                    }}
+                    type="button"
+                  >
+                    <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                    {isDeletingPlan ? "Deleting..." : "Delete Plan"}
+                  </button>
+                )}
                 <Link
                   className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] shadow-xs transition cursor-pointer"
                   href={
@@ -703,25 +834,8 @@ export function OfficerProcurementPlanDetailView({
                   <Plus aria-hidden="true" className="h-3.5 w-3.5" />
                   <span>Add Activity</span>
                 </Link>
-              ) : (
-                <Link
-                  href={
-                    "/workspace/projects?project=" +
-                    encodeURIComponent(project.code) +
-                    "&plan=" +
-                    encodeURIComponent(currentPlan.reference) +
-                    "&mode=create-additional-activity"
-                  }
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#00843D] px-4 text-xs font-semibold text-white hover:bg-[#0B6B3A] shadow-xs transition cursor-pointer"
-                  title="Create an additional procurement plan & activity with mandatory justification"
-                >
-                  <Plus
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 text-emerald-200"
-                  />
-                  <span>Add Activity</span>
-                </Link>
-              ))}
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -752,15 +866,32 @@ export function OfficerProcurementPlanDetailView({
           {planUpdateError}
         </div>
       )}
+      {planUpdateSuccess && (
+        <div
+          className="mt-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-xs text-emerald-900"
+          role="status"
+        >
+          Amendment request submitted. It will be reviewed by the Director,
+          Endorsement Committee, and Executive Management in sequence.
+        </div>
+      )}
 
       {activePlanStatus === "Update Requested" && (
         <section
           aria-label="Plan amendment request status"
           className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-950"
         >
-          Amendment request sent. A Director must authorize reopening before
-          activities can be edited. After approval, edit the activity and
-          resubmit the plan through the normal review workflow.
+          <span>
+            This plan has an amendment request awaiting review. Track its
+            progress in{" "}
+          </span>
+          <Link
+            className="font-semibold underline underline-offset-2"
+            href="/workspace/amendment-requests"
+          >
+            Amendment Requests
+          </Link>
+          .
         </section>
       )}
 
@@ -777,7 +908,7 @@ export function OfficerProcurementPlanDetailView({
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-semibold text-slate-900">
-                  Plan Returned by Director for Revision
+                  Plan Returned for Revision
                 </h2>
                 <span className="badge-status-base badge-status-delayed font-medium">
                   Action Required
@@ -787,7 +918,7 @@ export function OfficerProcurementPlanDetailView({
                 <div className="notice-quote-clean text-xs">
                   <p className="font-semibold text-slate-900 mb-1 flex items-center gap-1.5">
                     <MessageSquare className="h-3.5 w-3.5 text-slate-600" />
-                    Director Feedback &amp; Revision Instructions:
+                    Return Remark &amp; Revision Instructions:
                   </p>
                   <p className="italic leading-relaxed text-slate-700 font-normal">
                     &ldquo;
@@ -828,19 +959,21 @@ export function OfficerProcurementPlanDetailView({
                 <Edit3 className="h-3.5 w-3.5 text-slate-500" />
                 Edit Plan Information
               </Link>
-              <Link
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
-                href={
-                  "/workspace/projects?project=" +
-                  encodeURIComponent(project.code) +
-                  "&plan=" +
-                  encodeURIComponent(currentPlan.reference) +
-                  "&mode=create-activity"
-                }
-              >
-                <Plus className="h-3.5 w-3.5 text-[#00843D]" />
-                Add Activity
-              </Link>
+              {isDraft && (
+                <Link
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
+                  href={
+                    "/workspace/projects?project=" +
+                    encodeURIComponent(project.code) +
+                    "&plan=" +
+                    encodeURIComponent(currentPlan.reference) +
+                    "&mode=create-activity"
+                  }
+                >
+                  <Plus className="h-3.5 w-3.5 text-[#00843D]" />
+                  Add Activity
+                </Link>
+              )}
               <button
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
                 onClick={() => setIsVersionHistoryOpen(true)}
@@ -1158,10 +1291,17 @@ export function OfficerProcurementPlanDetailView({
                 value={statusFilter}
               >
                 <option value="All">All Statuses</option>
+                <option value="Approved">Approved</option>
+                <option value="Cancelled">Cancelled</option>
                 <option value="Not Started">Not Started</option>
                 <option value="In Progress">In Progress</option>
                 <option value="Completed">Completed</option>
                 <option value="Delayed">Delayed</option>
+                <option value="Draft">Draft</option>
+                <option value="Returned">Returned</option>
+                <option value="Submitted to Director">
+                  Submitted to Director
+                </option>
               </select>
               <ChevronDown
                 aria-hidden="true"
@@ -1171,9 +1311,9 @@ export function OfficerProcurementPlanDetailView({
           </div>
         </div>
 
-        <div className="overflow-x-auto max-h-[620px] overflow-y-auto border-b border-slate-200">
-          <table className="w-full table-fixed border-collapse text-left">
-            <thead className="sticky top-0 z-10 table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+        <HorizontalTableScroller label="Activities in plan">
+          <table className="w-full min-w-[1050px] table-fixed border-collapse text-left">
+            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
               <tr className="bg-slate-100 text-slate-600 text-[10px] font-semibold">
                 <th className="w-[10%] px-2 py-3" scope="col">
                   Ref
@@ -1188,7 +1328,7 @@ export function OfficerProcurementPlanDetailView({
                   Method
                 </th>
                 <th className="w-[12%] px-2 py-3 text-right" scope="col">
-                  Est. Amount ({currentPlan.currency})
+                  Est. amount
                 </th>
                 <th className="w-[11%] px-2 py-3" scope="col">
                   Current Stage
@@ -1206,48 +1346,89 @@ export function OfficerProcurementPlanDetailView({
             </thead>
             <tbody className="divide-y divide-slate-200">
               {visibleActivities.length ? (
-                visibleActivities.map((activity) => (
-                  <ActivityRow
-                    key={activity.reference}
-                    activity={activity}
-                    canEdit={activePlanStatus === "Draft" || isReturned}
-                    canDeleteDraft={
-                      (activePlanStatus === "Draft" || isReturned) &&
-                      activity.status === "Draft"
-                    }
-                    isMultiOfficer={isMultiOfficerProject}
-                    onSelectDelay={handleSelectActivityDelay}
-                    onDeleteDraft={onDeleteDraftActivity}
-                    editHref={
-                      "/workspace/projects?project=" +
-                      encodeURIComponent(project.code) +
-                      "&plan=" +
-                      encodeURIComponent(currentPlan.reference) +
-                      "&activity=" +
-                      encodeURIComponent(activity.reference) +
-                      "&mode=edit-activity"
-                    }
-                    href={
-                      "/workspace/projects?project=" +
-                      encodeURIComponent(project.code) +
-                      "&plan=" +
-                      encodeURIComponent(currentPlan.reference) +
-                      "&activity=" +
-                      encodeURIComponent(activity.reference)
-                    }
-                    registerContractHref={
-                      isFinallyApproved
-                        ? "/workspace/contracts?mode=register&project=" +
+                paginatedActivities.map((activity) =>
+                  (() => {
+                    const tracking = findActivityTrackingRecord(
+                      activityTrackingRecords,
+                      project.code,
+                      currentPlan.reference,
+                      activity.reference,
+                    );
+                    const reachedStage = isFinallyApproved
+                      ? latestReachedRoadmapStage(
+                          activity.details?.roadmap || [],
+                          (stage) =>
+                            tracking?.stages.find(
+                              (item) => item.stageName === stage.name,
+                            ) ?? defaultStageTracking(activity, stage),
+                          (stage) =>
+                            tracking?.stages.find(
+                              (item) => item.stageName === stage.name,
+                            )?.actualDate?.gregorian,
+                        )?.name
+                      : undefined;
+                    const stageLabel =
+                      reachedStage ||
+                      (isFinallyApproved &&
+                      activity.currentStage !== "Draft" &&
+                      activity.currentStage !== "Not Started"
+                        ? activity.currentStage
+                        : undefined);
+                    const isActivityCreator =
+                      (currentUser?.role === "OFFICER" ||
+                        currentUser?.role === "SUPERUSER") &&
+                      !activity.isInheritedFromParentPlan &&
+                      activity.isActive !== false &&
+                      (currentUser.role === "SUPERUSER" ||
+                        activity.createdById === currentUser.id);
+
+                    return (
+                      <ActivityRow
+                        key={activity.reference}
+                        activity={activity}
+                        planCurrency={currentPlan.currency}
+                        stageLabel={stageLabel}
+                        canEdit={isActivityCreator && (isDraft || isReturned)}
+                        canDeleteDraft={
+                          isActivityCreator &&
+                          (isDraft || isReturned) &&
+                          (activity.status === "Draft" ||
+                            (activity.status as string) === "DRAFT")
+                        }
+                        onSelectDelay={handleSelectActivityDelay}
+                        onDeleteDraft={onDeleteDraftActivity}
+                        editHref={
+                          "/workspace/projects?project=" +
                           encodeURIComponent(project.code) +
                           "&plan=" +
                           encodeURIComponent(currentPlan.reference) +
                           "&activity=" +
                           encodeURIComponent(activity.reference) +
-                          "&from=projects"
-                        : undefined
-                    }
-                  />
-                ))
+                          "&mode=edit-activity"
+                        }
+                        href={
+                          "/workspace/projects?project=" +
+                          encodeURIComponent(project.code) +
+                          "&plan=" +
+                          encodeURIComponent(currentPlan.reference) +
+                          "&activity=" +
+                          encodeURIComponent(activity.reference)
+                        }
+                        registerContractHref={
+                          isFinallyApproved
+                            ? "/workspace/contracts?mode=register&project=" +
+                              encodeURIComponent(project.code) +
+                              "&plan=" +
+                              encodeURIComponent(currentPlan.reference) +
+                              "&activity=" +
+                              encodeURIComponent(activity.reference) +
+                              "&from=projects"
+                            : undefined
+                        }
+                      />
+                    );
+                  })(),
+                )
               ) : (
                 <tr>
                   <td
@@ -1261,12 +1442,21 @@ export function OfficerProcurementPlanDetailView({
               )}
             </tbody>
           </table>
-        </div>
+        </HorizontalTableScroller>
+        <PaginationControls
+          page={page}
+          pageCount={pageCount}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalItems={visibleActivities.length}
+          setPage={setPage}
+        />
 
         <footer className="flex flex-col gap-2 bg-[#fbfcfd] px-4 py-3 text-[11px] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p aria-live="polite" className="font-medium text-slate-700">
-            Showing all {filteredActivities.length}{" "}
-            {filteredActivities.length === 1 ? "activity" : "activities"}
+            Showing {visibleActivities.length ? startIndex + 1 : 0}–{endIndex}{" "}
+            of {visibleActivities.length}{" "}
+            {visibleActivities.length === 1 ? "activity" : "activities"}
             {filteredActivities.length !== activities.length && (
               <span className="text-slate-400 font-normal">
                 {" "}
@@ -1276,7 +1466,7 @@ export function OfficerProcurementPlanDetailView({
           </p>
           <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span>All activities on one page • Scrollable list</span>
+            <span>15 activities per page</span>
           </div>
         </footer>
       </section>
@@ -1450,6 +1640,73 @@ export function OfficerProcurementPlanDetailView({
         </div>
       )}
 
+      {isPlanAmendmentModalOpen && (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs"
+          role="dialog"
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-amber-100 bg-amber-50/60 px-6 py-4">
+              <h3 className="text-sm font-semibold text-amber-950">
+                Request Plan Amendment
+              </h3>
+              <p className="mt-1 text-[11px] text-amber-800">
+                The request will be reviewed by the Director, Endorsement
+                Committee, and Executive Management in sequence.
+              </p>
+            </div>
+            <div className="space-y-2 px-6 py-5">
+              <label
+                className="text-xs font-semibold text-slate-700"
+                htmlFor="plan-amendment-reason"
+              >
+                Reason for amendment
+              </label>
+              <textarea
+                autoFocus
+                className="min-h-28 w-full rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                disabled={isRequestingPlanUpdate}
+                id="plan-amendment-reason"
+                maxLength={2000}
+                onChange={(event) => setPlanAmendmentReason(event.target.value)}
+                placeholder="Explain what needs to change and why"
+                value={planAmendmentReason}
+              />
+              <p className="text-[11px] text-slate-500">
+                Provide at least 10 characters.
+              </p>
+              {planUpdateError && (
+                <p className="text-xs text-rose-700" role="alert">
+                  {planUpdateError}
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-6 py-3.5">
+              <button
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                disabled={isRequestingPlanUpdate}
+                onClick={() => setIsPlanAmendmentModalOpen(false)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                disabled={
+                  isRequestingPlanUpdate ||
+                  planAmendmentReason.trim().length < 10
+                }
+                onClick={() => void handleRequestPlanUpdate()}
+                type="button"
+              >
+                {isRequestingPlanUpdate ? "Submitting…" : "Submit Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── REQUEST PLAN CANCELLATION MODAL ─────────────────────────── */}
       {isCancelModalOpen && (
         <div
@@ -1587,27 +1844,92 @@ export function OfficerProcurementPlanDetailView({
           </div>
         </div>
       )}
+      {isDeletePlanDialogOpen && (
+        <div
+          aria-labelledby="delete-plan-dialog-title"
+          aria-modal="true"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-xs"
+          role="dialog"
+        >
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-start gap-3 border-b border-slate-100 px-5 py-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700">
+                <AlertTriangle aria-hidden="true" className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <h2
+                  className="text-lg font-semibold text-slate-900"
+                  id="delete-plan-dialog-title"
+                >
+                  Delete draft plan?
+                </h2>
+                <p className="mt-1 break-words text-sm leading-6 text-slate-600">
+                  Delete{" "}
+                  <span className="font-semibold text-slate-800">
+                    {currentPlan.name}
+                  </span>{" "}
+                  and all {activities.length}{" "}
+                  {activities.length === 1 ? "activity" : "activities"} under
+                  it? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            {planDeleteError && (
+              <p
+                className="mx-5 mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+                role="alert"
+              >
+                {planDeleteError}
+              </p>
+            )}
+            <div className="flex justify-end gap-2 px-5 py-4">
+              <button
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                disabled={isDeletingPlan}
+                onClick={() => {
+                  setIsDeletePlanDialogOpen(false);
+                  setPlanDeleteError(null);
+                }}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isDeletingPlan}
+                onClick={() => void handleDeleteDraftPlan()}
+                type="button"
+              >
+                <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
+                {isDeletingPlan ? "Deleting..." : "Delete Plan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function ActivityRow({
   activity,
+  planCurrency,
+  stageLabel,
   canEdit = true,
   canDeleteDraft = false,
   editHref,
   href,
-  isMultiOfficer = false,
   onSelectDelay,
   onDeleteDraft,
   registerContractHref,
 }: {
   activity: PlanActivity;
+  planCurrency?: string;
+  stageLabel?: string;
   canEdit?: boolean;
   canDeleteDraft?: boolean;
   editHref: string;
   href: string;
-  isMultiOfficer?: boolean;
   onSelectDelay?: (activity: PlanActivity) => void;
   onDeleteDraft?: (activity: PlanActivity) => Promise<void>;
   registerContractHref?: string;
@@ -1651,12 +1973,28 @@ function ActivityRow({
   return (
     <tr className="even:bg-[#fbfcff] hover:bg-[#f7fbf9] transition-colors">
       <td className="px-2 py-2.5 align-top font-mono text-[10px] font-semibold text-[#1261a8] truncate">
-        {activity.reference}
+        <div className="flex items-center gap-1">
+          <span>{activity.reference}</span>
+          {activity.isActive === false && (
+            <span className="rounded border border-rose-200 bg-rose-50 px-1 text-[8px] font-sans font-semibold text-rose-700">
+              Soft-deleted
+            </span>
+          )}
+          <span className="rounded bg-slate-100 px-1 text-[8px] font-sans font-medium text-slate-600">
+            v{activity.version || 1}
+          </span>
+          {activity.returnedForRevision && (
+            <span className="rounded border border-amber-200 bg-amber-50 px-1 text-[8px] font-sans font-semibold text-amber-800">
+              Return
+            </span>
+          )}
+        </div>
       </td>
       <td className="px-2 py-2.5 align-top text-[10px] font-medium leading-4 text-slate-700 wrap-break-word">
         <p className="wrap-break-word line-clamp-2">{activity.description}</p>
-        {isMultiOfficer &&
-          (activity.createdByName || activity.updatedByName) && (
+        {(activity.createdByName ||
+          (activity.updatedByName &&
+            activity.updatedByName !== activity.createdByName)) && (
             <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[9px] text-slate-400">
               {activity.createdByName && (
                 <span>
@@ -1688,14 +2026,20 @@ function ActivityRow({
         {activity.method}
       </td>
       <td className="px-2 py-2.5 text-right align-top font-mono text-[10px] font-medium tabular-nums text-slate-800">
+        <span className="mr-1 text-slate-500">
+          {activity.currency || planCurrency || "ETB"}
+        </span>
         {formatAmount(activity.estimatedAmount)}
       </td>
       <td className="px-2 py-2.5 align-top text-[10px] text-slate-500">
-        {activity.currentStage}
+        {stageLabel || activity.currentStage}
       </td>
       <td className="px-2 py-2.5 align-top">
         <div className="flex flex-col gap-1 items-start">
-          <StatusText className="text-[9px]" label={activity.status} />
+          <StatusText
+            className="text-[9px]"
+            label={stageLabel || activity.status}
+          />
           {isDelayed && (
             <button
               type="button"

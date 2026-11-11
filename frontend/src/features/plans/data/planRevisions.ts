@@ -37,6 +37,7 @@ export type VersionActionType =
 
 export interface PlanActivitySnapshot {
   id?: string;
+  version?: number;
   activityRefNo: string;
   description: string;
   method: string;
@@ -251,6 +252,7 @@ export function getPlanVersionHistory(
     const mappedActivities: PlanActivitySnapshot[] = Array.isArray(rawActs)
       ? rawActs.map((act: any) => ({
           id: act.id,
+          version: Number(act.version) || undefined,
           activityRefNo:
             act.activityRefNo || act.reference || act.id || "ACT-REF",
           description: act.description || "Activity description",
@@ -363,11 +365,10 @@ export function getPlanVersionHistory(
     }
 
     // 2. Synthesize Director Return if status is Returned and missing
-    if (
-      !hasReturnEvent &&
-      (normStatus.includes("return") ||
-        options?.planData?.directorRevisionComment)
-    ) {
+    const isReturnedForRevision =
+      normStatus.includes("return") ||
+      Boolean(options?.planData?.returnedForRevision);
+    if (!hasReturnEvent && isReturnedForRevision) {
       const returnTime =
         options?.planData?.rejectedAt ||
         options?.planData?.updatedAt ||
@@ -385,20 +386,19 @@ export function getPlanVersionHistory(
         planName: resolvedPlanName,
         projectCode: resolvedProjectCode,
         projectName: resolvedProjectName,
-        versionNumber: 1,
+        versionNumber: Math.max(2, Number(options?.planData?.version) || 1),
         action: "RETURNED",
-        actionLabel: "Plan Returned by Director for Revision",
+        actionLabel: "Plan Returned for Revision",
         changedBy:
           options?.planData?.rejectedByUser?.name ||
           options?.planData?.rejectedByUser?.displayName ||
-          "Mekonen (Director)",
-        changedByRole: "Director",
+          "Approver",
+        changedByRole: "Approver",
         changedAt: returnTime,
         reason: feedback,
         directorReview: {
-          directorName:
-            options?.planData?.rejectedByUser?.name || "Mekonen (Director)",
-          directorRole: "Director",
+          directorName: options?.planData?.rejectedByUser?.name || "Approver",
+          directorRole: "Approver",
           reviewedAt: returnTime,
           decision: "RETURNED",
           feedback,
@@ -406,7 +406,7 @@ export function getPlanVersionHistory(
         projectDetails: defaultProjectDetails,
         planDetails: {
           ...defaultPlanDetails,
-          status: "Returned for Revision",
+          status: "Draft",
         },
         activities: mappedActivities,
         snapshot: defaultPlanDetails,

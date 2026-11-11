@@ -12,6 +12,7 @@ import {
   calculateDelayDays,
   defaultStageTracking,
   effectiveTargetDate,
+  latestReachedRoadmapStage,
   type ActivityStageStatus,
   type ActivityStageTracking,
   type OfficerActivityTrackingRecord,
@@ -72,6 +73,7 @@ export function ActivityTrackingDetailView({
   const roadmap = useMemo(() => trackingRoadmap(item), [item]);
   const [activeTab, setActiveTab] = useState<ActivityDetailTab>("overview");
   const [record, setRecord] = useState(item.tracking);
+  const [savedRecord, setSavedRecord] = useState(item.tracking);
   const [savedMessage, setSavedMessage] = useState("");
   const [savedContracts, setSavedContracts] = useState<OfficerContract[]>([]);
 
@@ -163,6 +165,7 @@ export function ActivityTrackingDetailView({
   function persist(nextRecord: OfficerActivityTrackingRecord, message: string) {
     const savedRecord = { ...nextRecord, updatedAt: new Date().toISOString() };
     setRecord(savedRecord);
+    setSavedRecord(savedRecord);
     onSave(savedRecord);
     setSavedMessage(message);
   }
@@ -231,7 +234,14 @@ export function ActivityTrackingDetailView({
               <span>{item.plan.name}</span>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-              <StatusText className="text-xs" label={overallStatus} />
+              <StatusText
+                className="text-xs"
+                label={
+                  isFinallyApprovedPlan(item.plan)
+                    ? activeStageName
+                    : overallStatus
+                }
+              />
               <span className="text-xs text-slate-500">
                 Current stage:{" "}
                 <strong className="font-semibold text-slate-700">
@@ -381,7 +391,14 @@ export function ActivityTrackingDetailView({
               <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
                 Overall Status
               </p>
-              <StatusText className="mt-2 text-xs" label={overallStatus} />
+              <StatusText
+                className="mt-2 text-xs"
+                label={
+                  isFinallyApprovedPlan(item.plan)
+                    ? activeStageName
+                    : overallStatus
+                }
+              />
             </div>
             <div className="border-l-2 border-slate-200 pl-3">
               <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-slate-500">
@@ -461,6 +478,7 @@ export function ActivityTrackingDetailView({
       >
         {roadmap.length > 0 ? (
           <RoadmapTrackingSection
+            eligibilityRecord={savedRecord}
             item={item}
             onRecordChange={setRecord}
             onSave={persist}
@@ -629,26 +647,31 @@ function MissingRoadmapState({
 }
 
 function RoadmapTrackingSection({
+  eligibilityRecord,
   item,
   onRecordChange,
   onSave,
   record,
   roadmap,
 }: {
+  eligibilityRecord: OfficerActivityTrackingRecord;
   item: OfficerTrackedActivityItem;
   onRecordChange: (record: OfficerActivityTrackingRecord) => void;
   onSave: (record: OfficerActivityTrackingRecord, message: string) => void;
   record: OfficerActivityTrackingRecord;
   roadmap: readonly ProcurementActivityRoadmapStage[];
 }) {
-  const initialStage =
-    roadmap.find((stage) => stage.name === item.activity.currentStage) ??
-    roadmap[0];
+  const initialStage = nextSelectableRoadmapStage(
+    roadmap,
+    eligibilityRecord,
+    item,
+  );
   const [selectedStageName, setSelectedStageName] = useState(
     initialStage?.name ?? "",
   );
-  const selectedStage =
-    roadmap.find((stage) => stage.name === selectedStageName) ?? roadmap[0];
+  const selectedStage = roadmap.find(
+    (stage) => stage.name === selectedStageName,
+  );
   const selectedTracking = selectedStage
     ? trackingForStage(record, selectedStage, item)
     : undefined;
@@ -704,13 +727,19 @@ function RoadmapTrackingSection({
                   Delay
                 </th>
                 <th className="w-24 px-4 py-3.5 text-center" scope="col">
-                  Action
+                  Select
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {roadmap.map((stage) => {
+              {roadmap.map((stage, index) => {
                 const tracking = trackingForStage(record, stage, item);
+                const canSelect = canSelectRoadmapStage(
+                  roadmap,
+                  eligibilityRecord,
+                  item,
+                  index,
+                );
                 const original = dateFromRoadmap(stage);
                 const target = effectiveTargetDate(original, tracking);
                 const delay = calculateDelayDays(original, tracking);
@@ -782,13 +811,18 @@ function RoadmapTrackingSection({
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <button
-                        className="font-semibold text-sky-700 hover:text-[#00843D] hover:underline"
-                        onClick={() => setSelectedStageName(stage.name)}
-                        type="button"
-                      >
-                        Update
-                      </button>
+                      <input
+                        aria-label={`Select ${stage.name} for status update`}
+                        checked={selectedStageName === stage.name}
+                        className="h-4 w-4 accent-[#00843D] disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={!canSelect}
+                        onChange={(event) =>
+                          setSelectedStageName(
+                            event.target.checked ? stage.name : "",
+                          )
+                        }
+                        type="checkbox"
+                      />
                     </td>
                   </tr>
                 );
@@ -798,11 +832,21 @@ function RoadmapTrackingSection({
         </div>
 
         <aside className="border-t border-slate-200 bg-[#fafbfc] p-4 xl:border-t-0 xl:border-l">
+          <p className="mb-3 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] leading-4 text-blue-800">
+            Complete or mark a stage Not Applicable before selecting the next
+            roadmap step. Stages cannot be skipped.
+          </p>
           {selectedStage && selectedTracking ? (
             <StageEditor
               key={selectedStage.name}
               item={item}
-              onSave={onSave}
+              onSave={(nextRecord, message) => {
+                onSave(nextRecord, message);
+                setSelectedStageName(
+                  nextSelectableRoadmapStage(roadmap, nextRecord, item)?.name ??
+                    "",
+                );
+              }}
               onUpdate={updateStage}
               record={record}
               roadmap={roadmap}
@@ -820,12 +864,53 @@ function RoadmapTrackingSection({
   );
 }
 
+export function canSelectRoadmapStage(
+  roadmap: readonly ProcurementActivityRoadmapStage[],
+  record: OfficerActivityTrackingRecord,
+  item: OfficerTrackedActivityItem,
+  stageIndex: number,
+) {
+  const stage = roadmap[stageIndex];
+  if (!stage) return false;
+
+  const currentStatus = trackingForStage(record, stage, item).status;
+  if (currentStatus === "Completed" || currentStatus === "Not Applicable") {
+    return false;
+  }
+
+  return roadmap.slice(0, stageIndex).every((previousStage) => {
+    const status = trackingForStage(record, previousStage, item).status;
+    return status === "Completed" || status === "Not Applicable";
+  });
+}
+
+function nextSelectableRoadmapStage(
+  roadmap: readonly ProcurementActivityRoadmapStage[],
+  record: OfficerActivityTrackingRecord,
+  item: OfficerTrackedActivityItem,
+) {
+  return roadmap.find((_, index) =>
+    canSelectRoadmapStage(roadmap, record, item, index),
+  );
+}
+
 function detailCurrentStageName(
   item: OfficerTrackedActivityItem,
   record: OfficerActivityTrackingRecord,
   roadmap: readonly ProcurementActivityRoadmapStage[],
 ) {
   if (roadmap.length === 0) return item.activity.currentStage || "Not started";
+
+  if (isFinallyApprovedPlan(item.plan)) {
+    const reachedStage = latestReachedRoadmapStage(
+      roadmap,
+      (stage) => trackingForStage(record, stage, item),
+      (stage) =>
+        record.stages.find((tracking) => tracking.stageName === stage.name)
+          ?.actualDate?.gregorian,
+    );
+    if (reachedStage) return reachedStage.name;
+  }
 
   const inProgress = roadmap.find(
     (stage) => trackingForStage(record, stage, item).status === "In Progress",
@@ -856,6 +941,16 @@ function detailCurrentStageName(
     [...roadmap].reverse().find((stage) => !stage.notApplicable)?.name ??
     roadmap[roadmap.length - 1]?.name ??
     "Completed"
+  );
+}
+
+function isFinallyApprovedPlan(itemPlan: OfficerTrackedActivityItem["plan"]) {
+  const status = String(itemPlan.status || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+  return ["APPROVED", "FINALLY_APPROVED", "MANAGEMENT_APPROVED"].includes(
+    status,
   );
 }
 

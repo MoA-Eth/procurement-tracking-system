@@ -68,6 +68,29 @@ export async function updateUserHandler(
   }
 }
 
+export async function updateOwnProfileHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const userId = req.auth?.user.id;
+    if (!userId) {
+      res.status(401).json({ message: 'Authentication required.' });
+      return;
+    }
+
+    const user = await usersService.updateUser(
+      userId,
+      { name: req.body.name },
+      userId,
+    );
+    res.json({ message: 'Profile updated successfully.', data: user });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function deleteUserHandler(
   req: Request,
   res: Response,

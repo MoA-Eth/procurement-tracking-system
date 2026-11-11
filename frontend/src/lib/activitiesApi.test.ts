@@ -7,10 +7,12 @@ import {
   replanStage,
   type BackendActivity,
 } from "./activitiesApi";
+import { clearApiCache } from "./apiClient";
 
 describe("activitiesApi", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    clearApiCache();
   });
 
   it("fetches activities list via GET /api/activities", async () => {
@@ -33,6 +35,31 @@ describe("activitiesApi", () => {
 
     const result = await fetchActivities("plan-1");
     expect(result).toEqual(mockActivities);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/activities?planId=plan-1"),
+      expect.any(Object),
+    );
+  });
+
+  it("retrieves activities, including soft-deleted rows, for a specific plan", async () => {
+    const inactiveActivity: BackendActivity = {
+      id: "inactive-act",
+      reference: "ACT-OLD",
+      planId: "plan-1",
+      isActive: false,
+      procurementMethodId: "pm-1",
+      description: "Previously deleted activity",
+      estimatedBudget: 10,
+      currency: "ETB",
+      status: "DRAFT",
+    };
+    vi.spyOn(global, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify([inactiveActivity]), { status: 200 }),
+    );
+
+    await expect(fetchActivities("plan-1")).resolves.toEqual([
+      inactiveActivity,
+    ]);
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/activities?planId=plan-1"),
       expect.any(Object),

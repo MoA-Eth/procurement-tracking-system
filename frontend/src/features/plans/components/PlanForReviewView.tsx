@@ -23,6 +23,8 @@ export function PlanForReviewView({
   from,
 }: PlanForReviewViewProps) {
   const router = useRouter();
+  const isDirectorOrSuperuser =
+    user.role === "DIRECTOR" || user.role === "SUPERUSER";
   const review = usePlanForReview({
     user,
     selectedPlanId,
@@ -52,7 +54,7 @@ export function PlanForReviewView({
         targetActivityRef={selectedActivityRef}
         onBackClick={handleActivitiesBack}
         onApprovePlan={
-          user.role === "DIRECTOR" && from !== "vote-progress"
+          isDirectorOrSuperuser && from !== "vote-progress"
             ? (p) => {
                 review.handleApprovePlan(p);
                 review.closeActivitiesPlan();
@@ -60,7 +62,7 @@ export function PlanForReviewView({
             : undefined
         }
         onReturnPlan={
-          user.role === "DIRECTOR" && from !== "vote-progress"
+          isDirectorOrSuperuser && from !== "vote-progress"
             ? (p, remarks) => {
                 review.setReturnRemarks(remarks);
                 review.handleReturnPlan(p, remarks);
@@ -69,7 +71,7 @@ export function PlanForReviewView({
             : undefined
         }
         onApproveCancellation={
-          user.role === "DIRECTOR"
+          isDirectorOrSuperuser
             ? (p, comment) => {
                 review.handleApprovePlanCancellation(p, comment);
                 review.closeActivitiesPlan();
@@ -77,7 +79,7 @@ export function PlanForReviewView({
             : undefined
         }
         onRejectCancellation={
-          user.role === "DIRECTOR"
+          isDirectorOrSuperuser
             ? (p, comment) => {
                 review.handleRejectPlanCancellation(p, comment);
                 review.closeActivitiesPlan();
@@ -85,7 +87,7 @@ export function PlanForReviewView({
             : undefined
         }
         onCommitteeVote={
-          user.role === "ENDORSING_COMMITTEE" && from !== "vote-progress"
+          user.role === "ENDORSING_COMMITTEE" || user.role === "SUPERUSER"
             ? (p, decision, remarks, rejectionDetails) => {
                 if (remarks) review.setReturnRemarks(remarks);
                 review.handleCommitteeVote(
@@ -99,7 +101,7 @@ export function PlanForReviewView({
             : undefined
         }
         onManagementDecision={
-          user.role === "MANAGEMENT" &&
+          (user.role === "MANAGEMENT" || user.role === "SUPERUSER") &&
           from !== "vote-progress" &&
           isPlanAwaitingManagementReview(review.activitiesPlan)
             ? (p, decision, comment) => {
@@ -160,32 +162,32 @@ export function PlanForReviewView({
         returnRemarks={review.returnRemarks}
         setReturnRemarks={review.setReturnRemarks}
         onApprovePlan={
-          user.role === "DIRECTOR" && from !== "vote-progress"
+          isDirectorOrSuperuser && from !== "vote-progress"
             ? review.handleApprovePlan
             : undefined
         }
         onReturnPlan={
-          user.role === "DIRECTOR" && from !== "vote-progress"
+          isDirectorOrSuperuser && from !== "vote-progress"
             ? review.handleReturnPlan
             : undefined
         }
         onApproveCancellation={
-          user.role === "DIRECTOR"
+          isDirectorOrSuperuser
             ? review.handleApprovePlanCancellation
             : undefined
         }
         onRejectCancellation={
-          user.role === "DIRECTOR"
+          isDirectorOrSuperuser
             ? review.handleRejectPlanCancellation
             : undefined
         }
         onCommitteeVote={
-          user.role === "ENDORSING_COMMITTEE" && from !== "vote-progress"
+          user.role === "ENDORSING_COMMITTEE" || user.role === "SUPERUSER"
             ? review.handleCommitteeVote
             : undefined
         }
         onManagementDecision={
-          user.role === "MANAGEMENT" &&
+          (user.role === "MANAGEMENT" || user.role === "SUPERUSER") &&
           from !== "vote-progress" &&
           isPlanAwaitingManagementReview(review.selectedPlanForReview)
             ? (p, decision, comment) => {
@@ -198,11 +200,6 @@ export function PlanForReviewView({
         setIsCommitteeRejectionModalOpen={
           review.setIsCommitteeRejectionModalOpen
         }
-        isCommitteeChair={review.isCommitteeChair}
-        isChairAuthorized={review.isPlanChairAuthorized(
-          review.selectedPlanForReview.id,
-        )}
-        onChairAuthorize={review.handleChairAuthorizePlan}
       />
     );
   }
@@ -233,7 +230,6 @@ export function PlanForReviewView({
       committeeDeadlineDate={review.committeeDeadlineDate}
       setCommitteeDeadlineDate={review.setCommitteeDeadlineDate}
       onApprovePlan={review.handleApprovePlan}
-      onApprovePlanUpdate={review.handleApprovePlanUpdate}
       onReturnPlan={review.handleReturnPlan}
       onBatchReviewPlans={review.handleBatchReviewPlans}
       onBatchCommitteeVote={review.handleBatchCommitteeVote}

@@ -139,7 +139,7 @@ export function UserAccessTable({
       <div className="bg-[#ecfdf5]/70 p-4 sm:px-6 sm:py-4.5 border-b border-[#a7f3d0]/60 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="min-w-0">
-            <h3 className="font-semibold text-slate-900 text-sm sm:text-base leading-tight truncate">
+            <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
               User Access &amp; Accounts Overview
             </h3>
           </div>

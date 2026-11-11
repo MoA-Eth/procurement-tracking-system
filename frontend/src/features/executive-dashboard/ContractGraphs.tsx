@@ -75,7 +75,7 @@ export function ContractGraphs({
     <section aria-label="Contract register graphs" className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Contract values and delivery
           </h2>
           <p className="mt-1 text-xs leading-5 text-slate-500">

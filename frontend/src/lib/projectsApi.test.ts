@@ -7,11 +7,13 @@ import {
   mapBackendProjectToProjectItem,
   mapBackendProjectToOfficerProject,
   type BackendProject,
+  invalidateProjectsCache,
 } from "./projectsApi";
 
 describe("projectsApi", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    invalidateProjectsCache();
   });
 
   it("fetches projects list via GET /api/projects", async () => {
@@ -39,6 +41,38 @@ describe("projectsApi", () => {
       expect.stringContaining("/projects"),
       expect.any(Object),
     );
+  });
+
+  it("fetches every project across paginated API responses", async () => {
+    vi.spyOn(global, "fetch").mockImplementation(async (input) => {
+      const requestUrl = new URL(String(input));
+      const page = Number(requestUrl.searchParams.get("page"));
+      const projects = [
+        {
+          id: `project-${page}`,
+          code: `PRJ-${page}`,
+          name: `Project ${page}`,
+          fundingSourceId: "fs1",
+          sectorId: "sec1",
+          status: "ACTIVE" as const,
+        },
+      ];
+      return new Response(
+        JSON.stringify({
+          items: projects,
+          pagination: { totalPages: 2 },
+        }),
+        { status: 200 },
+      );
+    });
+
+    const result = await fetchProjects();
+
+    expect(result.map((project) => project.id)).toEqual([
+      "project-1",
+      "project-2",
+    ]);
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it("creates a new project via POST /api/projects", async () => {
@@ -198,8 +232,17 @@ describe("projectsApi", () => {
       username: "other",
     };
 
+    const superuser = {
+      id: "superuser-1",
+      email: "superuser@moa.gov.et",
+      displayName: "System Superuser",
+      role: "SUPERUSER" as const,
+      username: "superuser",
+    };
+
     expect(isProjectAssignedToOfficer(bp, matchingUser)).toBe(true);
     expect(isProjectAssignedToOfficer(bp, otherUser)).toBe(false);
+    expect(isProjectAssignedToOfficer(bp, superuser)).toBe(true);
     expect(isProjectAssignedToOfficer(bp, undefined)).toBe(true);
 
     const officerProj = mapBackendProjectToOfficerProject(bp);

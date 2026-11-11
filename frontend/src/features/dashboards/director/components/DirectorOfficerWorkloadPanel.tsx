@@ -311,7 +311,7 @@ export function DirectorOfficerWorkloadPanel() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-[#00843D] border border-emerald-200">
               <Users className="h-4 w-4" />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900">
+            <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
               Procurement Officer Workload & Delay Breakdown
             </h3>
           </div>

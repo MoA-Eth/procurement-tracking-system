@@ -23,7 +23,7 @@ import { getDetailedAccountStatus } from "@/lib/userAccountStatus";
 
 export function AdminDashboard({ user }: { user: AuthUser }) {
   const router = useRouter();
-  const heading = getDashboardHeading("ADMIN");
+  const heading = getDashboardHeading(user.role);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string | null>(
     null,
@@ -77,7 +77,9 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
         if (selectedRoleFilter === "Executive")
           return normalized === "MANAGEMENT";
         if (selectedRoleFilter === "Administrator")
-          return normalized === "ADMIN";
+          return normalized === "ADMIN" || normalized === "SUPERUSER";
+        if (selectedRoleFilter === "Superuser")
+          return normalized === "SUPERUSER";
         return true;
       });
     } else if (selectedStatusFilter !== "ALL") {
@@ -242,7 +244,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
               <div>
                 <h2
                   id="user-roles-breakdown-heading"
-                  className="text-base font-semibold text-slate-900"
+                  className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
                 >
                   Access Role Allocation
                 </h2>
@@ -357,7 +359,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
                       })}
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none select-none">
-                    <span className="text-2xl font-semibold tracking-tight text-slate-900 leading-none">
+                    <span className="text-xl font-semibold tracking-tight text-slate-900 leading-none">
                       {totalAllocated}
                     </span>
                     <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-1">
@@ -434,7 +436,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             <div>
               <h2
                 id="system-controls-heading"
-                className="text-base font-semibold text-slate-900"
+                className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
               >
                 Environment Health
               </h2>
@@ -486,7 +488,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
             <div>
               <h2
                 id="user-access-table-heading"
-                className="text-base font-semibold text-slate-900"
+                className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
               >
                 User Profiles &amp; Access Controls
               </h2>
@@ -569,7 +571,7 @@ export function AdminDashboard({ user }: { user: AuthUser }) {
           <div>
             <h2
               id="recent-audit-logs-heading"
-              className="text-base font-semibold text-slate-900"
+              className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight"
             >
               Recent Audit Trail
             </h2>

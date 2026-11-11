@@ -8,7 +8,10 @@ import type {
   ProcurementPlanSummary,
 } from "../../projects/data/officerProjects";
 import type { OfficerTrackedActivityItem } from "./OfficerActivityTrackerView";
-import { ActivityTrackingDetailView } from "./ActivityTrackingDetailView";
+import {
+  ActivityTrackingDetailView,
+  canSelectRoadmapStage,
+} from "./ActivityTrackingDetailView";
 
 const activityForm: ProcurementActivityFormValues = {
   activityDescription: "Supply and installation of solar-powered cold rooms",
@@ -185,6 +188,51 @@ describe("ActivityTrackingDetailView", () => {
     expect(markup).toContain("Signed contract milestone completed");
     expect(markup).toContain("Register Contract");
     expect(markup).toContain("mode=register");
+  });
+
+  it("only allows selecting the next stage after all previous stages are complete", () => {
+    expect(
+      canSelectRoadmapStage(
+        item.activity.details!.roadmap!,
+        item.tracking,
+        item,
+        0,
+      ),
+    ).toBe(false);
+    expect(
+      canSelectRoadmapStage(
+        item.activity.details!.roadmap!,
+        item.tracking,
+        item,
+        1,
+      ),
+    ).toBe(false);
+    expect(
+      canSelectRoadmapStage(
+        item.activity.details!.roadmap!,
+        item.tracking,
+        item,
+        2,
+      ),
+    ).toBe(true);
+
+    const firstStagePending = {
+      ...item.tracking,
+      stages: item.tracking.stages.map((stage) =>
+        stage.stageName === "Preparation of Specification"
+          ? { ...stage, status: "In Progress" as const }
+          : stage,
+      ),
+    };
+
+    expect(
+      canSelectRoadmapStage(
+        item.activity.details!.roadmap!,
+        firstStagePending,
+        item,
+        2,
+      ),
+    ).toBe(false);
   });
 
   it("provides real tab panels and clear states for a summary-only activity", () => {

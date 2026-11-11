@@ -9,26 +9,38 @@ interface StatusItem {
 }
 
 interface OfficerOverviewStatusBarChartProps {
+  className?: string;
   items: StatusItem[];
   loading?: boolean;
 }
 
 export function OfficerOverviewStatusBarChart({
+  className,
   items,
   loading = false,
 }: OfficerOverviewStatusBarChartProps) {
   const maxValue = Math.max(...items.map((i) => i.value), 1);
-  const total = items.reduce((sum, i) => sum + i.value, 0);
+  const planStatusLabels = new Set([
+    "Returned plans",
+    "Submitted plans",
+    "Draft plans",
+    "Finally approved",
+  ]);
+  const total = items.reduce(
+    (sum, item) =>
+      sum + (planStatusLabels.has(item.label) ? item.value : 0),
+    0,
+  );
 
   return (
     <section
       aria-label="Procurement overview"
-      className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+      className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ${className || ""}`}
     >
       <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
         <div className="flex items-center gap-2.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#00843D]" />
-          <h2 className="text-lg font-semibold text-[#16253d]">
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Procurement Overview
           </h2>
         </div>

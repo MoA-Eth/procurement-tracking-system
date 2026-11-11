@@ -63,8 +63,10 @@ const roleContext: Record<UserRole, string> = {
   DIRECTOR: "Directorate Oversight",
   ENDORSING_COMMITTEE: "Committee Review",
   MANAGEMENT: "Executive Management",
+  EXECUTIVE: "Executive Oversight",
   ADMIN: "System Administration",
   FINANCE: "Finance & Disbursements",
+  SUPERUSER: "System Superuser",
 };
 
 // Today in the Ethiopian calendar ("18 Tikimt 2019 E.C.") and Gregorian
@@ -124,7 +126,6 @@ export function AppShell({
       return next;
     });
   };
-
   const navigation = getNavigationForRole(user.role);
   const userInitials = initials(user.displayName);
 
@@ -276,6 +277,7 @@ export function AppShell({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
                 aria-current={isActive ? "page" : undefined}
                 onClick={(event) => handleNavClick(item.href, event)}
                 title={collapsed ? item.label : undefined}
@@ -316,9 +318,12 @@ export function AppShell({
           collapsed ? "p-2 space-y-2" : "p-3 space-y-1.5"
         }`}
       >
-        {(user.role === "DIRECTOR" || user.role === "ADMIN") && (
+        {(user.role === "DIRECTOR" ||
+          user.role === "ADMIN" ||
+          user.role === "SUPERUSER") && (
           <Link
             href="/workspace/settings"
+            prefetch={true}
             onClick={(event) => handleNavClick("/workspace/settings", event)}
             title={collapsed ? "Settings · ማስተካከያዎች" : undefined}
             aria-label="Settings"
@@ -356,6 +361,7 @@ export function AppShell({
           <div className="flex flex-col items-center gap-1.5 pt-1 border-t border-white/10">
             <Link
               href="/profile"
+              prefetch={true}
               onClick={() => setIsMobileMenuOpen(false)}
               title={`${user.displayName} (${ROLE_LABELS[user.role]})`}
               aria-label="View Profile"
@@ -375,6 +381,7 @@ export function AppShell({
           <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10">
             <Link
               href="/profile"
+              prefetch={true}
               onClick={() => setIsMobileMenuOpen(false)}
               title="View & Edit Profile"
               className={`flex items-center gap-2.5 min-w-0 flex-1 group rounded-xl p-1.5 transition-all ${

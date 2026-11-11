@@ -461,22 +461,27 @@ export function calculateOverviewStatusItems(
   assignedPlans: BackendPlan[],
   delayedActivitiesCount: number,
 ) {
-  const draftCount = assignedPlans.filter(
-    (p) => p.status === "DRAFT" || (p as any).status === "Draft",
+  const planStatuses = assignedPlans.map((plan) =>
+    String(plan.status || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[\s-]+/g, "_"),
+  );
+  const draftCount = planStatuses.filter((status) => status === "DRAFT").length;
+  const returnedCount = planStatuses.filter((status) =>
+    [
+      "REJECTED",
+      "RETURNED",
+      "RETURNED_FOR_REVISION",
+      "COMMITTEE_REJECTED",
+      "MANAGEMENT_REJECTED",
+    ].includes(status),
   ).length;
-  const returnedCount = assignedPlans.filter(
-    (p) => p.status === "REJECTED" || (p as any).status === "Returned",
+  const approvedCount = planStatuses.filter((status) =>
+    ["APPROVED", "FINALLY_APPROVED", "MANAGEMENT_APPROVED"].includes(status),
   ).length;
-  const submittedCount = assignedPlans.filter(
-    (p) =>
-      p.status === "SUBMITTED" ||
-      (p as any).status === "Submitted to Director" ||
-      (p as any).status === "WITH_COMMITTEE" ||
-      (p as any).status === "Under Committee Review",
-  ).length;
-  const approvedCount = assignedPlans.filter(
-    (p) => p.status === "APPROVED" || (p as any).status === "Finally Approved",
-  ).length;
+  const submittedCount =
+    assignedPlans.length - draftCount - returnedCount - approvedCount;
 
   return [
     {

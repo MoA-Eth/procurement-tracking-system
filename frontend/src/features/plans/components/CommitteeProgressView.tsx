@@ -42,6 +42,11 @@ import { useSearchParams } from "next/navigation";
 import { parseRejectionDetails, type ProcurementPlan } from "../plansData";
 import { DirectorActivitiesListView } from "../../activities/components/DirectorActivitiesListView";
 import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
+import {
   OFFICER_PLAN_DRAFTS_STORAGE_KEY,
   parseSavedPlanRecords,
 } from "@/features/projects/data/officerPlanDrafts";
@@ -142,7 +147,8 @@ export function CommitteeProgressView({
   const [resendComment, setResendComment] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const isDirector = currentUser?.role === "DIRECTOR";
+  const isDirector =
+    currentUser?.role === "DIRECTOR" || currentUser?.role === "SUPERUSER";
 
   const loadData = useCallback(async () => {
     try {
@@ -454,14 +460,18 @@ export function CommitteeProgressView({
           const directKeys = new Set(
             directActs
               .map((a: any) =>
-                (a.reference || a.activityRefNo || a.id || "").toLowerCase().trim(),
+                (a.reference || a.activityRefNo || a.id || "")
+                  .toLowerCase()
+                  .trim(),
               )
               .filter(Boolean),
           );
           const uniqueParents = parentActs.filter(
             (pa: any) =>
               !directKeys.has(
-                (pa.reference || pa.activityRefNo || pa.id || "").toLowerCase().trim(),
+                (pa.reference || pa.activityRefNo || pa.id || "")
+                  .toLowerCase()
+                  .trim(),
               ),
           );
           const effectiveActivities = [...directActs, ...uniqueParents];
@@ -858,7 +868,7 @@ export function CommitteeProgressView({
 
     try {
       setIsSubmittingRevision(true);
-      await returnPlanForRevision(
+      const returnedPlan = await returnPlanForRevision(
         planToReturn.id,
         instructions,
         currentUser?.id,
@@ -869,7 +879,9 @@ export function CommitteeProgressView({
         planReference: planToReturn.planNumber || planToReturn.id,
         planName: planToReturn.planTitle || planToReturn.planNumber,
         projectCode: planToReturn.projectCode,
-        versionNumber: getCurrentPlanVersionNumber(planToReturn.id),
+        versionNumber:
+          returnedPlan.version ||
+          getCurrentPlanVersionNumber(planToReturn.id) + 1,
         action: "RETURNED",
         actionLabel: "Plan Returned by Committee for Revision",
         changedBy:
@@ -957,6 +969,8 @@ export function CommitteeProgressView({
   const managementItems = useMemo(() => {
     return filteredItems.filter((it) => it.hasAdvancedToManagement);
   }, [filteredItems]);
+  const committeePagination = useListPagination(committeeItems, 15);
+  const managementPagination = useListPagination(managementItems, 15);
 
   // Quick stats
   const stats = useMemo(() => {
@@ -2116,7 +2130,7 @@ export function CommitteeProgressView({
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            <HorizontalTableScroller label="Committee plan progress">
               <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                   <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -2148,7 +2162,7 @@ export function CommitteeProgressView({
                       </td>
                     </tr>
                   ) : (
-                    committeeItems.map((item) => (
+                    committeePagination.pageItems.map((item) => (
                       <tr
                         key={item.id}
                         className="hover:bg-slate-50 transition-colors"
@@ -2269,7 +2283,15 @@ export function CommitteeProgressView({
                   )}
                 </tbody>
               </table>
-            </div>
+            </HorizontalTableScroller>
+            <PaginationControls
+              page={committeePagination.page}
+              pageCount={committeePagination.pageCount}
+              startIndex={committeePagination.startIndex}
+              endIndex={committeePagination.endIndex}
+              totalItems={committeeItems.length}
+              setPage={committeePagination.setPage}
+            />
           </div>
 
           {/* SECTION B: EXECUTIVE MANAGEMENT PROGRESS TABLE */}
@@ -2295,7 +2317,7 @@ export function CommitteeProgressView({
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            <HorizontalTableScroller label="Executive management plan progress">
               <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                   <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -2327,7 +2349,7 @@ export function CommitteeProgressView({
                       </td>
                     </tr>
                   ) : (
-                    managementItems.map((item) => (
+                    managementPagination.pageItems.map((item) => (
                       <tr
                         key={item.id}
                         className="hover:bg-slate-50 transition-colors"
@@ -2411,7 +2433,15 @@ export function CommitteeProgressView({
                   )}
                 </tbody>
               </table>
-            </div>
+            </HorizontalTableScroller>
+            <PaginationControls
+              page={managementPagination.page}
+              pageCount={managementPagination.pageCount}
+              startIndex={managementPagination.startIndex}
+              endIndex={managementPagination.endIndex}
+              totalItems={managementItems.length}
+              setPage={managementPagination.setPage}
+            />
           </div>
         </div>
       )}

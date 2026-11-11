@@ -2,11 +2,16 @@
 
 import { StatusText } from "../../../components/dashboard/StatusText";
 import {
+  HorizontalTableScroller,
+  PaginationControls,
+} from "@/components/dashboard/ListPagination";
+import {
   calculateDelayDays,
   defaultStageTracking,
   createInitialActivityTrackingRecord,
   effectiveTargetDate,
   findActivityTrackingRecord,
+  latestReachedRoadmapStage,
   OFFICER_ACTIVITY_TRACKING_STORAGE_KEY,
   parseActivityTrackingRecords,
   upsertActivityTrackingRecord,
@@ -80,7 +85,7 @@ type TrackerSort =
   "attention" | "delay-desc" | "reference" | "stage" | "status" | "target-asc";
 
 const DUE_SOON_DAYS = 7;
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 
 export function OfficerActivityTrackerView({
   currentUser,
@@ -295,6 +300,8 @@ export function collectTrackableActivities(
 
   for (const project of projects) {
     for (const plan of project.plans) {
+      if (!isFinallyApprovedPlan(plan)) continue;
+
       const planDirectActivities = plan.planActivities || [];
 
       const savedActivities = savedActivityRecords
@@ -378,17 +385,16 @@ export function collectTrackableActivities(
         ) || projects[0];
 
       if (projMatch) {
-        const planMatch =
-          projMatch.plans?.find(
-            (pl) =>
-              pl.reference?.toLowerCase() ===
-                record.planReference?.toLowerCase() ||
-              pl.name?.toLowerCase() === record.planReference?.toLowerCase() ||
-              (Boolean(pl.id) &&
-                pl.id?.toLowerCase() === record.planReference?.toLowerCase()),
-          ) || projMatch.plans?.[0];
+        const planMatch = projMatch.plans?.find(
+          (pl) =>
+            pl.reference?.toLowerCase() ===
+              record.planReference?.toLowerCase() ||
+            pl.name?.toLowerCase() === record.planReference?.toLowerCase() ||
+            (Boolean(pl.id) &&
+              pl.id?.toLowerCase() === record.planReference?.toLowerCase()),
+        );
 
-        if (planMatch) {
+        if (planMatch && isFinallyApprovedPlan(planMatch)) {
           const tracking =
             findActivityTrackingRecord(
               trackingRecords,
@@ -416,6 +422,16 @@ export function collectTrackableActivities(
   }
 
   return Array.from(itemsByIdentity.values());
+}
+
+function isFinallyApprovedPlan(plan: ProcurementPlanSummary): boolean {
+  const status = String(plan.status || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+  return ["APPROVED", "FINALLY_APPROVED", "MANAGEMENT_APPROVED"].includes(
+    status,
+  );
 }
 
 interface TrackerStageSnapshot {
@@ -467,6 +483,16 @@ export function trackerCurrentStage(
       ),
   );
   const selectedStage =
+    (isFinallyApprovedPlan(item.plan)
+      ? latestReachedRoadmapStage(
+          roadmap,
+          (stage) => resolvedStageTracking(item, stage),
+          (stage) =>
+            item.tracking.stages.find(
+              (tracking) => tracking.stageName === stage.name,
+            )?.actualDate?.gregorian,
+        )
+      : undefined) ??
     inProgressStage ??
     usableDeclaredStage ??
     firstIncompleteStage ??
@@ -527,6 +553,15 @@ export function trackerDisplayStatus(
   }
 
   return "Not Started";
+}
+
+export function trackerActivityStatusLabel(
+  item: OfficerTrackedActivityItem,
+  todayIso = new Date().toISOString().slice(0, 10),
+): string {
+  return isFinallyApprovedPlan(item.plan)
+    ? trackerCurrentStage(item, todayIso).name
+    : trackerDisplayStatus(item, todayIso);
 }
 
 export function trackerIsDueSoon(
@@ -1224,7 +1259,7 @@ function ActivityTrackerList({
 
       {/* 5. Main Table Container */}
       <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <HorizontalTableScroller label="Activity tracker">
           <table className="w-full text-left border-collapse min-w-[1240px]">
             <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
               <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -1306,41 +1341,18 @@ function ActivityTrackerList({
               )}
             </tbody>
           </table>
-        </div>
-        <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-          <span>
-            Showing {orderedItems.length === 0 ? 0 : firstVisibleIndex + 1} to{" "}
-            {Math.min(firstVisibleIndex + PAGE_SIZE, orderedItems.length)} of{" "}
-            {orderedItems.length} matching activities
-          </span>
-          <div className="flex items-center gap-3">
-            <span>
-              Page {currentPageNumber} of {totalPages}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                aria-label="Previous page"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
-                disabled={currentPageNumber === 1}
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                type="button"
-              >
-                <ChevronLeft aria-hidden="true" className="h-4 w-4" />
-              </button>
-              <button
-                aria-label="Next page"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition-colors"
-                disabled={currentPageNumber === totalPages}
-                onClick={() =>
-                  setPage((current) => Math.min(totalPages, current + 1))
-                }
-                type="button"
-              >
-                <ChevronRight aria-hidden="true" className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
+        </HorizontalTableScroller>
+        <PaginationControls
+          page={currentPageNumber}
+          pageCount={totalPages}
+          startIndex={firstVisibleIndex}
+          endIndex={Math.min(
+            firstVisibleIndex + PAGE_SIZE,
+            orderedItems.length,
+          )}
+          totalItems={orderedItems.length}
+          setPage={setPage}
+        />
       </div>
     </div>
   );
@@ -1454,7 +1466,10 @@ function TrackerRow({
         )}
       </td>
       <td className="py-3.5 px-4 whitespace-nowrap">
-        <StatusText className="text-xs" label={status} />
+        <StatusText
+          className="text-xs"
+          label={trackerActivityStatusLabel(item, todayIso)}
+        />
       </td>
       <td className="py-3.5 pr-6 pl-4 text-center whitespace-nowrap">
         <Link

@@ -1,43 +1,74 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useLayoutEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { getClientSession } from "@/lib/authApi";
+import { signOut } from "@/lib/authApi";
 import { authTokenManager } from "@/lib/authTokenManager";
 import { tabSessionManager } from "@/lib/tabSessionManager";
+import type { AuthSession } from "@/lib/authTypes";
 
 interface TabSessionGuardProps {
   children: ReactNode;
+  session: AuthSession;
 }
 
-export function TabSessionGuard({ children }: TabSessionGuardProps) {
+export function TabSessionGuard({
+  children,
+  session,
+}: TabSessionGuardProps) {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
-  useEffect(() => {
-    if (tabSessionManager.hasTabSession()) {
-      setIsAuthorized(true);
-      return;
-    }
+  useLayoutEffect(() => {
+    tabSessionManager.setTabSession(session);
+    authTokenManager.setToken(session.accessToken ?? null);
 
-    // Check if a valid remembered session exists from cookie
-    const clientSession = getClientSession();
-    if (
-      clientSession &&
-      clientSession.status === "AUTHENTICATED" &&
-      clientSession.user
-    ) {
-      tabSessionManager.setTabSession(clientSession);
-      if (clientSession.accessToken) {
-        authTokenManager.setToken(clientSession.accessToken);
+    const expiresAt = new Date(session.expiresAt).getTime();
+    let timeoutId: number | undefined;
+    const redirectToLogin = () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
       }
-      setIsAuthorized(true);
+      tabSessionManager.clearTabSession();
+      authTokenManager.clearToken();
+      void signOut();
+      setIsAuthorized(false);
+      router.replace("/");
+    };
+
+    if (!Number.isFinite(expiresAt)) {
+      redirectToLogin();
       return;
     }
 
-    setIsAuthorized(false);
-    router.replace("/");
-  }, [router]);
-  if (isAuthorized === null || isAuthorized === false) {
+    const checkExpiration = () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+      const remaining = expiresAt - Date.now();
+      if (remaining <= 0) {
+        redirectToLogin();
+        return;
+      }
+      timeoutId = window.setTimeout(
+        checkExpiration,
+        Math.min(remaining, 2_147_000_000),
+      );
+    };
+    const checkWhenActive = () => {
+      if (document.visibilityState === "visible") checkExpiration();
+    };
+
+    checkExpiration();
+    window.addEventListener("focus", checkWhenActive);
+    document.addEventListener("visibilitychange", checkWhenActive);
+    return () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      window.removeEventListener("focus", checkWhenActive);
+      document.removeEventListener("visibilitychange", checkWhenActive);
+    };
+  }, [router, session]);
+
+  if (!isAuthorized) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">

@@ -1,13 +1,72 @@
 import { describe, expect, it } from "vitest";
 import {
+  activityStatusForSelectedPlan,
+  activityStatusForPlanStatus,
+  activityRecordBelongsToPlanId,
   addSavedActivityRecord,
   findBackendActivityForPlan,
+  mergeBackendAndSavedActivityRecords,
   mergeActivityRoadmaps,
   mapBackendActivityToProcurementActivitySummary,
   mapRoadmapStagesForBackend,
+  nextAvailableActivityReference,
   parseSavedActivityRecords,
   type SavedOfficerActivityRecord,
 } from "./officerActivityDrafts";
+
+describe("activity status derived from plan status", () => {
+  it.each([
+    ["Draft", "Draft"],
+    ["Submitted to Director", "Submitted to Director"],
+    ["Committee Review", "Not Started"],
+    ["Approved", "Approved"],
+    ["Finally Approved", "Approved"],
+    ["Returned", "Draft"],
+    ["Returned for Revision", "Draft"],
+    ["Update Requested", "Not Started"],
+    ["Cancellation Requested", "Not Started"],
+    ["Cancelled", "Cancelled"],
+  ] as const)("maps plan status %s to activity status %s", (plan, activity) => {
+    expect(activityStatusForPlanStatus(plan)).toBe(activity);
+  });
+
+  it("preserves the source status of activities inherited from another plan", () => {
+    expect(
+      activityStatusForSelectedPlan(
+        {
+          category: "Goods",
+          currentStage: "Draft",
+          description: "Inherited activity",
+          estimatedAmount: 100,
+          isInheritedFromParentPlan: true,
+          method: "RFB",
+          reference: "ACT-001",
+          status: "Submitted to Director",
+        },
+        "Draft",
+      ),
+    ).toBe("Submitted to Director");
+  });
+});
+
+describe("nextAvailableActivityReference", () => {
+  it("increments a colliding generated reference until it is unused", () => {
+    expect(
+      nextAvailableActivityReference("ET-MoA-000004-GO-RFQ", [
+        "ET-MoA-000004-GO-RFQ",
+        "ET-MoA-000005-GO-RFQ",
+      ]),
+    ).toBe("ET-MoA-000006-GO-RFQ");
+  });
+
+  it("preserves references that are already available", () => {
+    expect(
+      nextAvailableActivityReference("ET-MoA-000004-GO-RFQ", [
+        "ET-MoA-000003-GO-RFQ",
+      ]),
+    ).toBe("ET-MoA-000004-GO-RFQ");
+  });
+});
 
 const record: SavedOfficerActivityRecord = {
   activity: {
@@ -22,6 +81,27 @@ const record: SavedOfficerActivityRecord = {
   planReference: "PP-DRIVE-2016-01",
   projectCode: "PRJ-24-001",
 };
+
+describe("activityRecordBelongsToPlanId", () => {
+  it("uses the activity's plan ID even when project metadata differs", () => {
+    expect(
+      activityRecordBelongsToPlanId(
+        {
+          ...record,
+          activity: { ...record.activity, planId: "plan-id" },
+          projectCode: "another-project",
+        },
+        "PLAN-ID",
+      ),
+    ).toBe(true);
+  });
+
+  it("matches the saved plan reference when the activity has no plan ID", () => {
+    expect(activityRecordBelongsToPlanId(record, record.planReference)).toBe(
+      true,
+    );
+  });
+});
 
 const detailedRecord: SavedOfficerActivityRecord = {
   ...record,
@@ -79,6 +159,49 @@ const detailedRecord: SavedOfficerActivityRecord = {
     },
   },
 };
+
+describe("mergeBackendAndSavedActivityRecords", () => {
+  it("keeps database activity ownership when a saved record has the same reference", () => {
+    const backendRecord: SavedOfficerActivityRecord = {
+      ...record,
+      activity: {
+        ...record.activity,
+        id: "database-activity-id",
+        activityId: "database-activity-id",
+        createdById: "database-owner-id",
+        createdByName: "Database Owner",
+      },
+    };
+    const staleSavedRecord: SavedOfficerActivityRecord = {
+      ...record,
+      activity: {
+        ...record.activity,
+        id: "stale-local-id",
+        activityId: "stale-local-id",
+        createdById: "current-user-id",
+        createdByName: "Current User",
+      },
+    };
+
+    expect(
+      mergeBackendAndSavedActivityRecords([backendRecord], [staleSavedRecord]),
+    ).toEqual([backendRecord]);
+  });
+
+  it("keeps local activities that do not exist in backend records", () => {
+    const savedOnlyRecord: SavedOfficerActivityRecord = {
+      ...record,
+      activity: {
+        ...record.activity,
+        reference: "LOCAL-ACTIVITY",
+      },
+    };
+
+    expect(mergeBackendAndSavedActivityRecords([], [savedOnlyRecord])).toEqual([
+      savedOnlyRecord,
+    ]);
+  });
+});
 
 describe("officer activity draft storage", () => {
   it("does not match another plan's activity by a reused reference", () => {
@@ -139,6 +262,22 @@ describe("officer activity draft storage", () => {
     expect(activity.category).toBe("Works");
   });
 
+  it("maps approved backend activity status to Approved", () => {
+    const activity = mapBackendActivityToProcurementActivitySummary({
+      id: "activity-id",
+      reference: "ACT-001",
+      status: "APPROVED",
+      description: "Supply of equipment",
+      estimatedBudget: 500,
+      procurementCategory: "GOODS",
+      procurementMethod: { label: "Request for Bids" },
+      plan: { status: "APPROVED" },
+      stages: [],
+    });
+
+    expect(activity.status).toBe("Approved");
+  });
+
   it("maps activities under a submitted plan to Submitted to Director", () => {
     for (const status of ["DRAFT", "PLANNED", "IN_PROGRESS"]) {
       const activity = mapBackendActivityToProcurementActivitySummary({
@@ -155,6 +294,22 @@ describe("officer activity draft storage", () => {
 
       expect(activity.status).toBe("Submitted to Director");
     }
+  });
+
+  it("uses the parent plan status when it conflicts with the activity status", () => {
+    const activity = mapBackendActivityToProcurementActivitySummary({
+      id: "activity-id",
+      reference: "ACT-001",
+      status: "IN_PROGRESS",
+      description: "Supply of equipment",
+      estimatedBudget: 500,
+      procurementCategory: "GOODS",
+      procurementMethod: { label: "Request for Bids" },
+      plan: { status: "DRAFT" },
+      stages: [],
+    });
+
+    expect(activity.status).toBe("Draft");
   });
 
   it("maps entered roadmap dates into backend stage payloads", () => {

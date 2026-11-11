@@ -5,7 +5,11 @@ import {
   parseRejectionDetails,
 } from "@/features/plans/plansData";
 import { roadmapForMethod } from "@/features/projects/data/procurementActivityConfig";
-import { mapBackendActivityToProcurementActivitySummary } from "@/features/projects/data/officerActivityDrafts";
+import {
+  activityStatusForPlanStatus,
+  mapBackendActivityToProcurementActivitySummary,
+  normalizePlanStatus,
+} from "@/features/projects/data/officerActivityDrafts";
 import {
   gregorianToEthiopian,
   formatEthiopianDate,
@@ -33,6 +37,7 @@ export interface BackendCommitteeVote {
 
 export interface BackendPlanActivity {
   id: string;
+  isActive?: boolean;
   reference?: string;
   description?: string;
   estimatedBudget: number;
@@ -86,6 +91,7 @@ export interface BackendPlanActivity {
     }[];
   }[];
   status?: string;
+  version?: number;
   createdById?: string;
   creator?: { id: string; name: string; displayName?: string; email?: string };
   updatedById?: string;
@@ -135,6 +141,7 @@ export interface BackendPlan {
     | "UPDATE_REQUESTED"
     | "CANCELLED"
     | string;
+  version?: number;
   committeeRound?: number;
   committeeVoteDeadline?: string | null;
   title: string;
@@ -193,6 +200,7 @@ export interface BackendPlan {
     id: string;
     title?: string;
     reference?: string;
+    status?: string;
     activities?: BackendPlanActivity[];
   } | null;
   planType?: "ANNUAL" | "ADDITIONAL" | string | null;
@@ -231,7 +239,7 @@ export interface UpdatePlanInput {
   additionalPlanReason?: string;
 }
 
-import { apiClient } from "./apiClient";
+import { apiClient, clearApiCache } from "./apiClient";
 
 let _cachedPlans: BackendPlan[] | null = null;
 let _cachedPlansTimestamp = 0;
@@ -248,22 +256,41 @@ export function setCachedPlans(plans: BackendPlan[]) {
 export function invalidatePlansCache() {
   _cachedPlans = null;
   _cachedPlansTimestamp = 0;
+  clearApiCache("/plans");
 }
 
-export async function fetchPlans(): Promise<BackendPlan[]> {
+export async function fetchPlans(forceRefresh = false): Promise<BackendPlan[]> {
   try {
-    const res = await apiClient.get<any>("/plans", {
-      params: { pageSize: 500 },
+    const firstPage = await apiClient.get<any>("/plans", {
+      params: { page: 1, pageSize: 500 },
+      noCache: forceRefresh,
     });
-    const data = Array.isArray(res)
-      ? res
-      : Array.isArray(res?.items)
-        ? res.items
-        : Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res?.data?.items)
-            ? res.data.items
-            : [];
+    const getItems = (response: any): BackendPlan[] =>
+      Array.isArray(response)
+        ? response
+        : Array.isArray(response?.items)
+          ? response.items
+          : Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.data?.items)
+              ? response.data.items
+              : [];
+    const totalPages =
+      firstPage?.pagination?.totalPages ??
+      firstPage?.data?.pagination?.totalPages ??
+      1;
+    const data = getItems(firstPage);
+    if (Number.isInteger(totalPages) && totalPages > 1) {
+      const laterPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          apiClient.get<any>("/plans", {
+            params: { page: index + 2, pageSize: 500 },
+            noCache: forceRefresh,
+          }),
+        ),
+      );
+      data.push(...laterPages.flatMap(getItems));
+    }
     if (Array.isArray(data) && data.length > 0) {
       _cachedPlans = data;
       _cachedPlansTimestamp = Date.now();
@@ -298,15 +325,9 @@ export async function updatePlan(
   return res.data || res;
 }
 
-export async function deletePlan(id: string): Promise<boolean> {
-  try {
-    invalidatePlansCache();
-    await apiClient.delete(`/plans/${encodeURIComponent(id)}`);
-    return true;
-  } catch (err) {
-    console.warn(`deletePlan notice for ${id}:`, err);
-    return false;
-  }
+export async function deletePlan(id: string): Promise<void> {
+  await apiClient.delete(`/plans/${encodeURIComponent(id)}`);
+  invalidatePlansCache();
 }
 
 /** Officer submits draft plan to Director */
@@ -314,22 +335,6 @@ export async function submitPlanForReview(id: string): Promise<BackendPlan> {
   invalidatePlansCache();
   const res = await apiClient.post<any>(
     `/plans/${encodeURIComponent(id)}/submit`,
-  );
-  return res.data || res;
-}
-
-export async function requestPlanUpdate(id: string): Promise<BackendPlan> {
-  invalidatePlansCache();
-  const res = await apiClient.post<any>(
-    `/plans/${encodeURIComponent(id)}/request-update`,
-  );
-  return res.data || res;
-}
-
-export async function approvePlanUpdate(id: string): Promise<BackendPlan> {
-  invalidatePlansCache();
-  const res = await apiClient.post<any>(
-    `/plans/${encodeURIComponent(id)}/approve-update`,
   );
   return res.data || res;
 }
@@ -348,6 +353,7 @@ export async function sendPlanToCommittee(
       deadlineDays,
     },
   );
+  invalidatePlansCache();
   return res.data || res;
 }
 
@@ -397,25 +403,17 @@ export async function submitManagementDecision(
   return res.data || res;
 }
 
-/** Director returns rejected plan to Officer for revision with comments */
+/** An approver returns a plan to its officer for revision with comments. */
 export async function returnPlanForRevision(
   planId: string,
   comment: string,
   userId?: string,
 ): Promise<BackendPlan> {
-  try {
-    const res = await apiClient.post<any>(
-      `/plans/${encodeURIComponent(planId)}/return-to-officer`,
-      { comment, reason: comment, userId },
-    );
-    return res.data || res;
-  } catch (err: any) {
-    const res = await apiClient.post<any>(
-      `/plans/${encodeURIComponent(planId)}/reject`,
-      { comment, reason: comment, userId },
-    );
-    return res.data || res;
-  }
+  const res = await apiClient.post<any>(
+    `/plans/${encodeURIComponent(planId)}/return-to-officer`,
+    { comment, reason: comment, userId },
+  );
+  return res.data || res;
 }
 
 /** Fetch comments for a plan and its activities */
@@ -515,7 +513,11 @@ export function mapBackendPlanToFrontend(
       : "0.0M ETB";
 
   // Calculate progress details from committeeVotes relation
-  const votes = backendPlan.committeeVotes || [];
+  const votes = (backendPlan.committeeVotes || []).filter(
+    (vote) =>
+      backendPlan.committeeRound === undefined ||
+      vote.round === backendPlan.committeeRound,
+  );
   const approvalsCount = votes.filter((v) => v.decision === "APPROVE").length;
   const progress = Math.min(100, Math.round((approvalsCount / 5) * 100)); // 5 members total
   const progressText = `${approvalsCount} of 5 approved`;
@@ -604,6 +606,8 @@ export function mapBackendPlanToFrontend(
     organizationRegion: backendPlan.organization || "Federal",
     description: backendPlan.description || undefined,
     status,
+    version: backendPlan.version,
+    returnedForRevision: backendPlan.status === "RETURNED_FOR_REVISION",
     createdBy:
       (backendPlan as any).creator?.name ||
       backendPlan.createdBy ||
@@ -672,9 +676,10 @@ export function mapBackendPlanToFrontend(
               const isNA = Boolean(st.isNotApplicable || st.notApplicable);
               return {
                 id: st.id || `stage-${idx + 1}`,
-                stageName:
-                  st.stageType?.label || st.name || `Stage ${idx + 1}`,
-                originalPlannedDate: isNA ? "Not applicable" : plannedDate || "",
+                stageName: st.stageType?.label || st.name || `Stage ${idx + 1}`,
+                originalPlannedDate: isNA
+                  ? "Not applicable"
+                  : plannedDate || "",
                 revisedTargetDate: isNA
                   ? "Not applicable"
                   : targetDate || plannedDate || "",
@@ -745,8 +750,7 @@ export function mapBackendPlanToOfficerPlanSummary(
   else if (backendPlan.status === "CANCELLATION_REQUESTED")
     status = "Cancellation Requested";
   else if (backendPlan.status === "CANCELLED") status = "Cancelled";
-  else if (backendPlan.status === "RETURNED_FOR_REVISION")
-    status = "Returned for Revision";
+  else if (backendPlan.status === "RETURNED_FOR_REVISION") status = "Draft";
   else if (
     backendPlan.status === "REJECTED" ||
     backendPlan.status === "COMMITTEE_REJECTED" ||
@@ -827,12 +831,14 @@ export function mapBackendPlanToOfficerPlanSummary(
 
               let rawPlannedDate = st.plannedStartDate
                 ? new Date(st.plannedStartDate).toISOString().slice(0, 10)
-                : (st.gregorianDate || "");
+                : st.gregorianDate || "";
               let rawTargetDate = st.currentTargetStartDate
                 ? new Date(st.currentTargetStartDate).toISOString().slice(0, 10)
-                : (rawPlannedDate || st.gregorianDate || "");
+                : rawPlannedDate || st.gregorianDate || "";
 
-              const dateToUse = isNA ? "" : rawTargetDate || rawPlannedDate || st.gregorianDate || "";
+              const dateToUse = isNA
+                ? ""
+                : rawTargetDate || rawPlannedDate || st.gregorianDate || "";
 
               const rawActualDate =
                 st.actualEndDate || st.actualStartDate
@@ -859,7 +865,7 @@ export function mapBackendPlanToOfficerPlanSummary(
                 days: String(st.plannedDays || 14),
                 ethiopianDate: isNA
                   ? ""
-                  : (st.ethiopianDate || toEthiopianDateString(dateToUse)),
+                  : st.ethiopianDate || toEthiopianDateString(dateToUse),
                 gregorianDate: isNA ? "" : dateToUse,
                 plannedStartDate: isNA ? "" : rawPlannedDate || dateToUse,
                 plannedEndDate: isNA
@@ -959,7 +965,13 @@ export function mapBackendPlanToOfficerPlanSummary(
         id: a.id,
         activityId: a.id,
         planId: backendPlan.id,
+        isActive: a.isActive !== false,
         projectId: backendPlan.projectId || backendPlan.project?.id,
+        version:
+          backendPlan.status === "RETURNED_FOR_REVISION"
+            ? backendPlan.version || Number(a.version) || 1
+            : Number(a.version || backendPlan.version) || 1,
+        returnedForRevision: backendPlan.status === "RETURNED_FOR_REVISION",
         reference: a.reference || a.id,
         description: a.description || "Procurement activity package",
         category: activityCategory,
@@ -970,18 +982,20 @@ export function mapBackendPlanToOfficerPlanSummary(
         estimatedAmount: Number(a.estimatedBudget || 0),
         currentStage: currentStageObj?.name || "Not Started",
         status:
-          backendPlan.status === "SUBMITTED"
-            ? "Submitted to Director"
-            : a.status === "DRAFT" ||
-                (a.status === "PLANNED" && backendPlan.status === "DRAFT")
-              ? "Draft"
-              : a.status === "COMPLETED"
-                ? "Completed"
-                : a.status === "IN_PROGRESS" || a.status === "IN_EXECUTION"
-                  ? "In Progress"
-                  : a.status === "DELAYED"
-                    ? "Delayed"
-                    : "Not Started",
+          backendPlan.status === "RETURNED_FOR_REVISION"
+            ? "Draft"
+            : backendPlan.status === "SUBMITTED"
+              ? "Submitted to Director"
+              : a.status === "DRAFT" ||
+                  (a.status === "PLANNED" && backendPlan.status === "DRAFT")
+                ? "Draft"
+                : a.status === "COMPLETED"
+                  ? "Completed"
+                  : a.status === "IN_PROGRESS" || a.status === "IN_EXECUTION"
+                    ? "In Progress"
+                    : a.status === "DELAYED"
+                      ? "Delayed"
+                      : "Not Started",
         createdById: a.createdById || a.creator?.id,
         createdByName,
         updatedById: a.updatedById || a.updatedByUser?.id,
@@ -1071,7 +1085,13 @@ export function mapBackendPlanToOfficerPlanSummary(
       )
       .map((pa: any) => {
         const summary = mapBackendActivityToProcurementActivitySummary(pa);
-        (summary as any).isParentApproved = true;
+        summary.isInheritedFromParentPlan = true;
+        const parentPlanStatus = normalizePlanStatus(
+          backendPlan.parentPlan?.status,
+        );
+        if (parentPlanStatus) {
+          summary.status = activityStatusForPlanStatus(parentPlanStatus);
+        }
         return summary;
       });
 
@@ -1088,6 +1108,8 @@ export function mapBackendPlanToOfficerPlanSummary(
     budgetYear: backendPlan.budgetYear || "",
     category,
     status,
+    version: backendPlan.version || 1,
+    returnedForRevision: backendPlan.status === "RETURNED_FOR_REVISION",
     rejectionReason: backendPlan.rejectionReason || undefined,
     directorRevisionComment: backendPlan.directorRevisionComment || undefined,
     managementComment: backendPlan.managementComment || undefined,
@@ -1099,11 +1121,11 @@ export function mapBackendPlanToOfficerPlanSummary(
     inProgressActivities: allPlanActivities.filter(
       (a) => a.status === "In Progress",
     ).length,
-    delayedActivities: allPlanActivities.filter(
-      (a) => a.status === "Delayed",
-    ).length,
+    delayedActivities: allPlanActivities.filter((a) => a.status === "Delayed")
+      .length,
     currency: "ETB",
-    estimatedValue: totalPlanEstimatedValue > 0 ? totalPlanEstimatedValue : estimatedValue,
+    estimatedValue:
+      totalPlanEstimatedValue > 0 ? totalPlanEstimatedValue : estimatedValue,
     organizationRegion: backendPlan.organization || "",
     description: backendPlan.description || undefined,
     planActivities: allPlanActivities,

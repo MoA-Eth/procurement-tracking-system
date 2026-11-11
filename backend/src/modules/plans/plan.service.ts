@@ -1,5 +1,4 @@
 import {
-  ActivityStatus,
   Prisma,
   PlanStatus,
   RevisionEntityType,
@@ -15,6 +14,7 @@ import { env } from '../../config/env.js';
 import { logger } from '../../config/logger.js';
 import { createNotification } from '../alerts/alerts.service.js';
 import { notifyOfficersOnEntityChange } from '../alerts/officer-notification.helper.js';
+import { syncPlanActivityStatuses } from './plan-activity-status.js';
 
 import { ApiError } from '../../utils/errors.js';
 
@@ -55,11 +55,29 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
         project: {
           include: {
             members: {
-              include: { user: true },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    displayName: true,
+                    email: true,
+                    authRole: true,
+                  },
+                },
+              },
             },
           },
         },
-        creator: true,
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            email: true,
+            authRole: true,
+          },
+        },
         parentPlan: {
           include: {
             activities: { where: { isActive: true } },
@@ -67,7 +85,6 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
         },
         childPlans: true,
         activities: {
-          where: { isActive: true },
           include: {
             procurementMethod: true,
             stages: {
@@ -106,16 +123,19 @@ export const getPlansService = async (options: GetPlansQueryOptions = {}) => {
       plans.flatMap((p) => (p.committeeVotes || []).map((v) => v.memberId)),
     ),
   );
-  const users = await prisma.user.findMany({
-    where: { id: { in: voterIds } },
-    select: {
-      id: true,
-      name: true,
-      displayName: true,
-      email: true,
-      authRole: true,
-    },
-  });
+  const users =
+    voterIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: voterIds } },
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            email: true,
+            authRole: true,
+          },
+        })
+      : [];
   const userMap = new Map(users.map((u) => [u.id, u]));
 
   const mappedPlans = plans.map((p) => ({
@@ -158,11 +178,29 @@ export const getPlanByIdService = async (id: string) => {
         project: {
           include: {
             members: {
-              include: { user: true },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    displayName: true,
+                    email: true,
+                    authRole: true,
+                  },
+                },
+              },
             },
           },
         },
-        creator: true,
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            email: true,
+            authRole: true,
+          },
+        },
         parentPlan: {
           include: {
             activities: { where: { isActive: true } },
@@ -170,7 +208,6 @@ export const getPlanByIdService = async (id: string) => {
         },
         childPlans: true,
         activities: {
-          where: { isActive: true },
           include: {
             procurementMethod: true,
             stages: {
@@ -205,16 +242,19 @@ export const getPlanByIdService = async (id: string) => {
   if (!plan) return null;
 
   const voterIds = (plan.committeeVotes || []).map((v) => v.memberId);
-  const users = await prisma.user.findMany({
-    where: { id: { in: voterIds } },
-    select: {
-      id: true,
-      name: true,
-      displayName: true,
-      email: true,
-      authRole: true,
-    },
-  });
+  const users =
+    voterIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: voterIds } },
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            email: true,
+            authRole: true,
+          },
+        })
+      : [];
   const userMap = new Map(users.map((u) => [u.id, u]));
 
   return {
@@ -230,6 +270,53 @@ export const getPlanByIdService = async (id: string) => {
       };
     }),
   };
+};
+
+export const deleteDraftPlanService = async (id: string, userId: string) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const plan = await tx.plan.findFirst({
+      where: { OR: [{ id }, { title: id }], isActive: true },
+    });
+    if (!plan) throw ApiError.notFound('Plan not found');
+    if (plan.status !== PlanStatus.DRAFT) {
+      throw ApiError.conflict('Only draft plans can be deleted.');
+    }
+
+    const user = await tx.user.findUnique({ where: { id: userId } });
+    if (!user) throw ApiError.unauthorized('Authenticated user not found.');
+    const isOfficer =
+      user.authRole === UserRole.OFFICER ||
+      (user as { role?: string }).role === 'ProcurementOfficer';
+    if (isOfficer) {
+      const assignment = await tx.userProject.findUnique({
+        where: {
+          userId_projectId: { userId, projectId: plan.projectId },
+        },
+      });
+      if (!assignment) {
+        throw ApiError.forbidden('You are not assigned to this project.');
+      }
+    }
+
+    await tx.activity.updateMany({
+      where: { planId: plan.id, isActive: true },
+      data: { isActive: false },
+    });
+    const deletedPlan = await tx.plan.update({
+      where: { id: plan.id },
+      data: { isActive: false },
+    });
+    await logRevision(
+      tx,
+      RevisionEntityType.PLAN,
+      RevisionChangeType.SOFT_DELETE,
+      plan.id,
+      userId,
+      plan,
+      deletedPlan,
+    );
+    return deletedPlan;
+  });
 };
 
 export const createPlanService = async (
@@ -465,15 +552,10 @@ export const updatePlanService = async (
         );
       }
 
-      if (isSubmitting && oldPlan.status !== PlanStatus.SUBMITTED) {
-        await tx.activity.updateMany({
-          where: {
-            planId: oldPlan.id,
-            isActive: true,
-            status: ActivityStatus.DRAFT,
-          },
-          data: { status: ActivityStatus.PLANNED },
-        });
+      const requestedStatus =
+        typeof data.status === 'string' ? data.status : data.status?.set;
+      if (requestedStatus && requestedStatus !== oldPlan.status) {
+        await syncPlanActivityStatuses(tx, oldPlan.id, requestedStatus);
       }
 
       const plan = await tx.plan.update({
@@ -582,14 +664,7 @@ export const submitPlanService = async (id: string, userId: string) => {
       }
       const validUserId = user.id;
 
-      await tx.activity.updateMany({
-        where: {
-          planId: oldPlan.id,
-          isActive: true,
-          status: ActivityStatus.DRAFT,
-        },
-        data: { status: ActivityStatus.PLANNED },
-      });
+      await syncPlanActivityStatuses(tx, oldPlan.id, PlanStatus.SUBMITTED);
 
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
@@ -676,6 +751,7 @@ export const sendToCommitteeService = async (
         throw new Error(`Authenticated user not found with id: ${userId}`);
       }
       const validUserId = user.id;
+      await syncPlanActivityStatuses(tx, oldPlan.id, PlanStatus.WITH_COMMITTEE);
 
       // Compute vote deadline if the director specified hours
       const committeeVoteDeadline =
@@ -849,6 +925,7 @@ export const rejectPlanService = async (
         throw new Error(`Authenticated user not found with id: ${userId}`);
       }
       const validUserId = user.id;
+      await syncPlanActivityStatuses(tx, oldPlan.id, PlanStatus.REJECTED);
 
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
@@ -939,11 +1016,21 @@ export const returnToOfficerService = async (
         throw new Error(`Authenticated user not found with id: ${userId}`);
       }
       const validUserId = user.id;
+      await syncPlanActivityStatuses(
+        tx,
+        oldPlan.id,
+        PlanStatus.RETURNED_FOR_REVISION,
+      );
+      await tx.activity.updateMany({
+        where: { planId: oldPlan.id },
+        data: { version: { increment: 1 } },
+      });
 
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: {
           status: PlanStatus.RETURNED_FOR_REVISION,
+          version: { increment: 1 },
           directorRevisionComment: reason,
           rejectedById: validUserId,
           rejectedAt: new Date(),
@@ -995,10 +1082,10 @@ export const returnToOfficerService = async (
     creatorId: plan.createdBy,
     actorUserId: userId,
     title: `Plan Returned for Revision: ${plan.title}`,
-    message: `Director returned plan "${plan.title}" for revision with comments: "${reason}"`,
+    message: `An approver returned plan "${plan.title}" for revision with comments: "${reason}"`,
     type: 'DECISION',
     severity: 'HIGH',
-    link: '/workspace/plan-management',
+    link: '/workspace/projects',
   }).catch(() => {});
 
   return plan;
@@ -1092,6 +1179,11 @@ export const submitCommitteeVoteService = async (
       // 2. If at least 3 members vote REJECT, the plan is REJECTED (majority rejection).
       // 3. Otherwise (fewer than 3 approvals and fewer than 3 rejections), the plan stays in WITH_COMMITTEE (Pending Approval).
       if (approveCount >= 3) {
+        await syncPlanActivityStatuses(
+          tx,
+          oldPlan.id,
+          PlanStatus.AWAITING_MANAGEMENT_APPROVAL,
+        );
         plan = await tx.plan.update({
           where: { id: oldPlan.id },
           data: {
@@ -1134,6 +1226,7 @@ export const submitCommitteeVoteService = async (
           console.warn('logRevision vote approve warning:', auditErr);
         }
       } else if (rejectCount >= 3) {
+        await syncPlanActivityStatuses(tx, oldPlan.id, PlanStatus.REJECTED);
         plan = await tx.plan.update({
           where: { id: oldPlan.id },
           data: {
@@ -1179,6 +1272,11 @@ export const submitCommitteeVoteService = async (
           console.warn('logRevision vote reject warning:', auditErr);
         }
       } else {
+        await syncPlanActivityStatuses(
+          tx,
+          oldPlan.id,
+          PlanStatus.WITH_COMMITTEE,
+        );
         plan = await tx.plan.update({
           where: { id: oldPlan.id },
           data: {
@@ -1411,6 +1509,11 @@ export const requestPlanUpdateService = async (id: string, userId: string) => {
         }
       }
 
+      await syncPlanActivityStatuses(
+        tx,
+        oldPlan.id,
+        PlanStatus.UPDATE_REQUESTED,
+      );
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: { status: PlanStatus.UPDATE_REQUESTED },
@@ -1492,6 +1595,7 @@ export const approvePlanUpdateService = async (id: string, userId: string) => {
       }
       const validUserId = user.id;
 
+      await syncPlanActivityStatuses(tx, oldPlan.id, PlanStatus.DRAFT);
       const plan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: {
@@ -1573,6 +1677,12 @@ export const submitManagementDecisionService = async (
       }
 
       const isApproved = decision === 'APPROVE';
+      await syncPlanActivityStatuses(
+        tx,
+        oldPlan.id,
+        isApproved ? PlanStatus.APPROVED : PlanStatus.MANAGEMENT_REJECTED,
+      );
+
       const updatedPlan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: {
@@ -1685,6 +1795,11 @@ export const requestPlanCancellationService = async (
         throw new Error(`Plan not found with id: ${id}`);
       }
 
+      await syncPlanActivityStatuses(
+        tx,
+        oldPlan.id,
+        PlanStatus.CANCELLATION_REQUESTED,
+      );
       const updatedPlan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: {
@@ -1767,6 +1882,7 @@ export const approvePlanCancellationService = async (
         throw new Error(`Plan not found with id: ${id}`);
       }
 
+      await syncPlanActivityStatuses(tx, oldPlan.id, PlanStatus.CANCELLED);
       const updatedPlan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: {
@@ -1779,17 +1895,6 @@ export const approvePlanCancellationService = async (
           creator: true,
           activities: true,
           committeeVotes: true,
-        },
-      });
-
-      // Also set activities to CANCELLED if not COMPLETED
-      await tx.activity.updateMany({
-        where: {
-          planId: oldPlan.id,
-          status: { not: 'COMPLETED' },
-        },
-        data: {
-          status: 'CANCELLED',
         },
       });
 
@@ -1861,6 +1966,7 @@ export const rejectPlanCancellationService = async (
         throw new Error(`Plan not found with id: ${id}`);
       }
 
+      await syncPlanActivityStatuses(tx, oldPlan.id, PlanStatus.APPROVED);
       const updatedPlan = await tx.plan.update({
         where: { id: oldPlan.id },
         data: {

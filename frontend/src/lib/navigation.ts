@@ -36,7 +36,7 @@ const workspaceSections = {
     icon: "reports",
     description:
       "Read-only oversight of works, goods and services procurement.",
-    allowedRoles: ["DIRECTOR", "MANAGEMENT"],
+    allowedRoles: ["DIRECTOR", "MANAGEMENT", "EXECUTIVE"],
   },
   projects: {
     section: "projects",
@@ -60,7 +60,7 @@ const workspaceSections = {
     href: "/workspace/activity-tracker",
     icon: "activity",
     description: "Track procurement activities, milestones and upcoming work.",
-    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT"],
+    allowedRoles: ["OFFICER", "DIRECTOR", "MANAGEMENT", "EXECUTIVE"],
   },
   "plan-for-review": {
     section: "plan-for-review",
@@ -69,6 +69,15 @@ const workspaceSections = {
     icon: "clipboard",
     description: "Review procurement plans awaiting action from your role.",
     allowedRoles: ["DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT"],
+  },
+  "amendment-requests": {
+    section: "amendment-requests",
+    label: "Amendment Requests",
+    href: "/workspace/amendment-requests",
+    icon: "decision",
+    description:
+      "Review plan and activity amendment requests awaiting your decision.",
+    allowedRoles: ["OFFICER", "DIRECTOR", "ENDORSING_COMMITTEE", "MANAGEMENT"],
   },
   "vote-progress": {
     section: "vote-progress",
@@ -112,6 +121,7 @@ const workspaceSections = {
       "OFFICER",
       "ENDORSING_COMMITTEE",
       "ADMIN",
+      "EXECUTIVE",
     ],
   },
   "my-decisions": {
@@ -185,11 +195,18 @@ const workspaceSections = {
 type WorkspaceSectionKey = keyof typeof workspaceSections;
 
 const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
-  OFFICER: ["projects", "contracts", "activity-tracker", "reports"],
+  OFFICER: [
+    "projects",
+    "contracts",
+    "amendment-requests",
+    "activity-tracker",
+    "reports",
+  ],
   DIRECTOR: [
     "executive-dashboard",
     "projects",
     "plan-for-review",
+    "amendment-requests",
     "vote-progress",
     "activity-tracker",
     "reports",
@@ -198,11 +215,17 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "executive-dashboard",
     "projects",
     "plan-for-review",
+    "amendment-requests",
     "vote-progress",
     "activity-tracker",
     "reports",
   ],
-  ENDORSING_COMMITTEE: ["plan-for-review", "my-decisions"],
+  EXECUTIVE: ["executive-dashboard", "activity-tracker", "reports"],
+  ENDORSING_COMMITTEE: [
+    "plan-for-review",
+    "amendment-requests",
+    "my-decisions",
+  ],
   ADMIN: [
     "user-management",
     "system-logs",
@@ -210,6 +233,22 @@ const roleSectionOrder: Record<UserRole, readonly WorkspaceSectionKey[]> = {
     "finance-settings",
   ],
   FINANCE: ["finance-disbursements", "finance-settings"],
+  SUPERUSER: [
+    "executive-dashboard",
+    "projects",
+    "contracts",
+    "plan-for-review",
+    "amendment-requests",
+    "vote-progress",
+    "activity-tracker",
+    "reports",
+    "my-decisions",
+    "user-management",
+    "system-logs",
+    "notifications",
+    "finance-disbursements",
+    "finance-settings",
+  ],
 };
 
 export function getNavigationForRole(role: UserRole): NavigationItem[] {
@@ -225,11 +264,15 @@ export function getNavigationForRole(role: UserRole): NavigationItem[] {
     ...sections
       .filter((section) => section === "executive-dashboard")
       .map((section) => workspaceSections[section]),
-    {
-      label: "Dashboard",
-      href: dashboardPath(role),
-      icon: "dashboard",
-    },
+    ...(normRole === "EXECUTIVE"
+      ? []
+      : [
+          {
+            label: "Dashboard" as const,
+            href: dashboardPath(role),
+            icon: "dashboard" as const,
+          },
+        ]),
     ...sections
       .filter((section) => section !== "executive-dashboard")
       .map((section) => workspaceSections[section]),
@@ -247,6 +290,7 @@ export function canAccessWorkspaceSection(
   section: string,
 ): boolean {
   const normRole = normalizeUserRole(role);
+  if (normRole === "SUPERUSER") return getWorkspaceSection(section) !== undefined;
   const sec = getWorkspaceSection(section);
   if (!sec) return false;
   return sec.allowedRoles.includes(role) || sec.allowedRoles.includes(normRole);

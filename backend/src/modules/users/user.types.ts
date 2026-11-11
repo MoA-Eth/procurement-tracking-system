@@ -1,5 +1,11 @@
 export type UserRoleType =
-  'OFFICER' | 'DIRECTOR' | 'ENDORSING_COMMITTEE' | 'MANAGEMENT' | 'ADMIN';
+  | 'OFFICER'
+  | 'DIRECTOR'
+  | 'ENDORSING_COMMITTEE'
+  | 'MANAGEMENT'
+  | 'EXECUTIVE'
+  | 'ADMIN'
+  | 'SUPERUSER';
 
 export type Role =
   | UserRoleType

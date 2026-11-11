@@ -69,7 +69,7 @@ export function RecentAuditTrailTable({
       <div className="bg-[#f8fafc] p-4 sm:px-6 sm:py-4.5 border-b border-slate-200/70 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="min-w-0">
-            <h3 className="font-semibold text-slate-900 text-sm sm:text-base leading-tight truncate">
+            <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
               System Audit Log Trail
             </h3>
           </div>

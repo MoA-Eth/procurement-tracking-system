@@ -48,6 +48,24 @@ const sampleActivity = {
 };
 
 describe("OfficerProcurementPlanDetailView", () => {
+  it("keeps the plan title and reference on one line", () => {
+    const longName = "Long procurement plan name for an annual budget";
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={{ ...mockPlan, name: longName }}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).toContain(`title="${longName}"`);
+    expect(markup).toContain(
+      "truncate whitespace-nowrap text-2xl font-semibold tracking-tight",
+    );
+    expect(markup).toContain(
+      "inline-flex max-w-full shrink-0 whitespace-nowrap",
+    );
+  });
+
   it("renders the selected plan and activity page without summary cards", () => {
     const markup = renderToStaticMarkup(
       <OfficerProcurementPlanDetailView
@@ -83,6 +101,67 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).toContain("Not Started");
   });
 
+  it("labels soft-deleted activities and hides their edit and delete actions", () => {
+    const inactiveActivity = {
+      ...sampleActivity,
+      createdById: "officer-1",
+      isActive: false,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={{
+          ...mockPlan,
+          status: "Draft",
+          planActivities: [inactiveActivity],
+        }}
+        project={mockProject}
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+      />,
+    );
+
+    expect(markup).toContain("ET-MoA-000001-GO-RFQ");
+    expect(markup).toContain("Soft-deleted");
+    expect(markup).not.toContain('aria-label="Edit activity');
+    expect(markup).not.toContain('aria-label="Delete draft activity');
+  });
+
+  it("shows a returned plan and its activities as draft with return remarks and versions", () => {
+    const returnedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+      returnedForRevision: true,
+      version: 2,
+      directorRevisionComment: "Please correct the activity budget.",
+      planActivities: [
+        {
+          ...sampleActivity,
+          status: "Draft",
+          returnedForRevision: true,
+          version: 2,
+        },
+      ],
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={returnedPlan}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).toContain("Plan Returned for Revision");
+    expect(markup).toContain("Draft");
+    expect(markup).toContain("Return");
+    expect(markup).toContain("Please correct the activity budget.");
+    expect(markup).toContain("v2");
+  });
+
   it("does not display single-plan submit banner for draft plans since submissions are done in batch", () => {
     const draftPlan: ProcurementPlanSummary = {
       ...mockPlan,
@@ -101,6 +180,31 @@ describe("OfficerProcurementPlanDetailView", () => {
       "All activities have been drafted. Submit to the Director for final approval.",
     );
     expect(markup).not.toContain("Submit to Director");
+  });
+
+  it("shows Delete Plan only for a draft plan when a delete handler is available", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const draftMarkup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        onDeleteDraftPlan={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+      />,
+    );
+    const approvedMarkup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        onDeleteDraftPlan={async () => {}}
+        plan={mockPlan}
+        project={mockProject}
+      />,
+    );
+
+    expect(draftMarkup).toContain("Delete Plan");
+    expect(draftMarkup).not.toContain("delete-plan-dialog-title");
+    expect(approvedMarkup).not.toContain("Delete Plan");
   });
 
   it("displays submitted status banner when plan is submitted to director", () => {
@@ -184,6 +288,28 @@ describe("OfficerProcurementPlanDetailView", () => {
     );
   });
 
+  it("shows the reached roadmap stage as activity status on finally approved plans", () => {
+    const approvedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Finally Approved",
+    };
+    const activityAtReachedStage = {
+      ...sampleActivity,
+      currentStage: "Receiving Quotation",
+      status: "Not Started" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={approvedPlan}
+        project={mockProject}
+        savedActivities={[activityAtReachedStage]}
+      />,
+    );
+
+    expect(markup).toContain("Receiving Quotation");
+    expect(markup).not.toContain(">Not Started</span>");
+  });
+
   it("offers a delete action for draft activities", () => {
     const draftPlan: ProcurementPlanSummary = {
       ...mockPlan,
@@ -191,10 +317,18 @@ describe("OfficerProcurementPlanDetailView", () => {
     };
     const draftActivity = {
       ...sampleActivity,
+      createdById: "officer-1",
       status: "Draft" as const,
     };
     const markup = renderToStaticMarkup(
       <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer One",
+          role: "OFFICER",
+        }}
         onDeleteDraftActivity={async () => {}}
         plan={draftPlan}
         project={mockProject}
@@ -206,6 +340,201 @@ describe("OfficerProcurementPlanDetailView", () => {
       `aria-label="Delete draft activity ${draftActivity.reference}"`,
     );
     expect(markup).not.toContain('role="dialog"');
+  });
+
+  it("shows activity creator names in the plan activity list for one-officer projects", () => {
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={{
+          ...mockPlan,
+          planActivities: [
+            {
+              ...sampleActivity,
+              createdByName: "Yeabsira Fikre",
+              updatedByName: "Abebe Kebede",
+            },
+          ],
+        }}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).toContain("Created by");
+    expect(markup).toContain("Yeabsira Fikre");
+    expect(markup).toContain("Edited by");
+    expect(markup).toContain("Abebe Kebede");
+  });
+
+  it("allows superusers to edit and delete draft activities created by others", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const draftActivity = {
+      ...sampleActivity,
+      createdById: "another-officer",
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "superuser-1",
+          email: "superuser@example.com",
+          username: "superuser",
+          displayName: "System Superuser",
+          role: "SUPERUSER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[draftActivity]}
+      />,
+    );
+
+    expect(markup).toContain(
+      `aria-label="Edit activity ${draftActivity.reference}"`,
+    );
+    expect(markup).toContain(
+      `aria-label="Delete draft activity ${draftActivity.reference}"`,
+    );
+  });
+
+  it("hides edit and delete actions for activities inherited from a parent plan", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const inheritedActivity = {
+      ...sampleActivity,
+      id: "parent-activity-id",
+      createdById: "officer-1",
+      isInheritedFromParentPlan: true,
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer One",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[inheritedActivity]}
+      />,
+    );
+
+    expect(markup).not.toContain(
+      `aria-label="Edit activity ${inheritedActivity.reference}"`,
+    );
+    expect(markup).not.toContain(
+      `aria-label="Delete draft activity ${inheritedActivity.reference}"`,
+    );
+  });
+
+  it("does not grant owner actions based only on a matching creator name", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const draftActivity = {
+      ...sampleActivity,
+      createdByName: "Officer One (Procurement Officer)",
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer One",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[draftActivity]}
+      />,
+    );
+
+    expect(markup).not.toContain(
+      `aria-label="Edit activity ${draftActivity.reference}"`,
+    );
+    expect(markup).not.toContain(
+      `aria-label="Delete draft activity ${draftActivity.reference}"`,
+    );
+  });
+
+  it("shows owner actions when draft statuses use backend enum values", () => {
+    const draftPlan = {
+      ...mockPlan,
+      status: "DRAFT",
+    } as unknown as ProcurementPlanSummary;
+    const draftActivity = {
+      ...sampleActivity,
+      createdById: "officer-1",
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-1",
+          email: "officer@example.com",
+          username: "officer",
+          displayName: "Officer One",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[draftActivity]}
+      />,
+    );
+
+    expect(markup).toContain(
+      `aria-label="Edit activity ${draftActivity.reference}"`,
+    );
+    expect(markup).toContain(
+      `aria-label="Delete draft activity ${draftActivity.reference}"`,
+    );
+  });
+
+  it("hides activity edit and delete actions from an officer who did not create it", () => {
+    const draftPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      status: "Draft",
+    };
+    const draftActivity = {
+      ...sampleActivity,
+      createdById: "officer-1",
+      status: "Draft" as const,
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        currentUser={{
+          id: "officer-2",
+          email: "other@example.com",
+          username: "other",
+          displayName: "Officer Two",
+          role: "OFFICER",
+        }}
+        onDeleteDraftActivity={async () => {}}
+        plan={draftPlan}
+        project={mockProject}
+        savedActivities={[draftActivity]}
+      />,
+    );
+
+    expect(markup).not.toContain(
+      `aria-label="Edit activity ${draftActivity.reference}"`,
+    );
+    expect(markup).not.toContain(
+      `aria-label="Delete draft activity ${draftActivity.reference}"`,
+    );
   });
 
   it("does not render Register Contract while the plan is under review", () => {
@@ -224,7 +553,7 @@ describe("OfficerProcurementPlanDetailView", () => {
     expect(markup).not.toContain("Register Contract");
   });
 
-  it("renders Add Activity link pointing to create-additional-activity mode when plan is approved", () => {
+  it("hides Add Activity when the plan is approved", () => {
     const approvedPlan: ProcurementPlanSummary = {
       ...mockPlan,
       status: "Approved",
@@ -237,11 +566,8 @@ describe("OfficerProcurementPlanDetailView", () => {
       />,
     );
 
-    // Verify Add Activity link is rendered with non-modal create-additional-activity route
-    expect(markup).toContain("Add Activity");
-    expect(markup).toContain(
-      "/workspace/projects?project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;mode=create-additional-activity",
-    );
+    expect(markup).not.toContain("mode=create-activity");
+    expect(markup).not.toContain("mode=create-additional-activity");
   });
 
   it("renders Add Activity link pointing to create-activity mode when plan is draft", () => {
@@ -264,7 +590,7 @@ describe("OfficerProcurementPlanDetailView", () => {
     );
   });
 
-  it("renders Add Activity link pointing to create-additional-activity mode with justification when plan is under Committee Review", () => {
+  it("hides Add Activity when the plan is under Committee Review", () => {
     const committeePlan: ProcurementPlanSummary = {
       ...mockPlan,
       status: "Committee Review",
@@ -277,14 +603,11 @@ describe("OfficerProcurementPlanDetailView", () => {
       />,
     );
 
-    // Once a plan is submitted (e.g. in Committee Review), adding an activity creates an additional plan requiring justification
-    expect(markup).toContain("Add Activity");
-    expect(markup).toContain(
-      "/workspace/projects?project=PRJ-24-001&amp;plan=PP-DRIVE-2016-01&amp;mode=create-additional-activity",
-    );
+    expect(markup).not.toContain("mode=create-activity");
+    expect(markup).not.toContain("mode=create-additional-activity");
   });
 
-  it("renders 'Request Cancellation' button when plan is Finally Approved", () => {
+  it("does not render a Request Cancellation button when plan is Finally Approved", () => {
     const approvedPlan: ProcurementPlanSummary = {
       ...mockPlan,
       status: "Finally Approved",
@@ -297,7 +620,48 @@ describe("OfficerProcurementPlanDetailView", () => {
       />,
     );
 
-    expect(markup).toContain("Request Cancellation");
+    expect(markup).not.toContain("Request Cancellation");
+    expect(markup).toContain("Request Amendment");
+  });
+
+  it("hides Request Amendment when any approved-plan activity is at another stage", () => {
+    const approvedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      activities: 2,
+      status: "Finally Approved",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={approvedPlan}
+        project={mockProject}
+        savedActivities={[
+          sampleActivity,
+          {
+            ...sampleActivity,
+            currentStage: "Invitation to Bidders",
+            reference: "ET-MoA-000002-GO-RFQ",
+          },
+        ]}
+      />,
+    );
+
+    expect(markup).not.toContain("Request Amendment");
+  });
+
+  it("hides Request Amendment when approved-plan activities are unavailable", () => {
+    const approvedPlan: ProcurementPlanSummary = {
+      ...mockPlan,
+      activities: 1,
+      status: "Finally Approved",
+    };
+    const markup = renderToStaticMarkup(
+      <OfficerProcurementPlanDetailView
+        plan={approvedPlan}
+        project={mockProject}
+      />,
+    );
+
+    expect(markup).not.toContain("Request Amendment");
   });
 
   it("renders pending banner when plan is Cancellation Requested", () => {

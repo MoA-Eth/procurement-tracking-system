@@ -3,11 +3,14 @@ import {
   gregorianToEthiopian,
   formatEthiopianDate,
 } from "../utils/ethiopianCalendar";
+import type { ProcurementPlanStatus } from "./officerProjects";
 
 export const OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY =
   "moa-pts:officer-activity-drafts:v2";
 
 export type ProcurementActivityStatus =
+  | "Approved"
+  | "Cancelled"
   | "Completed"
   | "Delayed"
   | "In Progress"
@@ -15,6 +18,77 @@ export type ProcurementActivityStatus =
   | "Returned"
   | "Submitted to Director"
   | "Draft";
+
+export function activityStatusForPlanStatus(
+  status: ProcurementPlanStatus,
+): ProcurementActivityStatus {
+  switch (status) {
+    case "Draft":
+      return "Draft";
+    case "Approved":
+    case "Finally Approved":
+      return "Approved";
+    case "Cancelled":
+      return "Cancelled";
+    case "Returned":
+    case "Returned for Revision":
+      return "Draft";
+    case "Submitted to Director":
+      return "Submitted to Director";
+    case "Committee Review":
+    case "Update Requested":
+    case "Cancellation Requested":
+      return "Not Started";
+  }
+}
+
+export function activityStatusForSelectedPlan(
+  activity: ProcurementActivitySummary,
+  planStatus: ProcurementPlanStatus,
+): ProcurementActivityStatus {
+  return activity.isInheritedFromParentPlan
+    ? activity.status
+    : activityStatusForPlanStatus(planStatus);
+}
+
+export function normalizePlanStatus(
+  status: unknown,
+): ProcurementPlanStatus | undefined {
+  if (typeof status !== "string") return undefined;
+  const displayStatuses: ProcurementPlanStatus[] = [
+    "Approved",
+    "Committee Review",
+    "Draft",
+    "Finally Approved",
+    "Returned",
+    "Returned for Revision",
+    "Update Requested",
+    "Submitted to Director",
+    "Cancellation Requested",
+    "Cancelled",
+  ];
+  const statusMap: Record<string, ProcurementPlanStatus> = {
+    DRAFT: "Draft",
+    SUBMITTED: "Submitted to Director",
+    SUBMITTED_TO_DIRECTOR: "Submitted to Director",
+    WITH_COMMITTEE: "Committee Review",
+    COMMITTEE_ENDORSED: "Committee Review",
+    COMMITTEE_REJECTED: "Returned",
+    AWAITING_MANAGEMENT_APPROVAL: "Committee Review",
+    MANAGEMENT_APPROVED: "Finally Approved",
+    MANAGEMENT_REJECTED: "Returned",
+    RETURNED_FOR_REVISION: "Returned for Revision",
+    APPROVED: "Approved",
+    REJECTED: "Returned",
+    UPDATE_REQUESTED: "Update Requested",
+    CANCELLATION_REQUESTED: "Cancellation Requested",
+    CANCELLED: "Cancelled",
+  };
+  return (
+    statusMap[status.toUpperCase()] ||
+    displayStatuses.find((displayStatus) => displayStatus === status)
+  );
+}
 
 export interface ProcurementActivityAllocation {
   id: string;
@@ -232,7 +306,11 @@ export interface ProcurementActivitySummary {
   id?: string;
   activityId?: string;
   planId?: string;
+  isActive?: boolean;
   projectId?: string;
+  version?: number;
+  returnedForRevision?: boolean;
+  isInheritedFromParentPlan?: boolean;
   category: string;
   currentStage: string;
   description: string;
@@ -257,6 +335,53 @@ export interface SavedOfficerActivityRecord {
   activity: ProcurementActivitySummary;
   planReference: string;
   projectCode: string;
+}
+
+export function activityRecordBelongsToPlanId(
+  record: SavedOfficerActivityRecord,
+  planId: string,
+): boolean {
+  const normalizedPlanId = planId.trim().toLowerCase();
+  return Boolean(
+    normalizedPlanId &&
+    [record.activity.planId, record.planReference].some(
+      (value) => value?.trim().toLowerCase() === normalizedPlanId,
+    ),
+  );
+}
+
+export function mergeBackendAndSavedActivityRecords(
+  backendRecords: readonly SavedOfficerActivityRecord[],
+  savedRecords: readonly SavedOfficerActivityRecord[],
+): SavedOfficerActivityRecord[] {
+  const records = [...backendRecords];
+  const normalize = (value?: string) => (value || "").trim().toLowerCase();
+
+  for (const savedRecord of savedRecords) {
+    const savedIds = new Set(
+      [savedRecord.activity.id, savedRecord.activity.activityId]
+        .map(normalize)
+        .filter(Boolean),
+    );
+    const savedReference = normalize(savedRecord.activity.reference);
+    const hasBackendMatch = backendRecords.some((backendRecord) => {
+      const backendIds = [
+        backendRecord.activity.id,
+        backendRecord.activity.activityId,
+      ]
+        .map(normalize)
+        .filter(Boolean);
+      return (
+        backendIds.some((id) => savedIds.has(id)) ||
+        (savedReference &&
+          normalize(backendRecord.activity.reference) === savedReference)
+      );
+    });
+
+    if (!hasBackendMatch) records.push(savedRecord);
+  }
+
+  return records;
 }
 
 export function findBackendActivityForPlan(
@@ -297,6 +422,28 @@ export function findBackendActivityForPlan(
       belongsToSelectedPlan(record) &&
       normalize(record.activity.reference) === activityReference,
   );
+}
+
+export function nextAvailableActivityReference(
+  reference: string,
+  usedReferences: readonly string[],
+): string {
+  const normalize = (value: string) => value.trim().toLowerCase();
+  const used = new Set(usedReferences.map(normalize));
+  if (!used.has(normalize(reference))) return reference;
+
+  const match = /^(ET-[^-]+-)(\d+)(-[^-]+-[^-]+)$/i.exec(reference);
+  if (!match?.[1] || !match[2] || !match[3]) return reference;
+
+  const [, prefix, sequence, suffix] = match;
+  let nextSequence = Number(sequence);
+  let candidate: string;
+  do {
+    nextSequence += 1;
+    candidate = `${prefix}${String(nextSequence).padStart(sequence.length, "0")}${suffix}`;
+  } while (used.has(normalize(candidate)));
+
+  return candidate;
 }
 
 export function isTestOrJunkActivity(
@@ -654,13 +801,17 @@ export function mapBackendActivityToProcurementActivitySummary(
 
           let rawPlannedDate = s.plannedStartDate
             ? new Date(s.plannedStartDate).toISOString().slice(0, 10)
-            : (s.gregorianDate || "");
+            : s.gregorianDate || "";
           let rawTargetDate = s.currentTargetStartDate
             ? new Date(s.currentTargetStartDate).toISOString().slice(0, 10)
-            : (rawPlannedDate || s.gregorianDate || "");
+            : rawPlannedDate || s.gregorianDate || "";
 
-          const greg = isNA ? "" : rawTargetDate || rawPlannedDate || s.gregorianDate || "";
-          const eth = isNA ? "" : (s.ethiopianDate || toEthiopianDateString(greg));
+          const greg = isNA
+            ? ""
+            : rawTargetDate || rawPlannedDate || s.gregorianDate || "";
+          const eth = isNA
+            ? ""
+            : s.ethiopianDate || toEthiopianDateString(greg);
 
           return {
             id: s.id,
@@ -715,19 +866,25 @@ export function mapBackendActivityToProcurementActivitySummary(
     ba.stages?.at(-1)?.stageType?.label ||
     "Draft";
 
-  let status: ProcurementActivityStatus = "Not Started";
-  if (ba.plan?.status === "SUBMITTED") {
-    status = "Submitted to Director";
-  } else if (
-    ba.status === "DRAFT" ||
-    (ba.status === "PLANNED" && ba.plan?.status === "DRAFT")
-  ) {
+  const planStatus = normalizePlanStatus(ba.plan?.status);
+  let status: ProcurementActivityStatus;
+  if (planStatus) {
+    status = activityStatusForPlanStatus(planStatus);
+  } else if (ba.status === "DRAFT") {
     status = "Draft";
-  } else if (ba.status === "COMPLETED") status = "Completed";
-  else if (ba.status === "IN_PROGRESS") status = "In Progress";
-  else if (ba.stages?.some((s: any) => s.status === "DELAYED"))
+  } else if (ba.status === "APPROVED") {
+    status = "Approved";
+  } else if (ba.status === "CANCELLED") {
+    status = "Cancelled";
+  } else if (ba.status === "COMPLETED") {
+    status = "Completed";
+  } else if (ba.status === "IN_PROGRESS") {
+    status = "In Progress";
+  } else if (ba.stages?.some((s: any) => s.status === "DELAYED")) {
     status = "Delayed";
-  else if (ba.status === "APPROVED") status = "Not Started";
+  } else {
+    status = "Not Started";
+  }
 
   const rawCat = (
     ba.procurementCategory ||
@@ -787,6 +944,7 @@ export function mapBackendActivityToProcurementActivitySummary(
     id: ba.id,
     activityId: ba.id,
     planId: ba.planId,
+    isActive: ba.isActive !== false,
     category: categoryName,
     currentStage: activeStage,
     description: ba.description || "Procurement Activity",
@@ -794,6 +952,8 @@ export function mapBackendActivityToProcurementActivitySummary(
     method: ba.procurementMethod?.label || ba.procurementMethod?.code || "RFB",
     reference: ba.reference || ba.id,
     status,
+    version: Number(ba.version || ba.plan?.version) || undefined,
+    returnedForRevision: ba.plan?.status === "RETURNED_FOR_REVISION",
     currency: ba.currency || "ETB",
     fundingSource:
       ba.fundings?.[0]?.fundingSource || ba.fundingSource || undefined,

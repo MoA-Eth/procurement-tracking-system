@@ -16,6 +16,7 @@ import {
   type CustomStageInput,
 } from './stage-generator.js';
 import { notifyOfficersOnEntityChange } from '../alerts/officer-notification.helper.js';
+import { activityStatusForPlanStatus } from '../plans/plan-activity-status.js';
 import type {
   CreateActivityInput,
   UpdateActivityInput,
@@ -40,6 +41,28 @@ async function generateActivityReference(
   const seq = String(count + 1).padStart(6, '0');
 
   return `MOA-${methodCode}-${seq}`;
+}
+
+async function nextAvailableGeneratedReference(
+  tx: Prisma.TransactionClient,
+  reference: string,
+): Promise<string | undefined> {
+  const match = /^(ET-[^-]+-)(\d+)(-[^-]+-[^-]+)$/i.exec(reference);
+  if (!match) return undefined;
+
+  const prefix = match[1];
+  const sequence = match[2];
+  const suffix = match[3];
+  if (!prefix || !sequence || !suffix) return undefined;
+  let nextSequence = Number(sequence);
+  let candidate: string;
+
+  do {
+    nextSequence += 1;
+    candidate = `${prefix}${String(nextSequence).padStart(sequence.length, '0')}${suffix}`;
+  } while (await tx.activity.findUnique({ where: { reference: candidate } }));
+
+  return candidate;
 }
 
 // ─── Get Activities ───────────────────────────────────────────────────────────
@@ -85,31 +108,52 @@ export const getActivitiesService = async (planId?: string) => {
       select: { id: true, parentPlanId: true },
     });
 
-    const planIds = [trimmed];
     if (targetPlan) {
-      if (targetPlan.id && !planIds.includes(targetPlan.id)) {
-        planIds.push(targetPlan.id);
-      }
-      if (targetPlan.parentPlanId && !planIds.includes(targetPlan.parentPlanId)) {
-        planIds.push(targetPlan.parentPlanId);
-      }
+      where = {
+        OR: [
+          { planId: targetPlan.id },
+          ...(targetPlan.parentPlanId
+            ? [
+                {
+                  planId: targetPlan.parentPlanId,
+                  isActive: true,
+                },
+              ]
+            : []),
+        ],
+      };
+    } else {
+      where = {
+        isActive: true,
+        OR: [
+          { planId: trimmed },
+          { plan: { title: { equals: trimmed, mode: 'insensitive' } } },
+        ],
+      };
     }
-
-    where = {
-      isActive: true,
-      OR: [
-        { planId: { in: planIds } },
-        { plan: { id: { in: planIds } } },
-        { plan: { title: { equals: trimmed, mode: 'insensitive' } } },
-      ],
-    };
   }
   return prisma.activity.findMany({
     where,
     include: {
       plan: { include: { project: true } },
-      creator: true,
-      updatedByUser: true,
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          email: true,
+          authRole: true,
+        },
+      },
+      updatedByUser: {
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          email: true,
+          authRole: true,
+        },
+      },
       lots: true,
       fundings: true,
       components: true,
@@ -130,8 +174,24 @@ export const getActivityByIdService = async (id: string) => {
     where: { id, isActive: true },
     include: {
       plan: true,
-      creator: true,
-      updatedByUser: true,
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          email: true,
+          authRole: true,
+        },
+      },
+      updatedByUser: {
+        select: {
+          id: true,
+          name: true,
+          displayName: true,
+          email: true,
+          authRole: true,
+        },
+      },
       lots: true,
       fundings: true,
       components: true,
@@ -197,9 +257,29 @@ export const createActivityService = async (
       reference = await generateActivityReference(resolvedMethodId);
     } else {
       reference = reference.trim();
-      const existing = await tx.activity.findUnique({ where: { reference } });
+      const existing = await tx.activity.findUnique({
+        where: { reference },
+        include: {
+          lots: true,
+          fundings: true,
+          components: true,
+          creator: true,
+          updatedByUser: true,
+          stages: {
+            include: { stageType: true, revisions: true },
+            orderBy: { sequence: 'asc' },
+          },
+        },
+      });
       if (existing) {
-        reference = await generateActivityReference(resolvedMethodId);
+        const availableReference = await nextAvailableGeneratedReference(
+          tx,
+          reference,
+        );
+        if (!availableReference) {
+          throw ApiError.conflict('Reference already in use');
+        }
+        reference = availableReference;
       }
     }
 
@@ -258,8 +338,8 @@ export const createActivityService = async (
       reference,
       plan: { connect: { id: plan.id } },
       procurementMethod: { connect: { id: resolvedMethodId } },
-      status:
-        data.status === 'DRAFT' ? ActivityStatus.DRAFT : ActivityStatus.PLANNED,
+      status: activityStatusForPlanStatus(plan.status),
+      version: plan.version,
       ...(validActUserId
         ? {
             creator: { connect: { id: validActUserId } },
@@ -361,27 +441,22 @@ export const deleteDraftActivityService = async (
     const isOfficer =
       user.authRole === UserRole.OFFICER ||
       (user as { role?: string }).role === 'ProcurementOfficer';
-    if (isOfficer) {
-      const assignment = await tx.userProject.findUnique({
-        where: {
-          userId_projectId: { userId, projectId: activity.plan.projectId },
-        },
-      });
-      if (!assignment) {
-        throw ApiError.forbidden('You are not assigned to this project.');
-      }
+    if (isOfficer && activity.createdById !== userId) {
+      throw ApiError.forbidden(
+        'Only the officer who created this activity can delete it.',
+      );
     }
 
     if (!activity.isActive) return activity;
 
-    const editableStatuses: PlanStatus[] = [
+    const editablePlanStatuses: PlanStatus[] = [
       PlanStatus.DRAFT,
       PlanStatus.REJECTED,
       PlanStatus.COMMITTEE_REJECTED,
       PlanStatus.MANAGEMENT_REJECTED,
       PlanStatus.RETURNED_FOR_REVISION,
     ];
-    if (!editableStatuses.includes(activity.plan.status)) {
+    if (!editablePlanStatuses.includes(activity.plan.status)) {
       throw ApiError.conflict(
         `Activity "${activity.reference}" is linked to plan "${activity.plan.title}" (ID: ${activity.planId}), whose current status is ${activity.plan.status}. Activities can only be deleted while the linked plan is editable.`,
       );
@@ -443,7 +518,19 @@ export const updateActivityService = async (
           PlanStatus.REJECTED,
           PlanStatus.RETURNED_FOR_REVISION,
         ];
-        if (!editableStatuses.includes(oldActivity.plan.status)) {
+        const approvedAmendment =
+          oldActivity.status === ActivityStatus.DRAFT &&
+          (await tx.amendmentRequest.findFirst({
+            where: {
+              activityId: oldActivity.id,
+              status: 'APPROVED',
+            },
+            select: { id: true },
+          }));
+        if (
+          !editableStatuses.includes(oldActivity.plan.status) &&
+          !approvedAmendment
+        ) {
           throw new Error(
             `Cannot edit activities in a plan with status ${oldActivity.plan.status}. Plan must be in DRAFT, RETURNED_FOR_REVISION, REJECTED, or UPDATE_REQUESTED status.`,
           );
@@ -492,6 +579,7 @@ export const updateActivityService = async (
 
       const updateData: Prisma.ActivityUpdateInput = {
         ...(cleanScalarData as unknown as Prisma.ActivityUpdateInput),
+        status: activityStatusForPlanStatus(oldActivity.plan.status),
         ...(resolvedMethodId
           ? { procurementMethod: { connect: { id: resolvedMethodId } } }
           : {}),
@@ -534,6 +622,18 @@ export const updateActivityService = async (
           updatedByUser: true,
         },
       });
+      if (
+        oldActivity.plan.status === PlanStatus.APPROVED ||
+        oldActivity.plan.status === PlanStatus.MANAGEMENT_APPROVED
+      ) {
+        await tx.amendmentRequest.updateMany({
+          where: {
+            activityId: oldActivity.id,
+            status: 'APPROVED',
+          },
+          data: { status: 'COMPLETED' },
+        });
+      }
 
       // Update stages if provided
       const stageInputs = (inputWithExtra.stages ||

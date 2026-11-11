@@ -32,6 +32,11 @@ import { PlanBatchReviewModal } from "./PlanBatchReviewModal";
 import { CommitteeBatchReviewModal } from "./CommitteeBatchReviewModal";
 import { ManagementBatchReviewModal } from "./ManagementBatchReviewModal";
 import { StatusText } from "@/components/dashboard/StatusText";
+import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
 import type { ProjectItem } from "@/features/projects/management/projectsData";
 
 export interface PlanReviewDirectoryTableProps {
@@ -58,7 +63,6 @@ export interface PlanReviewDirectoryTableProps {
   committeeDeadlineDate: string;
   setCommitteeDeadlineDate: (date: string) => void;
   onApprovePlan: (plan: ProcurementPlan, deadline?: string) => void;
-  onApprovePlanUpdate?: (plan: ProcurementPlan) => Promise<void>;
   onReturnPlan?: (plan: ProcurementPlan, remarks?: string) => void;
   onBatchReviewPlans?: (data: {
     approvedPlanIds: string[];
@@ -92,11 +96,7 @@ export interface PlanReviewDirectoryTableProps {
 function getPlanActivitiesCount(plan: ProcurementPlan): number {
   const direct = plan.activities?.length || 0;
   const parent = plan.parentActivities?.length || 0;
-  return Math.max(
-    plan.activitiesCount || 0,
-    direct + parent,
-    direct,
-  );
+  return Math.max(plan.activitiesCount || 0, direct + parent, direct);
 }
 
 export function PlanReviewDirectoryTable({
@@ -123,7 +123,6 @@ export function PlanReviewDirectoryTable({
   committeeDeadlineDate,
   setCommitteeDeadlineDate,
   onApprovePlan,
-  onApprovePlanUpdate,
   onReturnPlan,
   onBatchReviewPlans,
   onBatchCommitteeVote,
@@ -161,6 +160,9 @@ export function PlanReviewDirectoryTable({
     useState<ProcurementPlan | null>(null);
   const [singleReturnFeedback, setSingleReturnFeedback] = useState("");
   const [isReturningSingle, setIsReturningSingle] = useState(false);
+  const [singleReturnError, setSingleReturnError] = useState<string | null>(
+    null,
+  );
 
   // Fallback plans source
   const effectiveAllPlans = allPlans.length > 0 ? allPlans : filteredPlans;
@@ -281,14 +283,18 @@ export function PlanReviewDirectoryTable({
   }, [projectGroups, selectedProjectCode]);
 
   // Current project's plans
-  const currentPendingPlans = currentProjectGroup?.pendingPlans || [];
-  const reviewablePlans = currentPendingPlans.filter(
+  const currentPendingPlans = (currentProjectGroup?.pendingPlans || []).filter(
     (plan) =>
       plan.status !== "Update Requested" &&
       (plan as any).status !== "UPDATE_REQUESTED",
   );
+  const reviewablePlans = currentPendingPlans;
   const currentApprovedPlans = currentProjectGroup?.approvedPlans || [];
   const currentReturnedPlans = currentProjectGroup?.returnedPlans || [];
+  const projectPagination = useListPagination(filteredProjectGroups, 15);
+  const pendingPagination = useListPagination(currentPendingPlans, 15);
+  const approvedPagination = useListPagination(currentApprovedPlans, 15);
+  const returnedPagination = useListPagination(currentReturnedPlans, 15);
 
   // Toggle selection
   const isAllPendingSelected =
@@ -411,6 +417,13 @@ export function PlanReviewDirectoryTable({
       await onReturnPlan(singleReturnModalPlan, singleReturnFeedback.trim());
       setSingleReturnModalPlan(null);
       setSingleReturnFeedback("");
+      setSingleReturnError(null);
+    } catch (err) {
+      setSingleReturnError(
+        err instanceof Error
+          ? `Could not return plan: ${err.message}`
+          : "Could not return plan to the officer.",
+      );
     } finally {
       setIsReturningSingle(false);
     }
@@ -556,7 +569,7 @@ export function PlanReviewDirectoryTable({
 
           {/* Projects Directory Table */}
           <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
+            <HorizontalTableScroller label="Projects awaiting review">
               <table className="w-full text-left border-collapse min-w-[960px]">
                 <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                   <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -601,7 +614,7 @@ export function PlanReviewDirectoryTable({
                       </td>
                     </tr>
                   ) : (
-                    filteredProjectGroups.map((group, index) => {
+                    projectPagination.pageItems.map((group, index) => {
                       const hasPending = group.pendingPlans.length > 0;
                       return (
                         <tr
@@ -610,7 +623,7 @@ export function PlanReviewDirectoryTable({
                           className="hover:bg-emerald-50/50 transition-colors cursor-pointer group"
                         >
                           <td className="py-3.5 px-4 font-mono text-slate-400 font-semibold text-center">
-                            {index + 1}
+                            {projectPagination.startIndex + index + 1}
                           </td>
                           <td className="py-3.5 px-4">
                             <span className="font-mono font-medium text-[#00843D] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-xs inline-block whitespace-nowrap">
@@ -678,7 +691,15 @@ export function PlanReviewDirectoryTable({
                   )}
                 </tbody>
               </table>
-            </div>
+            </HorizontalTableScroller>
+            <PaginationControls
+              page={projectPagination.page}
+              pageCount={projectPagination.pageCount}
+              startIndex={projectPagination.startIndex}
+              endIndex={projectPagination.endIndex}
+              totalItems={filteredProjectGroups.length}
+              setPage={projectPagination.setPage}
+            />
           </div>
         </div>
       ) : (
@@ -800,55 +821,59 @@ export function PlanReviewDirectoryTable({
           {activeTab === "AWAITING_REVIEW" && (
             <div className="space-y-4">
               {/* Batch Action Bar */}
-              {userRole === "DIRECTOR" && reviewablePlans.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-semibold text-slate-700">
-                      {selectedPlanIds.length} of {reviewablePlans.length} plans
-                      selected
-                    </span>
-                    {selectedPlanIds.length > 0 && (
+              {(userRole === "DIRECTOR" || userRole === "SUPERUSER") &&
+                reviewablePlans.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs font-semibold text-slate-700">
+                        {selectedPlanIds.length} of {reviewablePlans.length}{" "}
+                        plans selected
+                      </span>
+                      {selectedPlanIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPlanIds([])}
+                          className="text-xs text-slate-400 hover:text-slate-600 underline"
+                        >
+                          Clear selection
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setSelectedPlanIds([])}
-                        className="text-xs text-slate-400 hover:text-slate-600 underline"
+                        onClick={handleOpenApproveAll}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
                       >
-                        Clear selection
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+                        <span>
+                          Approve All Plans ({reviewablePlans.length})
+                        </span>
                       </button>
-                    )}
-                  </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleOpenApproveAll}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
-                      <span>Approve All Plans ({reviewablePlans.length})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={selectedPlanIds.length === 0}
-                      onClick={handleOpenApproveSelected}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#00843D] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      <span>
-                        Approve Selected ({selectedPlanIds.length})
-                        {selectedPlanIds.length > 0 &&
-                        selectedPlanIds.length < reviewablePlans.length
-                          ? " & Return Remaining"
-                          : ""}
-                      </span>
-                    </button>
+                      <button
+                        type="button"
+                        disabled={selectedPlanIds.length === 0}
+                        onClick={handleOpenApproveSelected}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#00843D] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#0B6B3A] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        <span>
+                          Approve Selected ({selectedPlanIds.length})
+                          {selectedPlanIds.length > 0 &&
+                          selectedPlanIds.length < reviewablePlans.length
+                            ? " & Return Remaining"
+                            : ""}
+                        </span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Committee Batch Action Bar */}
-              {userRole === "ENDORSING_COMMITTEE" &&
+              {(userRole === "ENDORSING_COMMITTEE" ||
+                userRole === "SUPERUSER") &&
                 currentPendingPlans.length > 0 && (
                   <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
                     <div className="flex items-center gap-2.5">
@@ -907,69 +932,73 @@ export function PlanReviewDirectoryTable({
                 )}
 
               {/* Management Batch Action Bar */}
-              {userRole === "MANAGEMENT" && currentPendingPlans.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs font-semibold text-slate-700">
-                      {selectedPlanIds.length} of {currentPendingPlans.length}{" "}
-                      plans selected
-                    </span>
-                    {selectedPlanIds.length > 0 && (
+              {(userRole === "MANAGEMENT" || userRole === "SUPERUSER") &&
+                currentPendingPlans.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs font-semibold text-slate-700">
+                        {selectedPlanIds.length} of {currentPendingPlans.length}{" "}
+                        plans selected
+                      </span>
+                      {selectedPlanIds.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPlanIds([])}
+                          className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                        >
+                          Clear selection
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setSelectedPlanIds([])}
-                        className="text-xs text-slate-400 hover:text-slate-600 underline cursor-pointer"
+                        onClick={handleOpenManagementApproveAll}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
                       >
-                        Clear selection
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
+                        <span>
+                          Grant Authorization to All (
+                          {currentPendingPlans.length})
+                        </span>
                       </button>
-                    )}
+
+                      <button
+                        type="button"
+                        disabled={selectedPlanIds.length === 0}
+                        onClick={handleOpenManagementApproveSelected}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>
+                          Authorize Selected ({selectedPlanIds.length})
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={selectedPlanIds.length === 0}
+                        onClick={handleOpenManagementRejectSelected}
+                        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 text-rose-600" />
+                        <span>
+                          Return / Reject Selected ({selectedPlanIds.length})
+                        </span>
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleOpenManagementApproveAll}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 transition cursor-pointer"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-700" />
-                      <span>
-                        Grant Authorization to All ({currentPendingPlans.length}
-                        )
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={selectedPlanIds.length === 0}
-                      onClick={handleOpenManagementApproveSelected}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#0A3C2F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#083025] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>Authorize Selected ({selectedPlanIds.length})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={selectedPlanIds.length === 0}
-                      onClick={handleOpenManagementRejectSelected}
-                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-4 text-xs font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5 text-rose-600" />
-                      <span>
-                        Return / Reject Selected ({selectedPlanIds.length})
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
 
               {/* Table of Plans Awaiting Review */}
               <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
+                <HorizontalTableScroller label="Plans awaiting review">
                   <table className="w-full text-left border-collapse min-w-[1040px]">
                     <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                       <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
                         {(userRole === "DIRECTOR" ||
+                          userRole === "SUPERUSER" ||
                           userRole === "ENDORSING_COMMITTEE" ||
                           userRole === "MANAGEMENT") && (
                           <th
@@ -1005,6 +1034,7 @@ export function PlanReviewDirectoryTable({
                           <td
                             colSpan={
                               userRole === "DIRECTOR" ||
+                              userRole === "SUPERUSER" ||
                               userRole === "ENDORSING_COMMITTEE" ||
                               userRole === "MANAGEMENT"
                                 ? 8
@@ -1024,11 +1054,8 @@ export function PlanReviewDirectoryTable({
                           </td>
                         </tr>
                       ) : (
-                        currentPendingPlans.map((plan) => {
+                        pendingPagination.pageItems.map((plan) => {
                           const isSelected = selectedPlanIds.includes(plan.id);
-                          const isReopeningRequest =
-                            plan.status === "Update Requested" ||
-                            (plan as any).status === "UPDATE_REQUESTED";
                           const isReturned =
                             (plan.status || "")
                               .toLowerCase()
@@ -1043,6 +1070,7 @@ export function PlanReviewDirectoryTable({
                               }`}
                             >
                               {(userRole === "DIRECTOR" ||
+                                userRole === "SUPERUSER" ||
                                 userRole === "ENDORSING_COMMITTEE" ||
                                 userRole === "MANAGEMENT") && (
                                 <td className="w-12 px-3.5 py-3.5 text-center">
@@ -1050,7 +1078,6 @@ export function PlanReviewDirectoryTable({
                                     type="checkbox"
                                     aria-label={`Select plan ${plan.planName}`}
                                     checked={isSelected}
-                                    disabled={isReopeningRequest}
                                     onChange={() => handleTogglePlan(plan.id)}
                                     className="h-4 w-4 rounded border-slate-300 text-[#00843D] focus:ring-[#00843D] cursor-pointer"
                                   />
@@ -1069,11 +1096,7 @@ export function PlanReviewDirectoryTable({
                                   <span className="font-mono text-[11px] text-slate-500">
                                     {plan.reference || plan.id}
                                   </span>
-                                  {isReopeningRequest ? (
-                                    <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-medium px-2 py-0.5 rounded-md">
-                                      Amendment Request
-                                    </span>
-                                  ) : isReturned ? (
+                                  {isReturned ? (
                                     <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-medium px-2 py-0.5 rounded-md">
                                       Resubmitted (Revised)
                                     </span>
@@ -1121,50 +1144,33 @@ export function PlanReviewDirectoryTable({
                                     Review Activities
                                   </button>
 
-                                  {userRole === "DIRECTOR" &&
-                                    isReopeningRequest && (
+                                  {(userRole === "DIRECTOR" ||
+                                    userRole === "SUPERUSER") && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setPendingApprovePlan(plan)
+                                        }
+                                        className="rounded-md bg-[#00843D] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#0B6B3A] transition cursor-pointer"
+                                      >
+                                        Approve
+                                      </button>
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          if (
-                                            window.confirm(
-                                              `Authorize reopening "${plan.planName}" so the officer can amend and resubmit it?`,
-                                            )
-                                          ) {
-                                            void onApprovePlanUpdate?.(plan);
-                                          }
+                                          setSingleReturnError(null);
+                                          setSingleReturnModalPlan(plan);
                                         }}
-                                        className="rounded-md bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-700 transition cursor-pointer"
+                                        className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer"
                                       >
-                                        Authorize Reopening
+                                        Return
                                       </button>
-                                    )}
+                                    </>
+                                  )}
 
-                                  {userRole === "DIRECTOR" &&
-                                    !isReopeningRequest && (
-                                      <>
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            setPendingApprovePlan(plan)
-                                          }
-                                          className="rounded-md bg-[#00843D] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-[#0B6B3A] transition cursor-pointer"
-                                        >
-                                          Approve
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            setSingleReturnModalPlan(plan)
-                                          }
-                                          className="rounded-md border border-rose-300 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-800 hover:bg-rose-100 transition cursor-pointer"
-                                        >
-                                          Return
-                                        </button>
-                                      </>
-                                    )}
-
-                                  {userRole === "MANAGEMENT" && (
+                                  {(userRole === "MANAGEMENT" ||
+                                    userRole === "SUPERUSER") && (
                                     <>
                                       <button
                                         type="button"
@@ -1207,7 +1213,15 @@ export function PlanReviewDirectoryTable({
                       )}
                     </tbody>
                   </table>
-                </div>
+                </HorizontalTableScroller>
+                <PaginationControls
+                  page={pendingPagination.page}
+                  pageCount={pendingPagination.pageCount}
+                  startIndex={pendingPagination.startIndex}
+                  endIndex={pendingPagination.endIndex}
+                  totalItems={currentPendingPlans.length}
+                  setPage={pendingPagination.setPage}
+                />
               </div>
             </div>
           )}
@@ -1217,7 +1231,7 @@ export function PlanReviewDirectoryTable({
           {/* ──────────────────────────────────────────────────────── */}
           {activeTab === "PREVIOUSLY_APPROVED" && (
             <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="overflow-x-auto">
+              <HorizontalTableScroller label="Previously approved plans">
                 <table className="w-full text-left border-collapse min-w-[960px]">
                   <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                     <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -1247,7 +1261,7 @@ export function PlanReviewDirectoryTable({
                         </td>
                       </tr>
                     ) : (
-                      currentApprovedPlans.map((plan) => (
+                      approvedPagination.pageItems.map((plan) => (
                         <tr
                           key={plan.id}
                           className="hover:bg-slate-50 transition-colors"
@@ -1300,7 +1314,15 @@ export function PlanReviewDirectoryTable({
                     )}
                   </tbody>
                 </table>
-              </div>
+              </HorizontalTableScroller>
+              <PaginationControls
+                page={approvedPagination.page}
+                pageCount={approvedPagination.pageCount}
+                startIndex={approvedPagination.startIndex}
+                endIndex={approvedPagination.endIndex}
+                totalItems={currentApprovedPlans.length}
+                setPage={approvedPagination.setPage}
+              />
             </div>
           )}
 
@@ -1310,7 +1332,7 @@ export function PlanReviewDirectoryTable({
           {activeTab === "RETURNED" && (
             <div className="space-y-4">
               <div className="rounded-2xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
+                <HorizontalTableScroller label="Returned plans">
                   <table className="w-full text-left border-collapse min-w-[960px]">
                     <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                       <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -1341,7 +1363,7 @@ export function PlanReviewDirectoryTable({
                           </td>
                         </tr>
                       ) : (
-                        currentReturnedPlans.map((plan) => (
+                        returnedPagination.pageItems.map((plan) => (
                           <tr
                             key={plan.id}
                             className="hover:bg-slate-50 transition-colors"
@@ -1407,7 +1429,15 @@ export function PlanReviewDirectoryTable({
                       )}
                     </tbody>
                   </table>
-                </div>
+                </HorizontalTableScroller>
+                <PaginationControls
+                  page={returnedPagination.page}
+                  pageCount={returnedPagination.pageCount}
+                  startIndex={returnedPagination.startIndex}
+                  endIndex={returnedPagination.endIndex}
+                  totalItems={currentReturnedPlans.length}
+                  setPage={returnedPagination.setPage}
+                />
               </div>
             </div>
           )}
@@ -1470,6 +1500,14 @@ export function PlanReviewDirectoryTable({
             </div>
 
             <div className="p-5 space-y-4">
+              {singleReturnError && (
+                <p
+                  className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+                  role="alert"
+                >
+                  {singleReturnError}
+                </p>
+              )}
               <p className="text-xs text-slate-600 leading-relaxed">
                 You are returning plan{" "}
                 <strong className="text-slate-900 font-semibold">

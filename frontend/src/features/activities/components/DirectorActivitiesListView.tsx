@@ -45,6 +45,11 @@ import {
 } from "../activitiesData";
 import { fetchActivities, type BackendActivity } from "@/lib/activitiesApi";
 import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
+import {
   parseSavedActivityRecords,
   OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
 } from "@/features/projects/data/officerActivityDrafts";
@@ -427,9 +432,10 @@ export function DirectorActivitiesListView({
   onManagementDecision,
   onAddActivityComment,
 }: DirectorActivitiesListViewProps) {
-  const isCommittee = userRole === "ENDORSING_COMMITTEE";
-  const isManagement = userRole === "MANAGEMENT";
-  const isDirector = userRole === "DIRECTOR";
+  const isSuperuser = userRole === "SUPERUSER";
+  const isCommittee = userRole === "ENDORSING_COMMITTEE" || isSuperuser;
+  const isManagement = userRole === "MANAGEMENT" || isSuperuser;
+  const isDirector = userRole === "DIRECTOR" || isSuperuser;
   const isCancellationRequested =
     plan.status === "Cancellation Requested" ||
     (plan as any).status === "CANCELLATION_REQUESTED";
@@ -1135,6 +1141,48 @@ export function DirectorActivitiesListView({
       statusFilter === "ALL" || getActivityStatus(act) === statusFilter;
     return matchesSearch && matchesMethod && matchesReview && matchesStatus;
   });
+  const {
+    pageItems: paginatedActivities,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(filteredActivities, 15);
+  const targetedActivityIndex = targetActivityRef
+    ? filteredActivities.findIndex(
+        (act) =>
+          (act.activityRefNo || "").toLowerCase().trim() ===
+            targetActivityRef.toLowerCase().trim() ||
+          act.id.toLowerCase().trim() ===
+            targetActivityRef.toLowerCase().trim() ||
+          ((act as any).reference || "").toLowerCase().trim() ===
+            targetActivityRef.toLowerCase().trim(),
+      )
+    : -1;
+
+  useEffect(() => {
+    if (targetedActivityIndex >= 0) {
+      setPage(Math.floor(targetedActivityIndex / 15) + 1);
+    }
+  }, [setPage, targetedActivityIndex]);
+
+  useEffect(() => {
+    if (targetedActivityIndex < 0) return;
+    const targetActivity = filteredActivities[targetedActivityIndex];
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById(
+          `activity-row-${targetActivity.activityRefNo || targetActivity.id}`,
+        )
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [filteredActivities, page, targetedActivityIndex]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, methodFilter, reviewFilter, statusFilter, setPage]);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200 pb-8">
@@ -2394,7 +2442,7 @@ export function DirectorActivitiesListView({
 
           {/* PACKAGE ACTIVITIES DIRECTORY TABLE (SCREENSHOT 1) */}
           <div className="rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
+            <HorizontalTableScroller label="Activity list">
               <table className="w-full text-left text-xs border-collapse min-w-[900px]">
                 <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                   <tr className="bg-slate-100 text-slate-600 text-xs font-semibold">
@@ -2446,7 +2494,7 @@ export function DirectorActivitiesListView({
                       </td>
                     </tr>
                   ) : (
-                    filteredActivities.map((act, index) => {
+                    paginatedActivities.map((act, index) => {
                       const completedStages = act.roadmap.filter(
                         (s) => s.stageStatus === "Completed",
                       ).length;
@@ -2476,7 +2524,7 @@ export function DirectorActivitiesListView({
                           }`}
                         >
                           <td className="py-3 px-3.5 font-mono text-slate-500 font-medium text-xs text-center">
-                            {index + 1}
+                            {startIndex + index + 1}
                           </td>
 
                           <td className="py-3 px-3.5 text-xs">
@@ -2573,7 +2621,15 @@ export function DirectorActivitiesListView({
                   )}
                 </tbody>
               </table>
-            </div>
+            </HorizontalTableScroller>
+            <PaginationControls
+              page={page}
+              pageCount={pageCount}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              totalItems={filteredActivities.length}
+              setPage={setPage}
+            />
           </div>
 
           {/* Decision & Workflow Actions Card */}

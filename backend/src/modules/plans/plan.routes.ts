@@ -16,8 +16,7 @@ import {
   getPlanById,
   createPlan,
   updatePlan,
-  requestPlanUpdate,
-  approvePlanUpdate,
+  deleteDraftPlan,
   submitPlan,
   sendToCommittee,
   rejectPlan,
@@ -67,16 +66,10 @@ router.patch(
   updatePlan,
 );
 
-router.post(
-  '/:id/request-update',
-  authorize('ProcurementOfficer', 'OFFICER', 'Administrator', 'ADMIN'),
-  requestPlanUpdate,
-);
-
-router.post(
-  '/:id/approve-update',
-  authorize('ProcurementDirector', 'DIRECTOR', 'Administrator', 'ADMIN'),
-  approvePlanUpdate,
+router.delete(
+  '/:id',
+  authorize('Administrator', 'ProcurementOfficer', 'OFFICER', 'ADMIN'),
+  deleteDraftPlan,
 );
 
 router.post(
@@ -107,7 +100,13 @@ router.post(
 
 router.post(
   '/:id/return-to-officer',
-  authorize('ProcurementDirector', 'DIRECTOR', 'Administrator', 'ADMIN'),
+  authorize(
+    'ProcurementDirector',
+    'DIRECTOR',
+    'ENDORSING_COMMITTEE',
+    'Administrator',
+    'ADMIN',
+  ),
   returnToOfficer,
 );
 

@@ -412,7 +412,9 @@ export function UserManagementView({
         DIRECTOR: "ProcurementDirector",
         ENDORSING_COMMITTEE: "EndorsingCommittee",
         MANAGEMENT: "ManagementTeam",
+        EXECUTIVE: "EXECUTIVE",
         ADMIN: "Administrator",
+        SUPERUSER: "SUPERUSER",
       };
 
       const isRestrictedFilter =
@@ -471,7 +473,9 @@ export function UserManagementView({
       DIRECTOR: "ProcurementDirector",
       ENDORSING_COMMITTEE: "EndorsingCommittee",
       MANAGEMENT: "ManagementTeam",
+      EXECUTIVE: "EXECUTIVE",
       ADMIN: "Administrator",
+      SUPERUSER: "SUPERUSER",
     };
 
     const isRestrictedFilter =
@@ -1171,10 +1175,17 @@ export function UserManagementView({
                     Endorsement Committee (Committee Review)
                   </option>
                   <option value="MANAGEMENT">
-                    Executive (Executive Dashboard, Reports &amp; Approval)
+                    Executive Management (Executive Dashboard, Reports &amp;
+                    Approval)
+                  </option>
+                  <option value="EXECUTIVE">
+                    Executive (Executive Dashboard &amp; Reports only)
                   </option>
                   <option value="ADMIN">
                     Administrator (System Administration / Governance)
+                  </option>
+                  <option value="SUPERUSER">
+                    Superuser (Full System Access)
                   </option>
                 </select>
 
@@ -1299,8 +1310,10 @@ export function UserManagementView({
                   <option value="ENDORSING_COMMITTEE">
                     Endorsement Committee
                   </option>
-                  <option value="MANAGEMENT">Management</option>
+                  <option value="MANAGEMENT">Executive Management</option>
+                  <option value="EXECUTIVE">Executive</option>
                   <option value="ADMIN">Administrator</option>
+                  <option value="SUPERUSER">Superuser</option>
                 </select>
 
                 <select

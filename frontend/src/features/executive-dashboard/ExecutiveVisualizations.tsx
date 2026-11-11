@@ -332,10 +332,10 @@ export function ExecutiveVisualizations({
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-white p-5">
-              <h2 className="text-sm text-slate-500">
+              <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
                 Invitation to signature
               </h2>
-              <p className="mt-2 text-2xl font-semibold">
+              <p className="mt-2 text-lg font-semibold">
                 {cycles.invitation.value === null
                   ? "Not available"
                   : `${money(cycles.invitation.value)} days`}
@@ -346,10 +346,10 @@ export function ExecutiveVisualizations({
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-5">
-              <h2 className="text-sm text-slate-500">
+              <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
                 Bid opening to signature
               </h2>
-              <p className="mt-2 text-2xl font-semibold">
+              <p className="mt-2 text-lg font-semibold">
                 {cycles.opening.value === null
                   ? "Not available"
                   : `${money(cycles.opening.value)} days`}
@@ -516,8 +516,8 @@ export function ExecutiveVisualizations({
                 key={item.label}
                 className="rounded-xl border border-slate-200 bg-white p-5"
               >
-                <h2 className="text-xs text-slate-500">{item.label}</h2>
-                <p className="mt-3 text-xl font-semibold">{item.value}</p>
+                <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">{item.label}</h2>
+                <p className="mt-3 text-lg font-semibold">{item.value}</p>
                 <p className="mt-2 text-xs text-slate-400">
                   {matched.pairs.length} complete same-currency activity/award
                   pairs

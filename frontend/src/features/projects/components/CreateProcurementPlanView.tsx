@@ -382,6 +382,7 @@ export function CreateProcurementPlanView({
     (project.organizationRegion ? [project.organizationRegion] : []);
 
   const isPlanReturned =
+    Boolean(initialPlan?.returnedForRevision) ||
     initialPlan?.status === "Returned" ||
     initialPlan?.status === "Returned for Revision";
 
@@ -448,7 +449,7 @@ export function CreateProcurementPlanView({
             <div>
               <p className="font-semibold text-amber-900 mb-1 flex items-center gap-1.5">
                 <MessageSquare className="h-4 w-4 text-amber-700" />
-                Director Feedback &amp; Revision Instructions:
+                Return Remark &amp; Revision Instructions:
               </p>
               <p className="italic leading-relaxed text-amber-950">
                 &ldquo;

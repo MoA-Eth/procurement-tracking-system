@@ -1,18 +1,28 @@
 "use client";
 
 import { StatusText } from "../../../components/dashboard/StatusText";
+import {
+  HorizontalTableScroller,
+  PaginationControls,
+  useListPagination,
+} from "@/components/dashboard/ListPagination";
 import { CreateProcurementActivityView } from "@/features/projects/components/CreateProcurementActivityView";
 import { CreateProcurementPlanView } from "@/features/projects/components/CreateProcurementPlanView";
 import { OfficerProcurementActivityDetailView } from "@/features/projects/components/OfficerProcurementActivityDetailView";
 import { OfficerProcurementPlanDetailView } from "@/features/projects/components/OfficerProcurementPlanDetailView";
 import { OfficerProjectDetailView } from "@/features/projects/components/OfficerProjectDetailView";
 import {
+  activityStatusForPlanStatus,
+  activityStatusForSelectedPlan,
+  activityRecordBelongsToPlanId,
   addSavedActivityRecord,
   findBackendActivityForPlan,
+  mergeBackendAndSavedActivityRecords,
   isTestOrJunkActivity,
   mergeActivityRoadmaps,
   mapRoadmapStagesForBackend,
   mapBackendActivityToProcurementActivitySummary,
+  nextAvailableActivityReference,
   OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
   parseSavedActivityRecords,
   type ProcurementActivitySummary,
@@ -43,6 +53,7 @@ import {
   getCachedPlans,
   invalidatePlansCache,
   mapBackendPlanToOfficerPlanSummary,
+  deletePlan,
   type BackendPlan,
 } from "@/lib/plansApi";
 import {
@@ -80,14 +91,7 @@ import {
 import { usePlanAvailability } from "../data/usePlanAvailability";
 import { getCurrentUser } from "@/lib/authApi";
 import type { AuthUser } from "@/lib/authTypes";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  FolderLock,
-  Search,
-  ShieldAlert,
-} from "lucide-react";
+import { ChevronDown, FolderLock, Search, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -219,21 +223,26 @@ export function OfficerProjectsView({
     SavedOfficerActivityRecord[]
   >([]);
   const [isLoadingData, setIsLoadingData] = useState(
-    () => !getCachedProjects(),
+    () => !getCachedProjects()?.length,
   );
+  const hasLoadedDataRef = useRef(Boolean(getCachedProjects()?.length));
   const loadDataRequestRef = useRef(0);
 
   const loadData = useCallback(async () => {
     const requestId = ++loadDataRequestRef.current;
     try {
-      if (backendProjects.length === 0) {
+      if (!hasLoadedDataRef.current) {
         setIsLoadingData(true);
       }
-      const [projData, planData, actData] = await Promise.allSettled([
-        fetchProjects(),
-        fetchPlans(),
-        fetchActivities(),
-      ]);
+      const [projData, planData, actData, selectedPlanActivitiesData] =
+        await Promise.allSettled([
+          fetchProjects(),
+          fetchPlans(),
+          fetchActivities(),
+          selectedPlanReference
+            ? fetchActivities(selectedPlanReference)
+            : Promise.resolve([]),
+        ]);
 
       if (requestId !== loadDataRequestRef.current) return;
 
@@ -271,7 +280,9 @@ export function OfficerProjectsView({
 
       if (planData.status === "fulfilled" && planData.value.length > 0) {
         // Only load plans that belong to the officer's assigned projects or the currently selected plan
-        if (effectiveUser && assignedProjList.length > 0) {
+        if (effectiveUser?.role === "SUPERUSER") {
+          fetchedPlans = planData.value;
+        } else if (effectiveUser && assignedProjList.length > 0) {
           const assignedIds = new Set(
             assignedProjList.map((p) => p.id).filter(Boolean),
           );
@@ -300,7 +311,17 @@ export function OfficerProjectsView({
       }
 
       if (actData.status === "fulfilled") {
-        const mappedDbRecords: SavedOfficerActivityRecord[] = actData.value
+        const activitiesById = new Map(
+          actData.value.map((activity) => [activity.id, activity]),
+        );
+        if (selectedPlanActivitiesData.status === "fulfilled") {
+          for (const activity of selectedPlanActivitiesData.value) {
+            activitiesById.set(activity.id, activity);
+          }
+        }
+        const mappedDbRecords: SavedOfficerActivityRecord[] = Array.from(
+          activitiesById.values(),
+        )
           .filter((ba: BackendActivity) => {
             if (isTestOrJunkActivity(ba.reference, ba.description))
               return false;
@@ -314,6 +335,18 @@ export function OfficerProjectsView({
               (ba.plan as any)?.projectId ||
               ba.plan?.project?.id ||
               "";
+            const belongsToSelectedPlan =
+              Boolean(selectedPlanReference) &&
+              ba.planId?.toLowerCase().trim() ===
+                selectedPlanReference?.toLowerCase().trim();
+            const belongsToLoadedPlan = Boolean(
+              ba.planId &&
+              fetchedPlans.some(
+                (plan) =>
+                  plan.id?.toLowerCase().trim() ===
+                  ba.planId.toLowerCase().trim(),
+              ),
+            );
             const assignedIds = new Set(
               assignedProjList.map((p) => p.id).filter(Boolean),
             );
@@ -321,6 +354,8 @@ export function OfficerProjectsView({
               assignedProjList.map((p) => p.code.toLowerCase()),
             );
             return (
+              belongsToSelectedPlan ||
+              belongsToLoadedPlan ||
               (projCode && assignedCodes.has(projCode.toLowerCase())) ||
               (projId && assignedIds.has(projId)) ||
               Boolean(ba.planId && parentPlan)
@@ -344,10 +379,11 @@ export function OfficerProjectsView({
       console.warn("loadData officer view note:", err);
     } finally {
       if (requestId === loadDataRequestRef.current) {
+        hasLoadedDataRef.current = true;
         setIsLoadingData(false);
       }
     }
-  }, [effectiveUser]);
+  }, [effectiveUser, selectedPlanReference]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -375,71 +411,10 @@ export function OfficerProjectsView({
   }, []);
 
   const effectiveSavedActivityRecords = useMemo(() => {
-    const list: SavedOfficerActivityRecord[] = [];
-    const norm = (s?: string) => (s || "").trim().toLowerCase();
-
-    const findIndex = (rec: SavedOfficerActivityRecord) => {
-      const rPlan = norm(rec.planReference);
-      const rDesc = norm(rec.activity.description);
-      const rRef = norm(rec.activity.reference);
-      const rId = norm(
-        (rec.activity as any).id || (rec.activity as any).activityId,
-      );
-      const rAmt = Number(rec.activity.estimatedAmount) || 0;
-
-      return list.findIndex((ex) => {
-        const eId = norm(
-          (ex.activity as any).id || (ex.activity as any).activityId,
-        );
-        const rId = norm(
-          (rec.activity as any).id || (rec.activity as any).activityId,
-        );
-        if (rId && eId && rId === eId) return true;
-
-        const eRef = norm(ex.activity.reference);
-        const rRef = norm(rec.activity.reference);
-        if (rRef && eRef && rRef === eRef) return true;
-
-        const ePlan = norm(ex.planReference);
-        const rPlan = norm(rec.planReference);
-        if (rPlan && ePlan && rPlan !== ePlan) return false;
-
-        const eDesc = norm(ex.activity.description);
-        const rDesc = norm(rec.activity.description);
-        const eAmt = Number(ex.activity.estimatedAmount) || 0;
-        const rAmt = Number(rec.activity.estimatedAmount) || 0;
-
-        if (rDesc && eDesc && rDesc === eDesc) {
-          if (rAmt === eAmt || Math.abs(rAmt - eAmt) < 1) return true;
-          if (
-            norm(rec.activity.method) &&
-            norm(rec.activity.method) === norm(ex.activity.method)
-          )
-            return true;
-        }
-        return false;
-      });
-    };
-
-    backendActivities.forEach((rec) => {
-      const idx = findIndex(rec);
-      if (idx === -1) {
-        list.push(rec);
-      } else {
-        list[idx] = rec;
-      }
-    });
-
-    savedActivityRecords.forEach((rec) => {
-      const idx = findIndex(rec);
-      if (idx === -1) {
-        list.push(rec);
-      } else {
-        list[idx] = rec;
-      }
-    });
-
-    return list;
+    return mergeBackendAndSavedActivityRecords(
+      backendActivities,
+      savedActivityRecords,
+    );
   }, [backendActivities, savedActivityRecords]);
 
   const allProjects = useMemo(() => {
@@ -484,8 +459,11 @@ export function OfficerProjectsView({
               return false;
             }
             const pCode = (rec.projectCode || "").toLowerCase().trim();
-            if (pCode !== projCode && pCode !== projId) return false;
             const rRef = (rec.planReference || "").toLowerCase().trim();
+            if (planId && activityRecordBelongsToPlanId(rec, planId)) {
+              return true;
+            }
+            if (pCode !== projCode && pCode !== projId) return false;
             return (
               (planId && rRef === planId) ||
               (planRef && rRef === planRef) ||
@@ -616,7 +594,7 @@ export function OfficerProjectsView({
       .filter((ba) => !isTestOrJunkActivity(ba.reference, ba.description))
       .map((ba) => {
         const s = mapBackendActivityToProcurementActivitySummary(ba);
-        (s as any).isParentApproved = true;
+        s.isInheritedFromParentPlan = true;
         return s;
       });
 
@@ -640,19 +618,21 @@ export function OfficerProjectsView({
           recProj === selCode ||
           (selShort && recProj === selShort) ||
           (selId && recProj === selId);
-
-        if (!matchesProject) return false;
-
         const recPlan = (record.planReference || "").toLowerCase().trim();
         const bpId = (matchingBackendPlan?.id || "").toLowerCase().trim();
 
         // Must strictly belong to this plan by unique ID or unique reference
-        const matchesPlan =
+        const matchesPlanById =
+          (normId && activityRecordBelongsToPlanId(record, normId)) ||
+          (bpId && activityRecordBelongsToPlanId(record, bpId));
+        const matchesPlanByReference =
           (normId && recPlan === normId) ||
           (normRef && recPlan === normRef) ||
           (bpId && recPlan === bpId);
 
-        if (!matchesPlan) return false;
+        if (!matchesPlanById && !(matchesProject && matchesPlanByReference)) {
+          return false;
+        }
 
         return true;
       })
@@ -681,25 +661,23 @@ export function OfficerProjectsView({
     }
     directBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
     parentBackendActivities.forEach((a) => upsertSummaryActivity(combined, a));
-    if (selectedPlan.parentActivities && selectedPlan.parentActivities.length > 0) {
+    if (
+      selectedPlan.parentActivities &&
+      selectedPlan.parentActivities.length > 0
+    ) {
       selectedPlan.parentActivities.forEach((a: any) =>
-        upsertSummaryActivity(combined, { ...a, isParentApproved: true }),
+        upsertSummaryActivity(combined, {
+          ...a,
+          isInheritedFromParentPlan: true,
+        }),
       );
     }
     matchingSaved.forEach((a) => upsertSummaryActivity(combined, a));
 
-    const activitiesList = combined.map((act) => {
-      if (
-        (selectedPlan.status === "Returned" ||
-          selectedPlan.status === "Returned for Revision") &&
-        (act.status === "Submitted to Director" ||
-          (act as any).status === "Under Review" ||
-          !act.status)
-      ) {
-        return { ...act, status: "Returned" as const };
-      }
-      return act;
-    });
+    const activitiesList = combined.map((activity) => ({
+      ...activity,
+      status: activityStatusForSelectedPlan(activity, selectedPlan.status),
+    }));
 
     return activitiesList;
   }, [
@@ -1252,20 +1230,50 @@ export function OfficerProjectsView({
     handlePlanUpdated(additionalPlan);
   }
 
-  async function saveActivity(activity: ProcurementActivitySummary) {
+  async function saveActivity(
+    activity: ProcurementActivitySummary,
+    navigateAfterSave = true,
+  ) {
     if (!selectedProject || !selectedPlan) return;
+
+    const isCreatingActivity = mode === "create-activity";
+    if (isCreatingActivity) {
+      activity = {
+        ...activity,
+        reference: nextAvailableActivityReference(activity.reference, [
+          ...selectedPlanActivities.map((item) => item.reference),
+          ...backendActivities.map((record) => record.activity.reference),
+          ...savedActivityRecords.map((record) => record.activity.reference),
+        ]),
+      };
+    }
 
     const planRef = selectedPlan.id || selectedPlan.reference;
 
     // Check if this was an edit to an existing activity
-    const existing = selectedPlanActivities.find(
-      (a) =>
-        (Boolean(activity.id) && a.id === activity.id) ||
-        (Boolean(activity.activityId) &&
-          (a.id === activity.activityId ||
-            a.activityId === activity.activityId)) ||
-        a.reference.toLowerCase() === activity.reference.toLowerCase(),
-    );
+    const existing =
+      mode === "edit-activity"
+        ? selectedPlanActivities.find(
+            (a) =>
+              (Boolean(activity.id) && a.id === activity.id) ||
+              (Boolean(activity.activityId) &&
+                (a.id === activity.activityId ||
+                  a.activityId === activity.activityId)) ||
+              a.reference.toLowerCase() === activity.reference.toLowerCase(),
+          )
+        : undefined;
+    const activityToSave: ProcurementActivitySummary = {
+      ...activity,
+      status: activityStatusForPlanStatus(selectedPlan.status),
+      createdById:
+        existing?.createdById ||
+        activity.createdById ||
+        (existing ? undefined : effectiveUser?.id),
+      createdByName:
+        existing?.createdByName ||
+        activity.createdByName ||
+        (existing ? undefined : effectiveUser?.displayName),
+    };
     if (existing) {
       const existingAny = existing as any;
       const activityAny = activity as any;
@@ -1318,7 +1326,7 @@ export function OfficerProjectsView({
     }
 
     const nextRecords = addSavedActivityRecord(savedActivityRecords, {
-      activity,
+      activity: activityToSave,
       planReference: planRef,
       projectCode: selectedProject.code,
     });
@@ -1334,7 +1342,7 @@ export function OfficerProjectsView({
         a.reference.toLowerCase() !== activity.reference.toLowerCase() &&
         (!a.id || !(activity as any).id || a.id !== (activity as any).id),
     );
-    const updatedActivities = [...currentPlanActivities, activity];
+    const updatedActivities = [...currentPlanActivities, activityToSave];
 
     const updatedPlan: ProcurementPlanSummary = {
       ...selectedPlan,
@@ -1438,22 +1446,33 @@ export function OfficerProjectsView({
         );
 
         // Check if this activity already exists in the backend
-        const existingBackendAct = findBackendActivityForPlan(
-          backendActivities,
-          activity,
-          [targetBackendPlanId, selectedPlan.id || "", selectedPlan.reference],
-          selectedProject.code,
-        );
+        const existingBackendAct =
+          mode === "edit-activity"
+            ? findBackendActivityForPlan(
+                backendActivities,
+                activity,
+                [
+                  targetBackendPlanId,
+                  selectedPlan.id || "",
+                  selectedPlan.reference,
+                ],
+                selectedProject.code,
+              )
+            : undefined;
         const existingBackendId =
-          existingBackendAct?.activity.id ||
-          (activity.id && activity.id.includes("-") && activity.id.length > 20
-            ? activity.id
-            : undefined) ||
-          (activity.activityId &&
-          activity.activityId.includes("-") &&
-          activity.activityId.length > 20
-            ? activity.activityId
-            : undefined);
+          mode === "edit-activity"
+            ? existingBackendAct?.activity.id ||
+              (activity.id &&
+              activity.id.includes("-") &&
+              activity.id.length > 20
+                ? activity.id
+                : undefined) ||
+              (activity.activityId &&
+              activity.activityId.includes("-") &&
+              activity.activityId.length > 20
+                ? activity.activityId
+                : undefined)
+            : undefined;
 
         const formDetails = activity.details?.form || ({} as any);
 
@@ -1578,55 +1597,11 @@ export function OfficerProjectsView({
             throw updateErr;
           }
         } else {
-          let createdBackendAct: any = null;
-          try {
-            createdBackendAct = await createActivity({
-              ...baseActivityPayload,
-              planId: targetBackendPlanId,
-              reference: activity.reference,
-            });
-          } catch (firstErr) {
-            console.warn(
-              "First createActivity attempt failed, attempting fallback:",
-              firstErr,
-            );
-            try {
-              createdBackendAct = await createActivity({
-                planId: targetBackendPlanId,
-                reference: activity.reference,
-                procurementCategory: toBackendProcurementCategory(
-                  activity.category,
-                ),
-                ...(activity.status === "Draft" ? { status: "DRAFT" } : {}),
-                procurementMethodId: resolvedMethodId,
-                description: activity.description || "Activity description",
-                estimatedBudget: Number(activity.estimatedAmount) || 500000,
-                currency:
-                  formDetails.currency ||
-                  (activity as any).currency ||
-                  selectedPlan.currency ||
-                  "ETB",
-                contractAwardDate: formDetails.contractAwardDate || null,
-                stages: customStages.length > 0 ? customStages : undefined,
-                roadmap: customStages.length > 0 ? customStages : undefined,
-                fundings: [
-                  {
-                    fundingSource:
-                      formDetails.fundingSource ||
-                      (activity as any).fundingSource ||
-                      selectedProject.fundingSource ||
-                      "World Bank",
-                    loanGrantNumber:
-                      selectedProject.financingNumbers?.[0] || undefined,
-                    allocationPct: 100,
-                  },
-                ],
-              });
-            } catch (secondErr) {
-              console.warn("Second createActivity attempt failed:", secondErr);
-              throw secondErr;
-            }
-          }
+          const createdBackendAct = await createActivity({
+            ...baseActivityPayload,
+            planId: targetBackendPlanId,
+            reference: activity.reference,
+          });
 
           if (createdBackendAct && createdBackendAct.id) {
             const backendId = createdBackendAct.id;
@@ -1637,9 +1612,7 @@ export function OfficerProjectsView({
             const updatedSavedActs = nextRecords.map((r) => {
               if (
                 r.activity.reference?.toLowerCase() ===
-                  activity.reference?.toLowerCase() ||
-                r.activity.description?.trim().toLowerCase() ===
-                  activity.description?.trim().toLowerCase()
+                activity.reference?.toLowerCase()
               ) {
                 return {
                   ...r,
@@ -1671,9 +1644,7 @@ export function OfficerProjectsView({
                   (a) => {
                     if (
                       a.reference?.toLowerCase() ===
-                        activity.reference?.toLowerCase() ||
-                      a.description?.trim().toLowerCase() ===
-                        activity.description?.trim().toLowerCase()
+                      activity.reference?.toLowerCase()
                     ) {
                       return {
                         ...a,
@@ -1712,23 +1683,25 @@ export function OfficerProjectsView({
     await loadData();
 
     // Navigate back to plan or activity detail
-    const targetActivityRef = activity.reference || selectedActivityReference;
-    if (mode === "edit-activity" && targetActivityRef) {
-      router.push(
-        "/workspace/projects?project=" +
-          encodeURIComponent(selectedProject.code) +
-          "&plan=" +
-          encodeURIComponent(selectedPlan.reference) +
-          "&activity=" +
-          encodeURIComponent(targetActivityRef),
-      );
-    } else {
-      router.push(
-        "/workspace/projects?project=" +
-          encodeURIComponent(selectedProject.code) +
-          "&plan=" +
-          encodeURIComponent(selectedPlan.reference),
-      );
+    if (navigateAfterSave) {
+      const targetActivityRef = activity.reference || selectedActivityReference;
+      if (mode === "edit-activity" && targetActivityRef) {
+        router.push(
+          "/workspace/projects?project=" +
+            encodeURIComponent(selectedProject.code) +
+            "&plan=" +
+            encodeURIComponent(selectedPlan.reference) +
+            "&activity=" +
+            encodeURIComponent(targetActivityRef),
+        );
+      } else {
+        router.push(
+          "/workspace/projects?project=" +
+            encodeURIComponent(selectedProject.code) +
+            "&plan=" +
+            encodeURIComponent(selectedPlan.reference),
+        );
+      }
     }
   }
 
@@ -1821,9 +1794,7 @@ export function OfficerProjectsView({
 
       const existingBackendAct = existingBackendActs.find(
         (existing) =>
-          existing.reference?.toLowerCase() === act.reference?.toLowerCase() ||
-          existing.description?.trim().toLowerCase() ===
-            act.description?.trim().toLowerCase(),
+          existing.reference?.toLowerCase() === act.reference?.toLowerCase(),
       );
 
       if (existingBackendAct) {
@@ -1869,12 +1840,14 @@ export function OfficerProjectsView({
     const submittedPlanActivities = planActs.map((activity) => ({
       ...activity,
       status: "Submitted to Director" as const,
+      returnedForRevision: false,
     }));
     const updatedPlan: ProcurementPlanSummary = {
       ...targetPlan,
       id: planIdToSubmit,
       reference: targetPlan.reference || planIdToSubmit,
       status: "Submitted to Director",
+      returnedForRevision: false,
       activities: planActs.length || targetPlan.activities,
       planActivities: submittedPlanActivities,
     };
@@ -1917,6 +1890,7 @@ export function OfficerProjectsView({
               ...record,
               activity: {
                 ...activity,
+                returnedForRevision: false,
                 status: "Submitted to Director" as const,
               },
             }
@@ -1941,9 +1915,9 @@ export function OfficerProjectsView({
       return nextRecords;
     });
 
-    const isReturned = (targetPlan.status || "")
-      .toLowerCase()
-      .includes("returned");
+    const isReturned =
+      Boolean(targetPlan.returnedForRevision) ||
+      (targetPlan.status || "").toLowerCase().includes("returned");
 
     const officerName =
       effectiveUser?.displayName ||
@@ -1981,7 +1955,7 @@ export function OfficerProjectsView({
       planName: targetPlan.name,
       projectCode: selectedProject.code,
       projectName: selectedProject.name,
-      versionNumber: isReturned ? 2 : 1,
+      versionNumber: targetPlan.version || (isReturned ? 2 : 1),
       action: isReturned ? "RESUBMITTED" : "SUBMITTED",
       actionLabel: isReturned
         ? "Plan Resubmitted to Director"
@@ -2095,6 +2069,76 @@ export function OfficerProjectsView({
     saveActivity(updatedActivity);
   }
 
+  async function handleDeleteDraftPlan() {
+    if (!selectedProject || !selectedPlan) {
+      throw new Error("The project or procurement plan is no longer selected.");
+    }
+
+    const planIdentifiers = new Set(
+      [selectedPlan.id, selectedPlan.reference, selectedPlan.name]
+        .filter((value): value is string => Boolean(value))
+        .map((value) => value.trim().toLowerCase()),
+    );
+    const matchesPlan = (planReference?: string, planId?: string) => {
+      const identifiers = [planReference, planId]
+        .filter((value): value is string => Boolean(value))
+        .map((value) => value.trim().toLowerCase());
+      return identifiers.some((identifier) => planIdentifiers.has(identifier));
+    };
+    const projectCode = selectedProject.code.trim().toLowerCase();
+
+    if (isPlanInBackend) {
+      const serverId = selectedPlan.id;
+      if (!serverId) {
+        throw new Error(
+          "The saved plan ID is missing; the plan was not deleted.",
+        );
+      }
+      await deletePlan(serverId);
+      setBackendPlans((plans) => plans.filter((plan) => plan.id !== serverId));
+      setBackendActivities((records) =>
+        records.filter(
+          (record) =>
+            !(
+              record.projectCode.trim().toLowerCase() === projectCode &&
+              matchesPlan(record.planReference)
+            ),
+        ),
+      );
+    }
+
+    const nextPlanRecords = savedPlanRecords.filter(
+      (record) =>
+        !(
+          record.projectCode.trim().toLowerCase() === projectCode &&
+          matchesPlan(record.plan.reference, record.plan.id)
+        ),
+    );
+    setSavedPlanRecords(nextPlanRecords);
+    window.localStorage.setItem(
+      OFFICER_PLAN_DRAFTS_STORAGE_KEY,
+      JSON.stringify(nextPlanRecords),
+    );
+
+    const nextActivityRecords = savedActivityRecords.filter(
+      (record) =>
+        !(
+          record.projectCode.trim().toLowerCase() === projectCode &&
+          matchesPlan(record.planReference)
+        ),
+    );
+    setSavedActivityRecords(nextActivityRecords);
+    window.localStorage.setItem(
+      OFFICER_ACTIVITY_DRAFTS_STORAGE_KEY,
+      JSON.stringify(nextActivityRecords),
+    );
+
+    router.push(
+      "/workspace/projects?project=" + encodeURIComponent(selectedProject.code),
+    );
+    void loadData();
+  }
+
   async function handleDeleteDraftActivity(
     activity: ProcurementActivitySummary,
   ) {
@@ -2157,20 +2201,15 @@ export function OfficerProjectsView({
       records.filter(
         (record) =>
           !(
-            belongsToSelectedPlan(
-              record.planReference,
-              record.projectCode,
-            ) && matchesActivity(record.activity)
+            belongsToSelectedPlan(record.planReference, record.projectCode) &&
+            matchesActivity(record.activity)
           ),
       ),
     );
     setBackendPlans((plans) =>
       plans.map((plan) => ({
         ...plan,
-        activities: belongsToSelectedPlan(
-          plan.id,
-          plan.project?.code,
-        )
+        activities: belongsToSelectedPlan(plan.id, plan.project?.code)
           ? (plan.activities || []).filter(
               (candidate) =>
                 !matchesActivity(
@@ -2562,20 +2601,24 @@ export function OfficerProjectsView({
               ? "create-additional-activity"
               : "create-activity"
         }
-        existingActivityCount={
-          Math.max(selectedPlan.activities || 0, selectedPlanActivities.length)
-        }
+        existingActivityCount={Math.max(
+          selectedPlan.activities || 0,
+          selectedPlanActivities.length,
+        )}
         initialActivity={
           mode === "edit-activity" ? selectedActivity : undefined
         }
         isAdditionalPlan={mode === "create-additional-activity"}
+        onSaveActivity={(activity) =>
+          saveActivity(activity, mode !== "create-activity")
+        }
         parentPlan={
           mode === "create-additional-activity" ? selectedPlan : undefined
         }
-        onSaveActivity={saveActivity}
         onSubmitAdditionalPlan={handleCreateAdditionalPlanAndActivity}
         plan={selectedPlan}
         project={selectedProject}
+        returnToActivityListOnSave={mode === "create-activity"}
       />
     );
   }
@@ -2596,6 +2639,8 @@ export function OfficerProjectsView({
   if (selectedProject && selectedPlan) {
     return (
       <OfficerProcurementPlanDetailView
+        currentUser={effectiveUser}
+        onDeleteDraftPlan={handleDeleteDraftPlan}
         onDeleteDraftActivity={handleDeleteDraftActivity}
         onBulkImportActivities={handleBulkImportActivities}
         onSubmitToDirector={submitPlanToDirector}
@@ -2724,10 +2769,14 @@ function OfficerProjectsList({
   }, [fundingSource, projects, searchQuery, status]);
 
   const resultCount = filteredProjects.length;
-  const entrySummary =
-    resultCount === 0
-      ? "Showing 0 entries"
-      : `Showing 1 to ${resultCount} of ${resultCount} entries`;
+  const {
+    pageItems: paginatedProjects,
+    page,
+    pageCount,
+    startIndex,
+    endIndex,
+    setPage,
+  } = useListPagination(filteredProjects, 15);
 
   return (
     <div className="space-y-5 pb-6">
@@ -2897,12 +2946,7 @@ function OfficerProjectsList({
             <h2 className="sr-only" id="projects-table-title">
               Assigned projects
             </h2>
-            <div
-              aria-label="Assigned projects table"
-              className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#00843D]"
-              role="region"
-              tabIndex={0}
-            >
+            <HorizontalTableScroller label="Assigned projects">
               <table className="w-full min-w-[880px] border-collapse text-left">
                 <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
                   <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
@@ -2936,8 +2980,8 @@ function OfficerProjectsList({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {filteredProjects.length > 0 ? (
-                    filteredProjects.map((project, index) => (
+                  {resultCount > 0 ? (
+                    paginatedProjects.map((project, index) => (
                       <tr
                         key={project.id || `${project.code}-${index}`}
                         className="hover:bg-slate-50"
@@ -3051,32 +3095,15 @@ function OfficerProjectsList({
                   )}
                 </tbody>
               </table>
-            </div>
-
-            <footer className="flex items-center justify-between gap-4 border-t border-slate-200 bg-[#fbfcfd] px-4 py-4 text-xs text-slate-500">
-              <p aria-live="polite">{entrySummary}</p>
-              <div
-                aria-label="Project table pagination"
-                className="flex gap-1.5"
-              >
-                <button
-                  aria-label="Previous page"
-                  className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
-                  disabled
-                  type="button"
-                >
-                  <ChevronLeft aria-hidden="true" className="h-4 w-4" />
-                </button>
-                <button
-                  aria-label="Next page"
-                  className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-300"
-                  disabled
-                  type="button"
-                >
-                  <ChevronRight aria-hidden="true" className="h-4 w-4" />
-                </button>
-              </div>
-            </footer>
+            </HorizontalTableScroller>
+            <PaginationControls
+              page={page}
+              pageCount={pageCount}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              totalItems={resultCount}
+              setPage={setPage}
+            />
           </section>
         </>
       )}

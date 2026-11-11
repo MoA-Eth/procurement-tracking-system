@@ -3,8 +3,10 @@ export type UserRole =
   | "DIRECTOR"
   | "ENDORSING_COMMITTEE"
   | "MANAGEMENT"
+  | "EXECUTIVE"
   | "ADMIN"
-  | "FINANCE";
+  | "FINANCE"
+  | "SUPERUSER";
 
 export type UserStatus = "INVITED" | "ACTIVE" | "INACTIVE";
 

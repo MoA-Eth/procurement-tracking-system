@@ -52,7 +52,7 @@ afterAll(async () => {
 });
 
 describe('executive module access', () => {
-  it.each(['DIRECTOR', 'MANAGEMENT'])(
+  it.each(['DIRECTOR', 'MANAGEMENT', 'EXECUTIVE', 'SUPERUSER'])(
     'allows authenticated %s',
     async (role) => {
       const response = await fetch(origin, {

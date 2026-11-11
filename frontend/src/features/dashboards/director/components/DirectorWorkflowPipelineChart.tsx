@@ -73,7 +73,7 @@ export function DirectorWorkflowPipelineChart({
         {/* Header */}
         <div className="pb-3 border-b border-slate-100">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg sm:text-xl font-serif font-semibold text-slate-900 tracking-tight">
+            <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
               Workflow Pipeline
             </h3>
             <span className="text-xs font-semibold text-slate-500">

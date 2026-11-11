@@ -24,6 +24,19 @@ function formatReportActivityDate(value?: string | null) {
   return formatDualCalendarDate(value) || value || "—";
 }
 
+const descriptionCellClass = "py-2.5 px-3 align-top leading-5";
+
+function DescriptionCell({ children }: { children: string }) {
+  return (
+    <div
+      className="block w-[600px] min-w-[600px] max-w-[600px] whitespace-pre-wrap break-words [overflow-wrap:anywhere] [text-overflow:clip]"
+      style={{ overflow: "visible" }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export interface ReportTablesProps {
   activeReport: ReportType;
   annualPlanRows: AnnualPlanReportRow[];
@@ -326,11 +339,8 @@ export function ReportTables({
                       {row.refNo}
                     </span>
                   </td>
-                  <td
-                    className="py-2.5 px-3 max-w-[200px] truncate"
-                    title={row.description}
-                  >
-                    {row.description}
+                  <td className={descriptionCellClass} title={row.description}>
+                    <DescriptionCell>{row.description}</DescriptionCell>
                   </td>
                   <td className="py-2.5 px-3">{row.category}</td>
                   <td className="py-2.5 px-3">{row.method}</td>
@@ -398,11 +408,8 @@ export function ReportTables({
                           {row.refNo}
                         </span>
                       </td>
-                      <td
-                        className="py-2.5 px-3 max-w-[160px] truncate"
-                        title={row.description}
-                      >
-                        {row.description}
+                      <td className={descriptionCellClass} title={row.description}>
+                        <DescriptionCell>{row.description}</DescriptionCell>
                       </td>
                       <td className="py-2.5 px-3">{row.method}</td>
                       <td className="py-2.5 px-3">
@@ -477,11 +484,8 @@ export function ReportTables({
                           {row.refNo}
                         </span>
                       </td>
-                      <td
-                        className="py-2.5 px-3 max-w-[160px] truncate"
-                        title={row.description}
-                      >
-                        {row.description}
+                      <td className={descriptionCellClass} title={row.description}>
+                        <DescriptionCell>{row.description}</DescriptionCell>
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap">
                         <span className="inline-block rounded-md bg-slate-100/90 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-800 border border-slate-200/80 whitespace-nowrap">
@@ -566,11 +570,8 @@ export function ReportTables({
                       {row.refNo}
                     </span>
                   </td>
-                  <td
-                    className="py-2.5 px-3 max-w-[160px] truncate"
-                    title={row.description}
-                  >
-                    {row.description}
+                  <td className={descriptionCellClass} title={row.description}>
+                    <DescriptionCell>{row.description}</DescriptionCell>
                   </td>
                   <td className="py-2.5 px-3 whitespace-nowrap">
                     <span className="inline-block rounded-md bg-slate-100/90 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-800 border border-slate-200/80 whitespace-nowrap">
@@ -648,11 +649,8 @@ export function ReportTables({
                       {row.refNo}
                     </span>
                   </td>
-                  <td
-                    className="py-2.5 px-3 max-w-[180px] truncate"
-                    title={row.description}
-                  >
-                    {row.description}
+                  <td className={descriptionCellClass} title={row.description}>
+                    <DescriptionCell>{row.description}</DescriptionCell>
                   </td>
                   <td className="py-2.5 px-3 whitespace-nowrap">
                     <span className="inline-block rounded-md bg-slate-100/90 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-800 border border-slate-200/80 whitespace-nowrap">
@@ -771,11 +769,10 @@ export function ReportTables({
                           {row.refNo || row.id}
                         </span>
                       </td>
-                      <td
-                        className="py-2.5 px-3 max-w-[180px] truncate"
-                        title={row.description}
-                      >
-                        {row.description || "Package details"}
+                      <td className={descriptionCellClass} title={row.description}>
+                        <DescriptionCell>
+                          {row.description || "Package details"}
+                        </DescriptionCell>
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap">
                         <span className="inline-block rounded-md bg-slate-100/90 px-2 py-0.5 font-mono text-[11px] font-medium text-slate-800 border border-slate-200/80 whitespace-nowrap">
@@ -910,10 +907,10 @@ export function ReportTables({
                     {row.rowNo || idx + 1}
                   </td>
                   <td
-                    className="py-2.5 px-3 max-w-[200px] truncate font-medium"
+                    className={`${descriptionCellClass} font-medium`}
                     title={row.description}
                   >
-                    {row.description}
+                    <DescriptionCell>{row.description}</DescriptionCell>
                   </td>
                   <td className="py-2.5 px-3">
                     <span className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">

@@ -20,6 +20,14 @@ const mockDirectorUser: AuthUser = {
   role: "DIRECTOR",
 };
 
+const mockAdminUser: AuthUser = {
+  id: "admin-1",
+  email: "admin@moa.gov.et",
+  username: "admin",
+  displayName: "System Admin",
+  role: "ADMIN",
+};
+
 describe("SettingsManagementView", () => {
   it("renders the settings header and lookup classification description", () => {
     const html = renderToStaticMarkup(
@@ -53,5 +61,23 @@ describe("SettingsManagementView", () => {
     expect(html).toContain("Add Project Short Code");
     expect(html).toContain("Status");
     expect(html).toContain("Actions");
+  });
+
+  it("shows the API settings submenu to administrators", () => {
+    const html = renderToStaticMarkup(
+      <SettingsManagementView currentUser={mockAdminUser} />,
+    );
+
+    expect(html).toContain(">API</button>");
+    expect(html).not.toContain("Executive Dashboard API");
+  });
+
+  it("does not show the API settings submenu to directors", () => {
+    const html = renderToStaticMarkup(
+      <SettingsManagementView currentUser={mockDirectorUser} />,
+    );
+
+    expect(html).not.toContain(">API</button>");
+    expect(html).toContain(">System</button>");
   });
 });

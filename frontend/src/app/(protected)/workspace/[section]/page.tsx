@@ -1,19 +1,87 @@
-import { ReportsView } from "@/features/reports/components/ReportsView";
-import { ExecutiveDashboard } from "@/features/executive-dashboard/ExecutiveDashboard";
-import { CommitteeProgressView } from "@/features/plans/components/CommitteeProgressView";
-import { SystemLogsView } from "@/features/dashboards/admin/SystemLogsView";
-import { UserManagementView } from "@/features/dashboards/admin/UserManagementView";
-import { OfficerContractsView } from "@/features/contracts/components/OfficerContractsView";
-import { OfficerActivityTrackerView } from "@/features/activity-tracker/components/OfficerActivityTrackerView";
-import { DirectorActivityTrackerView } from "@/features/activity-tracker/components/DirectorActivityTrackerView";
-import { OfficerProjectsView } from "@/features/projects/components/OfficerProjectsView";
-import { ProjectsManagementView } from "@/features/projects/management/ProjectsManagementView";
-import { PlanForReviewView } from "@/features/plans/components/PlanForReviewView";
-import { MyDecisionsView } from "@/features/plans/components/MyDecisionsView";
-import { NotificationsView } from "@/features/notifications/components/NotificationsView";
-import { SettingsManagementView } from "@/features/settings/SettingsManagementView";
-import { DisbursementsListView } from "@/features/finance/components/DisbursementsListView";
-import { FinanceSettingsView } from "@/features/finance/components/FinanceSettingsView";
+import dynamicImport from "next/dynamic";
+
+const SectionLoadingFallback = () => (
+  <div className="p-6 space-y-4 animate-pulse" role="status" aria-busy="true">
+    <div className="h-7 w-56 bg-slate-200 rounded-md" />
+    <div className="h-4 w-80 bg-slate-100 rounded-md" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
+      <div className="h-24 bg-slate-100 rounded-xl" />
+      <div className="h-24 bg-slate-100 rounded-xl" />
+      <div className="h-24 bg-slate-100 rounded-xl" />
+      <div className="h-24 bg-slate-100 rounded-xl" />
+    </div>
+    <div className="h-64 bg-slate-100 rounded-xl mt-4" />
+  </div>
+);
+
+const ReportsView = dynamicImport(
+  () => import("@/features/reports/components/ReportsView").then((m) => m.ReportsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const ExecutiveDashboard = dynamicImport(
+  () => import("@/features/executive-dashboard/ExecutiveDashboard").then((m) => m.ExecutiveDashboard),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const CommitteeProgressView = dynamicImport(
+  () => import("@/features/plans/components/CommitteeProgressView").then((m) => m.CommitteeProgressView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const AmendmentRequestsView = dynamicImport(
+  () => import("@/features/plans/components/AmendmentRequestsView").then((m) => m.AmendmentRequestsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const SystemLogsView = dynamicImport(
+  () => import("@/features/dashboards/admin/SystemLogsView").then((m) => m.SystemLogsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const UserManagementView = dynamicImport(
+  () => import("@/features/dashboards/admin/UserManagementView").then((m) => m.UserManagementView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const OfficerContractsView = dynamicImport(
+  () => import("@/features/contracts/components/OfficerContractsView").then((m) => m.OfficerContractsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const OfficerActivityTrackerView = dynamicImport(
+  () => import("@/features/activity-tracker/components/OfficerActivityTrackerView").then((m) => m.OfficerActivityTrackerView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const DirectorActivityTrackerView = dynamicImport(
+  () => import("@/features/activity-tracker/components/DirectorActivityTrackerView").then((m) => m.DirectorActivityTrackerView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const OfficerProjectsView = dynamicImport(
+  () => import("@/features/projects/components/OfficerProjectsView").then((m) => m.OfficerProjectsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const ProjectsManagementView = dynamicImport(
+  () => import("@/features/projects/management/ProjectsManagementView").then((m) => m.ProjectsManagementView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const PlanForReviewView = dynamicImport(
+  () => import("@/features/plans/components/PlanForReviewView").then((m) => m.PlanForReviewView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const MyDecisionsView = dynamicImport(
+  () => import("@/features/plans/components/MyDecisionsView").then((m) => m.MyDecisionsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const NotificationsView = dynamicImport(
+  () => import("@/features/notifications/components/NotificationsView").then((m) => m.NotificationsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const SettingsManagementView = dynamicImport(
+  () => import("@/features/settings/SettingsManagementView").then((m) => m.SettingsManagementView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const DisbursementsListView = dynamicImport(
+  () => import("@/features/finance/components/DisbursementsListView").then((m) => m.DisbursementsListView),
+  { loading: () => <SectionLoadingFallback /> }
+);
+const FinanceSettingsView = dynamicImport(
+  () => import("@/features/finance/components/FinanceSettingsView").then((m) => m.FinanceSettingsView),
+  { loading: () => <SectionLoadingFallback /> }
+);
 import { PanelsTopLeft } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { ROLE_LABELS, normalizeUserRole } from "../../../../lib/authTypes";
@@ -110,6 +178,10 @@ export default async function WorkspaceSectionPage({
     return <MyDecisionsView user={session.user} />;
   }
 
+  if (section === "amendment-requests") {
+    return <AmendmentRequestsView user={session.user} />;
+  }
+
   if (section === "vote-progress" || section === "committee-progress") {
     return <CommitteeProgressView currentUser={session.user} />;
   }
@@ -149,9 +221,62 @@ export default async function WorkspaceSectionPage({
     return <FinanceSettingsView currentUser={session.user} />;
   }
 
+  if (section === "projects" && userRole === "SUPERUSER") {
+    const selectedProjectCode =
+      typeof query.project === "string" ? query.project : undefined;
+    const selectedPlanReference =
+      typeof query.plan === "string"
+        ? query.plan
+        : typeof query.planId === "string"
+          ? query.planId
+          : undefined;
+    const selectedActivityReference =
+      typeof query.activity === "string" ? query.activity : undefined;
+    const from = typeof query.from === "string" ? query.from : undefined;
+    const fromTracker = from === "tracker" || from === "activity-tracker";
+    const mode =
+      query.mode === "create-plan" ||
+      query.mode === "create-activity" ||
+      query.mode === "create-additional-activity" ||
+      query.mode === "edit-plan" ||
+      query.mode === "edit-activity"
+        ? query.mode
+        : undefined;
+
+    return (
+      <div className="space-y-10">
+        <section aria-label="Officer project and procurement operations">
+          <h1 className="mb-4 text-xl font-semibold text-slate-900">
+            Officer Project &amp; Procurement Operations
+          </h1>
+          <OfficerProjectsView
+            currentUser={session.user}
+            fromTracker={fromTracker}
+            mode={mode}
+            selectedActivityReference={selectedActivityReference}
+            selectedPlanReference={selectedPlanReference}
+            selectedProjectCode={selectedProjectCode}
+          />
+        </section>
+        <section aria-label="Director project administration">
+          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+            Project Administration &amp; Plan Review
+          </h2>
+          <ProjectsManagementView
+            selectedProjectCode={selectedProjectCode}
+            selectedPlanReference={selectedPlanReference}
+            from={from}
+          />
+        </section>
+      </div>
+    );
+  }
+
   if (
     section === "projects" &&
-    (userRole === "DIRECTOR" || userRole === "MANAGEMENT")
+    (userRole === "DIRECTOR" ||
+      userRole === "MANAGEMENT" ||
+      userRole === "SUPERUSER")
   ) {
     const selectedProjectCode =
       typeof query.project === "string" ? query.project : undefined;
@@ -172,7 +297,10 @@ export default async function WorkspaceSectionPage({
     );
   }
 
-  if (section === "contracts" && userRole === "OFFICER") {
+  if (
+    section === "contracts" &&
+    (userRole === "OFFICER" || userRole === "SUPERUSER")
+  ) {
     const selectedContractNumber =
       typeof query.contract === "string" ? query.contract : undefined;
     const fromOpen = query.from === "open";
@@ -216,7 +344,12 @@ export default async function WorkspaceSectionPage({
   }
 
   if (section === "activity-tracker") {
-    if (userRole === "DIRECTOR" || userRole === "MANAGEMENT") {
+    if (
+      userRole === "DIRECTOR" ||
+      userRole === "MANAGEMENT" ||
+      userRole === "EXECUTIVE" ||
+      userRole === "SUPERUSER"
+    ) {
       return (
         <DirectorActivityTrackerView
           userRole={session.user.role}

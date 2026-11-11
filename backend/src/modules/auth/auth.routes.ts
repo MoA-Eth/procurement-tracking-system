@@ -31,6 +31,11 @@ import {
   sendEmail,
 } from '../../services/email.service.js';
 import './auth.validation.js';
+import {
+  getIntegrationApiKeyStatus,
+  revokeIntegrationApiKey,
+  rotateIntegrationApiKey,
+} from '../integrations/integration-api-key.service.js';
 
 const INVALID_LOGIN_MESSAGE = 'Unable to sign in with those credentials.';
 const GENERIC_RESET_MESSAGE =
@@ -143,6 +148,9 @@ const createUserSchema = z.object({
       if (clean === 'MANAGEMENTTEAM' || clean === 'MANAGEMENT') {
         return UserRole.MANAGEMENT;
       }
+      if (clean === 'EXECUTIVE') {
+        return UserRole.EXECUTIVE;
+      }
       if (clean === 'ENDORSINGCOMMITTEE') {
         return UserRole.ENDORSING_COMMITTEE;
       }
@@ -159,12 +167,18 @@ const createUserSchema = z.object({
       if (clean === 'ADMIN' || clean === 'ADMINISTRATOR') {
         return UserRole.ADMIN;
       }
+      if (clean === 'FINANCE' || clean === 'FINANCEOFFICER') {
+        return UserRole.FINANCE;
+      }
+      if (clean === 'SUPERUSER') {
+        return UserRole.SUPERUSER;
+      }
       return val as UserRole;
     })
     .pipe(
       z.nativeEnum(UserRole, {
         message:
-          'Role must be OFFICER, DIRECTOR, ENDORSING_COMMITTEE, MANAGEMENT, or ADMIN',
+          'Role must be OFFICER, DIRECTOR, ENDORSING_COMMITTEE, MANAGEMENT, EXECUTIVE, ADMIN, FINANCE, or SUPERUSER',
       }),
     ),
 });
@@ -274,8 +288,10 @@ async function deliverUserInvitation(values: {
     [UserRole.DIRECTOR]: 'Procurement Director',
     [UserRole.ENDORSING_COMMITTEE]: 'Endorsement Committee Member',
     [UserRole.MANAGEMENT]: 'Management Team',
+    [UserRole.EXECUTIVE]: 'Executive',
     [UserRole.ADMIN]: 'System Administrator',
     [UserRole.FINANCE]: 'Finance Officer',
+    [UserRole.SUPERUSER]: 'Superuser',
   };
 
   const roleTitle = roleDisplayNames[values.role] || values.role;
@@ -464,7 +480,10 @@ export const requireAuthenticated: RequestHandler = (req, res, next) => {
 
 function requireRole(role: UserRole): RequestHandler {
   return (req, res, next) => {
-    if (req.auth?.user.role !== role) {
+    if (
+      req.auth?.user.role !== role &&
+      req.auth?.user.role !== UserRole.SUPERUSER
+    ) {
       res.status(403).json({
         code: 'FORBIDDEN',
         message: 'You do not have access to this resource.',
@@ -978,6 +997,35 @@ authRouter.post('/reset-password', async (req, res) => {
 
 export const adminRouter = Router();
 adminRouter.use(loadSession, requireAuthenticated, requireRole(UserRole.ADMIN));
+
+adminRouter.get('/integration-api-key', async (_req, res, next) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    res.json({ activeKey: await getIntegrationApiKeyStatus() });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.post('/integration-api-key/rotate', async (req, res, next) => {
+  try {
+    const userId = req.auth?.user.id;
+    if (!userId) throw ApiError.unauthorized();
+    const result = await rotateIntegrationApiKey(userId);
+    res.status(201).set('Cache-Control', 'no-store').json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.delete('/integration-api-key', async (_req, res, next) => {
+  try {
+    await revokeIntegrationApiKey();
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+});
 
 adminRouter.post('/users', async (req, res) => {
   const parsed = createUserSchema.safeParse(req.body);

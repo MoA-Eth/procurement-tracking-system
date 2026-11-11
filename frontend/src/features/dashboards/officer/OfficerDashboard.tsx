@@ -59,19 +59,19 @@ export function OfficerDashboard({ user }: { user: AuthUser }) {
         </div>
       </header>
 
-      <div className="grid items-start xl:items-stretch gap-5 xl:grid-cols-[minmax(0,2.08fr)_minmax(19rem,1fr)]">
-        <div className="space-y-5">
-          <OfficerOverviewStatusBarChart
-            items={overviewStatusItems}
-            loading={loading}
-          />
-          <OfficerActiveProjectsTable
-            projects={officerProjectsList}
-            loading={loading}
-          />
-        </div>
-
+      <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)] xl:grid-rows-[auto_auto]">
+        <OfficerOverviewStatusBarChart
+          className="xl:col-start-1 xl:row-start-1"
+          items={overviewStatusItems}
+          loading={loading}
+        />
+        <OfficerActiveProjectsTable
+          className="xl:col-start-1 xl:row-start-2"
+          projects={officerProjectsList}
+          loading={loading}
+        />
         <OfficerAlertsCenter
+          className="xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:h-full"
           alerts={dynamicAlerts}
           loading={loading}
           onSelectDelay={handleSelectDelay}

@@ -13,8 +13,10 @@ import type { ProcurementActivitySummary } from "../data/officerActivityDrafts";
 import {
   CreateProcurementActivityView,
   RelatedInformationStep,
+  SavedPanel,
   STANDARD_PROCUREMENT_PROCESSES,
   normalizeProcurementProcess,
+  roadmapForMethodPreservingDates,
 } from "./CreateProcurementActivityView";
 
 const plan: ProcurementPlanSummary = {
@@ -49,6 +51,24 @@ const project: OfficerProject = {
 };
 
 describe("CreateProcurementActivityView", () => {
+  it("shows a success dialog with a link back to the activity list", () => {
+    const markup = renderToStaticMarkup(
+      <SavedPanel
+        activityReference="ACT-001"
+        planHref="/workspace/projects?project=DRIVE&plan=PLAN-001"
+        returnToActivityListOnSave
+      />,
+    );
+
+    expect(markup).toContain('role="dialog"');
+    expect(markup).toContain("Activity created successfully");
+    expect(markup).toContain("ACT-001 has been saved with its roadmap.");
+    expect(markup).toContain("Return to activity list");
+    expect(markup).toContain(
+      'href="/workspace/projects?project=DRIVE&amp;plan=PLAN-001"',
+    );
+  });
+
   it("starts with the four-step structure and lets each activity select its category", () => {
     const markup = renderToStaticMarkup(
       <CreateProcurementActivityView plan={plan} project={project} />,
@@ -201,6 +221,29 @@ describe("CreateProcurementActivityView", () => {
     expect(roadmapFromLabel.length).toBeGreaterThan(0);
     expect(roadmapFromLabel.length).toBe(roadmapFromKey.length);
     expect(roadmapFromLabel[0]?.name).toBe(roadmapFromKey[0]?.name);
+  });
+
+  it("preserves roadmap dates by stage name or position", () => {
+    const existing = roadmapForMethod("rfb-national").map((stage, index) => ({
+      allowNotApplicable: Boolean(stage.allowNotApplicable),
+      days: "14",
+      ethiopianDate: `01-Megabit-${index + 1}`,
+      gregorianDate: `2026-03-${String(index + 1).padStart(2, "0")}`,
+      name: `Legacy ${stage.name}`,
+      notApplicable: false,
+      remarks: "Existing note",
+      status: "Not Started",
+    }));
+
+    const updated = roadmapForMethodPreservingDates(
+      "rfb-national",
+      "Goods",
+      existing,
+    );
+
+    expect(updated[0]?.gregorianDate).toBe(existing[0]?.gregorianDate);
+    expect(updated[0]?.ethiopianDate).toBe(existing[0]?.ethiopianDate);
+    expect(updated[0]?.remarks).toBe("Existing note");
   });
 
   it("renders Review Type and Procurement Document Type as optional and excludes Not Applicable from Qualification Approach", () => {

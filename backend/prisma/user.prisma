@@ -16,7 +16,6 @@ model User {
   createdAt             DateTime   @default(now())
   updatedAt             DateTime   @updatedAt
 
-
   auditLogs           AuditLog[]
   projectLinks        UserProject[]
   refreshTokens       RefreshToken[]
@@ -41,7 +40,9 @@ model User {
   contractAmendments  ContractAmendment[]   @relation("ContractAmendedBy")
   planStatusChanges   PlanStatusHistory[]   @relation("PlanStatusChangedBy")
   notifications       UserNotification[]    @relation("UserNotifications")
-  createdPayments     Payment[]             @relation("PaymentCreator")
+  createdPayments           Payment[]             @relation("PaymentCreator")
+  amendmentRequests         AmendmentRequest[]
+  createdIntegrationApiKeys IntegrationApiKey[]
 
   @@index([authRole, status])
   @@index([isActive])

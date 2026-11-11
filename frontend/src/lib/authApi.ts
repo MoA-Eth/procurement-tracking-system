@@ -28,11 +28,15 @@ function mapPrismaRoleToUserRole(role: string): UserRole {
     case "ManagementTeam":
     case "MANAGEMENT_TEAM":
       return "MANAGEMENT";
+    case "EXECUTIVE":
+      return "EXECUTIVE";
     case "ENDORSING_COMMITTEE":
       return "ENDORSING_COMMITTEE";
     case "Administrator":
     case "ADMIN":
       return "ADMIN";
+    case "SUPERUSER":
+      return "SUPERUSER";
     case "ProcurementOfficer":
     case "OFFICER":
       return "OFFICER";
@@ -117,7 +121,7 @@ export async function authenticate(
       loginData.expiresAt ||
       new Date(
         Date.now() +
-          (rememberMe ? 30 * 24 * 60 * 60 * 1000 : 12 * 60 * 60 * 1000),
+          (rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000),
       ).toISOString();
 
     const session: AuthSession = {
@@ -249,15 +253,41 @@ export async function updateProfile(
   displayName: string,
 ): Promise<{ message: string; user?: AuthUser }> {
   try {
-    const res = await apiClient.patch<any>("/users/profile", {
+    const res = await apiClient.patch<{
+      message?: string;
+      data?: {
+        id: string;
+        email: string;
+        username?: string | null;
+        name: string;
+        displayName?: string;
+        role?: string;
+        authRole?: string;
+      };
+    }>("/users/profile", {
       name: displayName,
     });
     return {
       message: res.message || "Profile updated successfully",
-      user: res.data,
+      ...(res.data
+        ? {
+            user: {
+              id: res.data.id,
+              email: res.data.email,
+              username: res.data.username ?? null,
+              displayName: res.data.displayName || res.data.name,
+              role: mapPrismaRoleToUserRole(
+                res.data.authRole || res.data.role || "OFFICER",
+              ),
+            },
+          }
+        : {}),
     };
-  } catch {
-    return { message: "Profile updated successfully" };
+  } catch (err) {
+    if (err instanceof ApiClientError) {
+      throw new AuthApiError(err.message);
+    }
+    throw err;
   }
 }
 

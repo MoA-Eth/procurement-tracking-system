@@ -2,7 +2,11 @@ import { prisma } from '../../config/database.js';
 import { Prisma } from '../../generated/prisma/index.js';
 import {
   classifyItemType,
+  executiveRegisterColumns,
+  executiveRegisterRow,
+  latestReachedStageLabel,
   milestoneDate,
+  procurementPortfolioStatus,
   reportedProgress,
   type ExecutiveRecord,
 } from './executive-dashboard.model.js';
@@ -52,7 +56,6 @@ export async function getExecutiveSnapshot() {
         prisma.activity.findMany({
           where: {
             isActive: true,
-            plan: { isActive: true, project: { isActive: true } },
           },
           select: {
             id: true,
@@ -65,16 +68,19 @@ export async function getExecutiveSnapshot() {
             plan: {
               select: {
                 title: true,
+                status: true,
                 procurementCategory: true,
                 project: { select: { id: true, name: true, country: true } },
               },
             },
             stages: {
+              orderBy: { sequence: 'asc' },
               select: {
                 stageType: { select: { label: true } },
                 actualStartDate: true,
                 actualEndDate: true,
                 status: true,
+                sequence: true,
                 plannedEndDate: true,
                 currentTargetEndDate: true,
                 isNotApplicable: true,
@@ -112,6 +118,18 @@ export async function getExecutiveSnapshot() {
       activityId: activity.id,
       activityReference: activity.reference,
       activityContractCount: activity.contracts.length,
+      activityStatus: activity.status,
+      planStatus: activity.plan.status,
+      activityStage: latestReachedStageLabel(stages),
+      portfolioStatus: procurementPortfolioStatus(
+        activity.status,
+        stages,
+        activity.contracts.map((contract) => ({
+          status: contract.status,
+          signatureDate: contract.signatureDate,
+          actualCompletionDate: contract.actualCompletionDate,
+        })),
+      ),
       contractId: null,
       reference: activity.reference,
       description: activity.description || activity.plan.title,
@@ -162,6 +180,10 @@ export async function getExecutiveSnapshot() {
     });
   return {
     records,
+    register: {
+      columns: executiveRegisterColumns,
+      rows: records.map(executiveRegisterRow),
+    },
     systemSummary: operationalSummary(
       projects.length,
       plans,

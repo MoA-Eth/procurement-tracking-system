@@ -30,7 +30,7 @@ export function DirectorActionPanels({
               <FileText className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900 text-xs sm:text-sm leading-tight">
+              <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
                 {isManagement
                   ? `Plans Awaiting Executive Authorization (${pendingPlans.length})`
                   : `Plans Awaiting Director Review (${pendingPlans.length})`}
@@ -135,7 +135,7 @@ export function DirectorActionPanels({
               <AlertCircle className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900 text-xs sm:text-sm leading-tight">
+              <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
                 Critical Delays ({criticalDelays.length})
               </h3>
               <p className="text-[11px] text-slate-500 mt-0.5">

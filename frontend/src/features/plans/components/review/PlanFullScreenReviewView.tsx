@@ -15,8 +15,6 @@ import {
   AlertTriangle,
   AlertCircle,
   Eye,
-  ShieldAlert,
-  Lock,
   Sparkles,
   MessageSquare,
   XCircle,
@@ -68,9 +66,6 @@ export interface PlanFullScreenReviewViewProps {
   ) => void;
   isCommitteeRejectionModalOpen: boolean;
   setIsCommitteeRejectionModalOpen: (open: boolean) => void;
-  isCommitteeChair?: boolean;
-  isChairAuthorized?: boolean;
-  onChairAuthorize?: (plan: ProcurementPlan) => void;
 }
 
 export function PlanFullScreenReviewView({
@@ -100,9 +95,6 @@ export function PlanFullScreenReviewView({
   onManagementDecision,
   isCommitteeRejectionModalOpen,
   setIsCommitteeRejectionModalOpen,
-  isCommitteeChair = true,
-  isChairAuthorized = false,
-  onChairAuthorize,
 }: PlanFullScreenReviewViewProps) {
   const isCancellationRequested =
     plan.status === "Cancellation Requested" ||
@@ -200,7 +192,7 @@ export function PlanFullScreenReviewView({
               <label className="block text-[11px] font-semibold text-[#00843D] uppercase tracking-wider">
                 Plan Title
               </label>
-              {userRole === "DIRECTOR" ? (
+              {userRole === "DIRECTOR" || userRole === "SUPERUSER" ? (
                 <input
                   type="text"
                   value={plan.planName}
@@ -520,13 +512,13 @@ export function PlanFullScreenReviewView({
             <label className="block text-xs font-semibold text-slate-900">
               Procurement Plan Justification &amp; Directorate Notes
             </label>
-            {userRole === "DIRECTOR" && (
+            {(userRole === "DIRECTOR" || userRole === "SUPERUSER") && (
               <span className="text-[11px] text-slate-400">
                 Auto-saved as Director edits
               </span>
             )}
           </div>
-          {userRole === "DIRECTOR" ? (
+          {userRole === "DIRECTOR" || userRole === "SUPERUSER" ? (
             <textarea
               rows={3}
               value={plan.description || ""}
@@ -710,7 +702,8 @@ export function PlanFullScreenReviewView({
 
                         {/* Action Cell */}
                         <td className="py-3.5 px-3.5 text-center align-top pt-3.5">
-                          {userRole === "DIRECTOR" ? (
+                          {userRole === "DIRECTOR" ||
+                          userRole === "SUPERUSER" ? (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -759,7 +752,7 @@ export function PlanFullScreenReviewView({
       {Boolean(
         (userRole === "ENDORSING_COMMITTEE" && Boolean(onCommitteeVote)) ||
         (userRole === "MANAGEMENT" && Boolean(onManagementDecision)) ||
-        (userRole === "DIRECTOR" &&
+        ((userRole === "DIRECTOR" || userRole === "SUPERUSER") &&
           (Boolean(onApprovePlan && onReturnPlan) ||
             (isCancellationRequested && Boolean(onApproveCancellation)))),
       ) && (
@@ -860,75 +853,43 @@ export function PlanFullScreenReviewView({
 
           {/* Action Buttons */}
           {userRole === "ENDORSING_COMMITTEE" ? (
-            !isChairAuthorized ? (
-              <div className="pt-2 border-t border-slate-100">
-                {isCommitteeChair ? (
-                  <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-amber-950 font-semibold text-xs">
-                      <ShieldAlert className="h-4 w-4 text-amber-700" />
-                      <span>Committee Chairperson Authorization Required</span>
-                    </div>
-                    <p className="text-xs text-amber-900 leading-relaxed">
-                      As Chairperson of the Endorsement Committee, you must
-                      review and formally allow this project/plan before
-                      committee members can deliberate and vote.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => onChairAuthorize && onChairAuthorize(plan)}
-                      className="px-5 py-2.5 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer flex items-center gap-2"
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
-                      <span>Authorize Project for Committee Deliberation</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 flex items-start gap-3">
-                    <Lock className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-xs font-semibold text-slate-800">
-                        Pending Committee Chair Authorization
-                      </h4>
-                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                        The Endorsement Committee Chairperson must first review
-                        and allow this project before member voting is unlocked.
-                      </p>
-                    </div>
-                  </div>
-                )}
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              {plan.committeeDecision && (
+                <p
+                  className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900"
+                  role="status"
+                >
+                  Your vote is recorded as{" "}
+                  <strong>{plan.committeeDecision}</strong>. You may change your
+                  vote while committee review remains open.
+                </p>
+              )}
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Committee Deliberation &amp; Voting Active</span>
               </div>
-            ) : (
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>
-                    Chairperson Authorized: Committee Deliberation &amp; Voting
-                    Active
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onCommitteeVote && onCommitteeVote(plan, "APPROVE")
-                    }
-                    className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                  >
-                    <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
-                    <span>Vote: Endorse &amp; Approve Plan</span>
-                  </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onCommitteeVote && onCommitteeVote(plan, "APPROVE")
+                  }
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#00843D] text-white hover:bg-[#06542D] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
+                  <span>Vote: Endorse &amp; Approve Plan</span>
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsCommitteeRejectionModalOpen(true)}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-semibold transition-colors bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer shadow-2xs"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    <span>Vote: Reject / Return Plan</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCommitteeRejectionModalOpen(true)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-semibold transition-colors bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 cursor-pointer shadow-2xs"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  <span>Vote: Reject / Return Plan</span>
+                </button>
               </div>
-            )
+            </div>
           ) : userRole === "MANAGEMENT" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
               <button
@@ -960,7 +921,7 @@ export function PlanFullScreenReviewView({
                 <span>Reject Plan (Return to Director)</span>
               </button>
             </div>
-          ) : userRole === "DIRECTOR" ? (
+          ) : userRole === "DIRECTOR" || userRole === "SUPERUSER" ? (
             <div className="space-y-4 pt-2 border-t border-slate-100">
               {isCancellationRequested ? (
                 <div className="space-y-3">
@@ -1069,6 +1030,84 @@ export function PlanFullScreenReviewView({
           ) : null}
         </section>
       )}
+
+      {userRole === "SUPERUSER" &&
+        (onCommitteeVote || onManagementDecision) && (
+          <section
+            aria-label="Additional superuser review actions"
+            className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-6 shadow-2xs space-y-5"
+          >
+            <div className="border-b border-indigo-100 pb-3">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Additional Review-Stage Actions
+              </h3>
+              <p className="mt-1 text-xs text-slate-600">
+                These actions are available to SUPERUSER alongside director
+                actions and remain subject to the plan&apos;s current workflow
+                stage.
+              </p>
+            </div>
+            {onCommitteeVote && plan.status === "Committee Review" && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-slate-800">
+                  Endorsement Committee
+                </h4>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => onCommitteeVote(plan, "APPROVE")}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#00843D] px-5 py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#06542D]"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-[#A3E635]" />
+                    Vote: Endorse &amp; Approve Plan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCommitteeRejectionModalOpen(true)}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-100"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Vote: Reject / Return Plan
+                  </button>
+                </div>
+              </div>
+            )}
+            {onManagementDecision && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-slate-800">
+                  Executive Management
+                </h4>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onManagementDecision(plan, "APPROVE", returnRemarks)
+                    }
+                    className="flex items-center justify-center gap-2 rounded-xl bg-indigo-700 px-5 py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-indigo-800"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-indigo-200" />
+                    Grant Executive Authorization
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!returnRemarks.trim()}
+                    onClick={() =>
+                      onManagementDecision(plan, "REJECT", returnRemarks)
+                    }
+                    className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-xs font-semibold transition-colors ${
+                      returnRemarks.trim()
+                        ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                        : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                    }`}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reject Plan (Return to Director)
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
       {/* Dedicated Activity Quick Edit Modal */}
       <ActivityQuickEditModal

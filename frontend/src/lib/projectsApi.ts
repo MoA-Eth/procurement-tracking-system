@@ -9,7 +9,7 @@ import {
   formatEthiopianDate,
   formatGregorianDate,
 } from "@/features/projects/utils/ethiopianCalendar";
-import { apiClient, directApiFetch, ApiClientError } from "./apiClient";
+import { apiClient, directApiFetch, ApiClientError, clearApiCache } from "./apiClient";
 import { downloadReportFile, saveReportFile } from "./reportsApi";
 
 export interface ImportProjectsResult {
@@ -133,22 +133,39 @@ export function setCachedProjects(projects: BackendProject[]) {
 export function invalidateProjectsCache() {
   _cachedProjects = null;
   _cachedProjectsTimestamp = 0;
+  clearApiCache("/projects");
 }
 
 export async function fetchProjects(): Promise<BackendProject[]> {
   try {
-    const res = await apiClient.get<any>("/projects", {
-      params: { pageSize: 500 },
+    const firstPage = await apiClient.get<any>("/projects", {
+      params: { page: 1, pageSize: 100 },
     });
-    const data = Array.isArray(res)
-      ? res
-      : Array.isArray(res?.items)
-        ? res.items
-        : Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res?.data?.items)
-            ? res.data.items
-            : [];
+    const getItems = (response: any): BackendProject[] =>
+      Array.isArray(response)
+        ? response
+        : Array.isArray(response?.items)
+          ? response.items
+          : Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.data?.items)
+              ? response.data.items
+              : [];
+    const totalPages =
+      firstPage?.pagination?.totalPages ??
+      firstPage?.data?.pagination?.totalPages ??
+      1;
+    const data = getItems(firstPage);
+    if (Number.isInteger(totalPages) && totalPages > 1) {
+      const laterPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          apiClient.get<any>("/projects", {
+            params: { page: index + 2, pageSize: 100 },
+          }),
+        ),
+      );
+      data.push(...laterPages.flatMap(getItems));
+    }
     if (Array.isArray(data) && data.length > 0) {
       _cachedProjects = data;
       _cachedProjectsTimestamp = Date.now();
@@ -263,7 +280,7 @@ export function isProjectAssignedToOfficer(
   project: BackendProject | OfficerProject,
   user?: AuthUser | null,
 ): boolean {
-  if (!user) return true;
+  if (!user || user.role === "SUPERUSER") return true;
 
   // Check BackendProject with members array
   if ("members" in project && Array.isArray(project.members)) {

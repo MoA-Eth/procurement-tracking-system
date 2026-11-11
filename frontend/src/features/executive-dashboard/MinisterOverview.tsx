@@ -48,7 +48,7 @@ function Values({ values }: { values: [string, number][] }) {
     <div className="space-y-1">
       {values.map(([currency, value]) => (
         <div key={currency} className="flex flex-wrap items-baseline gap-2">
-          <strong className="text-2xl font-semibold">
+          <strong className="text-lg font-semibold">
             {money(value, true)}
           </strong>
           <span className="text-xs font-medium text-slate-500">{currency}</span>
@@ -111,7 +111,7 @@ export function MinisterOverview({
         className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
       >
         <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h2 className="text-sm font-medium text-slate-500">
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Estimated procurement value
           </h2>
           <div className="mt-4">
@@ -122,7 +122,7 @@ export function MinisterOverview({
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h2 className="text-sm font-medium text-slate-500">
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Contract commitments
           </h2>
           <div className="mt-4">
@@ -133,10 +133,10 @@ export function MinisterOverview({
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h2 className="text-sm font-medium text-slate-500">
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Contracts completed
           </h2>
-          <p className="mt-4 text-3xl font-semibold">
+          <p className="mt-4 text-xl font-semibold">
             {summary.completed}
             <span className="ml-2 text-base font-normal text-slate-400">
               of {summary.contracts}
@@ -151,11 +151,11 @@ export function MinisterOverview({
         <div
           className={`rounded-xl border bg-white p-4 sm:p-5 ${summary.overdue ? "border-amber-300" : "border-slate-200"}`}
         >
-          <h2 className="text-sm font-medium text-slate-500">
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Overdue contracts
           </h2>
           <p
-            className={`mt-4 text-3xl font-semibold ${summary.overdue ? "text-amber-800" : ""}`}
+            className={`mt-4 text-xl font-semibold ${summary.overdue ? "text-amber-800" : ""}`}
           >
             {summary.overdue}
           </p>
@@ -169,7 +169,7 @@ export function MinisterOverview({
 
       <section aria-labelledby="minister-types-heading" className="space-y-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="minister-types-heading" className="text-base font-semibold">
+          <h2 id="minister-types-heading" className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">
             Procurement at a glance
           </h2>
           <span className="text-xs text-slate-500">
@@ -185,12 +185,12 @@ export function MinisterOverview({
                 key={item.type}
                 className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5"
               >
-                <h3 className="font-semibold">{TYPE_LABELS[item.type]}</h3>
+                <h3 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">{TYPE_LABELS[item.type]}</h3>
                 <p className="mt-1 text-xs text-slate-500">
                   {item.description}
                 </p>
                 <div className="mt-4 flex items-baseline gap-2">
-                  <strong className="text-3xl font-semibold">
+                  <strong className="text-xl font-semibold">
                     {stats.activities}
                   </strong>
                   <span className="text-xs text-slate-500">activities</span>
@@ -223,7 +223,7 @@ export function MinisterOverview({
 
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h2 className="text-base font-semibold">Contract delivery</h2>
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">Contract delivery</h2>
           <div className="mt-4">
             <CompletionDonut
               simple
@@ -238,7 +238,7 @@ export function MinisterOverview({
           </p>
         </section>
         <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h2 className="text-base font-semibold">For attention</h2>
+          <h2 className="text-base sm:text-lg font-sans font-medium text-slate-900 tracking-tight leading-tight">For attention</h2>
           <div className="mt-4 space-y-4 text-sm">
             {overdue.length ? (
               <div className="rounded-lg bg-amber-50 p-3">

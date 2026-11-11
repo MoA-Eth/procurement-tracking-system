@@ -62,6 +62,11 @@ function parseSessionPayload(val: string): AuthSession | null {
   return null;
 }
 
+// Lightweight in-memory session cache to prevent blocking external HTTP round-trips
+// on every internal Next.js server-rendered route transition.
+const serverSessionCache = new Map<string, { session: AuthSession; expiresAt: number }>();
+const SESSION_CACHE_TTL_MS = 20_000; // 20 seconds
+
 export const getServerSession = cache(async (): Promise<AuthSession | null> => {
   try {
     const cookieStore = await cookies();
@@ -72,6 +77,14 @@ export const getServerSession = cache(async (): Promise<AuthSession | null> => {
       process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME || "moa_user_session";
     const primary = cookieStore.get(primaryCookieName)?.value;
     const primaryParsed = primary ? parseSessionPayload(primary) : null;
+
+    // Check fast server cache for this cookie set
+    if (cookieHeader) {
+      const cachedEntry = serverSessionCache.get(cookieHeader);
+      if (cachedEntry && cachedEntry.expiresAt > Date.now()) {
+        return cachedEntry.session;
+      }
+    }
 
     // 2. Fetch authoritative live session from backend /api/auth/session
     // This guarantees that any role changes or invitations (like Management)
@@ -92,9 +105,18 @@ export const getServerSession = cache(async (): Promise<AuthSession | null> => {
             remoteSession.user.role = normalizeUserRole(
               (remoteSession.user as any).authRole || remoteSession.user.role,
             );
+            // Cache verified session to accelerate subsequent tab navigations
+            if (serverSessionCache.size > 200) {
+              serverSessionCache.clear();
+            }
+            serverSessionCache.set(cookieHeader, {
+              session: remoteSession,
+              expiresAt: Date.now() + SESSION_CACHE_TTL_MS,
+            });
             return remoteSession;
           }
         } else if (response.status === 401 || response.status === 403) {
+          serverSessionCache.delete(cookieHeader);
           // Backend rejected — fall through to local cookie parsing below
         }
       } catch {

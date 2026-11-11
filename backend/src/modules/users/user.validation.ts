@@ -13,8 +13,10 @@ const roleValues = [
   'ENDORSING_COMMITTEE',
   'MANAGEMENT',
   'MANAGEMENT_TEAM',
+  'EXECUTIVE',
   'ADMIN',
   'ADMINISTRATOR',
+  'SUPERUSER',
 ] as const;
 
 export const roleEnum = z.enum(roleValues);
@@ -60,6 +62,18 @@ export const updateUserSchema = registry.register(
     .refine((data) => Object.keys(data).length > 0, {
       message: 'At least one field must be provided',
     }),
+);
+
+export const updateOwnProfileSchema = registry.register(
+  'UpdateOwnProfile',
+  z.object({
+    name: z
+      .string()
+      .trim()
+      .min(2, 'Name must be at least 2 characters')
+      .max(120, 'Name must be at most 120 characters')
+      .openapi({ example: 'Abebe Kebede' }),
+  }),
 );
 
 export const listUsersQuerySchema = z.object({
@@ -123,6 +137,28 @@ registry.registerPath({
   responses: {
     201: { description: 'User created' },
     409: { description: 'Email already in use' },
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/users/profile',
+  summary: "Update the authenticated user's name",
+  tags: ['Users'],
+  security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: updateOwnProfileSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: { description: 'Profile updated' },
+    401: { description: 'Authentication required' },
+    422: { description: 'Invalid profile name' },
   },
 });
 

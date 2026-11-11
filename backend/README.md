@@ -180,7 +180,7 @@ Run from the `backend/` directory:
 
 ## 📡 Key API Routes
 
-- **API Documentation**: `GET /api-docs` (Swagger UI)
+- **API Documentation**: `/api/docs/` (Swagger UI; also available at `/api-docs/` when connecting directly to the backend), `/api/openapi.json` (OpenAPI specification)
 - **Health Check**: `GET /api/health`
 - **Authentication**: `/api/auth` (`/login`, `/logout`, `/me`, `/forgot-password`, `/reset-password`, `/change-password`)
 - **User Management**: `/api/admin` and `/api/users`

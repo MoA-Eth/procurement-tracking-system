@@ -13,6 +13,7 @@ import {
   generateDynamicAlerts,
 } from "./OfficerDashboard";
 import type { AuthUser } from "@/lib/authTypes";
+import { OfficerOverviewStatusBarChart } from "./components/OfficerOverviewStatusBarChart";
 
 const mockOfficerUser: AuthUser = {
   id: "user-123",
@@ -30,6 +31,8 @@ describe("OfficerDashboard - Alerts Center & UI Layout", () => {
 
     // Alerts Center aside exists
     expect(html).toContain("Alerts Center");
+    expect(html).toContain("xl:grid-rows-[auto_auto]");
+    expect(html).toContain("xl:col-start-2 xl:row-span-2 xl:row-start-1");
 
     // Container has minimum height and scroll classes
     expect(html).toContain("min-h-[380px]");
@@ -457,6 +460,42 @@ describe("Real Data Synchronization - Officer Dashboard & Alerts Center", () => 
     expect(items.find((i) => i.label === "Returned plans")?.value).toBe(1);
     expect(items.find((i) => i.label === "Finally approved")?.value).toBe(1);
     expect(items.find((i) => i.label === "Delayed activities")?.value).toBe(2);
+  });
+
+  it("shows total plan count without adding projects and delayed activities", () => {
+    const items = calculateOverviewStatusItems(
+      1,
+      [
+        { id: "p1", status: "SUBMITTED_TO_DIRECTOR" },
+        { id: "p2", status: "COMMITTEE_REVIEW" },
+        { id: "p3", status: "DRAFT" },
+        { id: "p4", status: "DRAFT" },
+        { id: "p5", status: "FINALLY_APPROVED" },
+      ] as any,
+      3,
+    );
+    const html = renderToStaticMarkup(
+      <OfficerOverviewStatusBarChart items={items} />,
+    );
+
+    expect(html).toContain("Total: 5");
+  });
+
+  it("counts Director-submitted and committee-review plans as submitted, not draft", () => {
+    const mockPlans: any[] = [
+      { id: "p1", status: "SUBMITTED_TO_DIRECTOR" },
+      { id: "p2", status: "COMMITTEE_REVIEW" },
+      { id: "p3", status: "DRAFT" },
+      { id: "p4", status: "Draft" },
+      { id: "p5", status: "FINALLY_APPROVED" },
+    ];
+
+    const items = calculateOverviewStatusItems(1, mockPlans, 0);
+
+    expect(items.find((i) => i.label === "Submitted plans")?.value).toBe(2);
+    expect(items.find((i) => i.label === "Draft plans")?.value).toBe(2);
+    expect(items.find((i) => i.label === "Finally approved")?.value).toBe(1);
+    expect(items.find((i) => i.label === "Returned plans")?.value).toBe(0);
   });
 
   it("generateDynamicAlerts includes live backend notifications alongside plan and activity alerts", () => {

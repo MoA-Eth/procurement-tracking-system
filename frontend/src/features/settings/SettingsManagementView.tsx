@@ -17,8 +17,16 @@ import {
   X,
   Banknote,
   CircleDollarSign,
+  KeyRound,
+  Copy,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/authTypes";
+import {
+  fetchIntegrationApiKeyStatus,
+  revokeIntegrationApiKey,
+  rotateIntegrationApiKey,
+  type IntegrationApiKeyMetadata,
+} from "@/lib/integrationApiKeys";
 import {
   fetchLookups,
   createLookup,
@@ -40,6 +48,8 @@ type TabType =
   | "FUNDING_TYPE"
   | "PROCUREMENT_METHOD"
   | "CURRENCY";
+
+type SettingsSection = "system" | "api";
 
 const TAB_CONFIGS: {
   type: TabType;
@@ -137,13 +147,26 @@ function getInitialTabCounts(): Record<TabType, number> {
 }
 
 export function SettingsManagementView({
-  currentUser: _currentUser,
+  currentUser,
 }: SettingsManagementViewProps) {
+  const [activeSettingsSection, setActiveSettingsSection] =
+    useState<SettingsSection>("system");
   const [activeTab, setActiveTab] = useState<TabType>("PROJECT_CODE");
   const [lookups, setLookups] = useState<LookupItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [integrationKey, setIntegrationKey] =
+    useState<IntegrationApiKeyMetadata | null>(null);
+  const [newIntegrationKey, setNewIntegrationKey] = useState<string | null>(
+    null,
+  );
+  const [integrationKeyError, setIntegrationKeyError] = useState<string | null>(
+    null,
+  );
+  const [isLoadingIntegrationKey, setIsLoadingIntegrationKey] = useState(false);
+  const [isChangingIntegrationKey, setIsChangingIntegrationKey] =
+    useState(false);
 
   // Tab live counts
   const [tabCounts, setTabCounts] =
@@ -213,6 +236,23 @@ export function SettingsManagementView({
     }
   };
 
+  const loadIntegrationKey = async () => {
+    setIsLoadingIntegrationKey(true);
+    setIntegrationKeyError(null);
+    try {
+      const { activeKey } = await fetchIntegrationApiKeyStatus();
+      setIntegrationKey(activeKey);
+    } catch (error) {
+      setIntegrationKeyError(
+        error instanceof Error
+          ? error.message
+          : "Could not load integration API key status.",
+      );
+    } finally {
+      setIsLoadingIntegrationKey(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
     setShowAddForm(false);
@@ -220,6 +260,12 @@ export function SettingsManagementView({
     setNewCode("");
     setNewLabel("");
   }, [activeTab]);
+
+  useEffect(() => {
+    if (currentUser.role === "ADMIN" || currentUser.role === "SUPERUSER") {
+      void loadIntegrationKey();
+    }
+  }, [currentUser.role]);
 
   useEffect(() => {
     loadAllCounts();
@@ -358,6 +404,70 @@ export function SettingsManagementView({
     showToast(`Removed "${item.code}".`);
   };
 
+  const handleRotateIntegrationKey = async () => {
+    if (
+      integrationKey &&
+      !window.confirm(
+        "Rotate this API key? The current key will stop working immediately.",
+      )
+    ) {
+      return;
+    }
+    setIsChangingIntegrationKey(true);
+    setIntegrationKeyError(null);
+    try {
+      const result = await rotateIntegrationApiKey();
+      setIntegrationKey(result.metadata);
+      setNewIntegrationKey(result.key);
+    } catch (error) {
+      setIntegrationKeyError(
+        error instanceof Error
+          ? error.message
+          : "Could not create an integration API key.",
+      );
+    } finally {
+      setIsChangingIntegrationKey(false);
+    }
+  };
+
+  const handleRevokeIntegrationKey = async () => {
+    if (
+      !integrationKey ||
+      !window.confirm(
+        "Revoke this API key? The external application will lose access immediately.",
+      )
+    ) {
+      return;
+    }
+    setIsChangingIntegrationKey(true);
+    setIntegrationKeyError(null);
+    try {
+      await revokeIntegrationApiKey();
+      setIntegrationKey(null);
+      setNewIntegrationKey(null);
+    } catch (error) {
+      setIntegrationKeyError(
+        error instanceof Error
+          ? error.message
+          : "Could not revoke the integration API key.",
+      );
+    } finally {
+      setIsChangingIntegrationKey(false);
+    }
+  };
+
+  const handleCopyIntegrationKey = async () => {
+    if (!newIntegrationKey) return;
+    try {
+      await navigator.clipboard.writeText(newIntegrationKey);
+      setIntegrationKeyError(null);
+    } catch {
+      setIntegrationKeyError(
+        "Could not copy the API key. Select and copy the key shown above.",
+      );
+    }
+  };
+
   const currentTabConfig = TAB_CONFIGS.find((t) => t.type === activeTab)!;
 
   return (
@@ -378,449 +488,631 @@ export function SettingsManagementView({
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight">
-              Settings & Lookup Configurations
+              {activeSettingsSection === "system"
+                ? "Settings & Lookup Configurations"
+                : "API Settings"}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Manage project short codes, acronyms, and global procurement
-              classifications.
+              {activeSettingsSection === "system"
+                ? "Manage project short codes, acronyms, and global procurement classifications."
+                : "Manage external integration access and API keys."}
             </p>
           </div>
         </div>
+      </div>
 
+      <div
+        aria-label="Settings sections"
+        className="flex items-center gap-2 border-b border-slate-200"
+        role="tablist"
+      >
         <button
-          onClick={() => {
-            setShowAddForm((prev) => !prev);
-            setFormError(null);
-          }}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+          aria-selected={activeSettingsSection === "system"}
+          className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+            activeSettingsSection === "system"
+              ? "border-[#00843D] text-[#00843D]"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+          onClick={() => setActiveSettingsSection("system")}
+          role="tab"
+          type="button"
         >
-          <Plus className="h-4 w-4" />
-          <span>
-            {showAddForm
-              ? "Cancel"
-              : `Add ${currentTabConfig.label.slice(0, -1)}`}
-          </span>
+          System
         </button>
+        {(currentUser.role === "ADMIN" ||
+          currentUser.role === "SUPERUSER") && (
+          <button
+            aria-selected={activeSettingsSection === "api"}
+            className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+              activeSettingsSection === "api"
+                ? "border-[#00843D] text-[#00843D]"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+            onClick={() => setActiveSettingsSection("api")}
+            role="tab"
+            type="button"
+          >
+            API
+          </button>
+        )}
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-        {TAB_CONFIGS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.type;
-          const count = tabCounts[tab.type] ?? 0;
-          return (
-            <button
-              key={tab.type}
-              onClick={() => setActiveTab(tab.type)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
-                isActive
-                  ? "bg-[#00843D] text-white shadow-sm"
-                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80"
-              }`}
-            >
-              <Icon
-                className={`h-4 w-4 ${isActive ? "text-emerald-300" : "text-slate-400"}`}
-              />
-              <span>{tab.label}</span>
-              <span
-                className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
-                  isActive
-                    ? "bg-[#06542D] text-emerald-300"
-                    : "bg-slate-100 text-slate-500"
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Add New Value Form (Collapsible) */}
-      {showAddForm && (
-        <form
-          onSubmit={handleCreate}
-          className="bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 p-5 shadow-sm space-y-4 animate-in fade-in duration-150"
+      {activeSettingsSection === "api" &&
+        (currentUser.role === "ADMIN" ||
+          currentUser.role === "SUPERUSER") && (
+        <section
+          aria-labelledby="external-dashboard-api-title"
+          className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs sm:p-6"
         >
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-[#00843D] uppercase tracking-wider">
-              Add New {currentTabConfig.label.slice(0, -1)}
-            </h3>
-            <span className="text-[11px] text-slate-400 font-medium">
-              Changes apply immediately to project creation dropdowns
-            </span>
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
+              <KeyRound className="h-5 w-5" />
+            </div>
+            <div>
+              <h2
+                className="text-sm font-semibold text-slate-900"
+                id="external-dashboard-api-title"
+              >
+                Executive Dashboard API
+              </h2>
+              <p className="mt-1 text-xs text-slate-600">
+                Create a read-only API key for another application to retrieve
+                Executive Summary, Consolidated Portfolio, Project Portfolio,
+                and Financial Position chart data.
+              </p>
+              <p className="mt-1 text-xs font-medium text-amber-800">
+                Keep the key on a trusted server. Do not embed it in browser or
+                mobile-app code.
+              </p>
+            </div>
           </div>
 
-          {formError && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{formError}</span>
+          {integrationKeyError && (
+            <p
+              className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"
+              role="alert"
+            >
+              {integrationKeyError}
+            </p>
+          )}
+
+          {newIntegrationKey && (
+            <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-4">
+              <p className="text-xs font-semibold text-amber-950">
+                Copy this key now. It will not be shown again.
+              </p>
+              <code className="block overflow-x-auto rounded bg-white p-3 text-xs text-slate-900">
+                {newIntegrationKey}
+              </code>
+              <button
+                className="inline-flex items-center gap-2 rounded-lg border border-amber-400 bg-white px-3 py-2 text-xs font-semibold text-amber-950 hover:bg-amber-100"
+                onClick={() => void handleCopyIntegrationKey()}
+                type="button"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Copy API key
+              </button>
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-800 block mb-1">
-                {activeTab === "PROJECT_CODE"
-                  ? "Project Short Code / Acronym *"
-                  : "Code *"}
-              </label>
-              <input
-                type="text"
-                value={newCode}
-                onChange={(e) => setNewCode(e.target.value)}
-                placeholder={TAB_PLACEHOLDERS[activeTab].code}
-                className="w-full rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
-              />
-            </div>
+          {isLoadingIntegrationKey ? (
+            <p className="text-xs text-slate-500">Checking API key status…</p>
+          ) : integrationKey ? (
+            <dl className="grid gap-2 text-xs text-slate-700 sm:grid-cols-3">
+              <div>
+                <dt className="font-semibold text-slate-500">Status</dt>
+                <dd>Active</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">Created</dt>
+                <dd>{new Date(integrationKey.createdAt).toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500">Last used</dt>
+                <dd>
+                  {integrationKey.lastUsedAt
+                    ? new Date(integrationKey.lastUsedAt).toLocaleString()
+                    : "Never"}
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <p className="text-xs text-slate-600">
+              No active integration key is configured.
+            </p>
+          )}
 
-            <div className="sm:col-span-2">
-              <label className="text-xs font-semibold text-slate-800 block mb-1">
-                {activeTab === "PROJECT_CODE"
-                  ? "Full Official Project Title *"
-                  : "Display Label / Description *"}
-              </label>
-              <input
-                type="text"
-                value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
-                placeholder={TAB_PLACEHOLDERS[activeTab].label}
-                className="w-full rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-2.5 pt-2">
+          <div className="flex flex-wrap gap-2">
             <button
+              className="rounded-lg bg-indigo-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-800 disabled:opacity-50"
+              disabled={isChangingIntegrationKey || isLoadingIntegrationKey}
+              onClick={() => void handleRotateIntegrationKey()}
               type="button"
-              onClick={() => setShowAddForm(false)}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer"
             >
-              Cancel
+              {integrationKey ? "Rotate API key" : "Generate API key"}
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
-            >
-              {isSubmitting ? "Saving..." : "Save Value"}
-            </button>
+            {integrationKey && (
+              <button
+                className="rounded-lg border border-rose-300 px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                disabled={isChangingIntegrationKey}
+                onClick={() => void handleRevokeIntegrationKey()}
+                type="button"
+              >
+                Revoke API key
+              </button>
+            )}
           </div>
-        </form>
-      )}
 
-      {/* Main Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        {/* Table Toolbar */}
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xs font-semibold text-slate-800 uppercase tracking-wider">
-              {currentTabConfig.label} ({filteredLookups.length})
-            </h2>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              {currentTabConfig.description}
+          <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-700">
+            <p className="font-semibold">Endpoint</p>
+            <code className="mt-1 block break-all">
+              GET /api/integrations/executive-dashboard
+            </code>
+            <p className="mt-2">
+              Send the key in the <code>X-API-Key</code> header. The key grants
+              read-only dashboard access and is shown only once.
+            </p>
+            <p className="mt-2">
+              The response includes chart summaries under{" "}
+              <code>charts.executiveSummary</code>,{" "}
+              <code>charts.consolidatedPortfolio</code>,{" "}
+              <code>charts.projectPortfolio</code>, and{" "}
+              <code>charts.financialPosition</code>, along with the underlying
+              records.
             </p>
           </div>
+        </section>
+      )}
 
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search codes or labels..."
-              className="w-full rounded-xl bg-slate-50 border border-slate-200 pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
-            />
+      {activeSettingsSection === "system" && (
+        <>
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                setShowAddForm((prev) => !prev);
+                setFormError(null);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>
+                {showAddForm
+                  ? "Cancel"
+                  : `Add ${currentTabConfig.label.slice(0, -1)}`}
+              </span>
+            </button>
           </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[650px]">
-            <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
-              <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
-                <th className="py-3 px-4 w-12 text-center">#</th>
-                <th className="py-3 px-4 w-44">
-                  {activeTab === "PROJECT_CODE" ? "Project Short Code" : "Code"}
-                </th>
-                <th className="py-3 px-4">
-                  {activeTab === "PROJECT_CODE" ? "Full Project Name" : "Label"}
-                </th>
-                <th className="py-3 px-4 w-28 text-center">Status</th>
-                <th className="py-3 px-4 w-28 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 text-xs">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="py-10 text-center text-slate-400">
-                    Loading configuration values...
-                  </td>
-                </tr>
-              ) : filteredLookups.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-12 px-4 text-center">
-                    <div className="max-w-xs mx-auto space-y-3">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto">
-                        {searchQuery ? (
-                          <Search className="h-6 w-6" />
-                        ) : (
-                          <currentTabConfig.icon className="h-6 w-6" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-slate-900">
-                          {searchQuery
-                            ? "No matching results"
-                            : `No ${currentTabConfig.label.toLowerCase()} configured yet`}
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-1">
-                          {searchQuery
-                            ? `No values match "${searchQuery}". Try a different search term.`
-                            : `Get started by adding the first ${currentTabConfig.label.slice(0, -1).toLowerCase()} for projects.`}
-                        </p>
-                      </div>
-                      {!searchQuery && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowAddForm(true);
-                            setFormError(null);
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          <span>Add {currentTabConfig.label.slice(0, -1)}</span>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredLookups.map((item, idx) => (
-                  <tr
-                    key={item.id || item.code}
-                    className="hover:bg-slate-50 transition-colors"
-                  >
-                    <td className="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">
-                      {idx + 1}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-slate-900 font-mono">
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
-                        {item.code}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-medium text-slate-800">
-                      {item.label}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handleToggleActive(item)}
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide transition-colors cursor-pointer ${
-                          item.isActive
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                            : "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200"
-                        }`}
-                      >
-                        {item.isActive ? "Active" : "Disabled"}
-                      </button>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => handleOpenEdit(item)}
-                          title="Edit lookup"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteItemModal(item)}
-                          title="Delete lookup"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Edit Lookup Modal */}
-      {editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                  <Pencil className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Edit {currentTabConfig.label.slice(0, -1)}
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Update short code, display name, or active status
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingItem(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {editError && (
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>{editError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveEdit} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-800 block">
-                  Code / Acronym *
-                </label>
-                <input
-                  type="text"
-                  value={editCode}
-                  onChange={(e) => setEditCode(e.target.value)}
-                  placeholder={TAB_PLACEHOLDERS[activeTab].code}
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase focus:bg-white focus:border-emerald-500 outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-800 block">
-                  {activeTab === "PROJECT_CODE"
-                    ? "Full Official Project Title *"
-                    : "Display Label *"}
-                </label>
-                <textarea
-                  rows={2}
-                  value={editLabel}
-                  onChange={(e) => setEditLabel(e.target.value)}
-                  placeholder={TAB_PLACEHOLDERS[activeTab].label}
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 outline-none resize-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
-                <div>
-                  <p className="text-xs font-semibold text-slate-800">Status</p>
-                  <p className="text-[10px] text-slate-500">
-                    Enable or disable for project creation
-                  </p>
-                </div>
+          {/* Category Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {TAB_CONFIGS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.type;
+              const count = tabCounts[tab.type] ?? 0;
+              return (
                 <button
-                  type="button"
-                  onClick={() => setEditIsActive(!editIsActive)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
-                    editIsActive
-                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                      : "bg-slate-200 text-slate-600 border border-slate-300"
+                  key={tab.type}
+                  onClick={() => setActiveTab(tab.type)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    isActive
+                      ? "bg-[#00843D] text-white shadow-sm"
+                      : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80"
                   }`}
                 >
-                  {editIsActive ? "Active" : "Disabled"}
+                  <Icon
+                    className={`h-4 w-4 ${isActive ? "text-emerald-300" : "text-slate-400"}`}
+                  />
+                  <span>{tab.label}</span>
+                  <span
+                    className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold ${
+                      isActive
+                        ? "bg-[#06542D] text-emerald-300"
+                        : "bg-slate-100 text-slate-500"
+                    }`}
+                  >
+                    {count}
+                  </span>
                 </button>
+              );
+            })}
+          </div>
+
+          {/* Add New Value Form (Collapsible) */}
+          {showAddForm && (
+            <form
+              onSubmit={handleCreate}
+              className="bg-white rounded-2xl border border-emerald-200 bg-emerald-50/20 p-5 shadow-sm space-y-4 animate-in fade-in duration-150"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-[#00843D] uppercase tracking-wider">
+                  Add New {currentTabConfig.label.slice(0, -1)}
+                </h3>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  Changes apply immediately to project creation dropdowns
+                </span>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              {formError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    {activeTab === "PROJECT_CODE"
+                      ? "Project Short Code / Acronym *"
+                      : "Code *"}
+                  </label>
+                  <input
+                    type="text"
+                    value={newCode}
+                    onChange={(e) => setNewCode(e.target.value)}
+                    placeholder={TAB_PLACEHOLDERS[activeTab].code}
+                    className="w-full rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-semibold text-slate-800 block mb-1">
+                    {activeTab === "PROJECT_CODE"
+                      ? "Full Official Project Title *"
+                      : "Display Label / Description *"}
+                  </label>
+                  <input
+                    type="text"
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder={TAB_PLACEHOLDERS[activeTab].label}
+                    className="w-full rounded-xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
                 <button
                   type="button"
-                  onClick={() => setEditingItem(null)}
-                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold cursor-pointer"
+                  onClick={() => setShowAddForm(false)}
+                  className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isEditSubmitting}
-                  className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold cursor-pointer shadow-xs disabled:opacity-50"
+                  disabled={isSubmitting}
+                  className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
-                  {isEditSubmitting ? "Saving..." : "Save Changes"}
+                  {isSubmitting ? "Saving..." : "Save Value"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Custom Safe Delete Modal */}
-      {deleteItemModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5" />
-              </div>
+          {/* Main Table Card */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            {/* Table Toolbar */}
+            <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">
-                  Remove &ldquo;{deleteItemModal.code}&rdquo;?
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">
-                  {deleteItemModal.label}
+                <h2 className="text-xs font-semibold text-slate-800 uppercase tracking-wider">
+                  {currentTabConfig.label} ({filteredLookups.length})
+                </h2>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {currentTabConfig.description}
                 </p>
               </div>
+
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search codes or labels..."
+                  className="w-full rounded-xl bg-slate-50 border border-slate-200 pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                />
+              </div>
             </div>
 
-            <div className="notice-card-clean text-xs space-y-1">
-              <p className="font-semibold text-slate-800 flex items-center gap-1.5">
-                <span>Data Integrity Recommendation</span>
-              </p>
-              <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
-                If existing projects or procurement activities reference this
-                code, permanently deleting it may cause reporting
-                inconsistencies. Deactivating it is recommended instead.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setDeleteItemModal(null)}
-                className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  await handleToggleActive(deleteItemModal);
-                  setDeleteItemModal(null);
-                }}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
-              >
-                Deactivate Instead
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  await deleteLookup(deleteItemModal.id);
-                  setLookups((prev) =>
-                    prev.filter((l) => l.id !== deleteItemModal.id),
-                  );
-                  setDeleteItemModal(null);
-                  loadAllCounts();
-                  showToast(`Removed "${deleteItemModal.code}".`);
-                }}
-                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-xs"
-              >
-                Delete Permanently
-              </button>
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[650px]">
+                <thead className="table-head bg-slate-100 border-b border-slate-200 text-left text-slate-600">
+                  <tr className="bg-slate-100 text-slate-600 text-[11px] font-semibold">
+                    <th className="py-3 px-4 w-12 text-center">#</th>
+                    <th className="py-3 px-4 w-44">
+                      {activeTab === "PROJECT_CODE"
+                        ? "Project Short Code"
+                        : "Code"}
+                    </th>
+                    <th className="py-3 px-4">
+                      {activeTab === "PROJECT_CODE"
+                        ? "Full Project Name"
+                        : "Label"}
+                    </th>
+                    <th className="py-3 px-4 w-28 text-center">Status</th>
+                    <th className="py-3 px-4 w-28 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-xs">
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="py-10 text-center text-slate-400"
+                      >
+                        Loading configuration values...
+                      </td>
+                    </tr>
+                  ) : filteredLookups.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 px-4 text-center">
+                        <div className="max-w-xs mx-auto space-y-3">
+                          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto">
+                            {searchQuery ? (
+                              <Search className="h-6 w-6" />
+                            ) : (
+                              <currentTabConfig.icon className="h-6 w-6" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-900">
+                              {searchQuery
+                                ? "No matching results"
+                                : `No ${currentTabConfig.label.toLowerCase()} configured yet`}
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-1">
+                              {searchQuery
+                                ? `No values match "${searchQuery}". Try a different search term.`
+                                : `Get started by adding the first ${currentTabConfig.label.slice(0, -1).toLowerCase()} for projects.`}
+                            </p>
+                          </div>
+                          {!searchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowAddForm(true);
+                                setFormError(null);
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              <span>
+                                Add {currentTabConfig.label.slice(0, -1)}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLookups.map((item, idx) => (
+                      <tr
+                        key={item.id || item.code}
+                        className="hover:bg-slate-50 transition-colors"
+                      >
+                        <td className="py-3 px-4 text-center text-slate-400 font-mono text-[11px]">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-slate-900 font-mono">
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
+                            {item.code}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-medium text-slate-800">
+                          {item.label}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            onClick={() => handleToggleActive(item)}
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide transition-colors cursor-pointer ${
+                              item.isActive
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                                : "bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200"
+                            }`}
+                          >
+                            {item.isActive ? "Active" : "Disabled"}
+                          </button>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleOpenEdit(item)}
+                              title="Edit lookup"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteItemModal(item)}
+                              title="Delete lookup"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
+
+          {/* Edit Lookup Modal */}
+          {editingItem && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                      <Pencil className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Edit {currentTabConfig.label.slice(0, -1)}
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Update short code, display name, or active status
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingItem(null)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {editError && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>{editError}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveEdit} className="space-y-3.5">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-800 block">
+                      Code / Acronym *
+                    </label>
+                    <input
+                      type="text"
+                      value={editCode}
+                      onChange={(e) => setEditCode(e.target.value)}
+                      placeholder={TAB_PLACEHOLDERS[activeTab].code}
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 uppercase focus:bg-white focus:border-emerald-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-800 block">
+                      {activeTab === "PROJECT_CODE"
+                        ? "Full Official Project Title *"
+                        : "Display Label *"}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      placeholder={TAB_PLACEHOLDERS[activeTab].label}
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 outline-none resize-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-800">
+                        Status
+                      </p>
+                      <p className="text-[10px] text-slate-500">
+                        Enable or disable for project creation
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditIsActive(!editIsActive)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                        editIsActive
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : "bg-slate-200 text-slate-600 border border-slate-300"
+                      }`}
+                    >
+                      {editIsActive ? "Active" : "Disabled"}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setEditingItem(null)}
+                      className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isEditSubmitting}
+                      className="px-4 py-1.5 rounded-xl bg-[#00843D] hover:bg-[#0B6B3A] text-white text-xs font-semibold cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      {isEditSubmitting ? "Saving..." : "Save Changes"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Custom Safe Delete Modal */}
+          {deleteItemModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+              <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-150">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      Remove &ldquo;{deleteItemModal.code}&rdquo;?
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">
+                      {deleteItemModal.label}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="notice-card-clean text-xs space-y-1">
+                  <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                    <span>Data Integrity Recommendation</span>
+                  </p>
+                  <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+                    If existing projects or procurement activities reference
+                    this code, permanently deleting it may cause reporting
+                    inconsistencies. Deactivating it is recommended instead.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteItemModal(null)}
+                    className="px-3.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-xs font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await handleToggleActive(deleteItemModal);
+                      setDeleteItemModal(null);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+                  >
+                    Deactivate Instead
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await deleteLookup(deleteItemModal.id);
+                      setLookups((prev) =>
+                        prev.filter((l) => l.id !== deleteItemModal.id),
+                      );
+                      setDeleteItemModal(null);
+                      loadAllCounts();
+                      showToast(`Removed "${deleteItemModal.code}".`);
+                    }}
+                    className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-xs"
+                  >
+                    Delete Permanently
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import {
   REGISTER_COLUMNS,
   displayDate,
   summarize,
+  summarizeProcurementProgress,
   type ExecutiveRecord,
 } from "./model";
 
@@ -205,6 +206,198 @@ describe("executive measurements", () => {
       preContract: 1,
       amounts: [],
     });
+  });
+  it("counts unique activities by procurement stage and unique projects", () => {
+    const records: ExecutiveRecord[] = [
+      {
+        ...row,
+        activityStatus: "APPROVED",
+        contractId: null,
+        complete: null,
+        invitationDate: null,
+      },
+      {
+        ...row,
+        id: "tender",
+        activityId: "activity:2",
+        activityStatus: "PLANNED",
+        contractId: null,
+        complete: null,
+        invitationDate: "2026-10-01",
+      },
+      {
+        ...row,
+        id: "contract:3",
+        activityId: "activity:3",
+        activityStatus: "CONTRACTED",
+        contractId: "3",
+        complete: false,
+      },
+      {
+        ...row,
+        id: "contract:4",
+        activityId: "activity:4",
+        activityStatus: "COMPLETED",
+        contractId: "4",
+        complete: true,
+      },
+      {
+        ...row,
+        id: "contract:5",
+        activityId: "activity:3",
+        activityStatus: "CONTRACTED",
+        contractId: "5",
+        complete: false,
+      },
+      { ...row, id: "unlinked", activityId: null, projectId: "p2" },
+    ];
+
+    expect(summarizeProcurementProgress(records)).toEqual({
+      activities: 4,
+      projects: 1,
+      notYetToMarket: 1,
+      inTendering: 1,
+      awardedDelivery: 1,
+      completed: 1,
+      statuses: {
+        notStarted: 0,
+        biddingDocumentPreparation: 1,
+        bidAdvertised: 1,
+        bidEvaluation: 0,
+        contractAwarded: 0,
+        contractDelivery: 1,
+        completed: 1,
+      },
+    });
+  });
+  it("uses parent plan approval and reached stage for Executive Summary buckets", () => {
+    const records: ExecutiveRecord[] = [
+      {
+        ...row,
+        id: "not-approved",
+        activityId: "activity:not-approved",
+        planStatus: "SUBMITTED",
+        activityStage: "Contract Completion",
+      },
+      {
+        ...row,
+        id: "tendering",
+        activityId: "activity:tendering",
+        planStatus: "MANAGEMENT_APPROVED",
+        activityStage: "Receiving Quotations",
+        portfolioStatus: "COMPLETED",
+      },
+      {
+        ...row,
+        id: "notice",
+        activityId: "activity:notice",
+        planStatus: "APPROVED",
+        activityStage: "Notification of Intention of Award",
+        portfolioStatus: "BID_EVALUATION",
+      },
+      {
+        ...row,
+        id: "completed",
+        activityId: "activity:completed",
+        planStatus: "FINALLY_APPROVED",
+        activityStage: "Contract Completion",
+      },
+      {
+        ...row,
+        id: "notice-contract-1",
+        activityId: "activity:notice",
+        contractId: "contract-1",
+        planStatus: "APPROVED",
+        activityStage: "Notification of Intention of Award",
+      },
+    ];
+
+    expect(summarizeProcurementProgress(records)).toMatchObject({
+      activities: 4,
+      notYetToMarket: 1,
+      inTendering: 1,
+      awardedDelivery: 1,
+      completed: 1,
+    });
+  });
+  it("counts Consolidated Portfolio rows from plan approval and reached stage", () => {
+    const records: ExecutiveRecord[] = [
+      {
+        ...row,
+        activityId: "activity:not-approved",
+        planStatus: "SUBMITTED",
+        activityStage: "Contract Completion",
+      },
+      {
+        ...row,
+        activityId: "activity:draft-rfq",
+        planStatus: "MANAGEMENT_APPROVED",
+        activityStage: "Draft Request for Quotations",
+      },
+      {
+        ...row,
+        activityId: "activity:invitation",
+        planStatus: "APPROVED",
+        activityStage: "Invitation to Bidders",
+      },
+      {
+        ...row,
+        id: "invitation-contract",
+        activityId: "activity:invitation",
+        contractId: "contract:invitation",
+        planStatus: "APPROVED",
+        activityStage: "Invitation to Bidders",
+      },
+      {
+        ...row,
+        activityId: "activity:signed",
+        planStatus: "APPROVED",
+        activityStage: "Signed Contract",
+      },
+      {
+        ...row,
+        activityId: "activity:award-notice",
+        planStatus: "APPROVED",
+        activityStage: "Notification of Intention of Award",
+      },
+      {
+        ...row,
+        activityId: "activity:completion",
+        planStatus: "FINALLY_APPROVED",
+        activityStage: "Contract Completion",
+      },
+      {
+        ...row,
+        activityId: "activity:other-approved",
+        planStatus: "APPROVED",
+        activityStage: "Receive Quotations",
+      },
+    ];
+
+    expect(summarizeProcurementProgress(records)).toMatchObject({
+      activities: 7,
+      statuses: {
+        notStarted: 1,
+        biddingDocumentPreparation: 1,
+        bidAdvertised: 1,
+        bidEvaluation: 1,
+        contractAwarded: 2,
+        contractDelivery: 1,
+        completed: 1,
+      },
+    });
+  });
+  it("counts finally approved RFQ activities when approval or stage labels use UI variants", () => {
+    const result = summarizeProcurementProgress([
+      {
+        ...row,
+        activityId: "activity:rfq-label-variant",
+        planStatus: "Finally Approve",
+        activityStage: "Draft Request for Quotation",
+      },
+    ]);
+
+    expect(result.statuses.biddingDocumentPreparation).toBe(1);
   });
   it("exports only the selected population and neutralizes spreadsheet formula text", () => {
     const selected = filterRecords(

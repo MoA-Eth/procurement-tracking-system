@@ -35,6 +35,10 @@ Client web application for the Ministry of Agriculture Procurement Tracking Syst
    - Supports bulk project uploads using `.xlsx` templates.
    - Triggers browser downloads from backend streaming report endpoints.
 
+5. **No-Cache Reloads**:
+   - Frontend responses include no-cache headers so browsers and intermediary caches revalidate pages and assets on each reload.
+   - API fetches bypass the browser HTTP cache.
+
 ---
 
 ## 📂 Directory Structure

@@ -28,6 +28,7 @@ export const createAlertSchema = registry.register(
         'MANAGEMENT',
         'MANAGEMENT_TEAM',
         'ADMIN',
+        'SUPERUSER',
         'ALL',
       ])
       .optional()

@@ -95,17 +95,7 @@ export function mergeSavedPlans(
 
       if (!saved) return plan;
 
-      // Backend status is authoritative if plan is not in local Draft state,
-      // or if the backend returned a new workflow status like Returned / Committee Review / Finally Approved
-      const isBackendAuthoritative =
-        plan.status === "Returned" ||
-        plan.status === "Committee Review" ||
-        plan.status === "Finally Approved" ||
-        (saved.status === "Draft" && plan.status !== "Draft");
-
-      const resolvedStatus = isBackendAuthoritative
-        ? plan.status
-        : saved.status || plan.status;
+      const resolvedStatus = plan.status;
       const resolvedReason = plan.rejectionReason || saved.rejectionReason;
 
       const baseActs = plan.planActivities || [];
@@ -119,7 +109,25 @@ export function mergeSavedPlans(
         const key = (a.reference || a.id || "").toLowerCase().trim();
         if (key) {
           const existing = actMap.get(key);
-          actMap.set(key, existing ? { ...existing, ...a } : a);
+          actMap.set(
+            key,
+            existing
+              ? {
+                  ...existing,
+                  ...a,
+                  id: existing.id || a.id,
+                  activityId:
+                    existing.activityId || a.activityId || existing.id,
+                  planId: existing.planId || a.planId,
+                  createdById: existing.createdById || a.createdById,
+                  createdByName: existing.createdByName || a.createdByName,
+                  status: existing.status,
+                  isInheritedFromParentPlan:
+                    existing.isInheritedFromParentPlan ||
+                    a.isInheritedFromParentPlan,
+                }
+              : a,
+          );
         }
       });
       const rawActivities =
@@ -129,16 +137,25 @@ export function mergeSavedPlans(
             ? savedActs
             : baseActs;
 
+      const isReturnedForRevision =
+        plan.returnedForRevision ?? saved.returnedForRevision ?? false;
       const resolvedActivities = rawActivities.map((act: any) => ({
         ...act,
-        status:
-          resolvedStatus === "Submitted to Director"
-            ? "Submitted to Director"
-            : resolvedStatus === "Returned" &&
-                (act.status === "Submitted to Director" ||
-                  act.status === "Under Review")
-              ? "Returned"
-              : act.status,
+        returnedForRevision: isReturnedForRevision,
+        version: isReturnedForRevision
+          ? plan.version || act.version || 1
+          : act.version,
+        status: act.isInheritedFromParentPlan
+          ? act.status
+          : isReturnedForRevision
+            ? "Draft"
+            : resolvedStatus === "Submitted to Director"
+              ? "Submitted to Director"
+              : resolvedStatus === "Returned" &&
+                  (act.status === "Submitted to Director" ||
+                    act.status === "Under Review")
+                ? "Returned"
+                : act.status,
       }));
 
       return {
