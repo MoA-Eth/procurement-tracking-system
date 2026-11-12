@@ -1,9 +1,14 @@
 import { prisma } from '../../config/database.js';
 import { logger } from '../../config/logger.js';
 import { ApiError } from '../../utils/errors.js';
-import type { DisbursementInput, SmsSettingsInput } from './finance.schema.js';
+import type {
+  DisbursementInput,
+  SmsGatewayAuthFormat,
+  SmsSettingsInput,
+} from './finance.schema.js';
 
 const SMS_THRESHOLD_DEFAULT = 20_000_000;
+export const MASKED_GATEWAY_API_KEY = '***';
 
 // ─── Settings helpers ──────────────────────────────────────────────────────────
 
@@ -21,11 +26,12 @@ async function setSetting(key: string, value: string): Promise<void> {
 }
 
 export async function getSmsSettings() {
-  const [enabled, gatewayUrl, gatewayApiKey, threshold, recipientsJson, mockMode] =
+  const [enabled, gatewayUrl, gatewayApiKey, authFormat, threshold, recipientsJson, mockMode] =
     await Promise.all([
       getSetting('sms_enabled', 'false'),
       getSetting('sms_gateway_url', ''),
       getSetting('sms_gateway_api_key', ''),
+      getSetting('sms_gateway_auth_format', 'BEARER'),
       getSetting('sms_threshold_etb', String(SMS_THRESHOLD_DEFAULT)),
       getSetting('sms_recipients', '[]'),
       getSetting('sms_mock_mode', 'true'),
@@ -38,10 +44,13 @@ export async function getSmsSettings() {
     recipients = [];
   }
 
+  const gatewayAuthFormat: SmsGatewayAuthFormat = authFormat === 'RAW' ? 'RAW' : 'BEARER';
+
   return {
     smsEnabled: enabled === 'true',
     gatewayUrl,
     gatewayApiKey,
+    gatewayAuthFormat,
     thresholdEtb: parseInt(threshold, 10) || SMS_THRESHOLD_DEFAULT,
     recipients,
     mockMode: mockMode === 'true',
@@ -49,14 +58,27 @@ export async function getSmsSettings() {
 }
 
 export async function updateSmsSettings(data: SmsSettingsInput): Promise<void> {
-  await Promise.all([
+  const updates: Promise<void>[] = [
     setSetting('sms_enabled', data.smsEnabled ? 'true' : 'false'),
-    setSetting('sms_gateway_url', data.gatewayUrl),
-    setSetting('sms_gateway_api_key', data.gatewayApiKey),
+    setSetting('sms_gateway_url', data.gatewayUrl.trim()),
     setSetting('sms_threshold_etb', String(data.thresholdEtb)),
     setSetting('sms_recipients', JSON.stringify(data.recipients)),
     setSetting('sms_mock_mode', (data.mockMode ?? false) ? 'true' : 'false'),
-  ]);
+  ];
+
+  if (data.gatewayAuthFormat !== undefined) {
+    updates.push(setSetting('sms_gateway_auth_format', data.gatewayAuthFormat));
+  }
+
+  // Preserve saved key when masked placeholder ('***') or undefined is submitted
+  if (
+    data.gatewayApiKey !== undefined &&
+    data.gatewayApiKey !== MASKED_GATEWAY_API_KEY
+  ) {
+    updates.push(setSetting('sms_gateway_api_key', data.gatewayApiKey.trim()));
+  }
+
+  await Promise.all(updates);
 }
 
 // ─── SMS dispatch ──────────────────────────────────────────────────────────────
@@ -81,29 +103,58 @@ async function formatSmsMessage(
   return `[MoA Alert] High-Value Disbursement: ETB ${amountFormatted} paid to ${payeeName} (${catLabel}).${contractPart} Ref: ${referenceNo}. Approve via Finance Portal.`;
 }
 
-async function sendSmsToGateway(
+export function buildGatewayHeaders(
+  apiKey: string,
+  authFormat: SmsGatewayAuthFormat = 'BEARER',
+): Record<string, string> {
+  const trimmedKey = apiKey.trim();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (trimmedKey) {
+    headers.Authorization = authFormat === 'RAW' ? trimmedKey : `Bearer ${trimmedKey}`;
+  }
+  return headers;
+}
+
+function formatFetchError(err: unknown): string {
+  if (err instanceof Error) {
+    const causeMsg =
+      err.cause instanceof Error
+        ? err.cause.message
+        : typeof err.cause === 'string'
+          ? err.cause
+          : '';
+    return causeMsg ? `${err.message} (${causeMsg})` : err.message;
+  }
+  return String(err);
+}
+
+export async function sendSmsToGateway(
   phone: string,
   message: string,
   gatewayUrl: string,
   apiKey: string,
+  authFormat: SmsGatewayAuthFormat = 'BEARER',
 ): Promise<{ success: boolean; response: string }> {
   try {
     const res = await fetch(gatewayUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-      },
+      headers: buildGatewayHeaders(apiKey, authFormat),
       body: JSON.stringify({ to: phone, message }),
       signal: AbortSignal.timeout(10_000),
     });
-    const text = await res.text();
+    const text = (await res.text()).trim();
     if (!res.ok) {
-      return { success: false, response: text };
+      const reason = text || res.statusText || 'Gateway request failed';
+      return { success: false, response: `HTTP ${res.status}: ${reason}` };
     }
-    return { success: true, response: text };
+    return {
+      success: true,
+      response: text || `HTTP ${res.status} OK`,
+    };
   } catch (err: unknown) {
-    return { success: false, response: String(err) };
+    return { success: false, response: formatFetchError(err) };
   }
 }
 
@@ -154,6 +205,7 @@ export async function dispatchSms(paymentId: string): Promise<void> {
           message,
           settings.gatewayUrl,
           settings.gatewayApiKey,
+          settings.gatewayAuthFormat,
         );
         status = result.success ? 'SENT' : 'FAILED';
         gatewayResponse = result.response.substring(0, 500);
@@ -434,6 +486,7 @@ export async function sendTestSms(phone: string) {
     '[MoA Test] SMS gateway connectivity check from Procurement System.',
     settings.gatewayUrl,
     settings.gatewayApiKey,
+    settings.gatewayAuthFormat,
   );
   return { success: result.success, message: result.response };
 }

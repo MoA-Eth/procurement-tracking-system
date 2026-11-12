@@ -93,7 +93,7 @@ export function SmsSettingsPanel() {
       await updateSmsSettings({
         smsEnabled: settings.smsEnabled,
         gatewayUrl: settings.gatewayUrl,
-        gatewayApiKey: settings.gatewayApiKey || undefined,
+        gatewayApiKey: settings.gatewayApiKey,
         thresholdEtb: Number(settings.thresholdEtb),
         recipients: settings.recipients,
         mockMode: settings.mockMode,

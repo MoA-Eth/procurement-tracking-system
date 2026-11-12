@@ -31,14 +31,24 @@ export const DisbursementSchema = z.object({
 
 export type DisbursementInput = z.infer<typeof DisbursementSchema>;
 
+export const SMS_GATEWAY_AUTH_FORMATS = ['BEARER', 'RAW'] as const;
+export type SmsGatewayAuthFormat = (typeof SMS_GATEWAY_AUTH_FORMATS)[number];
+
 export const SmsSettingsSchema = z.object({
   smsEnabled: z.boolean(),
-  gatewayUrl: z.string().url('Must be a valid URL').or(z.string().max(0)),
-  gatewayApiKey: z.string().max(500),
+  gatewayUrl: z
+    .string()
+    .trim()
+    .refine(
+      (val) => val === '' || z.string().url().safeParse(val).success,
+      { message: 'Must be a valid URL' },
+    ),
+  gatewayApiKey: z.string().max(500).optional(),
+  gatewayAuthFormat: z.enum(SMS_GATEWAY_AUTH_FORMATS).optional(),
   thresholdEtb: z.number().positive().int(),
   recipients: z.array(z.object({
-    name: z.string().min(1),
-    phone: z.string().min(7).max(20),
+    name: z.string().trim().min(1),
+    phone: z.string().trim().min(7).max(20),
   })),
   mockMode: z.boolean().optional(),
 });

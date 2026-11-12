@@ -146,10 +146,13 @@ export interface SmsRecipient {
   phone: string;
 }
 
+export type SmsGatewayAuthFormat = "BEARER" | "RAW";
+
 export interface SmsSettings {
   smsEnabled: boolean;
   gatewayUrl: string;
   gatewayApiKey: string;
+  gatewayAuthFormat?: SmsGatewayAuthFormat;
   thresholdEtb: number;
   recipients: SmsRecipient[];
   mockMode: boolean;
@@ -230,6 +233,18 @@ export async function sendTestSms(
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+export function normalizeEthiopianPhone(rawPhone: string): string {
+  const cleaned = rawPhone.trim().replace(/\s+/g, "");
+  if (!cleaned) return "";
+  if (cleaned.startsWith("09") || cleaned.startsWith("07")) {
+    return `+251${cleaned.substring(1)}`;
+  }
+  if (!cleaned.startsWith("+")) {
+    return `+${cleaned}`;
+  }
+  return cleaned;
+}
 
 export function formatEtb(amount: number | string): string {
   const num = typeof amount === "string" ? parseFloat(amount) : amount;

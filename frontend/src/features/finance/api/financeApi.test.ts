@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatEtb,
   buildSmsPreview,
+  normalizeEthiopianPhone,
   CATEGORY_LABELS,
   PAYMENT_METHOD_LABELS,
 } from "./financeApi";
@@ -37,6 +38,14 @@ describe("financeApi utilities", () => {
     expect(PAYMENT_METHOD_LABELS.BANK_TRANSFER).toBe("Bank Transfer");
     expect(PAYMENT_METHOD_LABELS.CHEQUE_CPO).toBe("Cheque (CPO)");
     expect(PAYMENT_METHOD_LABELS.CASH).toBe("Cash");
+  });
+
+  it("normalizes Ethiopian phone numbers to +251 format", () => {
+    expect(normalizeEthiopianPhone("0911234567")).toBe("+251911234567");
+    expect(normalizeEthiopianPhone("0712 345 678")).toBe("+251712345678");
+    expect(normalizeEthiopianPhone("251911234567")).toBe("+251911234567");
+    expect(normalizeEthiopianPhone(" +251 911 234 567 ")).toBe("+251911234567");
+    expect(normalizeEthiopianPhone("   ")).toBe("");
   });
 });
 

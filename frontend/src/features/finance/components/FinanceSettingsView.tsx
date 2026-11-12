@@ -32,7 +32,9 @@ import {
   updateSmsSettings,
   sendTestSms,
   formatEtb,
+  normalizeEthiopianPhone,
   type SmsSettings,
+  type SmsGatewayAuthFormat,
   type SmsRecipient,
 } from "../api/financeApi";
 
@@ -69,6 +71,7 @@ export function FinanceSettingsView({ currentUser }: FinanceSettingsViewProps) {
     smsEnabled: true,
     gatewayUrl: "",
     gatewayApiKey: "",
+    gatewayAuthFormat: "BEARER",
     thresholdEtb: 20000000,
     recipients: [],
     mockMode: true,
@@ -88,8 +91,13 @@ export function FinanceSettingsView({ currentUser }: FinanceSettingsViewProps) {
     setError(null);
     try {
       const res = await fetchSmsSettings();
-      setSettings(res.data);
-      setOriginalSettingsJson(JSON.stringify(res.data));
+      const normalized: SmsSettings = {
+        ...res.data,
+        gatewayAuthFormat: res.data.gatewayAuthFormat ?? "BEARER",
+      };
+      setSettings(normalized);
+      setOriginalSettingsJson(JSON.stringify(normalized));
+      setShowApiKey(false);
     } catch (err: unknown) {
       setError(
         err instanceof Error
@@ -122,7 +130,7 @@ export function FinanceSettingsView({ currentUser }: FinanceSettingsViewProps) {
   function handleAddRecipient() {
     setSubscriberError(null);
     const name = newRecipientName.trim();
-    let phone = newRecipientPhone.trim().replace(/\s+/g, "");
+    const phone = normalizeEthiopianPhone(newRecipientPhone);
 
     if (!name) {
       setSubscriberError("Recipient name or title is required · ስም ወይም ማዕረግ ያስፈልጋል");
@@ -131,13 +139,6 @@ export function FinanceSettingsView({ currentUser }: FinanceSettingsViewProps) {
     if (!phone) {
       setSubscriberError("Phone number is required · ስልክ ቁጥር ያስፈልጋል");
       return;
-    }
-
-    // Auto-prefix Ethiopian numbers if user typed 09... or 07...
-    if (phone.startsWith("09") || phone.startsWith("07")) {
-      phone = `+251${phone.substring(1)}`;
-    } else if (!phone.startsWith("+")) {
-      phone = `+${phone}`;
     }
 
     if (phone.length < 10) {
@@ -175,15 +176,29 @@ export function FinanceSettingsView({ currentUser }: FinanceSettingsViewProps) {
     setSaveSuccess(false);
 
     try {
+      const trimmedUrl = settings.gatewayUrl.trim();
+      const authFormat: SmsGatewayAuthFormat = settings.gatewayAuthFormat ?? "BEARER";
+      const submittedKey = settings.gatewayApiKey;
+
       await updateSmsSettings({
         smsEnabled: settings.smsEnabled,
-        gatewayUrl: settings.gatewayUrl,
-        gatewayApiKey: settings.gatewayApiKey || undefined,
+        gatewayUrl: trimmedUrl,
+        gatewayApiKey: submittedKey,
+        gatewayAuthFormat: authFormat,
         thresholdEtb: Number(settings.thresholdEtb),
         recipients: settings.recipients,
         mockMode: settings.mockMode,
       });
-      setOriginalSettingsJson(JSON.stringify(settings));
+
+      const nextSettings: SmsSettings = {
+        ...settings,
+        gatewayUrl: trimmedUrl,
+        gatewayAuthFormat: authFormat,
+        gatewayApiKey: submittedKey.trim() ? "***" : "",
+      };
+      setSettings(nextSettings);
+      setOriginalSettingsJson(JSON.stringify(nextSettings));
+      setShowApiKey(false);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3500);
     } catch (err: unknown) {
@@ -198,11 +213,13 @@ export function FinanceSettingsView({ currentUser }: FinanceSettingsViewProps) {
   }
 
   async function handleSendTest() {
-    if (!testPhone.trim()) return;
+    const normalizedPhone = normalizeEthiopianPhone(testPhone);
+    if (!normalizedPhone) return;
+    setTestPhone(normalizedPhone);
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await sendTestSms(testPhone.trim());
+      const res = await sendTestSms(normalizedPhone);
       setTestResult(res);
     } catch (err: unknown) {
       setTestResult({
@@ -756,37 +773,69 @@ export function FinanceSettingsView({ currentUser }: FinanceSettingsViewProps) {
                   className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm font-mono text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                 />
                 <p className="mt-1 text-[11px] text-slate-400">
-                  Target API endpoint accepting POST requests with phone and message payloads.
+                  Target API endpoint accepting POST {"{ to, message }"} payloads.
                 </p>
               </div>
 
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Gateway API Key / Bearer Token · የኤፒአይ ቁልፍ (ምስጢራዊ ኮድ)
+                  Gateway API Key / Token · የኤፒአይ ቁልፍ (ምስጢራዊ ኮድ)
                 </label>
                 <div className="relative">
                   <input
-                    type={showApiKey ? "text" : "password"}
+                    type={showApiKey && settings.gatewayApiKey !== "***" ? "text" : "password"}
                     value={settings.gatewayApiKey}
-                    onChange={(e) =>
-                      setSettings((s) => ({ ...s, gatewayApiKey: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSettings((s) => ({ ...s, gatewayApiKey: val }));
+                    }}
                     placeholder="Enter auth token or leave blank if using IP whitelist"
                     className="w-full rounded-lg border border-slate-300 py-2.5 pl-3.5 pr-10 text-sm font-mono text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    title={showApiKey ? "Hide key" : "Show key"}
-                  >
-                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+                  {settings.gatewayApiKey !== "***" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      title={showApiKey ? "Hide key" : "Show key"}
+                    >
+                      {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  )}
                 </div>
                 <p className="mt-1 text-[11px] text-slate-400">
-                  Sent in authorization headers when dispatching notifications.
+                  {settings.gatewayApiKey === "***"
+                    ? "Token saved on server ('***'). Leave as-is to keep it, replace it, or clear the field to remove."
+                    : "Sent in Authorization header when dispatching notifications."}
                 </p>
               </div>
+            </div>
+
+            {/* Authorization Header Format */}
+            <div className="max-w-md">
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                Authorization Header Format · የማረጋገጫ ራስጌ ቅርጸት
+              </label>
+              <select
+                value={settings.gatewayAuthFormat ?? "BEARER"}
+                onChange={(e) =>
+                  setSettings((s) => ({
+                    ...s,
+                    gatewayAuthFormat: e.target.value as SmsGatewayAuthFormat,
+                  }))
+                }
+                className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <option value="BEARER">
+                  Bearer Token (Authorization: Bearer &lt;token&gt;)
+                </option>
+                <option value="RAW">
+                  Raw Token (Authorization: &lt;token&gt;)
+                </option>
+              </select>
+              <p className="mt-1 text-[11px] text-slate-400">
+                Choose how the API token is sent in the HTTP Authorization header.
+              </p>
             </div>
 
             {/* Action Bar */}
@@ -823,6 +872,25 @@ export function FinanceSettingsView({ currentUser }: FinanceSettingsViewProps) {
             </p>
           </div>
 
+          {hasUnsavedChanges && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-center gap-2 text-xs font-medium text-amber-800">
+                <AlertTriangle size={16} className="shrink-0" />
+                <span>
+                  You have unsaved gateway changes. Save settings first so the connectivity test uses your latest configuration.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSaveSettings()}
+                disabled={saving}
+                className="shrink-0 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+          )}
+
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <div className="flex items-start gap-3">
               <Info className="mt-0.5 text-emerald-600 shrink-0" size={18} />
@@ -832,6 +900,9 @@ export function FinanceSettingsView({ currentUser }: FinanceSettingsViewProps) {
                 </p>
                 <p className="mt-1">
                   • Target URL: <span className="font-mono">{settings.gatewayUrl || "Not configured (Mock mode will be used)"}</span>
+                </p>
+                <p>
+                  • Auth Header: <span className="font-semibold">{(settings.gatewayAuthFormat ?? "BEARER") === "RAW" ? "Raw Token" : "Bearer Token"}</span>
                 </p>
                 <p>
                   • Operational Mode: <span className="font-semibold">{settings.mockMode ? "Mock Mode (Simulated)" : "Live Gateway Dispatch"}</span>

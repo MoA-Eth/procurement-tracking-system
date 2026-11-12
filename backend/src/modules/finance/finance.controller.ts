@@ -56,7 +56,14 @@ export const financeController = {
   async getSmsSettings(req: Request, res: Response) {
     const settings = await financeService.getSmsSettings();
     // Mask API key
-    res.json({ data: { ...settings, gatewayApiKey: settings.gatewayApiKey ? '***' : '' } });
+    res.json({
+      data: {
+        ...settings,
+        gatewayApiKey: settings.gatewayApiKey
+          ? financeService.MASKED_GATEWAY_API_KEY
+          : '',
+      },
+    });
   },
 
   async updateSmsSettings(req: Request, res: Response) {
