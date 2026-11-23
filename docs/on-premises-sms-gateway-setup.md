@@ -6,6 +6,7 @@ This guide outlines the quick verification and activation checklist for the Mini
 
 ## 1. Network Prerequisite (MoA Intranet / SMS VPN)
 - **Target Gateway IP**: `172.16.166.186`
+- **Short Code (Sender ID)**: `6031` (Ethio Telecom registered MoA sender shortcode)
 - **Subnet**: Private internal network (`172.16.0.0/12`).
 - **Connection**: Your workstation or deployment server must be connected to the **Ministry Office LAN/Wi-Fi** or the **MoA SMS VPN** tunnel.
 
@@ -26,12 +27,15 @@ Confirm the following 3 items with the network/gateway administrator:
    - **None**: If local IP is whitelisted without authentication.
    - **Bearer Token**: `Authorization: Bearer <API_KEY>`
    - **Raw Token**: `Authorization: <API_KEY>` (common with Android Traccar / SMS Gateway apps).
-4. **Payload Expectation**:
-   - Our system currently dispatches JSON:
+4. **Sender / Shortcode Parameter**:
+   - The ministry's short code is **`6031`**. Ask if the gateway expects this in the body as:
+     - `"from": "6031"` or `"sender": "6031"` or `"shortcode": "6031"`, OR if the gateway router automatically attaches `6031` based on the SIM/channel.
+   - Example payload variations:
      ```json
      {
        "to": "+251911234567",
-       "message": "[MoA Alert] High-Value Disbursement..."
+       "message": "[MoA Alert] High-Value Disbursement...",
+       "from": "6031"
      }
      ```
 
